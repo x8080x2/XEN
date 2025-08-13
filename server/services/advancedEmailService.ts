@@ -93,7 +93,7 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
 
 
 
-// Replace placeholders like {randnumN} and {hashN} in strings - exact clone from main.js
+// Replace placeholders like {randnumN}, {hashN}, and {randcharN} in strings - exact clone from main.js
 function replacePlaceholders(str: string): string {
   // Replace {randnumN} with random N-digit numbers
   str = str.replace(/\{randnum(\d+)\}/gi, (_, n) => {
@@ -102,11 +102,31 @@ function replacePlaceholders(str: string): string {
     while (num.length < n) num += Math.floor(Math.random()*10);
     return num.slice(0, n);
   });
+  
   // Replace {hashN} with random N-character hex string
   str = str.replace(/\{hash(\d+)\}/gi, (_, n) => {
     n = parseInt(n, 10);
     return crypto.randomBytes(Math.ceil(n/2)).toString('hex').slice(0, n);
   });
+  
+  // Replace {randcharN} with random N-character alphanumeric string
+  str = str.replace(/\{randchar(\d+)\}/gi, (_, n) => {
+    n = parseInt(n, 10);
+    let chars = '';
+    while (chars.length < n) {
+      chars += Math.random().toString(36).charAt(2) || 'x';
+    }
+    return chars.slice(0, n);
+  });
+  
+  // Replace {randomnumN} (alternative spelling) with random N-digit numbers  
+  str = str.replace(/\{randomnum(\d+)\}/gi, (_, n) => {
+    n = parseInt(n, 10);
+    let num = '';
+    while (num.length < n) num += Math.floor(Math.random()*10);
+    return num.slice(0, n);
+  });
+  
   return str;
 }
 

@@ -61,6 +61,13 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **UI Cleanup** - Removed duplicate Logo Border Style and Logo Border Color settings per user request
 - ✅ **Clear Settings Organization** - QR settings and Domain Logo settings now clearly separated in UI
 
+## Placeholder System Improvements (August 2025)
+- ✅ **Complete Placeholder Coverage** - Fixed all placeholder processing conflicts and missing patterns
+- ✅ **Enhanced Pattern Support** - Added {randcharN}, {randomnumN}, and all variable-length placeholders  
+- ✅ **Conflict Resolution** - Removed duplicate placeholder processing between injectDynamicPlaceholders and replacePlaceholders
+- ✅ **Pattern Validation** - All hash, randnum, and randchar patterns now work with any digit length (e.g., {hash12}, {randnum8}, {randchar5})
+- ✅ **Comprehensive Testing** - Verified all 25+ placeholder types work correctly in both subject and email body
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
