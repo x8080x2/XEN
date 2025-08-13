@@ -40,6 +40,12 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Runtime Issues Fixed** - Resolved browser connection problems, priority handling errors, and HTML conversion failures
 - ✅ **Email Delivery Confirmed** - Successfully tested email sending with all advanced features working properly
 
+## Delivery Improvements (August 2025)
+- ✅ **HTML Attachment Removal** - Removed problematic "Include HTML Attachment" option that caused spam filtering
+- ✅ **Enhanced HTML Convert** - Added HTML format support to existing PDF/PNG/DOCX conversion options
+- ✅ **Inbox Delivery Fixed** - Resolved deliverability issues by eliminating HTML attachments that trigger spam filters
+- ✅ **Format Flexibility** - Users can now export HTML content in 4 formats: HTML, PDF, PNG, DOCX
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

@@ -84,14 +84,14 @@ export default function OriginalEmailSender() {
     qrcode: false,
     randomMetadata: false,
     minifyHtml: false,
-    includeHtmlAttachment: false,
+
     htmlImgBody: false,
     zipUse: false,
     zipPassword: "",
     emailPerSecond: "5",
     sleep: "3",
     fileName: "attachment",
-    htmlConvert: "pdf,png,docx", // Support multiple formats like main.js
+    htmlConvert: "html,pdf,png,docx", // Support HTML export plus other formats
     qrSize: "200",
     qrBorder: "2",
     qrBorderColor: "#000000",
@@ -866,18 +866,7 @@ export default function OriginalEmailSender() {
                   />
                   <Label className="text-xs text-[#a1a1aa]">ZIP Attachments</Label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.includeHtmlAttachment}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings({...advancedSettings, includeHtmlAttachment: !!checked})
-                    }
-                  />
-                  <div className="flex flex-col">
-                    <Label className="text-xs text-[#a1a1aa]">Include HTML Attachment</Label>
-                    <span className="text-[10px] text-[#ef4444]">⚠️ May cause delivery issues</span>
-                  </div>
-                </div>
+
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.htmlImgBody}
@@ -998,12 +987,12 @@ export default function OriginalEmailSender() {
                 </div>
                 
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">HTML Convert Formats (comma-separated: pdf,png,docx)</Label>
+                  <Label className="text-sm text-[#a1a1aa]">HTML Convert Formats (comma-separated: html,pdf,png,docx)</Label>
                   <Input
                     value={advancedSettings.htmlConvert}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="pdf,png,docx"
+                    placeholder="html,pdf,png,docx"
                   />
                 </div>
 

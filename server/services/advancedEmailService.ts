@@ -718,8 +718,17 @@ export class AdvancedEmailService {
     }
   }
 
+  // HTML to HTML conversion - simple pass-through for attachment
+  private async convertHtmlToHtml(html: string) {
+    if (typeof html !== 'string' || !html.trim()) {
+      throw new Error('Invalid HTML input for HTML conversion');
+    }
+    return Buffer.from(html, 'utf8');
+  }
+
   // Converter functions registry - exact clone
   private converters = {
+    html: this.convertHtmlToHtml.bind(this),
     pdf: this.convertHtmlToPdf.bind(this),
     png: this.convertHtmlToImage.bind(this),
     docx: this.htmlToDocxStandalone.bind(this)
@@ -826,9 +835,6 @@ export class AdvancedEmailService {
     }
     if (typeof args.minifyHtml === 'boolean') {
       C.MINIFY_HTML = args.minifyHtml;
-    }
-    if (typeof args.includeHtmlAttachment === 'boolean') {
-      C.INCLUDE_HTML_ATTACHMENT = args.includeHtmlAttachment;
     }
     if (typeof args.emailPerSecond === 'number' && args.emailPerSecond > 0) {
       C.EMAIL_PER_SECOND = args.emailPerSecond;
@@ -1217,13 +1223,7 @@ export class AdvancedEmailService {
             }
           }
 
-          // Include HTML attachment - exact clone
-          if (C.INCLUDE_HTML_ATTACHMENT && finalAttHtml) {
-            emailAttachments.push({
-              filename: `${C.FILE_NAME}.html`,
-              content: finalAttHtml
-            });
-          }
+
 
           // Replace {domainlogo} with domain logo - exact clone from main.js lines 865-887
           const domainFull = recipient.split('@')[1] || '';
