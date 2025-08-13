@@ -41,6 +41,34 @@ export default function OriginalEmailSender() {
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
   
+  // Attachment template change handler
+  const handleAttachmentTemplateChange = async (template: string) => {
+    setSelectedAttachmentTemplate(template);
+    
+    if (template && template !== 'off') {
+      try {
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filepath: `files/${template}` })
+        });
+        const data = await response.json();
+        if (data.success && data.content) {
+          setAttachmentHtml(data.content);
+        } else {
+          setAttachmentHtml('');
+        }
+      } catch (error) {
+        console.error('Error loading attachment template:', error);
+        setAttachmentHtml('');
+      }
+    } else {
+      setAttachmentHtml('');
+    }
+  };
+  
   // SMTP Settings
   const [smtpSettings, setSMTPSettings] = useState<SMTPSettings>({
     host: "",
@@ -142,9 +170,15 @@ export default function OriginalEmailSender() {
     // Load template content into textarea when selected - exact clone from sender.html lines 992-1006
     if (template && template !== 'off') {
       try {
-        const response = await fetch(`/api/original/readFile?path=files/${template}`);
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filepath: `files/${template}` })
+        });
         const data = await response.json();
-        if (data.content) {
+        if (data.success && data.content) {
           setEmailContent(data.content);
           setStatusText('');
         } else {
@@ -295,9 +329,15 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch(`/api/original/readFile?path=files/${selectedTemplate}`);
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
+        });
         const data = await response.json();
-        bodyHtml = data.content || '';
+        bodyHtml = data.success ? (data.content || '') : '';
       } catch (error) {
         console.error('Failed to load template:', error);
         bodyHtml = '';
@@ -310,9 +350,15 @@ export default function OriginalEmailSender() {
     // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
       try {
-        const response = await fetch(`/api/original/readFile?path=files/letter.html`);
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filepath: 'files/letter.html' })
+        });
         const data = await response.json();
-        bodyHtml = data.content || '';
+        bodyHtml = data.success ? (data.content || '') : '';
       } catch (error) {
         console.log('No default letter.html found');
         bodyHtml = '';
@@ -323,6 +369,9 @@ export default function OriginalEmailSender() {
       setStatusText('Email content cannot be empty.');
       return;
     }
+
+    // Set mainHtml for FormData - this was missing
+    const mainHtml = bodyHtml;
 
     // Attachment HTML handling - exact clone from main.js lines 583-605
     let attachmentHtmlContent = '';
@@ -601,11 +650,11 @@ export default function OriginalEmailSender() {
 
               
 
-              {/* Second Row - Attachment Files */}
-              <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
-                {/* Attachment */}
+              {/* Second Row - Attachment Files and HTML */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Attachment Files */}
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment</Label>
+                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment Files</Label>
                   <div className="space-y-2">
                     <Button
                       variant="outline"
@@ -635,6 +684,38 @@ export default function OriginalEmailSender() {
                       </div>
                     )}
                     <div className="text-xs text-[#75798b]">Supports various file formats</div>
+                  </div>
+                </div>
+
+                {/* Attachment HTML */}
+                <div>
+                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment HTML</Label>
+                  <Textarea
+                    value={attachmentHtml}
+                    onChange={(e) => setAttachmentHtml(e.target.value)}
+                    placeholder="Enter attachment HTML content here..."
+                    className="bg-[#0f0f12] border-[#26262b] text-white min-h-[120px]"
+                  />
+                  <div className="mt-2">
+                    <Label className="text-xs text-[#a1a1aa]">Attachment Template</Label>
+                    <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
+                      <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
+                        <SelectValue placeholder="-- Off --" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#131316] border-[#26262b]">
+                        <SelectItem value="off">-- Off --</SelectItem>
+                        {templateFiles.map(file => (
+                          <SelectItem key={file} value={file}>{file}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="text-xs text-[#a1a1aa] mt-1">
+                      {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
+                        <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
+                      ) : (
+                        <span>✏️ Using manual attachment HTML from textarea</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
