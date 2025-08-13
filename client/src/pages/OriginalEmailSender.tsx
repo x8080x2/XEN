@@ -207,7 +207,38 @@ export default function OriginalEmailSender() {
           proxyPass: config.PROXY_PASS || ''
         });
         
-        setStatusText('Configuration loaded automatically');
+        // Auto-load maillist/leads from config files - matching original main.js behavior
+        if (config.MAILLIST && Array.isArray(config.MAILLIST) && config.MAILLIST.length > 0) {
+          const maillistContent = config.MAILLIST.join('\n');
+          setRecipients(maillistContent);
+          console.log(`[Config Load] Auto-loaded ${config.MAILLIST.length} recipients from maillist`);
+        } else {
+          // Try to load from leads.txt if no maillist in config
+          try {
+            const leadsResponse = await fetch('/api/config/loadLeads');
+            const leadsData = await leadsResponse.json();
+            if (leadsData.success && leadsData.leads && leadsData.leads.length > 0) {
+              setRecipients(leadsData.leads.join('\n'));
+              console.log(`[Config Load] Auto-loaded ${leadsData.leads.length} recipients from leads.txt`);
+            }
+          } catch (leadsError) {
+            console.log('[Config Load] No leads.txt found, starting with empty recipients');
+          }
+        }
+        
+        // Auto-load letter content if available
+        if (config.LETTER_CONTENT) {
+          setEmailContent(config.LETTER_CONTENT);
+          console.log('[Config Load] Auto-loaded letter content from config');
+        }
+        
+        // Auto-load subject if available
+        if (config.SUBJECT) {
+          setSubject(config.SUBJECT);
+          console.log('[Config Load] Auto-loaded subject from config');
+        }
+        
+        setStatusText('Configuration and maillist loaded automatically');
         setTimeout(() => setStatusText('Ready to send emails'), 2000);
       } else {
         setStatusText('Failed to load configuration');
@@ -489,32 +520,9 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
 
-              {/* Second Row - Attachment HTML Template */}
-              <div className="mb-6">
-                <Label className="text-sm text-[#a1a1aa] mb-2">Attachment HTML Template</Label>
-                <Textarea
-                  value={attachmentHtml}
-                  onChange={(e) => setAttachmentHtml(e.target.value)}
-                  placeholder="Enter HTML template for attachments (will be converted to PDF/PNG/DOCX)..."
-                  className="bg-[#0f0f12] border-[#26262b] text-white min-h-[150px]"
-                />
-                <div className="mt-2">
-                  <Label className="text-xs text-[#a1a1aa]">Attach Template File</Label>
-                  <Select value={selectedAttachmentTemplate || "off"} onValueChange={setSelectedAttachmentTemplate}>
-                    <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
-                      <SelectValue placeholder="-- Off --" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#131316] border-[#26262b]">
-                      <SelectItem value="off">-- Off --</SelectItem>
-                      {templateFiles.map(file => (
-                        <SelectItem key={file} value={file}>{file}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              
 
-              {/* Third Row - Attachment Files */}
+              {/* Second Row - Attachment Files */}
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
                 {/* Attachment */}
                 <div>
@@ -647,12 +655,6 @@ export default function OriginalEmailSender() {
                   className="h-8 px-4 bg-[#ef4444] hover:bg-[#dc2626] text-white text-xs"
                 >
                   Save
-                </Button>
-                <Button
-                  onClick={loadConfigFromFiles}
-                  className="h-8 px-4 bg-[#10b981] hover:bg-[#059669] text-white text-xs"
-                >
-                  Load Config
                 </Button>
               </div>
             </div>
