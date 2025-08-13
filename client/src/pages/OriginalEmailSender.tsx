@@ -150,7 +150,7 @@ export default function OriginalEmailSender() {
       formData.append('senderName', senderName);
       formData.append('subject', subject);
       formData.append('html', emailContent);
-      formData.append('attachmentHtml', attachmentHtml);
+      formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
       
       // SMTP settings

@@ -12,6 +12,15 @@ import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
 import * as htmlDocx from "html-docx-js";
 
+// Random helper for array and hex - exact clone from main.js
+function randomFrom(arr: any[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randomHex(len: number) {
+  return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+}
+
 // Dynamic Placeholder Arrays - exact clone from main.js
 const randFirstNames = ['Daniel', 'Sophia', 'Liam', 'Ava', 'Ethan', 'Olivia', 'Noah', 'Emma'];
 const randLastNames = ['Nguyen', 'Smith', 'Johnson', 'Lee', 'Brown', 'Garcia', 'Williams', 'Davis'];
@@ -84,8 +93,25 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
-    .replace(/&#x([a-f\d]+);/gi, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code));
+}
+
+// Replace placeholders like {randnumN} and {hashN} in strings - exact clone from main.js
+function replacePlaceholders(str: string): string {
+  // Replace {randnumN} with random N-digit numbers
+  str = str.replace(/\{randnum(\d+)\}/gi, (_, n) => {
+    n = parseInt(n, 10);
+    let num = '';
+    while (num.length < n) num += Math.floor(Math.random()*10);
+    return num.slice(0, n);
+  });
+  // Replace {hashN} with random N-character hex string
+  str = str.replace(/\{hash(\d+)\}/gi, (_, n) => {
+    n = parseInt(n, 10);
+    return crypto.randomBytes(Math.ceil(n/2)).toString('hex').slice(0, n);
+  });
+  return str;
 }
 
 // Build QR options - exact clone from main.js
@@ -276,8 +302,12 @@ export class AdvancedEmailService {
     console.log('Advanced sendMail invoked with args:', args);
     const sendMailStart = Date.now();
     
-    // Load and merge configuration - exact clone from main.js
+    // Load and merge configuration - exact clone from main.js  
     const C = { ...defaultConfig };
+    
+    console.log('Loaded QR Config:', {
+      RANDOM_METADATA: C.RANDOM_METADATA
+    });
     
     // Override settings from args - exact clone logic
     if (args.sleep !== undefined && !isNaN(Number(args.sleep))) {
@@ -327,12 +357,11 @@ export class AdvancedEmailService {
     }
     
     // Override hidden-text overlay from UI if provided - exact clone
-    if (typeof args.includeHiddenText === 'boolean') {
-      C.INCLUDE_HIDDEN_TEXT = args.includeHiddenText;
-    }
-    if (typeof args.hiddenText === 'string') {
-      C.HIDDEN_TEXT = args.hiddenText;
-    }
+    C.HIDDEN_TEXT = args.includeHiddenText
+      ? (typeof args.hiddenText === 'string' ? args.hiddenText : C.HIDDEN_TEXT)
+      : '';
+    // Decode any HTML entities so they render correctly
+    C.HIDDEN_TEXT = decodeHtmlEntities(C.HIDDEN_TEXT);
 
     let sent = 0;
     let failed = 0;
@@ -369,22 +398,61 @@ export class AdvancedEmailService {
         rateLimit: C.EMAIL_PER_SECOND
       });
 
-      // Get recipients
-      const recipients = Array.isArray(args.recipients) ? args.recipients : 
-                        typeof args.recipients === 'string' ? args.recipients.split('\n').filter((r: string) => r.trim()) : [];
+      // Accept UI args or fallback to config/disk - exact clone from main.js
+      const recipients = Array.isArray(args.recipients) && args.recipients.length
+        ? args.recipients
+        : (typeof args.recipients === 'string' ? args.recipients.split('\n').filter((r: string) => r.trim()) : []);
       
       if (!recipients.length) {
         throw new Error('No recipients provided');
       }
 
-      // Process main HTML content and attachment HTML
-      let htmlContent = args.html || args.emailContent || '';
-      let attachmentHtml = args.attachmentHtml || '';
-      
-      // Generate date/time strings
-      const now = new Date();
-      const dateStr = now.toLocaleDateString();
-      const timeStr = now.toLocaleTimeString();
+      // Load email body HTML - exact clone from main.js
+      let bodyHtml = '';
+      if (args.bodyHtmlFile && typeof args.bodyHtmlFile === "string" && args.bodyHtmlFile.trim() !== "") {
+        // Load from file
+        bodyHtml = readFileSync(join('files', args.bodyHtmlFile), 'utf-8');
+      } else if (args.html && typeof args.html === "string") {
+        bodyHtml = args.html;
+      } else {
+        bodyHtml = args.html || args.emailContent || '';
+      }
+
+      // Prefer raw HTML passed in args.attachmentHtml; fall back to file-based template or bodyHtml
+      let attachmentHtml = (typeof args.attachmentHtml === 'string' && args.attachmentHtml.trim())
+        ? args.attachmentHtml
+        : bodyHtml;
+
+      // Replace placeholders in bodyHtml
+      const currentDate = new Date();
+      const dateStr = currentDate.toISOString().slice(0,10);
+      const timeStr = currentDate.toISOString().slice(11,19);
+
+      let processedBodyHtml = bodyHtml
+        .replace(/\{senderemail\}/g, args.senderEmail || '')
+        .replace(/\{date\}/g, dateStr)
+        .replace(/\{time\}/g, timeStr);
+
+      // After replacing user/email/date/time, also replace {link} with C.LINK_PLACEHOLDER or C.QR_LINK
+      processedBodyHtml = processedBodyHtml.replace(/\{link\}/g, C.LINK_PLACEHOLDER || C.QR_LINK || '');
+
+      // Replace placeholders in attachmentHtml
+      let processedAttachmentHtml = attachmentHtml
+        .replace(/\{senderemail\}/g, args.senderEmail || '')
+        .replace(/\{date\}/g, dateStr)
+        .replace(/\{time\}/g, timeStr);
+      processedAttachmentHtml = processedAttachmentHtml.replace(/\{link\}/g, C.LINK_PLACEHOLDER || C.QR_LINK || '');
+
+      // Additional placeholder replacement
+      processedAttachmentHtml = replacePlaceholders(processedAttachmentHtml);
+      processedBodyHtml = replacePlaceholders(processedBodyHtml);
+
+      // Recreate render concurrency limiter with updated rate
+      this.limit = pLimit(C.EMAIL_PER_SECOND || 5);
+
+      // Use processedBodyHtml as the email html body from now on
+      const templateHtmlBase = processedBodyHtml;
+      const attachmentHtmlBase = processedAttachmentHtml;
 
       // Process each recipient - exact clone logic
       for (let i = 0; i < recipients.length; i++) {
@@ -409,15 +477,15 @@ export class AdvancedEmailService {
 
         try {
           // Apply placeholders to both HTML content and subject - exact clone
-          const htmlWithPlaceholders = injectDynamicPlaceholders(htmlContent, recipient, fromEmail, dateStr, timeStr);
+          let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
           
           // Process attachment HTML with placeholders
-          let attHtml = attachmentHtml ? injectDynamicPlaceholders(attachmentHtml, recipient, fromEmail, dateStr, timeStr) : '';
+          let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
           
           // QR Code processing - exact clone from main.js
           if (attHtml.includes('{qrcode}')) {
-            const qrOpts = buildQrOpts(C);
+            const qrOpts = this.buildQrOpts(C);
             let qrContent = C.QR_LINK;
             
             // Apply link placeholder replacement
@@ -439,10 +507,8 @@ export class AdvancedEmailService {
             
             // Hidden text overlay - exact clone
             let hiddenOverlay = '';
-            if (C.INCLUDE_HIDDEN_TEXT && C.HIDDEN_TEXT) {
-              const hiddenTextWithPlaceholders = injectDynamicPlaceholders(C.HIDDEN_TEXT, recipient, fromEmail, dateStr, timeStr);
-              const decodedHiddenText = decodeHtmlEntities(hiddenTextWithPlaceholders);
-              hiddenOverlay = `<div style="position:absolute; top:0; left:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.8); font-family:Arial,sans-serif; font-size:10px; color:#333; z-index:999; pointer-events:none;">${decodedHiddenText}</div>`;
+            if (C.HIDDEN_TEXT) {
+              hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
             }
             
             attHtml = attHtml.replace(/\{qrcode\}/g,
@@ -453,7 +519,7 @@ export class AdvancedEmailService {
           }
 
           // HTML minification - exact clone
-          let finalHtml = htmlWithPlaceholders;
+          let finalHtml = html;
           let finalAttHtml = attHtml;
           
           if (C.MINIFY_HTML) {
@@ -562,7 +628,7 @@ export class AdvancedEmailService {
           }
 
           // Send email - exact clone
-          const text = htmlToText(htmlWithPlaceholders);
+          const text = htmlToText(finalHtml);
           const result = await this.sendOneEmail({
             to: recipient,
             subject: dynamicSubject,
