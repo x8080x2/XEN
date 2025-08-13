@@ -70,7 +70,20 @@ export default function OriginalEmailSender() {
     qrLink: "https://example.com",
     linkPlaceholder: "{email}",
     includeHiddenText: false,
-    hiddenText: "&#9919;"
+    hiddenText: "&#9919;",
+    domainLogoSize: "50%",
+    borderStyle: "solid",
+    borderColor: "#000000",
+    retry: "0",
+    priority: "2",
+    hiddenImgSize: "50",
+    hiddenImageFile: "",
+    proxyUse: false,
+    proxyType: "socks5",
+    proxyHost: "",
+    proxyPort: "",
+    proxyUser: "",
+    proxyPass: ""
   });
   
   // Progress tracking
@@ -731,6 +744,150 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white"
                     placeholder="pdf,png,docx"
                   />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Domain Logo Size</Label>
+                    <Input
+                      value={advancedSettings.domainLogoSize}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                      placeholder="50%"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Border Style</Label>
+                    <select 
+                      value={advancedSettings.borderStyle}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, borderStyle: e.target.value})}
+                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                    >
+                      <option value="solid">Solid</option>
+                      <option value="dashed">Dashed</option>
+                      <option value="dotted">Dotted</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Border Color</Label>
+                    <Input
+                      type="color"
+                      value={advancedSettings.borderColor}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, borderColor: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Retry Attempts</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={advancedSettings.retry}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, retry: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Priority</Label>
+                    <select 
+                      value={advancedSettings.priority}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, priority: e.target.value})}
+                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                    >
+                      <option value="1">Low</option>
+                      <option value="2">Normal</option>
+                      <option value="3">High</option>
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Hidden Image Size (px)</Label>
+                    <Input
+                      type="number"
+                      min="10"
+                      max="200"
+                      value={advancedSettings.hiddenImgSize}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenImgSize: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-sm text-[#a1a1aa]">Hidden Image File</Label>
+                  <select 
+                    value={advancedSettings.hiddenImageFile}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenImageFile: e.target.value})}
+                    className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                  >
+                    <option value="">-- None --</option>
+                  </select>
+                </div>
+
+                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy Settings</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={advancedSettings.proxyUse}
+                      onCheckedChange={(checked) => setAdvancedSettings({...advancedSettings, proxyUse: !!checked})}
+                    />
+                    <Label className="text-sm text-[#a1a1aa]">Use Proxy</Label>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Proxy Type</Label>
+                    <select 
+                      value={advancedSettings.proxyType}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyType: e.target.value})}
+                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                    >
+                      <option value="socks5">SOCKS5</option>
+                      <option value="socks4">SOCKS4</option>
+                      <option value="http">HTTP</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Proxy Host</Label>
+                    <Input
+                      value={advancedSettings.proxyHost}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyHost: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Proxy Port</Label>
+                    <Input
+                      type="number"
+                      value={advancedSettings.proxyPort}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPort: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Proxy User</Label>
+                    <Input
+                      value={advancedSettings.proxyUser}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyUser: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Proxy Password</Label>
+                    <Input
+                      type="password"
+                      value={advancedSettings.proxyPass}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPass: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">

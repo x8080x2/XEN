@@ -152,6 +152,64 @@ export class AdvancedEmailService {
 
   constructor() {}
 
+  // Domain Logo Fetching - exact clone from main.js lines 690-712
+  private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
+    if (!domain || typeof domain !== 'string') return null;
+    
+    try {
+      const url = `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`;
+      console.log(`[fetchDomainLogo] Fetching ${domain} logo from:`, url);
+      
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 10000,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)' }
+      });
+      
+      if (response.status === 200 && response.data) {
+        const buffer = Buffer.from(response.data);
+        console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes)`);
+        return buffer;
+      }
+      return null;
+    } catch (error) {
+      console.log(`[fetchDomainLogo] Failed to fetch ${domain} logo:`, error instanceof Error ? error.message : error);
+      return null;
+    }
+  }
+
+  // QR Code generation - exact clone from main.js lines 713-750
+  private async generateQRCode(link: string): Promise<Buffer | null> {
+    if (!link || typeof link !== 'string') return null;
+    
+    try {
+      const buffer = await QRCode.toBuffer(link, {
+        type: 'png',
+        width: 200,
+        margin: 4,
+        errorCorrectionLevel: 'H',
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      console.log(`[generateQRCode] Generated QR code for: ${link}`);
+      return buffer;
+    } catch (error) {
+      console.error('[generateQRCode] Error generating QR code:', error);
+      return null;
+    }
+  }
+
+  // Random helper functions - exact clone from main.js
+  private randomFrom(arr: string[]): string {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  private randomHex(len: number): string {
+    return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+  }
+
   // Launch browser with exact settings from main.js
   private async launchBrowser() {
     if (!this.globalBrowser) {
@@ -672,6 +730,62 @@ export class AdvancedEmailService {
             });
           }
 
+          // Replace {domainlogo} with domain logo - exact clone from main.js lines 865-887
+          const domainFull = recipient.split('@')[1] || '';
+          const domainLogoSize = C.DOMAIN_LOGO_SIZE || '50%';
+          let domainLogoBuffer = null;
+          if (finalHtml.includes('{domainlogo}')) {
+            domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+            if (domainLogoBuffer) {
+              emailAttachments.push({
+                filename: 'domainlogo.png',
+                content: domainLogoBuffer,
+                cid: 'domainlogo',
+                contentType: 'image/png'
+              });
+              finalHtml = finalHtml.replace(
+                /\{domainlogo\}/g,
+                `<img src="cid:domainlogo" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
+              );
+            } else {
+              finalHtml = finalHtml.replace(
+                /\{domainlogo\}/g,
+                `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`
+              );
+            }
+          }
+
+          // QR Code replacement with CID - exact clone from main.js lines 917-948
+          if (finalHtml.includes('{qrcode}')) {
+            const qrBuffer = await this.generateQRCode(C.QR_LINK);
+            if (qrBuffer) {
+              emailAttachments.push({
+                filename: 'qrcode.png',
+                content: qrBuffer,
+                cid: 'qrcode',
+                contentType: 'image/png'
+              });
+
+              // Hidden image overlay logic - exact clone from main.js
+              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+              let hiddenImageHtml = '';
+              if (C.HIDDEN_TEXT) {
+                hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+              }
+              
+              finalHtml = finalHtml.replace(/\{qrcode\}/g,
+                `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                   <a href="${C.QR_LINK}" target="_blank" rel="noopener noreferrer">
+                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
+                   </a>
+                   ${hiddenImageHtml}
+                 </div>`
+              );
+            } else {
+              finalHtml = finalHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+            }
+          }
+
           // Send email - exact clone
           const text = htmlToText(finalHtml);
           const result = await this.sendOneEmail({
@@ -682,7 +796,8 @@ export class AdvancedEmailService {
             attachments: emailAttachments,
             from: fromEmail,
             fromName,
-            transporter
+            transporter,
+            C
           });
 
             progressCallback?.({
@@ -788,6 +903,62 @@ export class AdvancedEmailService {
     } catch (err: any) {
       return { success: false, error: err.message };
     }
+  }
+
+  // Send one email with retries and random headers - exact clone from main.js
+  private async sendOneEmail({ to, subject, html, text, attachments, from, fromName, transporter, C }: any) {
+    const senderDomain = from.split('@')[1];
+    
+    const mail = {
+      from: { name: fromName, address: from },
+      to,
+      subject,
+      html,
+      text,
+      attachments: attachments || [],
+      priority: ['low','normal','high'][C.PRIORITY - 1] || 'normal',
+      messageId: `<${this.randomHex(12)}@${senderDomain}>`,
+      headers: {
+        'X-Mailer': this.randomFrom([
+          'Microsoft Outlook 16.0',
+          'Apple Mail (2.3654.120.0)',
+          'Mozilla Thunderbird',
+          'Roundcube Webmail',
+          'Outlook-Express/6.0'
+        ]),
+        'User-Agent': this.randomFrom([
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+          'Mozilla/5.0 (X11; Linux x86_64)',
+          'Thunderbird/91.11.0',
+          'AppleWebKit/605.1.15 (KHTML, like Gecko)',
+          'ElectronMail/5.4',
+          'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1',
+          'Opera/9.80 (Windows NT 6.0) Presto/2.12.388 Version/12.14',
+          'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:91.0) Gecko/20100101 Firefox/91.0',
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
+        ])
+      }
+    };
+
+    // Send mail with retry logic - exact clone from main.js lines 1057-1072
+    let lastError;
+    const retryAttempts = (C.RETRY || 0) + 1; // RETRY 0 means 1 attempt total
+    for (let attempt = 1; attempt <= retryAttempts; attempt++) {
+      try {
+        await transporter.sendMail(mail);
+        console.log(`Email sent to ${to} (attempt ${attempt})`);
+        return { success: true };
+      } catch (error) {
+        console.error(`Attempt ${attempt} failed:`, error);
+        lastError = error;
+        if (attempt < retryAttempts) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    }
+    return { success: false, error: lastError instanceof Error ? lastError.message : String(lastError) };
   }
 
   // Cleanup method
