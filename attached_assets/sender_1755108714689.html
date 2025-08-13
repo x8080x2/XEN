@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Mailer - V6</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-size: 13px;
+        }
+
+        body {
+            font-family: 'Fira Code', monospace;
+            background-color: #F4F6F8; /* Light Gray */
+            color: #37474F; /* Slate Gray */
+            caret-color: #FFA726; /* Soft Orange, accent for caret */
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .window-controls {
+            height: 12px;
+            background-color: #131316;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 8px;
+            border-bottom: 1px solid #26262b;
+        }
+
+        .control-button {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-left: 8px;
+            cursor: pointer;
+			
+        }
+        .control-button.minimize { background: #3f3f46 !important; }
+        .control-button.close    { background: #ef4444 !important; }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 50px);
+        }
+
+        .sidebar {
+            width: 180px;
+            background-color: #0b0b0d;
+            border-right: 1px solid #26262b;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background-color: #ef4444 !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 8px;
+            color: #fff !important;
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-bottom: 16px;
+        }
+
+        .nav-item {
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.2s;
+            color: #e5e7eb;
+            background-color: transparent;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: #ef4444;
+            color: #fff;
+        }
+        .nav-item.active {
+            background-color: #ef4444;
+            color: #fff;
+        }
+
+
+        .content-area {
+            flex: 1;
+            padding: 4px;
+            overflow-y: auto;
+            background-color: #0e0e10;
+            color: #e5e7eb;
+            height: calc(100vh - 50px);
+        }
+
+        .form-container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .sender-form-card {
+            background-color: #131316;
+            padding: 12px;
+            box-shadow: 0 4px 24px #3F51B511, 0 1.5px 6px #3F51B510;
+            color: #e5e7eb;
+        }
+        .form-group {
+            margin-bottom: 6px;
+        }
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e5e7eb !important;
+            margin-bottom: 2px;
+            letter-spacing: 0.01em;
+        }
+        .form-input,
+        .select,
+        .form-textarea {
+            width: 100%;
+            border-radius: 6px;
+            padding: 8px 10px;
+            background-color: #0f0f12 !important;
+            border: 1px solid #26262b !important;
+            color: #e5e7eb !important;
+            font-size: 14px;
+            box-shadow: none !important;
+            transition: border-color 0.17s, box-shadow 0.18s;
+        }
+        .form-input:focus,
+        .select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 2px rgba(239,68,68,.35) !important;
+        }
+        .form-input[readonly] {
+            background-color: #101014 !important;
+            color: #8b8b94 !important;
+            cursor: not-allowed;
+        }
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: #a1a1aa !important;
+            opacity: 1;
+        }
+        .form-textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        /* Improved style for recipients textarea */
+        #recipients {
+            min-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 8px;
+            border: 1px solid #26262b !important;
+            border-radius: 8px;
+            background-color: #0f0f12 !important;
+            color: #e5e7eb !important;
+            resize: vertical;
+        }
+        .file-upload-squad {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+        .file-upload-btn { background-color: #ef4444; border: 1.5px solid #ef4444; color: #fff; }
+        .file-upload-btn:hover, .file-upload-btn:focus { border-color: #ef4444; color: #ef4444; background-color: #131316; }
+        .file-upload-x {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #b91c1c !important;
+            color: #fff;
+            font-size: 18px;
+            margin-left: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.17s;
+        }
+        .file-upload-x:hover {
+            background: #b91c1ccc !important;
+            color: #fff;
+        }
+        .file-upload-selected {
+            font-size: 12px;
+            color: #a1a1aa !important;
+            margin-left: 4px;
+            max-width: 240px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .button { background-color: #ef4444 !important; color: #fff !important; }
+        .button:hover, .button:focus { background-color: #dc2626 !important; box-shadow: 0 2px 10px rgba(239,68,68,.35) !important; }
+        .button-secondary { background: transparent !important; border: 1px solid #ef4444 !important; color: #ef4444 !important; }
+        .button-secondary:hover, .button-secondary:focus { background: #ef4444 !important; color: #fff !important; border-color: #ef4444 !important; }
+        .status-bar-squad {
+            background-color: #ef4444;
+            border-radius: 8px;
+            padding: 6px 12px;
+            margin-bottom: 12px;
+            margin-top: 4px;
+            font-size: 14px;
+            color: #fff;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            display: inline-block;
+        }
+
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,.75) !important;
+            z-index: 1000;
+            display: none;
+        }
+
+        .settings-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 840px;
+            background-color: #131316 !important;
+            border-left: 1px solid #26262b !important;
+            overflow-y: auto;
+            padding: 8px 16px;
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .close-button {
+            background: transparent;
+            border: none;
+            color: #E57373;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .settings-section {
+            margin-bottom: 12px;
+            padding-left: 12px;
+            padding-right: 12px;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #26262b !important;
+            color: #e5e7eb !important;
+        }
+
+
+        .select {
+            width: 100%;
+            background-color: #F4F6F8;
+            border: 1.5px solid #3F51B5;
+            border-radius: 6px;
+            color: #37474F;
+            padding: 8px 10px;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: #26C6DA;
+        }
+
+        .progress-bar {
+            background-color: #1d1d21 !important;
+            height: 8px;
+            border-radius: 4px;
+        }
+        .progress-fill {
+            background-color: #ef4444;
+            height: 100%;
+            border-radius: 4px;
+        }
+
+        .status-text { color: #ef4444; }
+        .error       { color: #ef4444; }
+        .success     { color: #e5e7eb; }
+
+        .settings-section form {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px 12px;
+          max-width: 840px;
+          margin: 0 auto;
+          align-items: start;
+        }
+
+        .settings-section .form-group {
+          margin-bottom: 12px;
+        }
+
+        .settings-section .form-label {
+          font-size: 12px;
+          font-weight: 600;
+          margin-bottom: 4px;
+          color: #e5e7eb !important;
+        }
+
+        .settings-section input.form-input,
+        .settings-section select.form-input {
+          width: 100%;
+          font-size: 12px;
+          padding: 6px 8px;
+          background-color: #0f0f12 !important;
+          border: 1px solid #26262b !important;
+          color: #e5e7eb !important;
+        }
+
+        .settings-section h3 {
+          grid-column: 1 / -1;
+          margin-top: 24px;
+          margin-bottom: 12px;
+          color: #ef4444 !important;
+        }
+
+</style>
+    <style>
+
+    :root {
+      --bg: #0e0e10;
+      --surface: #131316;
+      --surface-2: #0b0b0d;
+      --text: #e5e7eb;
+      --muted: #a1a1aa;
+      --border: #26262b;
+      --primary: #ef4444; /* red */
+      --primary-700: #dc2626;
+      --primary-800: #b91c1c;
+      --glow: rgba(239,68,68,.35);
+    }
+
+    /* Base */
+    body { background-color: var(--bg) !important; color: var(--text) !important; }
+    .window-controls { background-color: var(--surface) !important; border-bottom: 1px solid var(--border) !important; }
+    .control-button { box-shadow: 0 0 0 1px var(--border) inset; }
+    .control-button.minimize { background: #3f3f46 !important; }
+    .control-button.close { background: var(--primary) !important; }
+
+    .sidebar { background-color: var(--surface-2) !important; border-right: 1px solid var(--border) !important; }
+    .logo { background-color: var(--primary) !important; color: #fff !important; }
+    .nav-item { color: var(--text) !important; background-color: transparent !important; border: 1px solid transparent; }
+    .nav-item:hover { background-color: var(--primary) !important; color: #fff !important; }
+    .nav-item.active { background-color: var(--primary) !important; color: #fff !important; }
+
+    .content-area { background-color: var(--bg) !important; color: var(--text) !important; }
+    .sender-form-card { background-color: var(--surface) !important; color: var(--text) !important; }
+
+    /* Inputs */
+    .form-input, .select, .form-textarea { background-color: #0f0f12 !important; border: 1px solid var(--border) !important; color: var(--text) !important; box-shadow: none !important; }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--muted) !important; }
+    .form-input[readonly] { background-color: #101014 !important; color: #8b8b94 !important; }
+    .form-input:focus, .select:focus, .form-textarea:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 2px var(--glow) !important; }
+
+    /* Buttons */
+    .button { background-color: var(--primary) !important; color: #fff !important; }
+    .button:hover, .button:focus { background-color: var(--primary-700) !important; box-shadow: 0 2px 10px var(--glow) !important; }
+    .button-secondary { background: transparent !important; border: 1px solid var(--primary) !important; color: var(--primary) !important; }
+    .button-secondary:hover, .button-secondary:focus { background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; }
+
+    /* File upload */
+    .file-upload-btn { background-color: var(--primary) !important; border: 1px solid var(--primary) !important; color: #fff !important; }
+    .file-upload-btn:hover, .file-upload-btn:focus { background-color: var(--surface) !important; color: var(--primary) !important; border-color: var(--primary) !important; }
+    .file-upload-x { background: var(--primary-800) !important; }
+    .file-upload-selected { color: var(--muted) !important; }
+
+    /* Progress */
+    .status-bar-squad { background-color: var(--primary) !important; color: #fff !important; }
+    .progress-bar { background-color: #1d1d21 !important; }
+    .progress-fill { background-color: var(--primary) !important; }
+
+    /* Settings overlay */
+    .settings-overlay { background: rgba(0,0,0,.75) !important; }
+    .settings-panel { background-color: var(--surface) !important; border-left: 1px solid var(--border) !important; }
+    .settings-title, .form-label { color: var(--text) !important; }
+
+    /* Cards / containers */
+    #sendStatusList { border: 1px solid var(--border) !important; background: #0f0f12 !important; }
+
+    /* Links, small accents */
+    .compact-hint summary { color: var(--primary) !important; }
+  </style>
+</style>
+    <style>
+
+        /* Make two-column grid stack on narrower screens */
+        @media (max-width: 1100px) {
+          .form-grid-squad { grid-template-columns: 1fr; }
+        }
+
+        /* Keep progress bar visible while scrolling the form */
+        #progressContainer { position: sticky; top: 0; z-index: 2; }
+
+        /* Compact top row: email, name, subject */
+        .form-grid-compact-top {
+          display: grid;
+          grid-template-columns: 1fr 1fr 2fr;
+          gap: 8px 8px;
+          margin-bottom: 6px;
+        }
+
+        /* Compact main row: letter, maillist, attachment */
+        .form-grid-compact-main {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          gap: 8px 8px;
+        }
+
+        /* Sticky toolbar for actions */
+        .toolbar-sticky {
+          position: sticky;
+          bottom: 0;
+          background: #131316;
+          padding-top: 4px;
+          z-index: 3;
+        }
+
+        /* Tighter inputs */
+        .form-input, .select, .form-textarea { padding: 8px 10px; }
+        .form-label { font-size: 13px; }
+
+        /* Responsive: stack compact grids on narrower widths */
+        @media (max-width: 1200px) {
+          .form-grid-compact-top { grid-template-columns: 1fr 1fr; }
+          .form-grid-compact-main { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 760px) {
+          .form-grid-compact-top,
+          .form-grid-compact-main { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Window Controls -->
+    <div class="window-controls">
+        <div class="control-button minimize"></div>
+        <div class="control-button close"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-section">
+                <div class="logo">SM</div>
+                <div>
+                    <div style="font-weight: 600;">Closed V6</div>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" onclick="showSection('mailer')">
+                   
+                    <span>Mailer</span>
+                </li>
+                <li class="nav-item" onclick="openSettings()">
+                    <span>Settings</span>
+                </li>
+            </ul>
+                <div style="margin-top: auto; padding: 16px; background: #131316; border: 1px solid #26262b; border-radius: 8px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 32px; height: 32px; background: #ef4444; border-radius: 50%; margin-right: 12px;"></div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 14px; color: #fff;">User</div>
+                            <div style="font-size: 12px; color: #ef4444;">Administrator</div>
+                        </div>
+                </div>
+            </div>
+        </div>
+        <!-- Content Area -->
+        <div class="content-area">
+            <div id="mailer" class="form-container">
+                <div class="sender-form-card">
+                    <form id="emailForm" autocomplete="off">
+                        <!-- Sender Email & Sender Name & Subject (compact) -->
+                        <div class="form-grid-compact-top">
+                          <div>
+                            <div class="form-group">
+                              <label class="form-label">Sender Email</label>
+                              <input type="email" class="form-input" id="senderEmailMain" required readonly />
+                              <div id="smtpEmailStatus" style="font-size: 13px; margin-top: 4px; color: #43A047; display: none;">✓ Loaded from SMTP config</div>
+                            </div>
+                          </div>
+                          <div>
+                            <div class="form-group">
+                              <label class="form-label">Sender Name</label>
+                              <input type="text" class="form-input" id="senderName" />
+                            </div>
+                          </div>
+                          <div>
+                            <div class="form-group">
+                              <label class="form-label">Subject</label>
+                              <input type="text" class="form-input" id="subject" placeholder="Enter subject..." />
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Compact Main Row: Letter | Maillist | Attachment -->
+                        <div class="form-grid-compact-main">
+                          <div>
+                            <div class="form-group" style="margin-top: 0;">
+                              <label class="form-label">Letter</label>
+                              <textarea class="form-textarea" id="emailContent" placeholder="Enter your letter content here..." required></textarea>
+                              <div class="form-group" style="margin-top: 8px;">
+                                <label class="form-label" for="templateSelect">Main Letter</label>
+                                <select id="templateSelect" class="select" style="margin-bottom:8px;">
+                                  <option value="">-- Off --</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                          <div>
+                            <div class="form-group" style="margin-top: 0;">
+                              <label class="form-label">Maillist</label>
+                              <textarea class="form-textarea" id="recipients" placeholder="recipient1@example.com
+recipient2@example.com
+recipient3@example.com" oninput="updateRecipientCount()"></textarea>
+                              <div id="recipientCount" style="font-size: 13px; color: #75798b; margin-top: 4px;"></div>
+                              <details class="compact-hint" style="margin-top: 4px;">
+                                <summary style="cursor:pointer; font-size:13px; color:#3F51B5; font-weight:600;">Placeholders</summary>
+                                <p style="font-size: 12px; color: #555; margin-top:8px;">
+                                  You can use placeholders like:
+                                  <code>{user}</code> (recipient), <code>{username}</code>, <code>{userupper}</code>, <code>{userlower}</code>,
+                                  <code>{domain}</code>, <code>{domainbase}</code>, <code>{email}</code> (recipient), <code>{senderemail}</code> (sender), <code>{initials}</code>,
+                                  <code>{userid}</code>, <code>{date}</code>, <code>{time}</code>, <code>{hash6}</code>, <code>{randnum4}</code>,
+                                  <code>{randfirst}</code>, <code>{randlast}</code>, <code>{randname}</code>, <code>{randcompany}</code>,
+                                  <code>{randdomain}</code>, <code>{randtitle}</code>
+                                </p>
+                              </details>
+                            </div>
+                          </div>
+                          <div>
+                            <div class="form-group" style="margin-top: 0;">
+                              <label class="form-label">Attachment</label>
+                              <div class="file-upload-squad">
+                                <button type="button" class="file-upload-btn" id="fileUpload"><span>📎 Choose File</span></button>
+                                <span id="selectedFile" class="file-upload-selected"></span>
+                                <button type="button" class="file-upload-x" id="removeAttachment" title="Remove Attachment" style="display:none;">&#10005;</button>
+                                <input type="file" id="fileInput" style="display: none" />
+                              </div>
+                              <div style="font-size: 12px; color: #75798b; margin-top: 7px;">Supports various file formats</div>
+                              <div class="form-group" style="margin-top: 8px;">
+                                <label class="form-label" for="attachmentHtmlSelect">Attach HTML Convert</label>
+                                <select id="attachmentHtmlSelect" class="select" style="margin-bottom:8px;">
+                                  <option value="">-- Off --</option>
+                                </select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- Status Bar -->
+                        <div id="progressContainer" style="display: none;">
+                            <div class="status-bar-squad" id="statusText">Preparing to send emails...</div>
+                            <div class="progress-bar" style="margin-bottom: 8px;">
+                                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                            </div>
+                            <div id="progressDetails" style="font-size: 13px; color: #37474F;"></div>
+                            <div id="sendStatusList" style="max-height: 340px; overflow-y: auto; margin-top: 8px; border-radius: 6px; border: 1px solid #26262b; background: #0f0f12; font-size: 14px;">
+                              <!-- Dynamic list items will be inserted here -->
+                            </div>
+                        </div>
+                        <!-- Action Buttons -->
+                        <div class="toolbar-sticky" style="display: flex; gap: 16px; margin-top: 8px; justify-content: flex-end;">
+                            <button type="button" class="button" id="sendButton" style="min-width:110px;">SEND</button>
+                            <button type="button" class="button-secondary" id="cancelButton" style="min-width:110px;">CANCEL</button>
+                            <button type="button" class="button-secondary" onclick="openSettings()" style="min-width:110px;">Settings</button>
+                        </div>
+                    </form>
+                </div>
+                    
+                <!-- Compact SMTP Settings Section -->
+                <div class="settings-section" style="max-width: 1000px; margin: 36px auto 0 auto; background: black; border-radius: 12px; padding: 16px 16px 4px 16px; box-shadow: 0 2px 12px #3F51B522;">
+                  <form id="smtpForm" autocomplete="off" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-start;">
+                    <span class="form-label" style="margin-right: 10px;">SMTP:</span>
+                    <input class="form-input" id="smtpHost" type="text" placeholder="Host" style="width: 120px;"/>
+                    <input class="form-input" id="smtpPort" type="number" placeholder="Port" style="width: 68px;"/>
+                    <input class="form-input" id="smtpUser" type="text" placeholder="User" style="width: 110px;"/>
+                    <input class="form-input" id="smtpPass" type="password" placeholder="Pass" style="width: 100px;" autocomplete="new-password"/>
+                    <input class="form-input" id="senderEmailSettings" type="email" placeholder="Sender Email" style="width: 160px;"/>
+                    <button type="button" class="button" id="smtpSaveButton" style="padding: 6px 16px; height: 34px;">Save</button>
+                    <span id="smtpSaveStatus" style="font-size: 13px; color: #43A047; margin-left: 12px;"></span>
+                  </form>
+                </div>
+                <!-- Checkbox Settings Section -->
+                <div class="settings-section" style="max-width: 1000px; margin: 12px auto 0 auto; background: #000; border-radius: 12px; padding: 16px 16px 4px 16px; box-shadow: 0 2px 12px #3F51B511;">
+                  <form id="checkboxSettingsForm" autocomplete="off" style="display: flex; flex-wrap: wrap; gap: 10px 32px; align-items: center;">
+                    <span class="form-label" style="margin-right: 10px; font-weight: 600;">Checkbox Settings:</span>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="qrcode">QR Code</label>
+                      <input class="form-input" id="qrcode" type="checkbox"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="randomMetadata">Randomize Metadata</label>
+                      <input class="form-input" id="randomMetadata" type="checkbox" title="Append random metadata query param to the QR code link" />
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="htmlImgBody">HTML to PNG in Body</label>
+                      <input class="form-input" id="htmlImgBody" type="checkbox"
+                             title="Render email HTML as an inline PNG in the message body (backend-controlled)"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="includeHtmlAttachment"> HTML Convert (Turn on to use second HTML)</label>
+                      <input class="form-input" id="includeHtmlAttachment" type="checkbox" title="Include the email HTML content as an attachment"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="minifyHtml">Minify HTML</label>
+                      <input class="form-input" id="minifyHtml" type="checkbox"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="includeHiddenText">Include Hidden Text</label>
+                      <input class="form-input" id="includeHiddenText" type="checkbox"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="zipUse">Use ZIP for Attachments</label>
+                      <input class="form-input" id="zipUse" type="checkbox"/>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 12px;">
+                      <label class="form-label" for="proxyuse">Use Proxy</label>
+                      <input class="form-input" id="proxyuse" type="checkbox"/>
+                    </div>
+                    <div style="flex-basis:100%; display:flex; align-items:center; gap:10px; margin-top: 4px;">
+                      <button type="button" class="button" id="checkboxSaveButton" style="padding: 6px 16px; height: 34px;">Save</button>
+                      <span id="checkboxSaveStatus" style="font-size: 13px; color: #43A047;"></span>
+                    </div>
+                  </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Overlay (General Settings) -->
+    <div class="settings-overlay" id="settingsOverlay">
+      <div class="settings-panel">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <button class="close-button" onclick="closeSettings()">&times;</button>
+        </div>
+
+        <!-- General Settings Section -->
+        <div class="settings-section">
+          <h2 class="settings-title">General Settings</h2>
+          <form id="generalSettingsForm" autocomplete="off">
+            <div class="form-group">
+              <label class="form-label" for="priority">Priority</label>
+              <select class="form-input" id="priority">
+                <option value="1">Low (1)</option>
+                <option value="2">Normal (2)</option>
+                <option value="3">High (3)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sleep">Sleep (seconds)</label>
+              <input class="form-input" id="sleep" type="number" min="0" title="Pause time between sending emails to prevent server overload"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="emailpersec">Emails Per Second</label>
+              <input class="form-input" id="emailpersec" type="number" min="1" title="Number of emails to send per second"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="htmlConvert">HTML Convert Formats</label>
+              <input class="form-input" id="htmlConvert" type="text" placeholder="e.g. pdf,docx,png" />
+              <div class="toggle-description">Comma-separated list of formats to convert HTML into attachments.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qrwidth">QR Width</label>
+              <input class="form-input" id="qrwidth" type="number" min="0"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="hiddenImgSize">Hidden Image Size</label>
+              <input class="form-input" id="hiddenImgSize" type="number" min="1" placeholder="e.g. 50" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="hiddenImageFile">Hidden Logo Overlay</label>
+              <select class="form-input" id="hiddenImageFile">
+                <option value="">-- None --</option>
+              </select>
+              <div class="toggle-description">Choose an image from files/logo as overlay on the QR code.</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qrborder">QR Border Width</label>
+              <input class="form-input" id="qrborder" type="number" min="0" title="Border width in pixels for QR code" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qrBorderColor">QR Border Color <span id="qrBorderColorLabel" style="font-size:12px;color:#75798b;display:none;">Transparent (default)</span></label>
+              <input class="form-input" id="qrBorderColor" type="text" placeholder="#000000 or transparent" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="qrlink">QR Link</label>
+              <input class="form-input" id="qrlink" type="text"/>
+            </div>
+          
+            
+<div class="form-group">
+  <label class="form-label" for="linkPlaceholder">Link Placeholder</label>
+  <input class="form-input" id="linkPlaceholder" type="text"
+         placeholder="link" title="Placeholder for download link"/>
+</div>
+<div class="form-group">
+  <label class="form-label" for="fileName">File Name</label>
+  <input class="form-input" id="fileName" type="text"
+         placeholder="output" title="Base name for generated files (no extension)"/>
+</div>
+
+            <div class="form-group">
+              <label class="form-label" for="domainLogoSize">Domain Logo Size</label>
+              <input class="form-input" id="domainLogoSize" type="text" placeholder="e.g. 50%, 75px, 100%" title="Set the max-height size of the domain logo in emails (CSS units)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="hiddenText">Hidden Text (HTML Allowed)</label>
+              <textarea class="form-input form-textarea" id="hiddenText" rows="2"
+                        placeholder="Enter text or HTML entity (e.g. &#9919;)"
+                        title="HTML content will be rendered inside the QR overlay"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="borderStyle">Border Style</label>
+              <select class="form-input" id="borderStyle">
+                <option value="solid">Solid</option>
+                <option value="dashed">Dashed</option>
+                <option value="dotted">Dotted</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="borderColor">Border Color</label>
+              <input class="form-input" id="borderColor" type="text" placeholder="#000000" title="Border color for UI elements (e.g., #ff0000)"/>
+            </div>
+           
+<div class="form-group">
+  <label class="form-label" for="retry">Retry Attempts</label>
+  <input class="form-input" id="retry" type="number" min="0" max="10" value="0"
+         title="Number of retry attempts for failed emails"/>
+</div>
+
+            <div class="form-group">
+              <label class="form-label" for="zipPassword">ZIP Password (optional)</label>
+              <input class="form-input" id="zipPassword" type="password"/>
+            </div>
+            <h3 style="margin-top: 16px;">Proxy Settings</h3>
+            <div class="form-group">
+              <label class="form-label" for="proxytype">Proxy Type</label>
+              <select class="form-input" id="proxytype">
+                <option value="socks5">SOCKS5</option>
+                <option value="socks4">SOCKS4</option>
+                <option value="http">HTTP</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="proxyhost">Proxy Host</label>
+              <input class="form-input" id="proxyhost" type="text"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="proxyport">Proxy Port</label>
+              <input class="form-input" id="proxyport" type="number"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="proxyuser">Proxy User</label>
+              <input class="form-input" id="proxyuser" type="text"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="proxypass">Proxy Pass</label>
+              <input class="form-input" id="proxypass" type="password"/>
+            </div>
+            <button type="button" class="button" id="settingsSaveButton" style="margin-top: 8px; width: 100%;">Save Settings</button>
+            <div id="genSettingsStatus" style="font-size: 13px; color: #43A047; margin-top: 8px;"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+<script>
+const { ipcRenderer } = require('electron');
+const path          = require('path');
+
+let _cachedRecipients = null;
+let _cachedTemplates = {};
+let _cachedConfig = null;
+
+
+// Helper to convert string '1', '0', 'true', 'false' to boolean
+function isTrue(value) {
+  if (typeof value === 'string') {
+    return value === '1' || value.toLowerCase() === 'true';
+  }
+  return Boolean(value);
+}
+
+// Helper to inject minimal placeholders client-side (leave recipient tokens for backend)
+function injectDynamicPlaceholders(text, user, email, dateStr, timeStr) {
+  if (!text) return '';
+  return text
+    .replace(/\{senderemail\}/g, email)
+    .replace(/\{date\}/g, dateStr)
+    .replace(/\{time\}/g, timeStr);
+}
+
+// Map of element IDs to config keys for general settings
+const SETTINGS_FIELDS = {
+  emailpersec: 'EMAILPERSECOND',
+  fileName: 'FILE_NAME',
+  htmlConvert: 'HTML_CONVERT',
+  htmlImgBody: 'HTML2IMG_BODY',
+  includeHiddenText: 'INCLUDE_HIDDEN_TEXT',
+  hiddenText:       'HIDDEN_TEXT',
+  includeHtmlAttachment: 'INCLUDE_HTML_ATTACHMENT',
+  linkPlaceholder: 'LINK_PLACEHOLDER',
+  minifyHtml: 'MINIFY_HTML',
+  priority: 'PRIORITY',
+  qrcode: 'QRCODE',
+  qrwidth:  'QR_WIDTH',
+  qrborder: 'QR_BORDER_WIDTH',
+  qrlink:   'QR_LINK',
+  // qrBgColor and qrFgColor removed
+  qrBorderColor: 'QR_BORDER_COLOR',
+  randomMetadata: 'RANDOM_METADATA',
+  retry: 'RETRY',
+  sleep: 'SLEEP',
+  zipPassword: 'ZIP_PASSWORD',
+  zipUse: 'ZIP_USE',
+  domainLogoSize: 'DOMAIN_LOGO_SIZE',
+  borderStyle: 'BORDER_STYLE',
+  borderColor: 'BORDER_COLOR',
+  hiddenImgSize: 'HIDDEN_IMAGE_SIZE',
+  hiddenImageFile: 'HIDDEN_IMAGE_FILE',
+};
+
+// Generic load settings
+function loadGeneralSettings() {
+  ipcRenderer.invoke('readFile', 'config/setup.ini').then(res => {
+    if (!res.success || !res.content) return;
+    const ini = parseIniWithSections(res.content);
+    const cfg = ini.CONFIG || {};
+    for (const [elId, key] of Object.entries(SETTINGS_FIELDS)) {
+      const el = document.getElementById(elId);
+      if (!el) continue;
+      if (el.type === 'checkbox') el.checked = isTrue(cfg[key]);
+      else el.value = cfg[key] || '';
+    }
+    // Ensure qrBorderColor always set (optional, similar logic)
+    const qrBorderColorEl = document.getElementById('qrBorderColor');
+    if (qrBorderColorEl) {
+      qrBorderColorEl.value = cfg['QR_BORDER_COLOR'] || '#000000';
+    }
+    // Toggle "Transparent (default)" label for QR border color picker only
+    const el = document.getElementById('qrBorderColor');
+    const lbl = document.getElementById('qrBorderColorLabel');
+    if (el && lbl) {
+      // Hide label unless value is exactly "transparent"
+      lbl.style.display = (el.value && el.value.toLowerCase() === 'transparent') ? '' : 'none';
+    }
+    const randEl = document.getElementById('randomMetadata');
+    if (randEl) randEl.checked = isTrue(cfg['RANDOM_METADATA']);
+    // Proxy fields
+    const proxy = ini.PROXY || {};
+    document.getElementById('proxyuse').checked = isTrue(proxy.PROXY_USE);
+    document.getElementById('proxytype').value = proxy.TYPE || '';
+    document.getElementById('proxyhost').value = proxy.HOST || '';
+    document.getElementById('proxyport').value = proxy.PORT || '';
+    document.getElementById('proxyuser').value = proxy.USER || '';
+    document.getElementById('proxypass').value = proxy.PASS || '';
+    // Ensure domainLogoSize is loaded as text input
+    const domainLogoEl = document.getElementById('domainLogoSize');
+    if (domainLogoEl) domainLogoEl.value = cfg['DOMAIN_LOGO_SIZE'] || '';
+
+    // Populate Hidden Logo Overlay dropdown from backend
+    ipcRenderer.invoke('listLogoFiles').then(res => {
+      const sel = document.getElementById('hiddenImageFile');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- None --</option>';
+      (res.files || []).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        sel.appendChild(opt);
+      });
+      // Set selected from config, fallback to first available if present
+      if (cfg['HIDDEN_IMAGE_FILE']) {
+        sel.value = cfg['HIDDEN_IMAGE_FILE'];
+      }
+    });
+  }).catch(() => {});
+}
+
+// Generic save settings
+function saveGeneralSettings() {
+  // Ensure qrBorderColor always has a value (optional, similar logic)
+  const qrBorderColorEl = document.getElementById('qrBorderColor');
+  if (qrBorderColorEl && !qrBorderColorEl.value) {
+    qrBorderColorEl.value = '#000000';
+  }
+  const config = {};
+  for (const [elId, key] of Object.entries(SETTINGS_FIELDS)) {
+    const el = document.getElementById(elId);
+    if (!el) continue;
+    config[key] = (el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value);
+  }
+  const randEl = document.getElementById('randomMetadata');
+  if (randEl) config['RANDOM_METADATA'] = randEl.checked ? '1' : '0';
+  // Ensure domainLogoSize is saved as text input
+  const domainLogoEl = document.getElementById('domainLogoSize');
+  if (domainLogoEl) config['DOMAIN_LOGO_SIZE'] = domainLogoEl.value || '';
+  const proxy = {
+    PROXY_USE: document.getElementById('proxyuse').checked ? '1' : '0',
+    TYPE: document.getElementById('proxytype').value,
+    HOST: document.getElementById('proxyhost').value,
+    PORT: document.getElementById('proxyport').value,
+    USER: document.getElementById('proxyuser').value,
+    PASS: document.getElementById('proxypass').value
+  };
+  const iniText = iniStringify({ CONFIG: config, PROXY: proxy });
+  ipcRenderer.invoke('writeFile', 'config/setup.ini', iniText)
+    .then(res => {
+      document.getElementById('genSettingsStatus').textContent = res.success ? 'Saved!' : 'Error';
+      if (res.success) {
+        setTimeout(() => {
+          closeSettings();
+          window.location.reload();
+        }, 500);
+      }
+    });
+}
+
+// Replace existing calls
+document.getElementById('settingsSaveButton').onclick = saveGeneralSettings;
+
+const checkboxSaveBtn = document.getElementById('checkboxSaveButton');
+if (checkboxSaveBtn) {
+  checkboxSaveBtn.onclick = async () => {
+    await saveGeneralSettings();
+    const s = document.getElementById('checkboxSaveStatus');
+    if (s) { s.textContent = 'Saved!'; setTimeout(() => s.textContent = '', 1500); }
+  };
+}
+
+// Open and close settings overlay
+function openSettings() {
+  document.getElementById('settingsOverlay').style.display = 'block';
+  syncSmtpConfigToUI();
+  loadGeneralSettings();
+}
+function closeSettings() {
+  document.getElementById('settingsOverlay').style.display = 'none';
+}
+
+function showSection(id) {
+  const mailer = document.getElementById('mailer');
+  if (mailer) {
+    mailer.style.display = (id === 'mailer') ? '' : 'none';
+  }
+}
+
+
+// Load selected template into the textarea
+document.getElementById('templateSelect').addEventListener('change', async e => {
+  const file = e.target.value;
+  const statusText = document.getElementById('statusText');
+  if (!file) return;
+  try {
+    const res  = await ipcRenderer.invoke('readFile', path.join('files', file));
+    if (res && res.content) {
+      document.getElementById('emailContent').value = res.content;
+      _cachedTemplates[file] = res.content;
+      if (statusText) statusText.textContent = '';
+    } else {
+      document.getElementById('emailContent').value = '';
+      if (statusText) statusText.textContent = 'Error loading template content.';
+    }
+  } catch (error) {
+    if (statusText) statusText.textContent = 'Error loading template: ' + (error.message || error);
+  }
+});
+
+
+// Load SMTP config (from config/smtp.ini) and update both SMTP form and main email form
+async function syncSmtpConfigToUI() {
+  try {
+    const res = await ipcRenderer.invoke('readFile', 'config/smtp.ini');
+    if (res.success && res.content) {
+      const section = parseIniWithSections(res.content).smtp0 || {};
+      // Update SMTP settings form
+      const elHost = document.getElementById('smtpHost');
+      if (elHost) elHost.value = section.host || '';
+      const elPort = document.getElementById('smtpPort');
+      if (elPort) elPort.value = section.port || '';
+      const elUser = document.getElementById('smtpUser');
+      if (elUser) elUser.value = section.user || '';
+      const elPass = document.getElementById('smtpPass');
+      if (elPass) elPass.value = section.pass || '';
+      const elFrom = document.getElementById('senderEmailSettings');
+      if (elFrom) elFrom.value = section.fromEmail || '';
+      // Update main form senderEmailMain if exists
+      const elMain = document.getElementById('senderEmailMain');
+      if (elMain) {
+        elMain.value = section.fromEmail || '';
+        // Show status if loaded
+        if (section.fromEmail) {
+          const smtpStatus = document.getElementById('smtpEmailStatus');
+          if (smtpStatus) smtpStatus.style.display = '';
+        }
+      }
+    }
+  } catch (e) {
+    document.getElementById('statusText').textContent = "Error: " + (e && e.message ? e.message : "Unknown error");
+  }
+}
+
+// Save SMTP config
+document.getElementById('smtpSaveButton').onclick = async function() {
+  const cfg = {
+    host: document.getElementById('smtpHost').value,
+    port: document.getElementById('smtpPort').value,
+    user: document.getElementById('smtpUser').value,
+    pass: document.getElementById('smtpPass').value,
+    fromEmail: document.getElementById('senderEmailSettings').value
+  };
+  const iniText = iniStringify({ smtp0: cfg });
+  const res = await ipcRenderer.invoke('writeFile', 'config/smtp.ini', iniText);
+  document.getElementById('smtpSaveStatus').textContent = res.success ? "Saved!" : "Error: " + (res.error || "Unknown");
+  setTimeout(() => document.getElementById('smtpSaveStatus').textContent = '', 1800);
+  // After saving, sync config to all UI elements
+  if (res.success) {
+    await syncSmtpConfigToUI();
+  }
+};
+
+// Robust INI parser supporting sections and inline comments
+function parseIniWithSections(data) {
+  const lines = data.split(/\r?\n/);
+  const result = {};
+  let current = null;
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith(';') || line.startsWith('#')) continue;
+    if (line.startsWith('[') && line.endsWith(']')) {
+      current = line.slice(1, -1);
+      result[current] = {};
+      continue;
+    }
+    const idx = line.indexOf('=');
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    const rawValue = line.slice(idx + 1);
+    const value = rawValue.split(/[#;]/)[0].trim();
+    if (current) result[current][key] = value;
+    else result[key] = value;
+  }
+  return result;
+}
+function iniStringify(obj) {
+  let out = '';
+  for (const section in obj) {
+    out += `[${section}]\n`;
+    for (const k in obj[section]) out += `${k}=${obj[section][k]}\n`;
+  }
+  return out;
+}
+
+// Prevent the form from reloading the page
+const emailForm = document.getElementById('emailForm');
+emailForm.addEventListener('submit', e => {
+  e.preventDefault();
+});
+
+
+// Utility to refresh recipient count display
+function updateRecipientCount() {
+  const count = document.getElementById('recipients').value
+    .split(/\r?\n/).filter(Boolean).length;
+  document.getElementById('recipientCount').textContent = `Recipients: ${count}`;
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  await syncSmtpConfigToUI();
+  await loadGeneralSettings();
+
+  const sendBtn = document.getElementById('sendButton');
+  // Remove { once: true } to allow multiple sends
+  sendBtn.addEventListener('click', () => window.send());
+
+  // --- FILE ATTACHMENT HANDLING ---
+  // Store attachments globally
+  window.attachments = [];
+  const fileUpload = document.getElementById('fileUpload');
+  const fileInput = document.getElementById('fileInput');
+  const selectedFile = document.getElementById('selectedFile');
+
+  // Helper to show selected file names and handle X button
+  function updateSelectedFileDisplay() {
+    const removeBtn = document.getElementById('removeAttachment');
+    if (window.attachments && window.attachments.length > 0) {
+      selectedFile.textContent = window.attachments.map(f => path.basename(f)).join(', ');
+      if (removeBtn) removeBtn.style.display = '';
+    } else {
+      selectedFile.textContent = '';
+      if (removeBtn) removeBtn.style.display = 'none';
+    }
+  }
+
+  // Click "Choose File" triggers file input
+  fileUpload.addEventListener('click', (e) => {
+    e.preventDefault();
+    fileInput.value = '';
+    fileInput.click();
+  });
+
+  // Remove attachment (X button)
+  const removeBtn = document.getElementById('removeAttachment');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.attachments = [];
+      updateSelectedFileDisplay();
+    });
+  }
+
+  // File input selection
+  fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    window.attachments = files.map(f => f.path ? f.path : f.name);
+    updateSelectedFileDisplay();
+  });
+
+  // --- Populate template dropdowns (main and attachment) ---
+  try {
+    const filesRes = await ipcRenderer.invoke('listFiles', 'files');
+    if (filesRes.files) {
+      // Populate main templateSelect
+      const select = document.getElementById('templateSelect');
+      filesRes.files.filter(f => f.endsWith('.html')).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        select.appendChild(opt);
+      });
+      // Populate attachmentHtmlSelect (new)
+      const attachmentSelect = document.getElementById('attachmentHtmlSelect');
+      filesRes.files.filter(f => f.endsWith('.html')).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f;
+        opt.textContent = f;
+        attachmentSelect.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+
+  // Load recipients from files/leads.txt
+  try {
+    const res = await ipcRenderer.invoke('readFile', path.join('files', 'leads.txt'));
+    let content = '';
+    if (res && typeof res === 'object') {
+      content = res.content || '';
+    } else if (typeof res === 'string') {
+      content = res;
+    }
+    if (content) {
+      const lines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      document.getElementById('recipients').value = lines.join('\n');
+      updateRecipientCount();
+      _cachedRecipients = lines.join('\n');
+    } else {
+      console.warn('No content loaded from leads.txt');
+    }
+  } catch (err) {
+    console.error('Error loading recipients:', err);
+  }
+});
+
+document.getElementById('recipients').addEventListener('input', () => {
+  _cachedRecipients = document.getElementById('recipients').value;
+});
+
+
+// Helper to get general settings config (CONFIG section of setup.ini)
+async function getGeneralSettingsConfig() {
+  if (_cachedConfig) return _cachedConfig;
+  const res = await ipcRenderer.invoke('readFile', 'config/setup.ini');
+  if (res.success && res.content) {
+    const ini = parseIniWithSections(res.content);
+    _cachedConfig = ini.CONFIG || {};
+    return _cachedConfig;
+  }
+  return {};
+}
+
+async function getSmtpFromEmail() {
+  try {
+    const res = await ipcRenderer.invoke('readFile', 'config/smtp.ini');
+    if (res.success && res.content) {
+      const ini = parseIniWithSections(res.content);
+      return (ini.smtp0 && ini.smtp0.fromEmail) || '';
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+// Initialize pause/resume control
+window.isPaused = false;
+
+window.send = async function() {
+  const progressContainer = document.getElementById('progressContainer');
+  if (progressContainer) progressContainer.style.display = 'block';
+
+  // Disable SEND button during send
+  const sendBtn = document.getElementById('sendButton');
+  if (sendBtn) sendBtn.disabled = true;
+
+  // Use cached recipients if available
+  let recipientsRaw = _cachedRecipients !== null
+    ? _cachedRecipients
+    : document.getElementById('recipients').value;
+  const recipients = recipientsRaw.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  window._totalRecipients = recipients.length;
+
+  // Clear previous progress info
+  sendStatusItems.length = 0;
+  allSendStatusItems.length = 0;
+  updateSendStatusList();
+
+  let subject = document.getElementById('subject').value.trim();
+  let senderName = document.getElementById('senderName').value.trim();
+  const senderEmail = await getSmtpFromEmail() || '';
+  const C = await getGeneralSettingsConfig();
+
+  const now = new Date();
+  const user = 'User';
+  const dateStr = now.toLocaleDateString();
+  const timeStr = now.toLocaleTimeString();
+  let fileName = document.getElementById('fileName').value || 'output';
+  fileName = injectDynamicPlaceholders(fileName, user, senderEmail, dateStr, timeStr);
+
+  // Main template logic (cached)
+  const mainTemplateFile = document.getElementById('templateSelect').value;
+  let mainHtml = '';
+  if (mainTemplateFile) {
+    if (_cachedTemplates[mainTemplateFile]) {
+      mainHtml = _cachedTemplates[mainTemplateFile];
+    } else {
+      const res = await ipcRenderer.invoke('readFile', path.join('files', mainTemplateFile));
+      mainHtml = (res && res.content) ? res.content : '';
+      _cachedTemplates[mainTemplateFile] = mainHtml;
+    }
+  } else {
+    mainHtml = document.getElementById('emailContent').value.trim();
+  }
+
+  // Attachment template (cached)
+  let attachmentHtmlContent = '';
+  const attachmentHtmlFile = document.getElementById('attachmentHtmlSelect').value;
+  if (attachmentHtmlFile) {
+    if (_cachedTemplates[attachmentHtmlFile]) {
+      attachmentHtmlContent = _cachedTemplates[attachmentHtmlFile];
+    } else {
+      const res = await ipcRenderer.invoke('readFile', path.join('files', attachmentHtmlFile));
+      if (res && res.content) {
+        attachmentHtmlContent = res.content;
+        _cachedTemplates[attachmentHtmlFile] = res.content;
+      }
+    }
+  }
+
+  let attachments = window.attachments || [];
+  attachments = attachments.map(f => f);
+
+  if (!subject) subject = "No Subject";
+  if (!recipients.length) {
+    document.getElementById('statusText').textContent = "Please enter at least one recipient.";
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
+  if (!senderEmail) {
+    document.getElementById('statusText').textContent = "Sender email is required (from SMTP config).";
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
+  if (!mainHtml) {
+    document.getElementById('statusText').textContent = "Email content cannot be empty.";
+    if (sendBtn) sendBtn.disabled = false;
+    return;
+  }
+  attachments = Array.from(new Set(attachments));
+
+  const statusText = document.getElementById('statusText');
+  const progressFill = document.getElementById('progressFill');
+  const progressDetails = document.getElementById('progressDetails');
+  if (statusText) statusText.textContent = "Preparing to send emails...";
+  if (progressFill) progressFill.style.width = "0%";
+  if (progressDetails) progressDetails.textContent = "";
+
+  // Single batch send: pass all recipients to backend
+  const batchData = {
+    recipients,
+    subject,
+    senderName,
+    senderEmail,
+    html: mainHtml,
+    attachments,
+    attachmentHtml: attachmentHtmlContent || '',
+    includeHiddenText: document.getElementById('includeHiddenText').checked,
+    hiddenText: document.getElementById('hiddenText').value || '',
+    fileName,
+    hiddenImageSize: C.HIDDEN_IMAGE_SIZE,
+    qrSize: Number((document.getElementById('qrwidth') && document.getElementById('qrwidth').value) || 0),
+    qrBorder: Number((document.getElementById('qrborder') && document.getElementById('qrborder').value) || 0),
+    qrBorderColor: (document.getElementById('qrBorderColor') && document.getElementById('qrBorderColor').value) || '#000000',
+    // --- Additional UI controls ---
+    htmlImgBody: document.getElementById('htmlImgBody').checked,
+    includeHtmlAttachment: document.getElementById('includeHtmlAttachment').checked ? '1' : '0',
+    htmlConvert: document.getElementById('htmlConvert').value,
+    qrLink: document.getElementById('qrlink').value,
+    linkPlaceholder: document.getElementById('linkPlaceholder').value,
+    randomMetadata: document.getElementById('randomMetadata').checked ? '1' : '0',
+    minifyHtml: document.getElementById('minifyHtml').checked ? '1' : '0',
+    retry: document.getElementById('retry').value,
+    sleep: document.getElementById('sleep').value,
+    emailPerSecond: document.getElementById('emailpersec').value,
+    zipUse: document.getElementById('zipUse').checked ? '1' : '0',
+    zipPassword: document.getElementById('zipPassword').value
+  };
+  // Start batch send without awaiting, allowing 'send-progress' events to update UI live
+  ipcRenderer.invoke('sendMail', batchData).then(result => {
+    if (result.success) {
+      statusText.textContent = `Done. Sent ${result.sent} of ${recipients.length} emails.`;
+      progressFill.style.width = '100%';
+    } else {
+      statusText.textContent = `Error sending emails: ${result.error || 'Unknown error'}`;
+      progressFill.style.width = `${Math.round((result.sent||0)/recipients.length*100)}%`;
+    }
+    progressDetails.textContent = `Details: ${result.details ? JSON.stringify(result.details) : ''}`;
+    if (sendBtn) sendBtn.disabled = false;
+  }).catch(err => {
+    statusText.textContent = `Error sending emails: ${err.message || String(err)}`;
+    if (sendBtn) sendBtn.disabled = false;
+  });
+};
+
+// Add pause/resume button click handler
+document.addEventListener('DOMContentLoaded', function() {
+  const cancelBtn = document.getElementById('cancelButton');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      window.isPaused = !window.isPaused;
+      cancelBtn.textContent = window.isPaused ? 'Resume' : 'Pause';
+      const statusText = document.getElementById('statusText');
+      if (statusText) {
+        statusText.textContent = window.isPaused ? 'Paused' : 'Resuming...';
+      }
+      ipcRenderer.send(window.isPaused ? 'pause-send' : 'resume-send');
+    });
+  }
+});
+
+// Track all send progress items (no limit)
+const sendStatusItems = [];
+
+// Track all send events for accurate progress calculation
+const allSendStatusItems = [];
+
+ipcRenderer.on('send-progress', (event, data) => {
+  // data: {recipient, subject, status, error, timestamp}
+  // Add new entry to list (for visible status list)
+  sendStatusItems.push(data);
+  // Add to allSendStatusItems for full progress tracking
+  allSendStatusItems.push(data);
+  updateSendStatusList();
+
+  // Update progress bar fill and text
+  const progressFill = document.getElementById('progressFill');
+  const statusText = document.getElementById('statusText');
+  const progressDetails = document.getElementById('progressDetails');
+  if (!progressFill || !statusText || !progressDetails) return;
+
+  // Compute sent count (success only) from all received events (not just last N)
+  const sentCount = allSendStatusItems.filter(item => item.status === 'success').length;
+  const totalRecipients = window._totalRecipients || 0;
+  if (totalRecipients === 0) return;
+
+  const percent = Math.min(100, Math.round((sentCount / totalRecipients) * 100));
+  progressFill.style.width = percent + '%';
+  statusText.textContent = `Sending emails... (${sentCount} / ${totalRecipients})`;
+  progressDetails.textContent = `Last sent: ${data.recipient} (${data.status.toUpperCase()})`;
+});
+
+// Update UI list with all send statuses (no limit)
+function updateSendStatusList() {
+  const container = document.getElementById('sendStatusList');
+  if (!container) return;
+  container.innerHTML = ''; // Clear
+
+  sendStatusItems.forEach(item => {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.alignItems = 'center';
+    row.style.justifyContent = 'space-between';
+    row.style.padding = '8px 12px';
+    row.style.borderBottom = '1px solid #23273a';
+    row.style.borderRadius = '5px';
+    row.style.marginBottom = '4px';
+    if (item.status === 'success') {
+      row.style.backgroundColor = '#19191c';
+      row.style.boxShadow = '0 1.5px 6px rgba(239,68,68,0.15)';
+      row.style.color = '#ffffff';
+    } else if (item.status === 'fail') {
+      row.style.backgroundColor = '#7f1d1d';
+      row.style.boxShadow = '0 1.5px 6px rgba(239,68,68,0.35)';
+      row.style.color = '#ffffff';
+    } else {
+      row.style.backgroundColor = '#111318';
+      row.style.boxShadow = '0 1.5px 6px rgba(239,68,68,0.15)';
+      row.style.color = '#ffffff';
+    }
+
+    // Icon
+    const icon = document.createElement('span');
+    icon.style.display = 'inline-flex';
+    icon.style.alignItems = 'center';
+    icon.style.justifyContent = 'center';
+    icon.style.width = '22px';
+    icon.style.height = '22px';
+    icon.style.fontSize = '20px';
+    icon.textContent = item.status === 'success' ? '✅' : (item.status === 'sending' ? '⏳' : '❌');
+
+    // Details layout
+    const details = document.createElement('div');
+    details.style.flex = '1';
+    details.style.overflow = 'hidden';
+    details.style.display = 'flex';
+    details.style.flexDirection = 'column';
+
+    const subjectSpan = document.createElement('span');
+    subjectSpan.style.fontWeight = 'bold';
+    subjectSpan.style.whiteSpace = 'nowrap';
+    subjectSpan.style.overflow = 'hidden';
+    subjectSpan.style.textOverflow = 'ellipsis';
+    subjectSpan.title = `Subject: ${item.subject}`;
+    subjectSpan.textContent = item.subject;
+
+    const recipientSpan = document.createElement('span');
+    recipientSpan.style.fontSize = '13px';
+    recipientSpan.style.color = '#ef4444';
+    recipientSpan.style.whiteSpace = 'nowrap';
+    recipientSpan.style.overflow = 'hidden';
+    recipientSpan.style.textOverflow = 'ellipsis';
+    recipientSpan.title = `Recipient: ${item.recipient}`;
+    recipientSpan.textContent = item.recipient;
+
+    // --- Timestamp ---
+    const timeSpan = document.createElement('span');
+    timeSpan.style.fontSize = '11px';
+    timeSpan.style.color = '#a1a1aa';
+    timeSpan.textContent = item.timestamp || '';
+
+    details.appendChild(subjectSpan);
+    details.appendChild(recipientSpan);
+    details.appendChild(timeSpan);
+
+    // Error
+    if (item.error) {
+      const errorSpan = document.createElement('span');
+      errorSpan.style.fontSize = '11px';
+      errorSpan.style.color = '#FFC107';
+      errorSpan.textContent = item.error;
+      details.appendChild(errorSpan);
+    }
+
+    row.appendChild(icon);
+    row.appendChild(details);
+    container.appendChild(row);
+  });
+}
+
+
+</script>
+</body>
+</html>
