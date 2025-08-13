@@ -613,7 +613,12 @@ export class AdvancedEmailService {
         }
         
         const batch = batches[batchIndex];
-        const promises = batch.map(async (recipient: string) => {
+        console.log(`[Batch ${batchIndex + 1}/${batches.length}] Processing ${batch.length} recipients`);
+        
+        // Process emails sequentially for better progress tracking
+        const batchResults = [];
+        for (let i = 0; i < batch.length; i++) {
+          const recipient = batch[i];
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -625,7 +630,8 @@ export class AdvancedEmailService {
                 error,
                 timestamp: new Date().toISOString()
               });
-              return { success: false, error, recipient };
+              batchResults.push({ success: false, error, recipient });
+              continue;
             }
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
@@ -904,7 +910,7 @@ export class AdvancedEmailService {
               error: result.success ? null : result.error || 'Unknown error',
               timestamp: new Date().toISOString()
             });
-            return result;
+            batchResults.push(result);
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
             progressCallback?.({
@@ -914,11 +920,9 @@ export class AdvancedEmailService {
               error: err && err.message ? err.message : String(err),
               timestamp: new Date().toISOString()
             });
-            return { success: false, error: err && err.message ? err.message : String(err), recipient };
+            batchResults.push({ success: false, error: err && err.message ? err.message : String(err), recipient });
           }
-        });
-        
-        const batchResults = await Promise.all(promises);
+        }
         
         // Count results - exact clone
         batchResults.forEach(result => {
