@@ -41,6 +41,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Load leads/maillist from files/leads.txt - exact clone from main.js line 562
+  app.get('/api/config/loadLeads', (req, res) => {
+    try {
+      const { join } = require('path');
+      const { readFileSync, existsSync } = require('fs');
+      
+      const leadsPath = join(process.cwd(), 'files', 'leads.txt');
+      if (existsSync(leadsPath)) {
+        const leadsContent = readFileSync(leadsPath, 'utf-8');
+        const leads = Array.from(new Set(
+          leadsContent
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(Boolean)
+        ));
+        console.log(`[ConfigService] Loaded ${leads.length} leads from leads.txt`);
+        res.json({ success: true, leads: leads.join('\n') });
+      } else {
+        console.log('[ConfigService] No leads.txt found, returning empty');
+        res.json({ success: true, leads: '' });
+      }
+    } catch (error) {
+      console.error('Failed to load leads:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Start email sending job
   app.post("/api/emails/send", upload.any(), async (req, res) => {
     try {
