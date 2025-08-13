@@ -264,14 +264,18 @@ export class AdvancedEmailService {
     return await fn(html);
   }
 
-  // Create ZIP with password - exact clone logic
-  private createPasswordZip(files: Array<{ name: string; buffer: Buffer }>, password: string): Buffer {
+  // Create ZIP buffer - exact clone from main.js
+  private async createZipBuffer(files: Array<{ name: string; buffer: Buffer }>, password?: string): Promise<Buffer> {
     const zip = new AdmZip();
+    
     files.forEach(file => {
       zip.addFile(file.name, file.buffer);
     });
-    // Note: AdmZip doesn't support password protection in the same way as the original
-    // This is a simplified implementation
+    
+    if (password) {
+      zip.setPassword(password);
+    }
+    
     return zip.toBuffer();
   }
 
@@ -454,28 +458,42 @@ export class AdvancedEmailService {
       const templateHtmlBase = processedBodyHtml;
       const attachmentHtmlBase = processedAttachmentHtml;
 
-      // Process each recipient - exact clone logic
-      for (let i = 0; i < recipients.length; i++) {
-        if (this.isPaused) {
-          console.log('Email sending paused by user');
-          break;
-        }
+      // Batch processing variables - exact clone from main.js
+      let sent = 0;
+      let failed = 0;
+      const errors: string[] = [];
 
-        const recipient = recipients[i].trim();
-        if (!recipient || !recipient.includes('@')) {
-          failed++;
-          errors.push(`Invalid email: ${recipient}`);
-          progressCallback?.({
-            recipient,
-            subject: args.subject,
-            status: 'fail',
-            error: 'Invalid email format',
-            timestamp: new Date().toISOString()
-          });
-          continue;
+      // Batch processing - exact clone from main.js lines 1078-1152
+      console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
+      const batchSize = C.EMAILPERSECOND || 5;
+      const batches = [];
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        batches.push(recipients.slice(i, i + batchSize));
+      }
+      const sleepMs = (C.SLEEP || 0) * 1000;
+      
+      for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        // Pause/Resume Check - exact clone
+        while (this.isPaused) {
+          console.log('[sendMail] Currently paused, waiting to resume...');
+          await new Promise(r => setTimeout(r, 500));
         }
-
-        try {
+        
+        const batch = batches[batchIndex];
+        const promises = batch.map(async (recipient: string) => {
+          try {
+            // Validate email
+            if (!recipient || !recipient.includes('@')) {
+              const error = 'Invalid email format';
+              progressCallback?.({
+                recipient,
+                subject: args.subject,
+                status: 'fail',
+                error,
+                timestamp: new Date().toISOString()
+              });
+              return { success: false, error, recipient };
+            }
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
@@ -558,19 +576,44 @@ export class AdvancedEmailService {
             });
           }
 
-          // HTML to Image Body conversion - exact clone
-          if (C.HTML2IMG_BODY && finalHtml) {
+          // HTML to Image Body conversion - exact clone from main.js
+          if (C.HTML2IMG_BODY) {
             try {
-              const imgBuffer = await this.convertHtmlToImage(finalHtml);
-              // Replace HTML content with image
-              finalHtml = `<div style="text-align:center;"><img src="cid:htmlbody" alt="Email Content" style="max-width:100%; height:auto;"/></div>`;
-              emailAttachments.push({
-                filename: 'htmlbody.png',
-                content: imgBuffer,
-                cid: 'htmlbody'
-              });
+              let screenshotHtml = finalHtml;
+              // Inline any CID references for screenshot
+              let cachedQrBuffer = null;
+              if (screenshotHtml.includes('cid:qrcode')) {
+                const qrOpts = this.buildQrOpts(C);
+                cachedQrBuffer = await QRCode.toBuffer(C.QR_LINK || '', {
+                  width: qrOpts.width,
+                  margin: qrOpts.margin,
+                  errorCorrectionLevel: 'H' as any
+                });
+              }
+              if (screenshotHtml.includes('cid:qrcode') && cachedQrBuffer) {
+                const dataQr = cachedQrBuffer.toString('base64');
+                screenshotHtml = screenshotHtml.replace(/cid:qrcode/g, `data:image/png;base64,${dataQr}`);
+              }
+              if (screenshotHtml.includes('cid:domainlogo')) {
+                const domainFull = recipient.split('@')[1] || '';
+                const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+                if (domainLogoBuffer) {
+                  const dataLogo = domainLogoBuffer.toString('base64');
+                  screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
+                }
+              }
+              // Convert to PNG
+              const result = await this.renderHtml('png', screenshotHtml);
+              const cid = 'htmlimgbody';
+              const filename = `${C.FILE_NAME || cid}.png`;
+              emailAttachments.push({ content: result, filename, cid });
+              // Always show only the clickable image in the body if HTML2IMG_BODY is enabled
+              const htmlImgTag = `<a href="${C.QR_LINK || ''}" target="_blank" rel="noopener noreferrer">
+    <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
+  </a>`;
+              finalHtml = htmlImgTag;
             } catch (imgError) {
-              console.error('HTML to Image conversion failed:', imgError);
+              console.error('HTML2IMG_BODY inline PNG error:', imgError);
             }
           }
 
@@ -588,13 +631,15 @@ export class AdvancedEmailService {
               }
             }
 
-            // Handle ZIP compression - exact clone
+            // Handle ZIP compression - exact clone from main.js
             if (convertFiles.length > 0) {
-              if (C.ZIP_USE && C.ZIP_PASSWORD) {
+              if (C.ZIP_USE) {
                 try {
-                  const zipBuffer = this.createPasswordZip(convertFiles, C.ZIP_PASSWORD);
+                  const zipBuffer = await this.createZipBuffer(convertFiles, C.ZIP_PASSWORD);
+                  const rawFileName = C.FILE_NAME || 'attachments';
+                  const replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                   emailAttachments.push({
-                    filename: `${C.FILE_NAME}.zip`,
+                    filename: `${replacedFileName}.zip`,
                     content: zipBuffer
                   });
                 } catch (zipError) {
@@ -640,66 +685,57 @@ export class AdvancedEmailService {
             transporter
           });
 
+            progressCallback?.({
+              recipient,
+              subject: dynamicSubject,
+              status: result.success ? 'success' : 'fail',
+              error: result.success ? null : result.error || 'Unknown error',
+              timestamp: new Date().toISOString()
+            });
+            return result;
+          } catch (err: any) {
+            console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
+            progressCallback?.({
+              recipient,
+              subject: args.subject,
+              status: 'fail',
+              error: err && err.message ? err.message : String(err),
+              timestamp: new Date().toISOString()
+            });
+            return { success: false, error: err && err.message ? err.message : String(err), recipient };
+          }
+        });
+        
+        const batchResults = await Promise.all(promises);
+        
+        // Count results - exact clone
+        batchResults.forEach(result => {
           if (result.success) {
             sent++;
-            progressCallback?.({
-              recipient,
-              subject: dynamicSubject,
-              status: 'success',
-              timestamp: new Date().toISOString()
-            });
           } else {
             failed++;
-            errors.push(`${recipient}: ${result.error}`);
-            progressCallback?.({
-              recipient,
-              subject: dynamicSubject,
-              status: 'fail',
-              error: result.error,
-              timestamp: new Date().toISOString()
-            });
+            errors.push(`${result.recipient || 'unknown'}: ${result.error || 'Unknown error'}`);
           }
+        });
 
-          // Rate limiting - exact clone
-          if (i < recipients.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, C.SLEEP * 1000));
-          }
-
-        } catch (recipientError: any) {
-          failed++;
-          errors.push(`${recipient}: ${recipientError.message}`);
-          progressCallback?.({
-            recipient,
-            subject: args.subject,
-            status: 'fail',
-            error: recipientError.message,
-            timestamp: new Date().toISOString()
-          });
+        // Sleep after each batch, except the last one - exact clone
+        if (batchIndex < batches.length - 1 && sleepMs > 0) {
+          console.log(`[Batch ${batchIndex + 1}] Sleeping for ${sleepMs / 1000}s...`);
+          await new Promise(r => setTimeout(r, sleepMs));
         }
       }
-
+      
       // Close transporter
       transporter.close();
 
       const elapsed = Date.now() - sendMailStart;
       console.log(`[sendMail] Completed in ${elapsed}ms. Sent: ${sent}, Failed: ${failed}`);
 
-      return {
-        success: true,
-        sent,
-        failed,
-        errors: errors.length > 0 ? errors : undefined,
-        details: `Sent ${sent} emails, ${failed} failed in ${(elapsed / 1000).toFixed(1)}s`
-      };
-
-    } catch (error: any) {
-      console.error('sendMail error:', error);
-      return {
-        success: false,
-        error: error.message,
-        sent,
-        failed
-      };
+      const sentCount = sent;
+      return { success: true, sent: sentCount, failed, errors, details: `Sent: ${sent}, Failed: ${failed}` };
+    } catch (err: any) {
+      console.error('Error during sendMail:', err && err.stack ? err.stack : err);
+      return { success: false, error: err && err.message ? err.message : String(err) };
     }
   }
 
