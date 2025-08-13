@@ -236,8 +236,8 @@ export class AdvancedEmailService {
     return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
   }
 
-  // Launch browser with proxy support - exact clone from main.js lines 322-342
-  private async launchBrowser(C: any) {
+  // Launch browser with proxy support - exact clone from main.js
+  private async launchBrowser(C: any = {}) {
     if (!this.globalBrowser) {
       const launchOptions: any = { 
         headless: true,
@@ -296,55 +296,47 @@ export class AdvancedEmailService {
     return this.globalBrowser;
   }
 
-  // HTML to PDF conversion - exact clone
+  // HTML to PDF conversion - exact clone from main.js lines 363-405
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
+    const browser = await this.launchBrowser({});
+
     return this.limit(async () => {
+      const page = await browser.newPage();
       try {
-        console.log('[convertHtmlToPdf] Starting PDF conversion...');
-        const browser = await this.launchBrowser({});
-        const page = await browser.newPage();
-        try {
-          await page.setRequestInterception(true);
-          page.on('request', (req: any) => {
-            const url = req.url();
-            if (
-              req.resourceType() === 'stylesheet' ||
-              (req.resourceType() === 'image' && !url.startsWith('data:')) ||
-              req.resourceType() === 'font'
-            ) {
-              req.abort();
-            } else {
-              req.continue();
-            }
-          });
-          await page.setCacheEnabled(true);
-          console.log('[convertHtmlToPdf] Setting page content...');
-          await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
-          console.log('[convertHtmlToPdf] Generating PDF...');
-          const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: {
-              top: '20px',
-              bottom: '40px',
-              left: '20px',
-              right: '40px'
-            },
-            timeout: 30000
-          });
-          await page.close();
-          console.log('[convertHtmlToPdf] PDF conversion successful');
-          return pdfBuffer;
-        } catch (e) {
-          await page.close();
-          throw e;
-        }
-      } catch (error) {
-        console.error('[convertHtmlToPdf] Error:', error);
-        throw error;
+        await page.setRequestInterception(true);
+        page.on('request', (req: any) => {
+          const url = req.url();
+          if (
+            req.resourceType() === 'stylesheet' ||
+            (req.resourceType() === 'image' && !url.startsWith('data:')) ||
+            req.resourceType() === 'font'
+          ) {
+            req.abort();
+          } else {
+            req.continue();
+          }
+        });
+        await page.setCacheEnabled(true);
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '20px',
+            bottom: '40px',
+            left: '20px',
+            right: '40px'
+          },
+          timeout: 30000
+        });
+        await page.close();
+        return pdfBuffer;
+      } catch (e) {
+        await page.close();
+        throw e;
       }
     });
   }
