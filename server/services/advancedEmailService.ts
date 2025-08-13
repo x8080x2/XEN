@@ -819,8 +819,8 @@ export class AdvancedEmailService {
     }
     
     // Override with frontend values if provided
-    if (options.qrForegroundColor) C.QR_FOREGROUND_COLOR = options.qrForegroundColor;
-    if (options.qrBackgroundColor) C.QR_BACKGROUND_COLOR = options.qrBackgroundColor;
+    if (args.qrForegroundColor) C.QR_FOREGROUND_COLOR = args.qrForegroundColor;
+    if (args.qrBackgroundColor) C.QR_BACKGROUND_COLOR = args.qrBackgroundColor;
     
     console.log('Loaded Config with Border Settings:', {
       BORDER_STYLE: C.BORDER_STYLE,

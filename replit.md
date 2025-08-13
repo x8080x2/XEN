@@ -54,6 +54,10 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Config Priority Fixed** - Config file values now properly override defaults (BORDER_STYLE=dotted, BORDER_COLOR=blue)
 - ✅ **Border Configuration Loading** - Enhanced config loading to merge all border-related settings from setup.ini
 - ✅ **Complete Parameter Mapping** - All 25+ advanced settings now synchronize perfectly between layers
+- ✅ **QR Color Customization** - Added QR_FOREGROUND_COLOR and QR_BACKGROUND_COLOR configuration support
+- ✅ **Color Parameter Fix** - Fixed "options is not defined" error in QR generation with proper args reference
+- ✅ **Frontend Color Controls** - Added QR foreground and background color picker inputs to UI
+- ✅ **Full Color Integration** - QR code generation now uses configurable colors from config files or frontend
 
 # User Preferences
 
