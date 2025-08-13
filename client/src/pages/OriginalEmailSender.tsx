@@ -95,6 +95,8 @@ export default function OriginalEmailSender() {
     qrSize: "200",
     qrBorder: "2",
     qrBorderColor: "#000000",
+    qrForegroundColor: "#000000",
+    qrBackgroundColor: "#FFFFFF",
     qrLink: "https://example.com",
     linkPlaceholder: "{email}",
     includeHiddenText: false,
@@ -930,6 +932,27 @@ export default function OriginalEmailSender() {
                       type="color"
                       value={advancedSettings.qrBorderColor}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorderColor: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">QR Foreground Color</Label>
+                    <Input
+                      type="color"
+                      value={advancedSettings.qrForegroundColor || '#000000'}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrForegroundColor: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">QR Background Color</Label>
+                    <Input
+                      type="color"
+                      value={advancedSettings.qrBackgroundColor || '#FFFFFF'}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrBackgroundColor: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white h-10"
                     />
                   </div>

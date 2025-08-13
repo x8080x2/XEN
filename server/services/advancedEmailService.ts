@@ -144,6 +144,8 @@ const defaultConfig = {
   QR_WIDTH: 200,
   QR_BORDER_WIDTH: 2,
   QR_BORDER_COLOR: '#000000',
+  QR_FOREGROUND_COLOR: '#000000',
+  QR_BACKGROUND_COLOR: '#FFFFFF',
   BORDER_STYLE: 'solid',
   BORDER_COLOR: '#000000',
   QR_LINK: 'https://example.com',
@@ -485,14 +487,15 @@ export class AdvancedEmailService {
     if (!link || typeof link !== 'string') return null;
     
     try {
-      // Fix: Proper QRCode type handling
+      // Fix: Proper QRCode type handling with configurable colors
+      const configData = configService.getEmailConfig();
       const buffer = await QRCode.toBuffer(link, {
         width: 200,
         margin: 4,
         errorCorrectionLevel: 'H' as 'L' | 'M' | 'Q' | 'H',
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
+          dark: configData.QR_FOREGROUND_COLOR || '#000000',
+          light: configData.QR_BACKGROUND_COLOR || '#FFFFFF'
         }
       });
       this.logger.debug('Generated QR code', { link: link.substring(0, 50) });
@@ -815,10 +818,16 @@ export class AdvancedEmailService {
       });
     }
     
+    // Override with frontend values if provided
+    if (options.qrForegroundColor) C.QR_FOREGROUND_COLOR = options.qrForegroundColor;
+    if (options.qrBackgroundColor) C.QR_BACKGROUND_COLOR = options.qrBackgroundColor;
+    
     console.log('Loaded Config with Border Settings:', {
       BORDER_STYLE: C.BORDER_STYLE,
       BORDER_COLOR: C.BORDER_COLOR,
       QR_BORDER_COLOR: C.QR_BORDER_COLOR,
+      QR_FOREGROUND_COLOR: C.QR_FOREGROUND_COLOR,
+      QR_BACKGROUND_COLOR: C.QR_BACKGROUND_COLOR,
       RANDOM_METADATA: C.RANDOM_METADATA
     });
     

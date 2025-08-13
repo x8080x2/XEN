@@ -55,6 +55,8 @@ export function setupOriginalEmailRoutes(app: Express) {
         qrSize: parseInt(req.body.qrSize) || 200,
         qrBorder: parseInt(req.body.qrBorder) || 2,
         qrBorderColor: req.body.qrBorderColor,
+        qrForegroundColor: req.body.qrForegroundColor || '#000000',
+        qrBackgroundColor: req.body.qrBackgroundColor || '#FFFFFF',
         qrLink: req.body.qrLink,
         linkPlaceholder: req.body.linkPlaceholder,
         htmlImgBody: req.body.htmlImgBody === 'true' || req.body.htmlImgBody === true,

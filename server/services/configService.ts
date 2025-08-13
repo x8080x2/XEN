@@ -110,6 +110,8 @@ export class ConfigService {
       QR_BORDER_WIDTH: config.QR_BORDER_WIDTH || 2,
       QR_LINK: config.QR_LINK || '',
       QR_BORDER_COLOR: config.QR_BORDER_COLOR || '#000000',
+      QR_FOREGROUND_COLOR: config.QR_FOREGROUND_COLOR || '#000000',
+      QR_BACKGROUND_COLOR: config.QR_BACKGROUND_COLOR || '#FFFFFF',
       
       // Hidden text settings
       INCLUDE_HIDDEN_TEXT: config.INCLUDE_HIDDEN_TEXT || 0,
