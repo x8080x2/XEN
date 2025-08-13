@@ -46,6 +46,15 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Inbox Delivery Fixed** - Resolved deliverability issues by eliminating HTML attachments that trigger spam filters
 - ✅ **Format Flexibility** - Users can now export HTML content in 4 formats: HTML, PDF, PNG, DOCX
 
+## Border Synchronization Fixes (August 2025)
+- ✅ **Parameter Type Conversions** - Fixed qrSize, qrBorder string-to-number conversions for proper backend processing
+- ✅ **Missing Parameter Sync** - Added retry, priority, proxy settings, borderStyle, borderColor parameter mapping
+- ✅ **Boolean Conversion Fixes** - Fixed all boolean parameters (qrcode, proxyUse, etc.) frontend-to-backend sync
+- ✅ **QR Code Toggle Added** - Added missing QRCODE boolean parameter sync between frontend and backend
+- ✅ **Config Priority Fixed** - Config file values now properly override defaults (BORDER_STYLE=dotted, BORDER_COLOR=blue)
+- ✅ **Border Configuration Loading** - Enhanced config loading to merge all border-related settings from setup.ini
+- ✅ **Complete Parameter Mapping** - All 25+ advanced settings now synchronize perfectly between layers
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.

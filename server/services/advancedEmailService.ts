@@ -145,6 +145,7 @@ const defaultConfig = {
   QR_BORDER_WIDTH: 2,
   QR_BORDER_COLOR: '#000000',
   BORDER_STYLE: 'solid',
+  BORDER_COLOR: '#000000',
   QR_LINK: 'https://example.com',
   LINK_PLACEHOLDER: '',
   HTML2IMG_BODY: false,
@@ -805,7 +806,19 @@ export class AdvancedEmailService {
     // Load and merge configuration - exact clone from main.js  
     const C = { ...defaultConfig };
     
-    console.log('Loaded QR Config:', {
+    // Merge config file values if available
+    if (emailConfig) {
+      Object.keys(emailConfig).forEach(key => {
+        if (key !== 'SMTP' && emailConfig[key] !== undefined) {
+          C[key] = emailConfig[key];
+        }
+      });
+    }
+    
+    console.log('Loaded Config with Border Settings:', {
+      BORDER_STYLE: C.BORDER_STYLE,
+      BORDER_COLOR: C.BORDER_COLOR,
+      QR_BORDER_COLOR: C.QR_BORDER_COLOR,
       RANDOM_METADATA: C.RANDOM_METADATA
     });
     
@@ -819,7 +832,7 @@ export class AdvancedEmailService {
     C.QR_BORDER_WIDTH = (typeof args.qrBorder === 'number' && args.qrBorder >= 0)
       ? args.qrBorder
       : (C.QR_BORDER_WIDTH || 2);
-    C.QR_BORDER_COLOR = args.qrBorderColor || '#000000';
+    C.QR_BORDER_COLOR = args.qrBorderColor || C.QR_BORDER_COLOR || '#000000';
     
     // Runtime overrides from UI - exact clone
     if (typeof args.htmlImgBody === 'boolean') {
@@ -887,6 +900,14 @@ export class AdvancedEmailService {
     C.HIDDEN_IMAGE_SIZE = args.hiddenImgSize || C.HIDDEN_IMAGE_SIZE || 50;
     C.HIDDEN_IMAGE_FILE = args.hiddenImageFile || C.HIDDEN_IMAGE_FILE || '';
     C.DOMAIN_LOGO_SIZE = args.domainLogoSize || C.DOMAIN_LOGO_SIZE || '70%';
+    
+    // Apply border settings from UI args - sync fix
+    if (typeof args.borderStyle === 'string') {
+      C.BORDER_STYLE = args.borderStyle;
+    }
+    if (typeof args.borderColor === 'string') {
+      C.BORDER_COLOR = args.borderColor;
+    }
 
     let sent = 0;
     let failed = 0;
