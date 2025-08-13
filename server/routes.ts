@@ -6,6 +6,7 @@ import { AdvancedEmailService } from "./services/advancedEmailService";
 import { PlaceholderService } from "./services/placeholderService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { configService } from "./services/configService";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
@@ -17,6 +18,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+
+  // Config loading routes - exact clone from main.js
+  app.get('/api/config/load', (req, res) => {
+    try {
+      const config = configService.loadConfig();
+      const emailConfig = configService.getEmailConfig();
+      res.json({ success: true, config: emailConfig });
+    } catch (error) {
+      console.error('Config load error:', error);
+      res.status(500).json({ success: false, error: 'Failed to load configuration' });
+    }
+  });
+
+  app.get('/api/config/smtp', (req, res) => {
+    try {
+      const config = configService.getEmailConfig();
+      res.json({ success: true, smtp: config.SMTP || {} });
+    } catch (error) {
+      console.error('SMTP config error:', error);
+      res.status(500).json({ success: false, error: 'Failed to load SMTP configuration' });
+    }
+  });
 
   // Start email sending job
   app.post("/api/emails/send", upload.any(), async (req, res) => {

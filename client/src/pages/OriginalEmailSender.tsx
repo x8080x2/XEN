@@ -135,6 +135,73 @@ export default function OriginalEmailSender() {
     }
   };
   
+  // Load configuration from files - exact clone from main.js
+  const loadConfigFromFiles = async () => {
+    try {
+      const response = await fetch('/api/config/load');
+      const data = await response.json();
+      
+      if (data.success && data.config) {
+        const config = data.config;
+        
+        // Load SMTP settings
+        if (config.SMTP) {
+          setSMTPSettings({
+            host: config.SMTP.host || '',
+            port: config.SMTP.port || '587',
+            user: config.SMTP.user || '',
+            pass: config.SMTP.pass || '',
+            fromEmail: config.SMTP.fromEmail || '',
+            fromName: config.SMTP.fromName || ''
+          });
+        }
+        
+        // Load advanced settings
+        setAdvancedSettings({
+          qrcode: !!config.QRCODE,
+          randomMetadata: !!config.RANDOM_METADATA,
+          minifyHtml: !!config.MINIFY_HTML,
+          includeHtmlAttachment: !!config.INCLUDE_HTML_ATTACHMENT,
+          htmlImgBody: !!config.HTML2IMG_BODY,
+          zipUse: !!config.ZIP_USE,
+          zipPassword: config.ZIP_PASSWORD || '',
+          emailPerSecond: config.EMAILPERSECOND?.toString() || '5',
+          sleep: config.SLEEP?.toString() || '3',
+          fileName: config.FILE_NAME || 'attachment',
+          htmlConvert: config.HTML_CONVERT || 'pdf,png,docx',
+          qrSize: config.QR_WIDTH?.toString() || '200',
+          qrBorder: config.QR_BORDER_WIDTH?.toString() || '2',
+          qrBorderColor: config.QR_BORDER_COLOR || '#000000',
+          qrLink: config.QR_LINK || 'https://example.com',
+          linkPlaceholder: config.LINK_PLACEHOLDER || '{email}',
+          includeHiddenText: !!config.INCLUDE_HIDDEN_TEXT,
+          hiddenText: config.HIDDEN_TEXT || '&#9919;',
+          domainLogoSize: config.DOMAIN_LOGO_SIZE || '50%',
+          borderStyle: config.BORDER_STYLE || 'solid',
+          borderColor: config.BORDER_COLOR || '#000000',
+          retry: config.RETRY?.toString() || '0',
+          priority: config.PRIORITY?.toString() || '2',
+          hiddenImgSize: config.HIDDEN_IMAGE_SIZE?.toString() || '50',
+          hiddenImageFile: config.HIDDEN_IMAGE_FILE || '',
+          proxyUse: !!config.PROXY_USE,
+          proxyType: config.PROXY_TYPE || 'socks5',
+          proxyHost: config.PROXY_HOST || '',
+          proxyPort: config.PROXY_PORT?.toString() || '',
+          proxyUser: config.PROXY_USER || '',
+          proxyPass: config.PROXY_PASS || ''
+        });
+        
+        setStatusText('Configuration loaded from files successfully');
+        setTimeout(() => setStatusText(''), 3000);
+      } else {
+        setStatusText('Failed to load configuration');
+      }
+    } catch (error) {
+      console.error('Config load error:', error);
+      setStatusText('Failed to load configuration');
+    }
+  };
+
   const saveSMTPSettings = async () => {
     // In the original, this saves to config file
     console.log('Saving SMTP settings:', smtpSettings);
@@ -564,6 +631,12 @@ export default function OriginalEmailSender() {
                   className="h-8 px-4 bg-[#ef4444] hover:bg-[#dc2626] text-white text-xs"
                 >
                   Save
+                </Button>
+                <Button
+                  onClick={loadConfigFromFiles}
+                  className="h-8 px-4 bg-[#10b981] hover:bg-[#059669] text-white text-xs"
+                >
+                  Load Config
                 </Button>
               </div>
             </div>

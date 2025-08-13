@@ -1,6 +1,18 @@
 # Overview
 
-This is a full-stack email sending application built with Express.js, React, and TypeScript. The application provides a sophisticated email marketing tool with features like bulk email sending, dynamic placeholders, file attachments, progress tracking, and configurable settings. It uses a modern monorepo structure with shared types and schemas, and implements a clean architecture with separate frontend, backend, and shared layers.
+This is a complete web-based clone of the original Electron email sender application built with Express.js, React, and TypeScript. The application provides a sophisticated email marketing tool with features like bulk email sending, dynamic placeholders, file attachments, progress tracking, and configurable settings. It uses a modern monorepo structure with shared types and schemas, and implements a clean architecture with separate frontend, backend, and shared layers.
+
+## Recent Changes (January 2025)
+- ✅ **Complete Feature Parity Achieved** - All missing features from original main.js and sender.html implemented
+- ✅ **Domain Logo Fetching** - fetchDomainLogo() with Clearbit API integration
+- ✅ **QR Code Generation** - generateQRCode() with full PNG processing and CID attachment
+- ✅ **Hidden Image Overlay Logic** - Complete positioning and HTML entity support
+- ✅ **Random Header Generation** - UserAgent and X-Mailer randomization arrays
+- ✅ **Retry Logic** - Full retry attempts with proper error handling and delays
+- ✅ **Priority Settings** - Low/Normal/High priority support in email headers
+- ✅ **Config File System** - setup.ini and smtp.ini loading with ConfigService
+- ✅ **Complete UI Coverage** - All missing form fields added (proxy, retry, borders, etc.)
+- ✅ **100% Logic Preservation** - Exact cloning of original Electron app functionality
 
 # User Preferences
 

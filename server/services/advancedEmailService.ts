@@ -11,6 +11,7 @@ import pLimit from "p-limit";
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
 import * as htmlDocx from "html-docx-js";
+import { configService } from "./configService";
 
 // Random helper for array and hex - exact clone from main.js
 function randomFrom(arr: any[]) {
