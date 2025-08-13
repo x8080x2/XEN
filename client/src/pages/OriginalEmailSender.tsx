@@ -1026,7 +1026,7 @@ export default function OriginalEmailSender() {
                 {/* Domain Logo Settings Section */}
                 <div>
                   <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo Settings</h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">Logo Size</Label>
                       <Input
@@ -1034,27 +1034,6 @@ export default function OriginalEmailSender() {
                         onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white"
                         placeholder="50%"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-sm text-[#a1a1aa]">Logo Border Style</Label>
-                      <select 
-                        value={advancedSettings.borderStyle}
-                        onChange={(e) => setAdvancedSettings({...advancedSettings, borderStyle: e.target.value})}
-                        className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
-                      >
-                        <option value="solid">Solid</option>
-                        <option value="dashed">Dashed</option>
-                        <option value="dotted">Dotted</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-[#a1a1aa]">Logo Border Color</Label>
-                      <Input
-                        type="color"
-                        value={advancedSettings.borderColor}
-                        onChange={(e) => setAdvancedSettings({...advancedSettings, borderColor: e.target.value})}
-                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
                       />
                     </div>
                   </div>

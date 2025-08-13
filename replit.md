@@ -58,6 +58,8 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Color Parameter Fix** - Fixed "options is not defined" error in QR generation with proper args reference
 - ✅ **Frontend Color Controls** - Added QR foreground and background color picker inputs to UI
 - ✅ **Full Color Integration** - QR code generation now uses configurable colors from config files or frontend
+- ✅ **UI Cleanup** - Removed duplicate Logo Border Style and Logo Border Color settings per user request
+- ✅ **Clear Settings Organization** - QR settings and Domain Logo settings now clearly separated in UI
 
 # User Preferences
 
