@@ -642,7 +642,7 @@ export class OriginalEmailService {
         }
 
         if (C.MINIFY_HTML) {
-          attHtml = minify(attHtml, { collapseWhitespace: true, removeComments: true });
+          attHtml = await minify(attHtml, { collapseWhitespace: true, removeComments: true });
         }
 
         const fmts = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : [];
