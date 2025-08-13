@@ -52,8 +52,8 @@ export function setupOriginalEmailRoutes(app: Express) {
         smtpPass: req.body.smtpPass,
         // Advanced settings
         sleep: req.body.sleep,
-        qrSize: req.body.qrSize,
-        qrBorder: req.body.qrBorder,
+        qrSize: parseInt(req.body.qrSize) || 200,
+        qrBorder: parseInt(req.body.qrBorder) || 2,
         qrBorderColor: req.body.qrBorderColor,
         qrLink: req.body.qrLink,
         linkPlaceholder: req.body.linkPlaceholder,
@@ -67,7 +67,24 @@ export function setupOriginalEmailRoutes(app: Express) {
         fileName: req.body.fileName,
         htmlConvert: req.body.htmlConvert,
         includeHiddenText: req.body.includeHiddenText === 'true' || req.body.includeHiddenText === true,
-        hiddenText: req.body.hiddenText
+        hiddenText: req.body.hiddenText,
+        // Additional missing parameters with proper conversion
+        retry: parseInt(req.body.retry) || 0,
+        priority: req.body.priority || '2',
+        domainLogoSize: req.body.domainLogoSize || '70%',
+        borderStyle: req.body.borderStyle || 'solid',
+        borderColor: req.body.borderColor || '#000000',
+        hiddenImgSize: parseInt(req.body.hiddenImgSize) || 50,
+        hiddenImageFile: req.body.hiddenImageFile || '',
+        // Proxy settings
+        proxyUse: req.body.proxyUse === 'true' || req.body.proxyUse === true,
+        proxyType: req.body.proxyType || 'socks5',
+        proxyHost: req.body.proxyHost || '',
+        proxyPort: req.body.proxyPort || '',
+        proxyUser: req.body.proxyUser || '',
+        proxyPass: req.body.proxyPass || '',
+        // QR Code boolean
+        qrcode: req.body.qrcode === 'true' || req.body.qrcode === true
       };
       
       // Send progress updates via Server-Sent Events

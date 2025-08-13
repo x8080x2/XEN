@@ -150,6 +150,7 @@ const defaultConfig = {
   HTML2IMG_BODY: false,
   RANDOM_METADATA: false,
   MINIFY_HTML: false,
+  QRCODE: false,
 
   SLEEP: 3,
   EMAIL_PER_SECOND: 5,
@@ -842,7 +843,9 @@ export class AdvancedEmailService {
     if (typeof args.priority === 'string' && ['1', '2', '3'].includes(args.priority)) {
       C.PRIORITY = args.priority;
     }
-    if (typeof args.retry === 'string' && !isNaN(Number(args.retry)) && Number(args.retry) >= 0) {
+    if (typeof args.retry === 'number' && args.retry >= 0) {
+      C.RETRY = args.retry;
+    } else if (typeof args.retry === 'string' && !isNaN(Number(args.retry)) && Number(args.retry) >= 0) {
       C.RETRY = Number(args.retry);
     }
     if (typeof args.zipUse === 'boolean') {
@@ -856,6 +859,11 @@ export class AdvancedEmailService {
     }
     if (typeof args.htmlConvert === 'string') {
       C.HTML_CONVERT = args.htmlConvert.split(',').map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+    }
+    
+    // QR Code boolean toggle
+    if (typeof args.qrcode === 'boolean') {
+      C.QRCODE = args.qrcode;
     }
     
     // Override hidden-text overlay from UI if provided - exact clone
