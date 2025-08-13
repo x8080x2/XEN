@@ -475,7 +475,7 @@ export default function OriginalEmailSender() {
                   }
 
                   if (data.status === 'success') {
-                    setStatusText(`✓ Email sent to ${data.recipient}`);
+                    setStatusText(`✓ Successfully sent to ${data.recipient}`);
                   } else {
                     setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
                   }
@@ -737,27 +737,76 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
 
-              {/* Progress Section */}
-              {isLoading && (
-                <div className="mb-6">
-                  <div className="bg-[#ef4444] text-white px-4 py-2 rounded-t text-sm">
-                    {statusText}
+              {/* Progress Section - Enhanced Real-time Display */}
+              {(isLoading || emailLogs.length > 0) && (
+                <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
+                  <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
+                    <span>{isLoading ? '📤 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
+                    <span className="text-xs bg-black/20 px-2 py-1 rounded">
+                      {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
+                    </span>
                   </div>
-                  <div className="bg-[#1d1d21] p-2 rounded-b">
-                    <Progress value={progress} className="mb-2" />
-                    <div className="text-xs text-[#75798b] mb-2">{progressDetails}</div>
-                    <div className="max-h-80 overflow-y-auto bg-[#0f0f12] border border-[#26262b] rounded p-2">
-                      {emailLogs.map((log, index) => (
-                        <div
-                          key={index}
-                          className={`text-xs py-1 ${
-                            log.status === 'success' ? 'text-green-400' : 'text-red-400'
-                          }`}
-                        >
-                          [{log.timestamp.slice(11, 19)}] {log.status === 'success' ? '✓' : '✗'} {log.recipient} - {log.subject}
-                          {log.error && <span className="text-red-300"> ({log.error})</span>}
-                        </div>
-                      ))}
+                  <div className="bg-[#1d1d21] p-4">
+                    <div className="mb-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-white font-medium">Progress</span>
+                        <span className="text-xs text-[#a1a1aa]">{Math.round(progress)}%</span>
+                      </div>
+                      <Progress value={progress} className="h-3" />
+                    </div>
+                    
+                    <div className="text-sm text-[#a1a1aa] mb-3 p-2 bg-[#0f0f12] rounded border border-[#26262b]">
+                      {progressDetails || 'Preparing to send...'}
+                    </div>
+                    
+                    <div className="bg-[#0f0f12] border border-[#26262b] rounded-lg overflow-hidden">
+                      <div className="bg-[#131316] px-3 py-2 border-b border-[#26262b]">
+                        <span className="text-xs font-semibold text-[#a1a1aa]">📋 LIVE EMAIL LOG</span>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto">
+                        {emailLogs.length === 0 ? (
+                          <div className="p-3 text-xs text-[#75798b] text-center">
+                            Waiting for email sending to start...
+                          </div>
+                        ) : (
+                          <div className="space-y-1 p-2">
+                            {emailLogs.slice(-20).reverse().map((log, index) => (
+                              <div
+                                key={index}
+                                className={`text-xs py-2 px-3 rounded flex items-start gap-2 ${
+                                  log.status === 'success' 
+                                    ? 'bg-green-900/20 border-l-2 border-green-500' 
+                                    : 'bg-red-900/20 border-l-2 border-red-500'
+                                }`}
+                              >
+                                <span className={`font-bold ${
+                                  log.status === 'success' ? 'text-green-400' : 'text-red-400'
+                                }`}>
+                                  {log.status === 'success' ? '✓' : '✗'}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-white font-medium truncate">{log.recipient}</span>
+                                    <span className="text-[#75798b] text-[10px]">
+                                      {log.timestamp.slice(11, 19)}
+                                    </span>
+                                  </div>
+                                  {log.subject && (
+                                    <div className="text-[#a1a1aa] text-[10px] truncate">
+                                      Subject: {log.subject}
+                                    </div>
+                                  )}
+                                  {log.error && (
+                                    <div className="text-red-300 text-[10px] mt-1">
+                                      Error: {log.error}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
