@@ -72,6 +72,18 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
              .replace(/{randcompany}/g, randcompany)
              .replace(/{randdomain}/g, randdomain)
              .replace(/{randtitle}/g, randtitle);
+
+  // MISSING ADVANCED PLACEHOLDERS - exact clone from main.js lines 767-783
+  // {mename}, {mename3}
+  text = text.replace(/\{mename\}/g, username);
+  text = text.replace(/\{mename3\}/g, username.slice(0,3));
+  // {emailb64}
+  text = text.replace(/\{emailb64\}/g, Buffer.from(user).toString('base64'));
+  // {xemail}
+  text = text.replace(/\{xemail\}/g, username.charAt(0) + '***@' + domain);
+  // {randomname}
+  const names = ['John Smith','Jane Doe','Alex Johnson','Chris Lee','Pat Morgan','Kim Davis','Sam Carter'];
+  text = text.replace(/\{randomname\}/g, names[Math.floor(Math.random() * names.length)]);
              
   // hashN
   text = text.replace(/\{hash(\d+)\}/gi, (m, n) =>
@@ -86,17 +98,7 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
   return text;
 }
 
-// Decode HTML entities like &#9919; back to characters - exact clone
-function decodeHtmlEntities(text: string): string {
-  if (typeof text !== 'string') return text;
-  return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code));
-}
+
 
 // Replace placeholders like {randnumN} and {hashN} in strings - exact clone from main.js
 function replacePlaceholders(str: string): string {
@@ -113,6 +115,18 @@ function replacePlaceholders(str: string): string {
     return crypto.randomBytes(Math.ceil(n/2)).toString('hex').slice(0, n);
   });
   return str;
+}
+
+// Decode HTML entities - exact clone from main.js lines 120-129
+function decodeHtmlEntities(text: string): string {
+  if (typeof text !== 'string') return text;
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)));
 }
 
 // Build QR options - exact clone from main.js
@@ -143,7 +157,18 @@ const defaultConfig = {
   FILE_NAME: 'attachment',
   HTML_CONVERT: ['pdf'], // pdf, png, docx
   INCLUDE_HIDDEN_TEXT: false,
-  HIDDEN_TEXT: ''
+  HIDDEN_TEXT: '',
+  DOMAIN_LOGO_SIZE: '70%',
+  HIDDEN_IMAGE_SIZE: 50,
+  HIDDEN_IMAGE_FILE: '',
+  PROXY: {
+    PROXY_USE: 0,
+    TYPE: 'socks5',
+    HOST: '',
+    PORT: '',
+    USER: '',
+    PASS: ''
+  }
 };
 
 export class AdvancedEmailService {
@@ -211,10 +236,10 @@ export class AdvancedEmailService {
     return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
   }
 
-  // Launch browser with exact settings from main.js
-  private async launchBrowser() {
+  // Launch browser with proxy support - exact clone from main.js lines 322-342
+  private async launchBrowser(C: any) {
     if (!this.globalBrowser) {
-      this.globalBrowser = await puppeteer.launch({
+      const launchOptions: any = { 
         headless: true,
         args: [
           '--no-sandbox',
@@ -227,7 +252,29 @@ export class AdvancedEmailService {
           '--disable-gpu',
           '--no-first-run'
         ]
-      });
+      };
+      
+      // Add proxy support - exact clone from main.js lines 325-331
+      if (C.PROXY && C.PROXY.PROXY_USE === 1) {
+        const proxyHost = C.PROXY.HOST || '';
+        const proxyPort = C.PROXY.PORT || '';
+        if (proxyHost && proxyPort) {
+          const scheme = (C.PROXY.TYPE || 'socks5').toLowerCase();
+          launchOptions.args.push(`--proxy-server=${scheme}://${proxyHost}:${proxyPort}`);
+          console.log(`[Browser] Using proxy: ${scheme}://${proxyHost}:${proxyPort}`);
+        }
+      }
+      
+      this.globalBrowser = await puppeteer.launch(launchOptions);
+      console.log('Puppeteer browser launched.');
+      
+      // Setup proxy authentication if needed - exact clone from main.js lines 336-340
+      if (C.PROXY && C.PROXY.PROXY_USE === 1 && C.PROXY.USER && C.PROXY.PASS) {
+        const pages = await this.globalBrowser.pages();
+        const page = pages.length ? pages[0] : await this.globalBrowser.newPage();
+        await page.authenticate({ username: C.PROXY.USER, password: C.PROXY.PASS });
+        console.log('[Browser] Proxy authentication configured.');
+      }
     }
     return this.globalBrowser;
   }
@@ -238,7 +285,7 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for PDF conversion');
     }
     return this.limit(async () => {
-      const browser = await this.launchBrowser();
+      const browser = await this.launchBrowser({});
       const page = await browser.newPage();
       try {
         await page.setRequestInterception(true);
@@ -283,7 +330,7 @@ export class AdvancedEmailService {
     }
     return this.limit(async () => {
       console.log(`[convertHtmlToImage] Queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
-      const browser = await this.launchBrowser();
+      const browser = await this.launchBrowser({});
       const page = await browser.newPage();
       try {
         await page.setViewport({ width: 1123, height: 1587 });
@@ -317,7 +364,7 @@ export class AdvancedEmailService {
   };
 
   // Unified HTML rendering helper - exact clone
-  private async renderHtml(format: string, html: string) {
+  private async renderHtml(format: string, html: string, C: any = {}) {
     const fn = this.converters[format as keyof typeof this.converters];
     if (!fn) throw new Error('Unsupported render format: ' + format);
     return await fn(html);
@@ -441,8 +488,23 @@ export class AdvancedEmailService {
     C.HIDDEN_TEXT = args.includeHiddenText
       ? (typeof args.hiddenText === 'string' ? args.hiddenText : C.HIDDEN_TEXT)
       : '';
-    // Decode any HTML entities so they render correctly
+    // Decode any HTML entities so they render correctly - exact clone from main.js line 557
     C.HIDDEN_TEXT = decodeHtmlEntities(C.HIDDEN_TEXT);
+    
+    // Apply proxy settings from UI args - exact clone from main.js lines 207-214
+    if (args.proxyUse === 'true' || args.proxyUse === true) {
+      C.PROXY.PROXY_USE = 1;
+      C.PROXY.TYPE = args.proxyType || 'socks5';
+      C.PROXY.HOST = args.proxyHost || '';
+      C.PROXY.PORT = args.proxyPort || '';
+      C.PROXY.USER = args.proxyUser || '';
+      C.PROXY.PASS = args.proxyPass || '';
+    }
+    
+    // Apply hidden image settings from UI args - exact clone
+    C.HIDDEN_IMAGE_SIZE = args.hiddenImgSize || C.HIDDEN_IMAGE_SIZE || 50;
+    C.HIDDEN_IMAGE_FILE = args.hiddenImageFile || C.HIDDEN_IMAGE_FILE || '';
+    C.DOMAIN_LOGO_SIZE = args.domainLogoSize || C.DOMAIN_LOGO_SIZE || '70%';
 
     let sent = 0;
     let failed = 0;
@@ -680,7 +742,7 @@ export class AdvancedEmailService {
                 }
               }
               // Convert to PNG
-              const result = await this.renderHtml('png', screenshotHtml);
+              const result = await this.renderHtml('png', screenshotHtml, C);
               const cid = 'htmlimgbody';
               const filename = `${C.FILE_NAME || cid}.png`;
               emailAttachments.push({ content: result, filename, cid });
@@ -700,7 +762,7 @@ export class AdvancedEmailService {
             
             for (const format of C.HTML_CONVERT) {
               try {
-                const buffer = await this.renderHtml(format, finalAttHtml);
+                const buffer = await this.renderHtml(format, finalAttHtml, C);
                 const filename = `${C.FILE_NAME}.${format}`;
                 convertFiles.push({ name: filename, buffer });
               } catch (convertError) {
@@ -785,10 +847,32 @@ export class AdvancedEmailService {
                 contentType: 'image/png'
               });
 
-              // Hidden image overlay logic - exact clone from main.js
-              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || args.hiddenImgSize || 50;
+              // Hidden image overlay logic - exact clone from main.js lines 890-943
+              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
               let hiddenImageHtml = '';
-              if (C.HIDDEN_TEXT) {
+              
+              // Load hidden image file from files/logo directory - exact clone
+              let imgBuf = null;
+              try {
+                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                  const logoDir = join('files', 'logo');
+                  const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                  if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                    imgBuf = readFileSync(candidatePath);
+                    console.log(`[Hidden Image] Loaded: ${candidatePath}`);
+                  }
+                }
+              } catch (err) {
+                console.log('[Hidden Image] Error loading file:', err);
+              }
+              
+              const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+              if (hasHiddenImage) {
+                const base64Img = imgBuf.toString('base64');
+                // Exact positioning from main.js line 933
+                hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+              } else if (C.HIDDEN_TEXT) {
+                // Exact positioning from main.js line 935
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
               }
               

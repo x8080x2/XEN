@@ -131,9 +131,12 @@ export default function OriginalEmailSender() {
     setRecipientCount(lines.length);
   }, [recipients]);
   
-  // Load templates on component mount
+  // Load templates and logo files on component mount
+  const [logoFiles, setLogoFiles] = useState<string[]>([]);
+  
   useEffect(() => {
     loadTemplates();
+    loadLogoFiles();
   }, []);
   
   const loadTemplates = async () => {
@@ -145,6 +148,18 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('Failed to load templates:', error);
+    }
+  };
+
+  const loadLogoFiles = async () => {
+    try {
+      const response = await fetch('/api/original/listLogoFiles');
+      const data = await response.json();
+      if (data.files) {
+        setLogoFiles(data.files);
+      }
+    } catch (error) {
+      console.error('Error loading logo files:', error);
     }
   };
   
@@ -642,6 +657,7 @@ export default function OriginalEmailSender() {
                         <div>Advanced: {'{userupper}'}, {'{userlower}'}, {'{domainbase}'}, {'{initials}'}, {'{userid}'}</div>
                         <div>Random: {'{randfirst}'}, {'{randlast}'}, {'{randname}'}, {'{randcompany}'}, {'{randdomain}'}, {'{randtitle}'}</div>
                         <div>Dynamic: {'{hash6}'}, {'{randnum4}'}, {'{hashN}'}, {'{randnumN}'}</div>
+                        <div>NEW: {'{mename}'}, {'{mename3}'}, {'{emailb64}'}, {'{xemail}'}, {'{randomname}'}</div>
                       </div>
                     </div>
                   </details>
@@ -1075,6 +1091,9 @@ export default function OriginalEmailSender() {
                     className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
                   >
                     <option value="">-- None --</option>
+                    {logoFiles.map(file => (
+                      <option key={file} value={file}>{file}</option>
+                    ))}
                   </select>
                 </div>
 
