@@ -9,6 +9,8 @@ import { minify } from "html-minifier-terser";
 import puppeteer from "puppeteer";
 import pLimit from "p-limit";
 import { htmlToText } from "html-to-text";
+import AdmZip from "adm-zip";
+const htmlDocx = require('html-docx-js');
 
 // Exact clone of the original configuration and helper functions
 function pickRand(arr: any[]): any {
