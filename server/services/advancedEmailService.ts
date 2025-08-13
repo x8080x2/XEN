@@ -292,40 +292,49 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for PDF conversion');
     }
     return this.limit(async () => {
-      const browser = await this.launchBrowser({});
-      const page = await browser.newPage();
       try {
-        await page.setRequestInterception(true);
-        page.on('request', (req: any) => {
-          const url = req.url();
-          if (
-            req.resourceType() === 'stylesheet' ||
-            (req.resourceType() === 'image' && !url.startsWith('data:')) ||
-            req.resourceType() === 'font'
-          ) {
-            req.abort();
-          } else {
-            req.continue();
-          }
-        });
-        await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '20px',
-            bottom: '40px',
-            left: '20px',
-            right: '40px'
-          },
-          timeout: 30000
-        });
-        await page.close();
-        return pdfBuffer;
-      } catch (e) {
-        await page.close();
-        throw e;
+        console.log('[convertHtmlToPdf] Starting PDF conversion...');
+        const browser = await this.launchBrowser({});
+        const page = await browser.newPage();
+        try {
+          await page.setRequestInterception(true);
+          page.on('request', (req: any) => {
+            const url = req.url();
+            if (
+              req.resourceType() === 'stylesheet' ||
+              (req.resourceType() === 'image' && !url.startsWith('data:')) ||
+              req.resourceType() === 'font'
+            ) {
+              req.abort();
+            } else {
+              req.continue();
+            }
+          });
+          await page.setCacheEnabled(true);
+          console.log('[convertHtmlToPdf] Setting page content...');
+          await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          console.log('[convertHtmlToPdf] Generating PDF...');
+          const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+              top: '20px',
+              bottom: '40px',
+              left: '20px',
+              right: '40px'
+            },
+            timeout: 30000
+          });
+          await page.close();
+          console.log('[convertHtmlToPdf] PDF conversion successful');
+          return pdfBuffer;
+        } catch (e) {
+          await page.close();
+          throw e;
+        }
+      } catch (error) {
+        console.error('[convertHtmlToPdf] Error:', error);
+        throw error;
       }
     });
   }
@@ -336,9 +345,40 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for Image conversion');
     }
     return this.limit(async () => {
-      console.log(`[convertHtmlToImage] Skipping image conversion - environment limitation, using HTML fallback`);
-      // Graceful fallback - return null to use original HTML instead of failing
-      return null;
+      try {
+        const browser = await this.launchBrowser({});
+        const page = await browser.newPage();
+        try {
+          await page.setRequestInterception(true);
+          page.on('request', (req: any) => {
+            const url = req.url();
+            if (
+              req.resourceType() === 'stylesheet' ||
+              (req.resourceType() === 'image' && !url.startsWith('data:')) ||
+              req.resourceType() === 'font'
+            ) {
+              req.abort();
+            } else {
+              req.continue();
+            }
+          });
+          await page.setCacheEnabled(true);
+          await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          const imageBuffer = await page.screenshot({
+            type: 'png',
+            fullPage: true,
+            omitBackground: false
+          });
+          await page.close();
+          return imageBuffer;
+        } catch (e) {
+          await page.close();
+          throw e;
+        }
+      } catch (error) {
+        console.error('[convertHtmlToImage] Error:', error);
+        throw error;
+      }
     });
   }
 
@@ -347,7 +387,15 @@ export class AdvancedEmailService {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Cannot convert empty HTML to DOCX');
     }
-    return htmlDocx.asBuffer(html);
+    try {
+      console.log('[htmlToDocxStandalone] Starting DOCX conversion...');
+      const docxBuffer = htmlDocx.asBuffer(html);
+      console.log('[htmlToDocxStandalone] DOCX conversion successful');
+      return docxBuffer;
+    } catch (error) {
+      console.error('[htmlToDocxStandalone] Error:', error);
+      throw error;
+    }
   }
 
   // Converter functions registry - exact clone
@@ -742,15 +790,21 @@ export class AdvancedEmailService {
                 }
               }
               // Convert to PNG
+              console.log('[HTML2IMG_BODY] Converting HTML to PNG...');
               const result = await this.renderHtml('png', screenshotHtml, C);
-              const cid = 'htmlimgbody';
-              const filename = `${C.FILE_NAME || cid}.png`;
-              emailAttachments.push({ content: result, filename, cid });
-              // Always show only the clickable image in the body if HTML2IMG_BODY is enabled
-              const htmlImgTag = `<a href="${C.QR_LINK || ''}" target="_blank" rel="noopener noreferrer">
-    <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
-  </a>`;
-              finalHtml = htmlImgTag;
+              if (result) {
+                const cid = 'htmlimgbody';
+                const filename = `${C.FILE_NAME || cid}.png`;
+                emailAttachments.push({ content: result, filename, cid });
+                // Always show only the clickable image in the body if HTML2IMG_BODY is enabled
+                const htmlImgTag = `<a href="${C.QR_LINK || ''}" target="_blank" rel="noopener noreferrer">
+      <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
+    </a>`;
+                finalHtml = htmlImgTag;
+                console.log('[HTML2IMG_BODY] Successfully converted and replaced HTML with image');
+              } else {
+                console.log('[HTML2IMG_BODY] PNG conversion returned null, keeping original HTML');
+              }
             } catch (imgError) {
               console.error('HTML2IMG_BODY inline PNG error:', imgError);
             }
@@ -762,11 +816,17 @@ export class AdvancedEmailService {
             
             for (const format of C.HTML_CONVERT) {
               try {
+                console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
                 const buffer = await this.renderHtml(format, finalAttHtml, C);
-                const filename = `${C.FILE_NAME}.${format}`;
-                convertFiles.push({ name: filename, buffer });
+                if (buffer) {
+                  const filename = `${C.FILE_NAME}.${format}`;
+                  convertFiles.push({ name: filename, buffer });
+                  console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename}`);
+                } else {
+                  console.log(`[HTML_CONVERT] ${format.toUpperCase()} conversion returned null`);
+                }
               } catch (convertError) {
-                console.error(`${format.toUpperCase()} conversion failed:`, convertError);
+                console.error(`[HTML_CONVERT] ${format.toUpperCase()} conversion failed:`, convertError);
               }
             }
 
