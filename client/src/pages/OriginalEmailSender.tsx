@@ -873,7 +873,10 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, includeHtmlAttachment: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">Include HTML Attachment</Label>
+                  <div className="flex flex-col">
+                    <Label className="text-xs text-[#a1a1aa]">Include HTML Attachment</Label>
+                    <span className="text-[10px] text-[#ef4444]">⚠️ May cause delivery issues</span>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
