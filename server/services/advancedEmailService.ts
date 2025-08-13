@@ -205,15 +205,15 @@ export class AdvancedEmailService {
   }
 
   // QR Code generation - exact clone from main.js lines 713-750
-  private async generateQRCode(link: string): Promise<Buffer | null> {
+  private async generateQRCodeInternal(link: string): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
     
     try {
       const buffer = await QRCode.toBuffer(link, {
-        type: 'png',
+        type: 'png' as any,
         width: 200,
         margin: 4,
-        errorCorrectionLevel: 'H',
+        errorCorrectionLevel: 'H' as any,
         color: {
           dark: '#000000',
           light: '#FFFFFF'
@@ -272,8 +272,18 @@ export class AdvancedEmailService {
         }
       }
       
-      this.globalBrowser = await puppeteer.launch(launchOptions);
-      console.log('Puppeteer browser launched.');
+      try {
+        // Try system chromium first
+        launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
+        this.globalBrowser = await puppeteer.launch(launchOptions);
+        console.log('Puppeteer browser launched with system chromium.');
+      } catch (error) {
+        console.log('System chromium failed, trying bundled chrome...');
+        // Fallback to bundled chrome
+        delete launchOptions.executablePath;
+        this.globalBrowser = await puppeteer.launch(launchOptions);
+        console.log('Puppeteer browser launched with bundled chrome.');
+      }
       
       // Setup proxy authentication if needed - exact clone from main.js lines 336-340
       if (C.PROXY && C.PROXY.PROXY_USE === 1 && C.PROXY.USER && C.PROXY.PASS) {
@@ -294,7 +304,7 @@ export class AdvancedEmailService {
     return this.limit(async () => {
       try {
         console.log('[convertHtmlToPdf] Starting PDF conversion...');
-        const browser = await this.launchBrowser({});
+        const browser = await this.launchBrowser(C);
         const page = await browser.newPage();
         try {
           await page.setRequestInterception(true);
@@ -339,45 +349,27 @@ export class AdvancedEmailService {
     });
   }
 
-  // HTML to Image conversion - exact clone
+  // HTML to Image conversion - exact clone from main.js lines 409-431
   private async convertHtmlToImage(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
     return this.limit(async () => {
+      console.log(`[convertHtmlToImage] Queue pending: ${this.limit.pendingCount}, active: ${this.limit.activeCount}`);
+      const browser = await this.launchBrowser({});
+      const page = await browser.newPage();
       try {
-        const browser = await this.launchBrowser({});
-        const page = await browser.newPage();
-        try {
-          await page.setRequestInterception(true);
-          page.on('request', (req: any) => {
-            const url = req.url();
-            if (
-              req.resourceType() === 'stylesheet' ||
-              (req.resourceType() === 'image' && !url.startsWith('data:')) ||
-              req.resourceType() === 'font'
-            ) {
-              req.abort();
-            } else {
-              req.continue();
-            }
-          });
-          await page.setCacheEnabled(true);
-          await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
-          const imageBuffer = await page.screenshot({
-            type: 'png',
-            fullPage: true,
-            omitBackground: false
-          });
-          await page.close();
-          return imageBuffer;
-        } catch (e) {
-          await page.close();
-          throw e;
-        }
-      } catch (error) {
-        console.error('[convertHtmlToImage] Error:', error);
-        throw error;
+        await page.setViewport({ width: 1123, height: 1587 });
+        await page.setCacheEnabled(true);
+        await page.setContent(html, { waitUntil: 'networkidle2' });
+        const pngBuffer = await page.screenshot({ fullPage: true });
+        await page.close();
+        console.log(`[convertHtmlToImage] Finished image generation, queue pending: ${this.limit.pendingCount}, active: ${this.limit.activeCount}`);
+        return pngBuffer;
+      } catch (e) {
+        await page.close();
+        console.error('Image generation failed:', e);
+        throw e;
       }
     });
   }
