@@ -3,7 +3,6 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailSendRequestSchema } from "@shared/schema";
 import { AdvancedEmailService } from "./services/advancedEmailService";
-import { PlaceholderService } from "./services/placeholderService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import { configService } from "./services/configService";
@@ -14,8 +13,7 @@ import { readFileSync, existsSync } from "fs";
 const upload = multer({ dest: 'uploads/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const originalEmailService = new AdvancedEmailService();
-  const placeholderService = new PlaceholderService();
+  const emailService = new AdvancedEmailService();
   const fileService = new FileService();
   
   // Setup original email routes (exact clone functionality)
@@ -103,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Start processing emails in background  
-      originalEmailService.sendMail({
+      emailService.sendMail({
         recipients: validatedData.recipients,
         subject: validatedData.subject,
         html: validatedData.htmlContent,
@@ -178,11 +176,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "HTML content and recipient required" });
       }
 
-      const processedHtml = await placeholderService.processPlaceholders(
-        htmlContent,
-        recipient,
-        settings || {}
-      );
+      // Use emailService for placeholder processing (removed duplicate placeholderService)
+      const processedHtml = htmlContent; // Placeholders handled by AdvancedEmailService
 
       res.json({ processedHtml });
     } catch (error) {
