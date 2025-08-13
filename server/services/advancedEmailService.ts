@@ -135,7 +135,7 @@ function buildQrOpts(C: any) {
   return {
     width: C.QR_WIDTH,
     margin: 4,
-    errorCorrectionLevel: 'H'
+    errorCorrectionLevel: 'H' as any
   };
 }
 
@@ -249,26 +249,42 @@ export class AdvancedEmailService {
     this.startMemoryMonitoring();
   }
 
-  // Improvement 1: Browser Pool Management
+  // Improvement 1: Browser Pool Management (Fixed connection issues)
   private async getBrowserFromPool(): Promise<any> {
     const now = Date.now();
+    
+    // Clean up any closed browsers first
+    this.browserPool = this.browserPool.filter(pool => {
+      try {
+        // Check if browser is still connected
+        return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
+      } catch {
+        return false;
+      }
+    });
     
     // Find available browser or create new one
     let availableBrowser = this.browserPool.find(pool => 
       pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
     );
     
-    if (!availableBrowser && this.browserPool.length < 3) {
-      // Create new browser in pool
-      const browser = await this.launchBrowser({});
-      availableBrowser = {
-        instance: browser,
-        activePages: 0,
-        lastUsed: now,
-        maxPages: 5
-      };
-      this.browserPool.push(availableBrowser);
-      this.logger.info('Created new browser in pool', { poolSize: this.browserPool.length });
+    if (!availableBrowser && this.browserPool.length < 2) { // Reduced max browsers to 2
+      try {
+        // Create new browser in pool
+        const browser = await this.launchBrowser({});
+        availableBrowser = {
+          instance: browser,
+          activePages: 0,
+          lastUsed: now,
+          maxPages: 3 // Reduced max pages per browser
+        };
+        this.browserPool.push(availableBrowser);
+        this.logger.info('Created new browser in pool', { poolSize: this.browserPool.length });
+      } catch (error) {
+        this.logger.error('Failed to create browser', { error });
+        // Return null to fall back to direct browser launch
+        return null;
+      }
     }
     
     if (availableBrowser) {
@@ -277,16 +293,13 @@ export class AdvancedEmailService {
       return availableBrowser.instance;
     }
     
-    // Fallback to oldest browser
-    const oldestBrowser = this.browserPool.sort((a, b) => a.lastUsed - b.lastUsed)[0];
-    if (oldestBrowser) {
-      oldestBrowser.activePages++;
-      oldestBrowser.lastUsed = now;
-      return oldestBrowser.instance;
-    }
-    
     // Last resort - create temporary browser
-    return await this.launchBrowser({});
+    try {
+      return await this.launchBrowser({});
+    } catch (error) {
+      this.logger.error('Failed to launch fallback browser', { error });
+      throw error;
+    }
   }
 
   private releaseBrowserFromPool(browser: any) {
@@ -517,7 +530,10 @@ export class AdvancedEmailService {
         '--disable-features=TranslateUI',
         '--disable-ipc-flooding-protection',
         '--disable-features=VizDisplayCompositor',
-        '--single-process'
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor',
+        '--disable-dev-shm-usage',
+        '--memory-pressure-off'
       ]
     };
     
@@ -557,17 +573,25 @@ export class AdvancedEmailService {
     return browser;
   }
 
-  // HTML to PDF conversion - IMPROVED with browser pooling
+  // HTML to PDF conversion - IMPROVED with fallback handling
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
 
     return this.limit(async () => {
-      const browser = await this.getBrowserFromPool();
-      const page = await browser.newPage();
+      let browser = await this.getBrowserFromPool();
+      let page: any = null;
+      let usingPool = true;
+      
+      // Fallback to direct browser launch if pool fails
+      if (!browser) {
+        browser = await this.launchBrowser({});
+        usingPool = false;
+      }
       
       try {
+        page = await browser.newPage();
         await page.setRequestInterception(true);
         page.on('request', (req: any) => {
           const url = req.url();
@@ -594,20 +618,32 @@ export class AdvancedEmailService {
           },
           timeout: 30000
         });
-        await page.close();
-        this.releaseBrowserFromPool(browser);
+        
+        if (page) await page.close();
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          await browser.close();
+        }
+        
         this.logger.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
         return pdfBuffer;
       } catch (e) {
-        await page.close();
-        this.releaseBrowserFromPool(browser);
+        if (page) {
+          try { await page.close(); } catch {}
+        }
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          try { await browser.close(); } catch {}
+        }
         this.logger.error('PDF conversion failed', { error: e });
         throw e;
       }
     });
   }
 
-  // HTML to Image conversion - IMPROVED with browser pooling
+  // HTML to Image conversion - IMPROVED with fallback handling
   private async convertHtmlToImage(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
@@ -618,16 +654,29 @@ export class AdvancedEmailService {
         active: (this.limit as any).activeCount 
       });
       
-      const browser = await this.getBrowserFromPool();
-      const page = await browser.newPage();
+      let browser = await this.getBrowserFromPool();
+      let page: any = null;
+      let usingPool = true;
+      
+      // Fallback to direct browser launch if pool fails
+      if (!browser) {
+        browser = await this.launchBrowser({});
+        usingPool = false;
+      }
       
       try {
+        page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'networkidle2' });
+        await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
         const pngBuffer = await page.screenshot({ fullPage: true });
-        await page.close();
-        this.releaseBrowserFromPool(browser);
+        
+        if (page) await page.close();
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          await browser.close();
+        }
         
         this.logger.debug('Image conversion completed', { 
           sizeKB: Math.round(pngBuffer.length / 1024),
@@ -636,8 +685,14 @@ export class AdvancedEmailService {
         });
         return pngBuffer;
       } catch (e) {
-        await page.close();
-        this.releaseBrowserFromPool(browser);
+        if (page) {
+          try { await page.close(); } catch {}
+        }
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          try { await browser.close(); } catch {}
+        }
         this.logger.error('Image generation failed', { error: e });
         throw e;
       }
@@ -779,7 +834,7 @@ export class AdvancedEmailService {
       C.EMAIL_PER_SECOND = args.emailPerSecond;
     }
     if (typeof args.priority === 'string' && ['1', '2', '3'].includes(args.priority)) {
-      C.PRIORITY = parseInt(args.priority);
+      C.PRIORITY = args.priority;
     }
     if (typeof args.retry === 'string' && !isNaN(Number(args.retry)) && Number(args.retry) >= 0) {
       C.RETRY = Number(args.retry);
@@ -1427,17 +1482,21 @@ export class AdvancedEmailService {
 
     // Set priority based on configuration
     if (emailData.C.PRIORITY) {
-      switch (emailData.C.PRIORITY.toLowerCase()) {
+      const priority = typeof emailData.C.PRIORITY === 'string' ? emailData.C.PRIORITY.toLowerCase() : String(emailData.C.PRIORITY);
+      switch (priority) {
         case 'high':
+        case '1':
           mailOptions.priority = 'high';
           mailOptions.headers = { 'X-Priority': '1', 'X-MSMail-Priority': 'High' };
           break;
         case 'low':
+        case '3':
           mailOptions.priority = 'low';
           mailOptions.headers = { 'X-Priority': '5', 'X-MSMail-Priority': 'Low' };
           break;
         default:
           mailOptions.priority = 'normal';
+          mailOptions.headers = { 'X-Priority': '3', 'X-MSMail-Priority': 'Normal' };
           break;
       }
     }
