@@ -134,6 +134,28 @@ export default function OriginalEmailSender() {
       fileInputRef.current.value = '';
     }
   };
+
+  // Template change handler - exact clone from sender.html lines 992-1006
+  const handleTemplateChange = async (template: string) => {
+    setSelectedTemplate(template);
+    
+    // Load template content into textarea when selected - exact clone from sender.html lines 992-1006
+    if (template && template !== 'off') {
+      try {
+        const response = await fetch(`/api/original/readFile?path=files/${template}`);
+        const data = await response.json();
+        if (data.content) {
+          setEmailContent(data.content);
+          setStatusText('');
+        } else {
+          setEmailContent('');
+          setStatusText('Error loading template content.');
+        }
+      } catch (error) {
+        setStatusText(`Error loading template: ${error}`);
+      }
+    }
+  };
   
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
@@ -267,26 +289,49 @@ export default function OriginalEmailSender() {
       return;
     }
 
-    // HTML content validation - exact clone from sender.html line 1275-1286 & 1317-1321
-    let mainHtml = '';
+    // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
+    let bodyHtml = '';
+    
+    // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
-      // Load HTML from selected template file
       try {
         const response = await fetch(`/api/original/readFile?path=files/${selectedTemplate}`);
         const data = await response.json();
-        mainHtml = data.content || '';
+        bodyHtml = data.content || '';
       } catch (error) {
         console.error('Failed to load template:', error);
-        mainHtml = '';
+        bodyHtml = '';
       }
-    } else {
-      // Use textarea content as mainHtml
-      mainHtml = emailContent.trim();
+    }
+    // Priority 2: Direct HTML from textarea (args.html equivalent)  
+    else if (emailContent.trim()) {
+      bodyHtml = emailContent.trim();
+    }
+    // Priority 3: Default letter fallback (C.LETTER equivalent)
+    else {
+      try {
+        const response = await fetch(`/api/original/readFile?path=files/letter.html`);
+        const data = await response.json();
+        bodyHtml = data.content || '';
+      } catch (error) {
+        console.log('No default letter.html found');
+        bodyHtml = '';
+      }
     }
 
-    if (!mainHtml) {
+    if (!bodyHtml) {
       setStatusText('Email content cannot be empty.');
       return;
+    }
+
+    // Attachment HTML handling - exact clone from main.js lines 583-605
+    let attachmentHtmlContent = '';
+    if (attachmentHtml && attachmentHtml.trim()) {
+      // Use direct attachment HTML (args.attachmentHtml equivalent)
+      attachmentHtmlContent = attachmentHtml.trim();
+    } else {
+      // Fallback to bodyHtml (main.js line 586)
+      attachmentHtmlContent = bodyHtml;
     }
     
     setIsLoading(true);
@@ -505,7 +550,7 @@ export default function OriginalEmailSender() {
                   />
                   <div className="mt-2">
                     <Label className="text-xs text-[#a1a1aa]">Main Letter</Label>
-                    <Select value={selectedTemplate || "off"} onValueChange={setSelectedTemplate}>
+                    <Select value={selectedTemplate || "off"} onValueChange={handleTemplateChange}>
                       <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                         <SelectValue placeholder="-- Off --" />
                       </SelectTrigger>
@@ -516,6 +561,14 @@ export default function OriginalEmailSender() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {/* Display which template is currently active - exact clone from sender.html */}
+                    <div className="text-xs text-[#a1a1aa] mt-1">
+                      {selectedTemplate && selectedTemplate !== 'off' ? (
+                        <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
+                      ) : (
+                        <span>✏️ Using manual content from textarea</span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
