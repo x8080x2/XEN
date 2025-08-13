@@ -654,15 +654,67 @@ export default function OriginalEmailSender() {
                     {recipientCount} recipients
                   </div>
                   <details className="mt-2">
-                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold">Placeholders</summary>
-                    <div className="text-xs text-[#a1a1aa] mt-2 space-y-1">
-                      <div>Available placeholders:</div>
-                      <div className="font-mono text-[10px] space-y-1">
-                        <div>Basic: {'{user}'}, {'{username}'}, {'{email}'}, {'{domain}'}, {'{date}'}, {'{time}'}</div>
-                        <div>Advanced: {'{userupper}'}, {'{userlower}'}, {'{domainbase}'}, {'{initials}'}, {'{userid}'}</div>
-                        <div>Random: {'{randfirst}'}, {'{randlast}'}, {'{randname}'}, {'{randcompany}'}, {'{randdomain}'}, {'{randtitle}'}</div>
-                        <div>Dynamic: {'{hash6}'}, {'{randnum4}'}, {'{hashN}'}, {'{randnumN}'}</div>
-                        <div>NEW: {'{mename}'}, {'{mename3}'}, {'{emailb64}'}, {'{xemail}'}, {'{randomname}'}</div>
+                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 Available Placeholders (Click to expand)</summary>
+                    <div className="text-xs text-[#a1a1aa] mt-3 space-y-3 bg-[#0a0a0f] p-3 rounded border border-[#26262b]">
+                      <div className="space-y-2">
+                        <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
+                        <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
+                          <div><span className="text-green-400">{'{user}'}</span> - Username from email</div>
+                          <div><span className="text-green-400">{'{username}'}</span> - Same as user</div>
+                          <div><span className="text-green-400">{'{email}'}</span> - Full email address</div>
+                          <div><span className="text-green-400">{'{domain}'}</span> - Email domain</div>
+                          <div><span className="text-green-400">{'{date}'}</span> - Current date</div>
+                          <div><span className="text-green-400">{'{time}'}</span> - Current time</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-blue-400 font-semibold">🔧 Advanced Email Placeholders:</div>
+                        <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
+                          <div><span className="text-cyan-400">{'{userupper}'}</span> - Username uppercase</div>
+                          <div><span className="text-cyan-400">{'{userlower}'}</span> - Username lowercase</div>
+                          <div><span className="text-cyan-400">{'{domainbase}'}</span> - Domain without TLD</div>
+                          <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
+                          <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
+                          <div><span className="text-cyan-400">{'{emailb64}'}</span> - Base64 encoded email</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-purple-400 font-semibold">🎲 Random Content Placeholders:</div>
+                        <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
+                          <div><span className="text-purple-300">{'{randfirst}'}</span> - Random first name</div>
+                          <div><span className="text-purple-300">{'{randlast}'}</span> - Random last name</div>
+                          <div><span className="text-purple-300">{'{randname}'}</span> - Random full name</div>
+                          <div><span className="text-purple-300">{'{randcompany}'}</span> - Random company</div>
+                          <div><span className="text-purple-300">{'{randdomain}'}</span> - Random domain</div>
+                          <div><span className="text-purple-300">{'{randtitle}'}</span> - Random job title</div>
+                          <div><span className="text-purple-300">{'{randomname}'}</span> - Alternative random name</div>
+                          <div><span className="text-purple-300">{'{mename}'}</span> - Special name variant</div>
+                          <div><span className="text-purple-300">{'{mename3}'}</span> - 3-char name variant</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="text-orange-400 font-semibold">🔢 Dynamic Generation Placeholders:</div>
+                        <div className="font-mono text-[10px] space-y-1 pl-2">
+                          <div><span className="text-orange-300">{'{hash6}'}</span> - 6-character hash</div>
+                          <div><span className="text-orange-300">{'{randnum4}'}</span> - 4-digit random number</div>
+                          <div><span className="text-orange-300">{'{hashN}'}</span> - N-character hash (e.g., {'{hash12}'})</div>
+                          <div><span className="text-orange-300">{'{randnumN}'}</span> - N-digit number (e.g., {'{randnum8}'})</div>
+                          <div><span className="text-orange-300">{'{randcharN}'}</span> - N random chars (e.g., {'{randchar5}'})</div>
+                          <div><span className="text-orange-300">{'{xemail}'}</span> - Processed email variant</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 p-2 bg-[#1a1a1f] rounded border-l-2 border-[#ef4444]">
+                        <div className="text-[#ef4444] font-semibold text-[10px] mb-1">💡 Pro Tips:</div>
+                        <div className="text-[10px] space-y-1">
+                          <div>• Use placeholders in both subject and email body</div>
+                          <div>• Combine placeholders: "Hi {'{user}'}, your {'{randcompany}'} account..."</div>
+                          <div>• Dynamic lengths work: {'{hash5}'}, {'{randnum10}'}, {'{randchar3}'}</div>
+                          <div>• File names support placeholders: "report_{'{hash6}'}.pdf"</div>
+                        </div>
                       </div>
                     </div>
                   </details>
