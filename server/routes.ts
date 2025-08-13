@@ -5,6 +5,7 @@ import { emailSendRequestSchema } from "@shared/schema";
 import { AdvancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { setupAnalyticsRoutes } from "./routes/analyticsRoutes";
 import { configService } from "./services/configService";
 import multer from "multer";
 import { join } from "path";
@@ -18,6 +19,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+  
+  // Setup advanced analytics routes
+  setupAnalyticsRoutes(app);
 
   // Config loading routes - exact clone from main.js
   app.get('/api/config/load', (req, res) => {

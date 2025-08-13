@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -277,7 +278,9 @@ export default function OriginalEmailSender() {
           proxyHost: config.PROXY_HOST || '',
           proxyPort: config.PROXY_PORT?.toString() || '',
           proxyUser: config.PROXY_USER || '',
-          proxyPass: config.PROXY_PASS || ''
+          proxyPass: config.PROXY_PASS || '',
+          qrForegroundColor: config.QR_FOREGROUND_COLOR || '#000000',
+          qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF'
         });
         
         // Auto-load leads from files/leads.txt - exact clone from main.js line 562
