@@ -207,23 +207,19 @@ export default function OriginalEmailSender() {
           proxyPass: config.PROXY_PASS || ''
         });
         
-        // Auto-load maillist/leads from config files - matching original main.js behavior
-        if (config.MAILLIST && Array.isArray(config.MAILLIST) && config.MAILLIST.length > 0) {
-          const maillistContent = config.MAILLIST.join('\n');
-          setRecipients(maillistContent);
-          console.log(`[Config Load] Auto-loaded ${config.MAILLIST.length} recipients from maillist`);
-        } else {
-          // Try to load from leads.txt if no maillist in config
-          try {
-            const leadsResponse = await fetch('/api/config/loadLeads');
-            const leadsData = await leadsResponse.json();
-            if (leadsData.success && leadsData.leads && leadsData.leads.length > 0) {
-              setRecipients(leadsData.leads.join('\n'));
-              console.log(`[Config Load] Auto-loaded ${leadsData.leads.length} recipients from leads.txt`);
-            }
-          } catch (leadsError) {
+        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
+        try {
+          const leadsResponse = await fetch('/api/config/loadLeads');
+          const leadsData = await leadsResponse.json();
+          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+            setRecipients(leadsData.leads);
+            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
+            console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt`);
+          } else {
             console.log('[Config Load] No leads.txt found, starting with empty recipients');
           }
+        } catch (leadsError) {
+          console.log('[Config Load] Failed to load leads:', leadsError);
         }
         
         // Auto-load letter content if available

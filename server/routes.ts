@@ -8,6 +8,8 @@ import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import { configService } from "./services/configService";
 import multer from "multer";
+import { join } from "path";
+import { readFileSync, existsSync } from "fs";
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -44,9 +46,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Load leads/maillist from files/leads.txt - exact clone from main.js line 562
   app.get('/api/config/loadLeads', (req, res) => {
     try {
-      const { join } = require('path');
-      const { readFileSync, existsSync } = require('fs');
-      
       const leadsPath = join(process.cwd(), 'files', 'leads.txt');
       if (existsSync(leadsPath)) {
         const leadsContent = readFileSync(leadsPath, 'utf-8');
