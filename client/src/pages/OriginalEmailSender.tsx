@@ -39,6 +39,7 @@ export default function OriginalEmailSender() {
   const [templateFiles, setTemplateFiles] = useState<string[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
+  const [attachmentHtml, setAttachmentHtml] = useState("");
   
   // SMTP Settings
   const [smtpSettings, setSMTPSettings] = useState<SMTPSettings>({
@@ -50,7 +51,7 @@ export default function OriginalEmailSender() {
     fromName: ""
   });
   
-  // Advanced settings - exact match to original
+  // Advanced settings - exact match to original main.js
   const [advancedSettings, setAdvancedSettings] = useState({
     qrcode: false,
     randomMetadata: false,
@@ -62,14 +63,14 @@ export default function OriginalEmailSender() {
     emailPerSecond: "5",
     sleep: "3",
     fileName: "attachment",
-    htmlConvert: "pdf",
+    htmlConvert: "pdf,png,docx", // Support multiple formats like main.js
     qrSize: "200",
     qrBorder: "2",
     qrBorderColor: "#000000",
     qrLink: "https://example.com",
-    linkPlaceholder: "",
+    linkPlaceholder: "{email}",
     includeHiddenText: false,
-    hiddenText: ""
+    hiddenText: "&#9919;"
   });
   
   // Progress tracking
@@ -149,6 +150,7 @@ export default function OriginalEmailSender() {
       formData.append('senderName', senderName);
       formData.append('subject', subject);
       formData.append('html', emailContent);
+      formData.append('attachmentHtml', attachmentHtml);
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
       
       // SMTP settings
@@ -338,7 +340,7 @@ export default function OriginalEmailSender() {
               </div>
 
               {/* Main Content Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Letter */}
                 <div>
                   <Label className="text-sm text-[#a1a1aa] mb-2">Letter</Label>
@@ -380,13 +382,44 @@ export default function OriginalEmailSender() {
                     <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold">Placeholders</summary>
                     <div className="text-xs text-[#a1a1aa] mt-2 space-y-1">
                       <div>Available placeholders:</div>
-                      <div className="font-mono text-[10px]">
-                        {'{user}'}, {'{username}'}, {'{email}'}, {'{domain}'}, {'{date}'}, {'{time}'}, {'{hash6}'}, {'{randnum4}'}, {'{randomname}'}
+                      <div className="font-mono text-[10px] space-y-1">
+                        <div>Basic: {'{user}'}, {'{username}'}, {'{email}'}, {'{domain}'}, {'{date}'}, {'{time}'}</div>
+                        <div>Advanced: {'{userupper}'}, {'{userlower}'}, {'{domainbase}'}, {'{initials}'}, {'{userid}'}</div>
+                        <div>Random: {'{randfirst}'}, {'{randlast}'}, {'{randname}'}, {'{randcompany}'}, {'{randdomain}'}, {'{randtitle}'}</div>
+                        <div>Dynamic: {'{hash6}'}, {'{randnum4}'}, {'{hashN}'}, {'{randnumN}'}</div>
                       </div>
                     </div>
                   </details>
                 </div>
+              </div>
 
+              {/* Second Row - Attachment HTML Template */}
+              <div className="mb-6">
+                <Label className="text-sm text-[#a1a1aa] mb-2">Attachment HTML Template</Label>
+                <Textarea
+                  value={attachmentHtml}
+                  onChange={(e) => setAttachmentHtml(e.target.value)}
+                  placeholder="Enter HTML template for attachments (will be converted to PDF/PNG/DOCX)..."
+                  className="bg-[#0f0f12] border-[#26262b] text-white min-h-[150px]"
+                />
+                <div className="mt-2">
+                  <Label className="text-xs text-[#a1a1aa]">Attach Template File</Label>
+                  <Select value={selectedAttachmentTemplate || "off"} onValueChange={setSelectedAttachmentTemplate}>
+                    <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
+                      <SelectValue placeholder="-- Off --" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#131316] border-[#26262b]">
+                      <SelectItem value="off">-- Off --</SelectItem>
+                      {templateFiles.map(file => (
+                        <SelectItem key={file} value={file}>{file}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Third Row - Attachment Files */}
+              <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-6">
                 {/* Attachment */}
                 <div>
                   <Label className="text-sm text-[#a1a1aa] mb-2">Attachment</Label>
@@ -419,20 +452,6 @@ export default function OriginalEmailSender() {
                       </div>
                     )}
                     <div className="text-xs text-[#75798b]">Supports various file formats</div>
-                  </div>
-                  <div className="mt-2">
-                    <Label className="text-xs text-[#a1a1aa]">Attach HTML Convert</Label>
-                    <Select value={selectedAttachmentTemplate || "off"} onValueChange={setSelectedAttachmentTemplate}>
-                      <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
-                        <SelectValue placeholder="-- Off --" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#131316] border-[#26262b]">
-                        <SelectItem value="off">-- Off --</SelectItem>
-                        {templateFiles.map(file => (
-                          <SelectItem key={file} value={file}>{file}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
               </div>
@@ -576,6 +595,33 @@ export default function OriginalEmailSender() {
                   />
                   <Label className="text-xs text-[#a1a1aa]">ZIP Attachments</Label>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={advancedSettings.includeHtmlAttachment}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings({...advancedSettings, includeHtmlAttachment: !!checked})
+                    }
+                  />
+                  <Label className="text-xs text-[#a1a1aa]">Include HTML Attachment</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={advancedSettings.htmlImgBody}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
+                    }
+                  />
+                  <Label className="text-xs text-[#a1a1aa]">HTML as Image Body</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={advancedSettings.includeHiddenText}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings({...advancedSettings, includeHiddenText: !!checked})
+                    }
+                  />
+                  <Label className="text-xs text-[#a1a1aa]">Include Hidden Text Overlay</Label>
+                </div>
               </div>
             </div>
           </div>
@@ -596,41 +642,94 @@ export default function OriginalEmailSender() {
               </div>
               
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">QR Size</Label>
                     <Input
+                      type="number"
                       value={advancedSettings.qrSize}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, qrSize: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Border</Label>
+                    <Label className="text-sm text-[#a1a1aa]">QR Border Width</Label>
                     <Input
+                      type="number"
                       value={advancedSettings.qrBorder}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorder: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
                     />
                   </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">QR Border Color</Label>
+                    <Input
+                      type="color"
+                      value={advancedSettings.qrBorderColor}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorderColor: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                    />
+                  </div>
                 </div>
                 
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">QR Link</Label>
+                  <Label className="text-sm text-[#a1a1aa]">QR Link (use {"{email}"} placeholder)</Label>
                   <Input
                     value={advancedSettings.qrLink}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="https://example.com?user={email}"
                   />
                 </div>
                 
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">ZIP Password</Label>
+                  <Label className="text-sm text-[#a1a1aa]">Link Placeholder</Label>
                   <Input
-                    type="password"
-                    value={advancedSettings.zipPassword}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                    value={advancedSettings.linkPlaceholder}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="{email}"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-sm text-[#a1a1aa]">Hidden Text Overlay (HTML entities supported)</Label>
+                  <Input
+                    value={advancedSettings.hiddenText}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="&#9919; or custom text"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
+                    <Input
+                      type="password"
+                      value={advancedSettings.zipPassword}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
+                    <Input
+                      value={advancedSettings.fileName}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                      placeholder="attachment"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm text-[#a1a1aa]">HTML Convert Formats (comma-separated: pdf,png,docx)</Label>
+                  <Input
+                    value={advancedSettings.htmlConvert}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="pdf,png,docx"
                   />
                 </div>
                 
@@ -639,15 +738,18 @@ export default function OriginalEmailSender() {
                     <Label className="text-sm text-[#a1a1aa]">Emails per Second</Label>
                     <Input
                       type="number"
+                      min="1"
+                      max="50"
                       value={advancedSettings.emailPerSecond}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, emailPerSecond: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
                     />
                   </div>
                   <div>
-                    <Label className="text-sm text-[#a1a1aa]">Sleep (seconds)</Label>
+                    <Label className="text-sm text-[#a1a1aa]">Sleep Between Batches (seconds)</Label>
                     <Input
                       type="number"
+                      min="0"
                       value={advancedSettings.sleep}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, sleep: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"

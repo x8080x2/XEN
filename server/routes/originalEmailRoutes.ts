@@ -1,11 +1,11 @@
 import type { Express } from "express";
-import { OriginalEmailService } from "../services/originalEmailService";
+import { AdvancedEmailService } from "../services/advancedEmailService";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
-  const emailService = new OriginalEmailService();
+  const emailService = new AdvancedEmailService();
   
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {

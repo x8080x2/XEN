@@ -10,7 +10,7 @@ import puppeteer from "puppeteer";
 import pLimit from "p-limit";
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
-const htmlDocx = require('html-docx-js');
+import * as htmlDocx from "html-docx-js";
 
 // Dynamic Placeholder Arrays - exact clone from main.js
 const randFirstNames = ['Daniel', 'Sophia', 'Liam', 'Ava', 'Ethan', 'Olivia', 'Noah', 'Emma'];
@@ -371,7 +371,7 @@ export class AdvancedEmailService {
 
       // Get recipients
       const recipients = Array.isArray(args.recipients) ? args.recipients : 
-                        typeof args.recipients === 'string' ? args.recipients.split('\n').filter(r => r.trim()) : [];
+                        typeof args.recipients === 'string' ? args.recipients.split('\n').filter((r: string) => r.trim()) : [];
       
       if (!recipients.length) {
         throw new Error('No recipients provided');
@@ -431,7 +431,11 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            const qrDataUrl = await QRCode.toDataURL(qrContent, qrOpts) as string;
+            const qrDataUrl = await QRCode.toDataURL(qrContent, {
+              width: qrOpts.width,
+              margin: qrOpts.margin,
+              errorCorrectionLevel: 'H' as any
+            });
             
             // Hidden text overlay - exact clone
             let hiddenOverlay = '';

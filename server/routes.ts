@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailSendRequestSchema } from "@shared/schema";
-import { OriginalEmailService } from "./services/originalEmailService";
+import { AdvancedEmailService } from "./services/advancedEmailService";
 import { PlaceholderService } from "./services/placeholderService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
@@ -11,7 +11,7 @@ import multer from "multer";
 const upload = multer({ dest: 'uploads/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const originalEmailService = new OriginalEmailService();
+  const originalEmailService = new AdvancedEmailService();
   const placeholderService = new PlaceholderService();
   const fileService = new FileService();
   
