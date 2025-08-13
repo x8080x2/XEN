@@ -61,9 +61,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[ConfigService] No leads.txt found, returning empty');
         res.json({ success: true, leads: '' });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load leads:', error);
-      res.status(500).json({ success: false, error: error.message });
+      res.status(500).json({ success: false, error: error.message || 'Failed to load leads' });
     }
   });
 
@@ -102,8 +102,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         settings: validatedData.settings,
       });
 
-      // Start processing emails in background
-      emailService.processEmailJob(job.id).catch(console.error);
+      // Start processing emails in background  
+      originalEmailService.sendMail({
+        recipients: validatedData.recipients,
+        subject: validatedData.subject,
+        html: validatedData.htmlContent,
+        attachments: files?.map(file => ({
+          filename: file.originalname,
+          path: file.path,
+          contentType: file.mimetype,
+        })) || []
+      }).catch(console.error);
 
       res.json({
         jobId: job.id,

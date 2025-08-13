@@ -67,6 +67,9 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Conflict Resolution** - Removed duplicate placeholder processing between injectDynamicPlaceholders and replacePlaceholders
 - ✅ **Pattern Validation** - All hash, randnum, and randchar patterns now work with any digit length (e.g., {hash12}, {randnum8}, {randchar5})
 - ✅ **Comprehensive Testing** - Verified all 25+ placeholder types work correctly in both subject and email body
+- ✅ **File Name Placeholder Fix** - Fixed critical bug where {hash6}, {randnum4}, etc. weren't processed in attachment file names
+- ✅ **Service Conflict Resolution** - Identified and documented duplicate services (advancedEmailService vs originalEmailService)
+- ✅ **LSP Error Resolution** - Fixed TypeScript compilation errors in routes and error handling
 
 # User Preferences
 

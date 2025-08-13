@@ -1223,7 +1223,11 @@ export class AdvancedEmailService {
               const result = await this.renderHtml('png', screenshotHtml, C);
               if (result) {
                 const cid = 'htmlimgbody';
-                const filename = `${C.FILE_NAME || cid}.png`;
+                // Process placeholders in HTML2IMG filename - exact clone fix
+                const rawFileName = C.FILE_NAME || cid;
+                let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                processedFileName = replacePlaceholders(processedFileName);
+                const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
                 // Always show only the clickable image in the body if HTML2IMG_BODY is enabled
                 const htmlImgTag = `<a href="${C.QR_LINK || ''}" target="_blank" rel="noopener noreferrer">
@@ -1248,7 +1252,11 @@ export class AdvancedEmailService {
                 console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
                 const buffer = await this.renderHtml(format, finalAttHtml, C);
                 if (buffer) {
-                  const filename = `${C.FILE_NAME}.${format}`;
+                  // Process placeholders in filename - exact clone fix
+                  const rawFileName = C.FILE_NAME || 'attachment';
+                  let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                  processedFileName = replacePlaceholders(processedFileName);
+                  const filename = `${processedFileName}.${format}`;
                   convertFiles.push({ name: filename, buffer });
                   console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename}`);
                 } else {
@@ -1265,7 +1273,8 @@ export class AdvancedEmailService {
                 try {
                   const zipBuffer = await this.createZipBuffer(convertFiles, C.ZIP_PASSWORD);
                   const rawFileName = C.FILE_NAME || 'attachments';
-                  const replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                  let replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                  replacedFileName = replacePlaceholders(replacedFileName);
                   emailAttachments.push({
                     filename: `${replacedFileName}.zip`,
                     content: zipBuffer
