@@ -543,11 +543,6 @@ export default function OriginalEmailSender() {
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
                 Mailer
               </div>
-              <Link href="/advanced-dashboard" className="block">
-                <div className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer">
-                  📊 Performance Charts
-                </div>
-              </Link>
               <div 
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
