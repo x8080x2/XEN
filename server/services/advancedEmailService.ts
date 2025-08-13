@@ -497,6 +497,12 @@ export class AdvancedEmailService {
     if (typeof args.emailPerSecond === 'number' && args.emailPerSecond > 0) {
       C.EMAIL_PER_SECOND = args.emailPerSecond;
     }
+    if (typeof args.priority === 'string' && ['1', '2', '3'].includes(args.priority)) {
+      C.PRIORITY = parseInt(args.priority);
+    }
+    if (typeof args.retry === 'string' && !isNaN(Number(args.retry)) && Number(args.retry) >= 0) {
+      C.RETRY = Number(args.retry);
+    }
     if (typeof args.zipUse === 'boolean') {
       C.ZIP_USE = args.zipUse;
     }
@@ -562,9 +568,9 @@ export class AdvancedEmailService {
         secure,
         auth: { user, pass },
         pool: true,
-        maxConnections: C.EMAIL_PER_SECOND,
+        maxConnections: C.EMAIL_PER_SECOND || 5,
         maxMessages: 100,
-        rateLimit: C.EMAIL_PER_SECOND
+        rateLimit: C.EMAIL_PER_SECOND || 5
       });
 
       // Accept UI args or fallback to config/disk - exact clone from main.js
@@ -631,6 +637,7 @@ export class AdvancedEmailService {
       // Batch processing - exact clone from main.js lines 1078-1152
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
       const batchSize = C.EMAIL_PER_SECOND || 5;
+      console.log(`[sendMail] Using EMAIL_PER_SECOND: ${batchSize}, SLEEP: ${C.SLEEP}s, PRIORITY: ${C.PRIORITY}, RETRY: ${C.RETRY}`);
       const batches = [];
       for (let i = 0; i < recipients.length; i += batchSize) {
         batches.push(recipients.slice(i, i + batchSize));
