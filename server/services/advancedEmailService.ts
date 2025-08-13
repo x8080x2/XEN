@@ -86,15 +86,7 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
   const names = ['John Smith','Jane Doe','Alex Johnson','Chris Lee','Pat Morgan','Kim Davis','Sam Carter'];
   text = text.replace(/\{randomname\}/g, names[Math.floor(Math.random() * names.length)]);
              
-  // hashN
-  text = text.replace(/\{hash(\d+)\}/gi, (m, n) =>
-    Array.from({ length: +n }, () => Math.random().toString(36)[2]).join('')
-  );
-  
-  // randnumN
-  text = text.replace(/\{randnum(\d+)\}/gi, (m, n) =>
-    Array.from({ length: +n }, () => Math.floor(Math.random() * 10)).join('')
-  );
+  // NOTE: hashN and randnumN are handled by replacePlaceholders() function later
   
   return text;
 }
