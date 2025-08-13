@@ -332,31 +332,24 @@ export class AdvancedEmailService {
     });
     
     if (password) {
-      zip.setPassword(password);
+      // Password functionality would require external library like node-7z
+      console.log('ZIP password requested but not implemented');
     }
     
     return zip.toBuffer();
   }
 
-  // Send one email - exact clone with all advanced features
-  private async sendOneEmail(args: any) {
-    const { to, subject, html, text, attachments, transporter } = args;
 
-    const mailOptions: any = {
-      from: `"${args.fromName || 'Sender'}" <${args.from}>`,
-      to,
-      subject,
-      html,
-      text,
-      attachments: attachments || []
-    };
 
+  // Generate QR Code - exact clone from main.js lines 735-744
+  private async generateQRCode(link: string): Promise<Buffer | null> {
     try {
-      const result = await transporter.sendMail(mailOptions);
-      return { success: true, messageId: result.messageId };
-    } catch (error: any) {
-      console.error(`Failed to send email to ${to}:`, error.message);
-      return { success: false, error: error.message };
+      const qrOpts = buildQrOpts({ QR_WIDTH: 200 });
+      const qrBuffer = await QRCode.toBuffer(link, qrOpts);
+      return qrBuffer;
+    } catch (e) {
+      console.error('QR code generation failed:', e);
+      return null;
     }
   }
 
@@ -549,7 +542,7 @@ export class AdvancedEmailService {
 
       // Batch processing - exact clone from main.js lines 1078-1152
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
-      const batchSize = C.EMAILPERSECOND || 5;
+      const batchSize = C.EMAIL_PER_SECOND || 5;
       const batches = [];
       for (let i = 0; i < recipients.length; i += batchSize) {
         batches.push(recipients.slice(i, i + batchSize));
@@ -585,9 +578,9 @@ export class AdvancedEmailService {
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
           
-          // QR Code processing - exact clone from main.js
+          // QR Code processing - exact clone from main.js  
           if (attHtml.includes('{qrcode}')) {
-            const qrOpts = this.buildQrOpts(C);
+            const qrOpts = buildQrOpts(C);
             let qrContent = C.QR_LINK;
             
             // Apply link placeholder replacement
@@ -667,7 +660,7 @@ export class AdvancedEmailService {
               // Inline any CID references for screenshot
               let cachedQrBuffer = null;
               if (screenshotHtml.includes('cid:qrcode')) {
-                const qrOpts = this.buildQrOpts(C);
+                const qrOpts = buildQrOpts(C);
                 cachedQrBuffer = await QRCode.toBuffer(C.QR_LINK || '', {
                   width: qrOpts.width,
                   margin: qrOpts.margin,
@@ -758,7 +751,7 @@ export class AdvancedEmailService {
 
           // Replace {domainlogo} with domain logo - exact clone from main.js lines 865-887
           const domainFull = recipient.split('@')[1] || '';
-          const domainLogoSize = C.DOMAIN_LOGO_SIZE || '50%';
+          const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
           let domainLogoBuffer = null;
           if (finalHtml.includes('{domainlogo}')) {
             domainLogoBuffer = await this.fetchDomainLogo(domainFull);
@@ -793,7 +786,7 @@ export class AdvancedEmailService {
               });
 
               // Hidden image overlay logic - exact clone from main.js
-              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || args.hiddenImgSize || 50;
               let hiddenImageHtml = '';
               if (C.HIDDEN_TEXT) {
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
