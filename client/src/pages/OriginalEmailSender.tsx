@@ -703,7 +703,28 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-
+                {/* Attachment HTML Template */}
+                <div>
+                  <Label className="text-xs text-[#a1a1aa]">Attachment HTML Template</Label>
+                  <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
+                    <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
+                      <SelectValue placeholder="-- Off --" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#131316] border-[#26262b]">
+                      <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
+                      {templateFiles.map(file => (
+                        <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="text-xs text-[#a1a1aa] mt-1">
+                    {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
+                      <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
+                    ) : (
+                      <span>✏️ No attachment template selected</span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Progress Section */}
