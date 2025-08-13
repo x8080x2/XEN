@@ -673,7 +673,7 @@ export class AdvancedEmailService {
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
           
           // QR Code processing - exact clone from main.js  
-          if (attHtml.includes('{qrcode}')) {
+          if (html.includes('{qrcode}') || attHtml.includes('{qrcode}')) {
             const qrOpts = buildQrOpts(C);
             let qrContent = C.QR_LINK;
             
@@ -700,11 +700,14 @@ export class AdvancedEmailService {
               hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
             }
             
-            attHtml = attHtml.replace(/\{qrcode\}/g,
-              `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                 <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
-                 ${hiddenOverlay}
-               </div>`);
+            const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                             <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
+                             ${hiddenOverlay}
+                           </div>`;
+            
+            // Replace QR code in both email body and attachment HTML
+            html = html.replace(/\{qrcode\}/g, qrHtml);
+            attHtml = attHtml.replace(/\{qrcode\}/g, qrHtml);
           }
 
           // HTML minification - exact clone
@@ -751,19 +754,43 @@ export class AdvancedEmailService {
           if (C.HTML2IMG_BODY) {
             try {
               let screenshotHtml = finalHtml;
-              // Inline any CID references for screenshot
-              let cachedQrBuffer = null;
-              if (screenshotHtml.includes('cid:qrcode')) {
+              
+              // Process QR code for screenshot with recipient-specific content
+              if (screenshotHtml.includes('{qrcode}') || screenshotHtml.includes('cid:qrcode')) {
                 const qrOpts = buildQrOpts(C);
-                cachedQrBuffer = await QRCode.toBuffer(C.QR_LINK || '', {
+                let qrContent = C.QR_LINK;
+                
+                // Apply link placeholder replacement - exact clone from main.js
+                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                }
+                
+                // Add random metadata to QR if enabled
+                if (C.RANDOM_METADATA) {
+                  const rand = crypto.randomBytes(4).toString('hex');
+                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                }
+                
+                const qrDataUrl = await QRCode.toDataURL(qrContent, {
                   width: qrOpts.width,
                   margin: qrOpts.margin,
                   errorCorrectionLevel: 'H' as any
                 });
-              }
-              if (screenshotHtml.includes('cid:qrcode') && cachedQrBuffer) {
-                const dataQr = cachedQrBuffer.toString('base64');
-                screenshotHtml = screenshotHtml.replace(/cid:qrcode/g, `data:image/png;base64,${dataQr}`);
+                
+                // Hidden text overlay - exact clone
+                let hiddenOverlay = '';
+                if (C.HIDDEN_TEXT) {
+                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                }
+                
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
+                                  ${hiddenOverlay}
+                                </div>`;
+                
+                // Replace both {qrcode} placeholders and cid:qrcode references
+                screenshotHtml = screenshotHtml.replace(/\{qrcode\}/g, qrHtml);
+                screenshotHtml = screenshotHtml.replace(/cid:qrcode/g, qrDataUrl);
               }
               if (screenshotHtml.includes('cid:domainlogo')) {
                 const domainFull = recipient.split('@')[1] || '';
