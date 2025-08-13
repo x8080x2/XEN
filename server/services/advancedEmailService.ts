@@ -1048,7 +1048,7 @@ export class AdvancedEmailService {
   // File system methods - exact clone
   async listFiles(folder = 'files') {
     try {
-      const files = readdirSync(folder).filter(f => /\.html$|\.txt$/i.test(f));
+      const files = readdirSync(folder).filter(f => /\.html$|\.htm$/i.test(f));
       return { files };
     } catch (err: any) {
       return { error: err.message, files: [] };
