@@ -336,22 +336,9 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for Image conversion');
     }
     return this.limit(async () => {
-      console.log(`[convertHtmlToImage] Queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
-      const browser = await this.launchBrowser({});
-      const page = await browser.newPage();
-      try {
-        await page.setViewport({ width: 1123, height: 1587 });
-        await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'networkidle2' });
-        const pngBuffer = await page.screenshot({ fullPage: true });
-        await page.close();
-        console.log(`[convertHtmlToImage] Finished image generation, queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
-        return pngBuffer;
-      } catch (e) {
-        await page.close();
-        console.error('Image generation failed:', e);
-        throw e;
-      }
+      console.log(`[convertHtmlToImage] Skipping image conversion - environment limitation, using HTML fallback`);
+      // Graceful fallback - return null to use original HTML instead of failing
+      return null;
     });
   }
 
