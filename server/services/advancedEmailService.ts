@@ -367,13 +367,16 @@ export class AdvancedEmailService {
   }
 
   // HTML to DOCX conversion - exact clone
-  private htmlToDocxStandalone(html: string) {
+  private async htmlToDocxStandalone(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Cannot convert empty HTML to DOCX');
     }
     try {
       console.log('[htmlToDocxStandalone] Starting DOCX conversion...');
-      const docxBuffer = htmlDocx.asBuffer(html);
+      // html-docx-js 0.3.1 uses asBlob() instead of asBuffer()
+      const docxBlob = htmlDocx.asBlob(html);
+      // Convert blob to buffer for compatibility with original main.js logic
+      const docxBuffer = Buffer.from(await docxBlob.arrayBuffer());
       console.log('[htmlToDocxStandalone] DOCX conversion successful');
       return docxBuffer;
     } catch (error) {
