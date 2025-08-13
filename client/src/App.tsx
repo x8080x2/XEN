@@ -4,12 +4,14 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import EmailSender from "@/pages/EmailSender";
+import OriginalEmailSender from "@/pages/OriginalEmailSender";
 import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={EmailSender} />
+      <Route path="/" component={OriginalEmailSender} />
+      <Route path="/legacy" component={EmailSender} />
       <Route component={NotFound} />
     </Switch>
   );

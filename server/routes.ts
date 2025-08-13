@@ -2,17 +2,21 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailSendRequestSchema } from "@shared/schema";
-import { EmailService } from "./services/emailService";
+import { OriginalEmailService } from "./services/originalEmailService";
 import { PlaceholderService } from "./services/placeholderService";
 import { FileService } from "./services/fileService";
+import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const emailService = new EmailService(storage);
+  const originalEmailService = new OriginalEmailService();
   const placeholderService = new PlaceholderService();
   const fileService = new FileService();
+  
+  // Setup original email routes (exact clone functionality)
+  setupOriginalEmailRoutes(app);
 
   // Start email sending job
   app.post("/api/emails/send", upload.any(), async (req, res) => {
