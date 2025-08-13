@@ -304,7 +304,7 @@ export class AdvancedEmailService {
     return this.limit(async () => {
       try {
         console.log('[convertHtmlToPdf] Starting PDF conversion...');
-        const browser = await this.launchBrowser(C);
+        const browser = await this.launchBrowser({});
         const page = await browser.newPage();
         try {
           await page.setRequestInterception(true);
