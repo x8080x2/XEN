@@ -41,11 +41,11 @@ export default function OriginalEmailSender() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
-  
+
   // Attachment template change handler
   const handleAttachmentTemplateChange = async (template: string) => {
     setSelectedAttachmentTemplate(template);
-    
+
     if (template && template !== 'off') {
       try {
         const response = await fetch('/api/original/readFile', {
@@ -69,7 +69,7 @@ export default function OriginalEmailSender() {
       setAttachmentHtml('');
     }
   };
-  
+
   // SMTP Settings
   const [smtpSettings, setSMTPSettings] = useState<SMTPSettings>({
     host: "",
@@ -79,7 +79,7 @@ export default function OriginalEmailSender() {
     fromEmail: "",
     fromName: ""
   });
-  
+
   // Advanced settings - exact match to original main.js
   const [advancedSettings, setAdvancedSettings] = useState({
     qrcode: false,
@@ -116,7 +116,7 @@ export default function OriginalEmailSender() {
     proxyUser: "",
     proxyPass: ""
   });
-  
+
   // Progress tracking
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -124,24 +124,24 @@ export default function OriginalEmailSender() {
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   // Update recipient count when recipients change
   useEffect(() => {
     const lines = recipients.split('\n').filter(line => line.trim() && line.includes('@'));
     setRecipientCount(lines.length);
   }, [recipients]);
-  
+
   // Load templates and logo files on component mount
   const [logoFiles, setLogoFiles] = useState<string[]>([]);
-  
+
   useEffect(() => {
     loadTemplates();
     loadLogoFiles();
   }, []);
-  
+
   const loadTemplates = async () => {
     try {
       const response = await fetch('/api/original/listFiles');
@@ -165,15 +165,15 @@ export default function OriginalEmailSender() {
       console.error('Error loading logo files:', error);
     }
   };
-  
+
   const handleFileSelect = () => {
     fileInputRef.current?.click();
   };
-  
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(e.target.files);
   };
-  
+
   const removeAttachment = () => {
     setSelectedFiles(null);
     if (fileInputRef.current) {
@@ -184,7 +184,7 @@ export default function OriginalEmailSender() {
   // Template change handler - exact clone from sender.html lines 992-1006
   const handleTemplateChange = async (template: string) => {
     setSelectedTemplate(template);
-    
+
     // Load template content into textarea when selected - exact clone from sender.html lines 992-1006
     if (template && template !== 'off') {
       try {
@@ -208,7 +208,7 @@ export default function OriginalEmailSender() {
       }
     }
   };
-  
+
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
@@ -219,10 +219,10 @@ export default function OriginalEmailSender() {
     try {
       const response = await fetch('/api/config/load');
       const data = await response.json();
-      
+
       if (data.success && data.config) {
         const config = data.config;
-        
+
         // Load SMTP settings
         if (config.SMTP) {
           const smtpConfig = {
@@ -234,7 +234,7 @@ export default function OriginalEmailSender() {
             fromName: config.SMTP.fromName || ''
           };
           setSMTPSettings(smtpConfig);
-          
+
           // Auto-set sender email from SMTP config - exact clone from main.js behavior
           if (smtpConfig.fromEmail) {
             setSenderEmail(smtpConfig.fromEmail);
@@ -245,7 +245,7 @@ export default function OriginalEmailSender() {
             console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
           }
         }
-        
+
         // Load advanced settings
         setAdvancedSettings({
           qrcode: !!config.QRCODE,
@@ -282,7 +282,7 @@ export default function OriginalEmailSender() {
           qrForegroundColor: config.QR_FOREGROUND_COLOR || '#000000',
           qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF'
         });
-        
+
         // Auto-load leads from files/leads.txt - exact clone from main.js line 562
         try {
           const leadsResponse = await fetch('/api/config/loadLeads');
@@ -297,19 +297,19 @@ export default function OriginalEmailSender() {
         } catch (leadsError) {
           console.log('[Config Load] Failed to load leads:', leadsError);
         }
-        
+
         // Auto-load letter content if available
         if (config.LETTER_CONTENT) {
           setEmailContent(config.LETTER_CONTENT);
           console.log('[Config Load] Auto-loaded letter content from config');
         }
-        
+
         // Auto-load subject if available
         if (config.SUBJECT) {
           setSubject(config.SUBJECT);
           console.log('[Config Load] Auto-loaded subject from config');
         }
-        
+
         setStatusText('Configuration and maillist loaded automatically');
         setTimeout(() => setStatusText('Ready to send emails'), 2000);
       } else {
@@ -328,16 +328,16 @@ export default function OriginalEmailSender() {
     setStatusText("✓ SMTP settings saved");
     setTimeout(() => setStatusText(""), 3000);
   };
-  
+
   const handleSendEmails = async () => {
     // Validation logic - exact clone from sender.html lines 1307-1321
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
-    
+
     if (!recipientList.length) {
       setStatusText('Please enter at least one recipient.');
       return;
     }
-    
+
     if (!senderEmail.trim()) {
       setStatusText('Sender email is required (from SMTP config).');
       return;
@@ -345,7 +345,7 @@ export default function OriginalEmailSender() {
 
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
-    
+
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
@@ -402,16 +402,16 @@ export default function OriginalEmailSender() {
       // Fallback to bodyHtml (main.js line 586)
       attachmentHtmlContent = bodyHtml;
     }
-    
+
     setIsLoading(true);
     setProgress(0);
     setStatusText("Preparing to send emails...");
     setEmailLogs([]);
     setProgressDetails("");
-    
+
     try {
       const formData = new FormData();
-      
+
       // Add all form data - exact match to original args
       formData.append('senderEmail', senderEmail);
       formData.append('senderName', senderName);
@@ -419,61 +419,61 @@ export default function OriginalEmailSender() {
       formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
-      
+
       // SMTP settings
       formData.append('smtpHost', smtpSettings.host);
       formData.append('smtpPort', smtpSettings.port);
       formData.append('smtpUser', smtpSettings.user);
       formData.append('smtpPass', smtpSettings.pass);
-      
+
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
         formData.append(key, value.toString());
       });
-      
+
       // Add files
       if (selectedFiles) {
         for (let i = 0; i < selectedFiles.length; i++) {
           formData.append('attachments', selectedFiles[i]);
         }
       }
-      
+
       // Use Server-Sent Events for real-time progress
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to start email sending');
       }
-      
+
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      
+
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value);
           const lines = chunk.split('\n');
-          
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                
+
                 if (data.type === 'progress') {
                   const progressData: EmailProgress = data;
                   setEmailLogs(prev => [...prev, progressData]);
-                  
+
                   if (progressData.totalRecipients) {
                     const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
                     setProgress(currentProgress);
                     setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
                   }
-                  
+
                   if (data.status === 'success') {
                     setStatusText(`✓ Email sent to ${data.recipient}`);
                   } else {
@@ -498,14 +498,14 @@ export default function OriginalEmailSender() {
           }
         }
       }
-      
+
     } catch (error: any) {
       setIsLoading(false);
       setStatusText(`Error: ${error.message}`);
       console.error('Email sending error:', error);
     }
   };
-  
+
   const cancelSending = async () => {
     try {
       await fetch('/api/original/pause', { method: 'POST' });
@@ -515,7 +515,7 @@ export default function OriginalEmailSender() {
       console.error('Failed to cancel sending:', error);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
       {/* Window Controls */}
@@ -538,7 +538,7 @@ export default function OriginalEmailSender() {
                 <div className="font-semibold text-white">Closed V6</div>
               </div>
             </div>
-            
+
             <nav className="space-y-2">
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
                 Mailer
@@ -551,7 +551,7 @@ export default function OriginalEmailSender() {
               </div>
             </nav>
           </div>
-          
+
           {/* User Profile */}
           <div className="absolute bottom-4 left-4 right-4">
             <div className="bg-[#131316] border border-[#26262b] rounded-lg p-4">
@@ -669,7 +669,7 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
 
-              
+
 
               {/* Second Row - Attachment Files and HTML */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -908,7 +908,7 @@ export default function OriginalEmailSender() {
                   ×
                 </button>
               </div>
-              
+
               <div className="space-y-6">
                 {/* QR Code Settings Section */}
                 <div>
@@ -942,7 +942,7 @@ export default function OriginalEmailSender() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">QR Code Color (Dark)</Label>
@@ -964,7 +964,7 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm text-[#a1a1aa]">QR Link (use {"{email}"} placeholder)</Label>
                   <Input
@@ -974,7 +974,7 @@ export default function OriginalEmailSender() {
                     placeholder="https://example.com?user={email}"
                   />
                 </div>
-                
+
                 <div>
                   <Label className="text-sm text-[#a1a1aa]">Link Placeholder</Label>
                   <Input
@@ -984,7 +984,7 @@ export default function OriginalEmailSender() {
                     placeholder="{email}"
                   />
                 </div>
-                
+
                 <div>
                   <Label className="text-sm text-[#a1a1aa]">Hidden Text Overlay (HTML entities supported)</Label>
                   <Input
@@ -994,7 +994,7 @@ export default function OriginalEmailSender() {
                     placeholder="&#9919; or custom text"
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
@@ -1015,7 +1015,7 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <Label className="text-sm text-[#a1a1aa]">HTML Convert Formats (comma-separated: html,pdf,png,docx)</Label>
                   <Input
@@ -1115,7 +1115,7 @@ export default function OriginalEmailSender() {
                     </select>
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Proxy Host</Label>
@@ -1135,7 +1135,7 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Proxy User</Label>
@@ -1155,7 +1155,7 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Emails per Second</Label>
@@ -1179,7 +1179,7 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
                     variant="outline"
