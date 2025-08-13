@@ -254,8 +254,38 @@ export default function OriginalEmailSender() {
   };
   
   const handleSendEmails = async () => {
-    if (!recipients.trim() || !emailContent.trim() || !senderEmail.trim()) {
-      alert('Please fill in all required fields');
+    // Validation logic - exact clone from sender.html lines 1307-1321
+    const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
+    
+    if (!recipientList.length) {
+      setStatusText('Please enter at least one recipient.');
+      return;
+    }
+    
+    if (!senderEmail.trim()) {
+      setStatusText('Sender email is required (from SMTP config).');
+      return;
+    }
+
+    // HTML content validation - exact clone from sender.html line 1275-1286 & 1317-1321
+    let mainHtml = '';
+    if (selectedTemplate && selectedTemplate !== 'off') {
+      // Load HTML from selected template file
+      try {
+        const response = await fetch(`/api/original/readFile?path=files/${selectedTemplate}`);
+        const data = await response.json();
+        mainHtml = data.content || '';
+      } catch (error) {
+        console.error('Failed to load template:', error);
+        mainHtml = '';
+      }
+    } else {
+      // Use textarea content as mainHtml
+      mainHtml = emailContent.trim();
+    }
+
+    if (!mainHtml) {
+      setStatusText('Email content cannot be empty.');
       return;
     }
     
@@ -272,7 +302,7 @@ export default function OriginalEmailSender() {
       formData.append('senderEmail', senderEmail);
       formData.append('senderName', senderName);
       formData.append('subject', subject);
-      formData.append('html', emailContent);
+      formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
       
