@@ -365,6 +365,31 @@ export class AdvancedEmailService {
     console.log('Advanced sendMail invoked with args:', args);
     const sendMailStart = Date.now();
     
+    // Load SMTP configuration from config files first - exact clone from main.js lines 656-712
+    const configData = configService.loadConfig();
+    const emailConfig = configService.getEmailConfig();
+    
+    // Auto-apply SMTP sender settings from config - exact clone from main.js behavior
+    if (emailConfig.SMTP && emailConfig.SMTP.fromEmail) {
+      if (!args.senderEmail || args.senderEmail.trim() === '') {
+        args.senderEmail = emailConfig.SMTP.fromEmail;
+        console.log('[AdvancedEmailService] Auto-applied sender email from config:', args.senderEmail);
+      }
+      if (!args.senderName || args.senderName.trim() === '') {
+        args.senderName = emailConfig.SMTP.fromName || '';
+        console.log('[AdvancedEmailService] Auto-applied sender name from config:', args.senderName);
+      }
+      
+      // Auto-apply SMTP settings if not provided - exact clone from main.js
+      if (!args.smtpHost && emailConfig.SMTP.host) {
+        args.smtpHost = emailConfig.SMTP.host;
+        args.smtpPort = emailConfig.SMTP.port || '587';
+        args.smtpUser = emailConfig.SMTP.user;
+        args.smtpPass = emailConfig.SMTP.pass;
+        console.log('[AdvancedEmailService] Auto-applied SMTP settings from config');
+      }
+    }
+    
     // Load and merge configuration - exact clone from main.js  
     const C = { ...defaultConfig };
     

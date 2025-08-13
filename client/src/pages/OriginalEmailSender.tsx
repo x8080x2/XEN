@@ -146,14 +146,25 @@ export default function OriginalEmailSender() {
         
         // Load SMTP settings
         if (config.SMTP) {
-          setSMTPSettings({
+          const smtpConfig = {
             host: config.SMTP.host || '',
             port: config.SMTP.port || '587',
             user: config.SMTP.user || '',
             pass: config.SMTP.pass || '',
             fromEmail: config.SMTP.fromEmail || '',
             fromName: config.SMTP.fromName || ''
-          });
+          };
+          setSMTPSettings(smtpConfig);
+          
+          // Auto-set sender email from SMTP config - exact clone from main.js behavior
+          if (smtpConfig.fromEmail) {
+            setSenderEmail(smtpConfig.fromEmail);
+            console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
+          }
+          if (smtpConfig.fromName) {
+            setSenderName(smtpConfig.fromName);
+            console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
+          }
         }
         
         // Load advanced settings
