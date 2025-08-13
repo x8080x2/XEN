@@ -60,7 +60,7 @@ export function setupOriginalEmailRoutes(app: Express) {
         htmlImgBody: req.body.htmlImgBody === 'true' || req.body.htmlImgBody === true,
         randomMetadata: req.body.randomMetadata === 'true' || req.body.randomMetadata === true,
         minifyHtml: req.body.minifyHtml === 'true' || req.body.minifyHtml === true,
-        includeHtmlAttachment: req.body.includeHtmlAttachment === 'true' || req.body.includeHtmlAttachment === true,
+
         emailPerSecond: parseInt(req.body.emailPerSecond) || 5,
         zipUse: req.body.zipUse === 'true' || req.body.zipUse === true,
         zipPassword: req.body.zipPassword,

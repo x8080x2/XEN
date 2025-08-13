@@ -150,13 +150,13 @@ const defaultConfig = {
   HTML2IMG_BODY: false,
   RANDOM_METADATA: false,
   MINIFY_HTML: false,
-  INCLUDE_HTML_ATTACHMENT: false,
+
   SLEEP: 3,
   EMAIL_PER_SECOND: 5,
   ZIP_USE: false,
   ZIP_PASSWORD: '',
   FILE_NAME: 'attachment',
-  HTML_CONVERT: ['pdf'], // pdf, png, docx
+  HTML_CONVERT: ['html', 'pdf', 'png', 'docx'], // html, pdf, png, docx
   INCLUDE_HIDDEN_TEXT: false,
   HIDDEN_TEXT: '',
   DOMAIN_LOGO_SIZE: '70%',
