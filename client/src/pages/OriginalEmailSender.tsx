@@ -40,6 +40,7 @@ export default function OriginalEmailSender() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
+  const [showAttachmentPreview, setShowAttachmentPreview] = useState(false);
   
   // Attachment template change handler
   const handleAttachmentTemplateChange = async (template: string) => {
@@ -705,13 +706,75 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML */}
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment HTML</Label>
-                  <Textarea
-                    value={attachmentHtml}
-                    onChange={(e) => setAttachmentHtml(e.target.value)}
-                    placeholder="Enter attachment HTML content here..."
-                    className="bg-[#0f0f12] border-[#26262b] text-white min-h-[120px]"
-                  />
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm text-[#a1a1aa]">Attachment HTML</Label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAttachmentPreview(!showAttachmentPreview)}
+                      className="h-6 text-xs bg-[#26262b] border-[#3f3f46] text-white hover:bg-[#3f3f46]"
+                    >
+                      {showAttachmentPreview ? 'Hide Preview' : 'Preview'}
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {/* HTML Content Input */}
+                    <Textarea
+                      value={attachmentHtml}
+                      onChange={(e) => setAttachmentHtml(e.target.value)}
+                      placeholder="Enter attachment HTML content here..."
+                      className="bg-[#0f0f12] border-[#26262b] text-white min-h-[120px]"
+                    />
+                    
+                    {/* HTML Preview */}
+                    {showAttachmentPreview && attachmentHtml.trim() && (
+                      <div className="bg-[#0f0f12] border border-[#26262b] rounded-md p-3">
+                        <div className="text-xs text-[#a1a1aa] mb-2 flex items-center gap-2">
+                          <span>🔍 HTML Preview:</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              const newWindow = window.open('', '_blank', 'width=800,height=600');
+                              if (newWindow) {
+                                newWindow.document.write(`
+                                  <!DOCTYPE html>
+                                  <html>
+                                  <head>
+                                    <meta charset="utf-8">
+                                    <title>HTML Preview</title>
+                                  </head>
+                                  <body>
+                                    ${attachmentHtml}
+                                  </body>
+                                  </html>
+                                `);
+                                newWindow.document.close();
+                              }
+                            }}
+                            className="h-5 text-xs text-[#60a5fa] hover:text-[#93c5fd] p-1"
+                          >
+                            📤 Open in New Tab
+                          </Button>
+                        </div>
+                        <div 
+                          className="bg-white rounded border max-h-[200px] overflow-auto p-2"
+                          style={{ minHeight: '100px' }}
+                          dangerouslySetInnerHTML={{ __html: attachmentHtml }}
+                        />
+                      </div>
+                    )}
+                    
+                    {showAttachmentPreview && !attachmentHtml.trim() && (
+                      <div className="bg-[#0f0f12] border border-[#26262b] rounded-md p-3 text-center">
+                        <div className="text-xs text-[#75798b]">
+                          💡 Enter HTML content above to see the preview
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="mt-2">
                     <Label className="text-xs text-[#a1a1aa]">Attachment Template</Label>
                     <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
