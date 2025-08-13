@@ -250,7 +250,14 @@ export class AdvancedEmailService {
           '--disable-images',
           '--disable-javascript',
           '--disable-gpu',
-          '--no-first-run'
+          '--no-first-run',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-ipc-flooding-protection',
+          '--disable-features=VizDisplayCompositor',
+          '--single-process'
         ]
       };
       
