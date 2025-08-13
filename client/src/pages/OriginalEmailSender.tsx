@@ -703,37 +703,7 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-                {/* Attachment HTML */}
-                <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment HTML</Label>
-                  <Textarea
-                    value={attachmentHtml}
-                    onChange={(e) => setAttachmentHtml(e.target.value)}
-                    placeholder="Enter attachment HTML content here..."
-                    className="bg-[#0f0f12] border-[#26262b] text-white min-h-[120px]"
-                  />
-                  <div className="mt-2">
-                    <Label className="text-xs text-[#a1a1aa]">Attachment Template</Label>
-                    <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
-                      <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
-                        <SelectValue placeholder="-- Off --" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#131316] border-[#26262b]">
-                        <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
-                        {templateFiles.map(file => (
-                          <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <div className="text-xs text-[#a1a1aa] mt-1">
-                      {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
-                        <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
-                      ) : (
-                        <span>✏️ Using manual attachment HTML from textarea</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+
               </div>
 
               {/* Progress Section */}
