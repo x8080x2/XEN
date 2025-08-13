@@ -906,55 +906,59 @@ export default function OriginalEmailSender() {
                 </button>
               </div>
               
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Size</Label>
-                    <Input
-                      type="number"
-                      value={advancedSettings.qrSize}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrSize: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
+              <div className="space-y-6">
+                {/* QR Code Settings Section */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-3">🔲 QR Code Settings</h3>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">QR Size (px)</Label>
+                      <Input
+                        type="number"
+                        value={advancedSettings.qrSize}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrSize: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">QR Border Width (px)</Label>
+                      <Input
+                        type="number"
+                        value={advancedSettings.qrBorder}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorder: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">QR Border Color</Label>
+                      <Input
+                        type="color"
+                        value={advancedSettings.qrBorderColor}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorderColor: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Border Width</Label>
-                    <Input
-                      type="number"
-                      value={advancedSettings.qrBorder}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorder: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Border Color</Label>
-                    <Input
-                      type="color"
-                      value={advancedSettings.qrBorderColor}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorderColor: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
-                    />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Foreground Color</Label>
-                    <Input
-                      type="color"
-                      value={advancedSettings.qrForegroundColor || '#000000'}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrForegroundColor: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">QR Background Color</Label>
-                    <Input
-                      type="color"
-                      value={advancedSettings.qrBackgroundColor || '#FFFFFF'}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, qrBackgroundColor: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
-                    />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">QR Code Color (Dark)</Label>
+                      <Input
+                        type="color"
+                        value={advancedSettings.qrForegroundColor || '#000000'}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrForegroundColor: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">QR Background Color (Light)</Label>
+                      <Input
+                        type="color"
+                        value={advancedSettings.qrBackgroundColor || '#FFFFFF'}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrBackgroundColor: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                      />
+                    </div>
                   </div>
                 </div>
                 
@@ -1019,36 +1023,40 @@ export default function OriginalEmailSender() {
                   />
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Domain Logo Size</Label>
-                    <Input
-                      value={advancedSettings.domainLogoSize}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                      placeholder="50%"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Border Style</Label>
-                    <select 
-                      value={advancedSettings.borderStyle}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, borderStyle: e.target.value})}
-                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
-                    >
-                      <option value="solid">Solid</option>
-                      <option value="dashed">Dashed</option>
-                      <option value="dotted">Dotted</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Border Color</Label>
-                    <Input
-                      type="color"
-                      value={advancedSettings.borderColor}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, borderColor: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white h-10"
-                    />
+                {/* Domain Logo Settings Section */}
+                <div>
+                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo Settings</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">Logo Size</Label>
+                      <Input
+                        value={advancedSettings.domainLogoSize}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white"
+                        placeholder="50%"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">Logo Border Style</Label>
+                      <select 
+                        value={advancedSettings.borderStyle}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, borderStyle: e.target.value})}
+                        className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                      >
+                        <option value="solid">Solid</option>
+                        <option value="dashed">Dashed</option>
+                        <option value="dotted">Dotted</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-[#a1a1aa]">Logo Border Color</Label>
+                      <Input
+                        type="color"
+                        value={advancedSettings.borderColor}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, borderColor: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                      />
+                    </div>
                   </div>
                 </div>
 

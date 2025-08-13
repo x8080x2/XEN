@@ -482,23 +482,31 @@ export class AdvancedEmailService {
     }
   }
 
-  // QR Code generation - exact clone from main.js lines 713-750 (Fixed)
-  private async generateQRCodeInternal(link: string): Promise<Buffer | null> {
+  // QR Code generation with colors from merged config (Fixed)
+  private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
     
     try {
-      // Fix: Proper QRCode type handling with configurable colors
-      const configData = configService.getEmailConfig();
+      // Use merged configuration colors
+      const foregroundColor = C.QR_FOREGROUND_COLOR || '#000000';
+      const backgroundColor = C.QR_BACKGROUND_COLOR || '#FFFFFF';
+      
+      console.log(`[QR Generation] Using colors - Foreground: ${foregroundColor}, Background: ${backgroundColor}`);
+      
       const buffer = await QRCode.toBuffer(link, {
-        width: 200,
+        width: C.QR_WIDTH || 200,
         margin: 4,
         errorCorrectionLevel: 'H' as 'L' | 'M' | 'Q' | 'H',
         color: {
-          dark: configData.QR_FOREGROUND_COLOR || '#000000',
-          light: configData.QR_BACKGROUND_COLOR || '#FFFFFF'
+          dark: foregroundColor,
+          light: backgroundColor
         }
       });
-      this.logger.debug('Generated QR code', { link: link.substring(0, 50) });
+      this.logger.debug('Generated QR code with custom colors', { 
+        link: link.substring(0, 50),
+        foregroundColor,
+        backgroundColor
+      });
       return buffer;
     } catch (error) {
       this.logger.error('Error generating QR code', { error, link });
@@ -764,11 +772,22 @@ export class AdvancedEmailService {
 
 
 
-  // Generate QR Code - exact clone from main.js lines 735-744
+  // Generate QR Code with config colors - exact clone from main.js lines 735-744
   private async generateQRCode(link: string): Promise<Buffer | null> {
+    const emailConfig = configService.getEmailConfig();
+    const foregroundColor = emailConfig.QR_FOREGROUND_COLOR || '#000000';
+    const backgroundColor = emailConfig.QR_BACKGROUND_COLOR || '#FFFFFF';
+    
     try {
-      const qrOpts = buildQrOpts({ QR_WIDTH: 200 });
-      const qrBuffer = await QRCode.toBuffer(link, qrOpts);
+      const qrBuffer = await QRCode.toBuffer(link, {
+        width: emailConfig.QR_WIDTH || 200,
+        margin: 4,
+        errorCorrectionLevel: 'H' as 'L' | 'M' | 'Q' | 'H',
+        color: {
+          dark: foregroundColor,
+          light: backgroundColor
+        }
+      });
       return qrBuffer;
     } catch (e) {
       console.error('QR code generation failed:', e);
@@ -813,7 +832,7 @@ export class AdvancedEmailService {
     if (emailConfig) {
       Object.keys(emailConfig).forEach(key => {
         if (key !== 'SMTP' && emailConfig[key] !== undefined) {
-          C[key] = emailConfig[key];
+          (C as any)[key] = emailConfig[key];
         }
       });
     }
@@ -1290,7 +1309,7 @@ export class AdvancedEmailService {
 
           // QR Code replacement with CID - exact clone from main.js lines 917-948
           if (finalHtml.includes('{qrcode}')) {
-            const qrBuffer = await this.generateQRCode(C.QR_LINK);
+            const qrBuffer = await this.generateQRCodeInternal(C.QR_LINK, C);
             if (qrBuffer) {
               emailAttachments.push({
                 filename: 'qrcode.png',
@@ -1328,10 +1347,16 @@ export class AdvancedEmailService {
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
               }
               
+              // Use QR border color if specified, otherwise use general border color
+              const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+              const borderStyle = C.BORDER_STYLE || 'solid';
+              
+              console.log(`[QR Border] Using border: ${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}`);
+              
               finalHtml = finalHtml.replace(/\{qrcode\}/g,
                 `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                    <a href="${C.QR_LINK}" target="_blank" rel="noopener noreferrer">
-                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
+                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                    </a>
                    ${hiddenImageHtml}
                  </div>`
