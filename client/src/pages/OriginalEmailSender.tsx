@@ -135,6 +135,11 @@ export default function OriginalEmailSender() {
     }
   };
   
+  // Auto-load configuration on startup - exact clone from main.js line 308
+  useEffect(() => {
+    loadConfigFromFiles();
+  }, []); // Run once on component mount
+
   // Load configuration from files - exact clone from main.js
   const loadConfigFromFiles = async () => {
     try {
@@ -202,8 +207,8 @@ export default function OriginalEmailSender() {
           proxyPass: config.PROXY_PASS || ''
         });
         
-        setStatusText('Configuration loaded from files successfully');
-        setTimeout(() => setStatusText(''), 3000);
+        setStatusText('Configuration loaded automatically');
+        setTimeout(() => setStatusText('Ready to send emails'), 2000);
       } else {
         setStatusText('Failed to load configuration');
       }

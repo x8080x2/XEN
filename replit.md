@@ -12,6 +12,9 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Priority Settings** - Low/Normal/High priority support in email headers
 - ✅ **Config File System** - setup.ini and smtp.ini loading with ConfigService
 - ✅ **Complete UI Coverage** - All missing form fields added (proxy, retry, borders, etc.)
+- ✅ **Automatic Config Loading** - Config loads automatically on startup (main.js line 308)
+- ✅ **SMTP Auto-Population** - Sender email/name auto-fills from config files
+- ✅ **Backend Auto-Application** - Email service automatically applies config SMTP settings
 - ✅ **100% Logic Preservation** - Exact cloning of original Electron app functionality
 
 # User Preferences
