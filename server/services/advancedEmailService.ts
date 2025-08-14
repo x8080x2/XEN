@@ -1100,7 +1100,7 @@ export class AdvancedEmailService {
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
           
-          // QR Code processing - exact clone from main.js  
+          // QR Code processing for inline HTML - Process QR codes ALWAYS when placeholder exists
           if (html.includes('{qrcode}') || attHtml.includes('{qrcode}')) {
             const qrOpts = buildQrOpts(C);
             let qrContent = C.QR_LINK;
@@ -1116,26 +1116,65 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            const qrDataUrl = await QRCode.toDataURL(qrContent, {
-              width: qrOpts.width,
-              margin: qrOpts.margin,
-              errorCorrectionLevel: 'H' as any
-            });
-            
-            // Hidden text overlay - exact clone
-            let hiddenOverlay = '';
-            if (C.HIDDEN_TEXT) {
-              hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+            // Generate QR code with configured colors
+            const qrBuffer = await this.generateQRCodeInternal(qrContent, C);
+            if (qrBuffer) {
+              // Create data URL from buffer for inline embedding
+              const qrDataUrl = `data:image/png;base64,${qrBuffer.toString('base64')}`;
+              
+              // Hidden text/image overlay logic
+              let hiddenOverlay = '';
+              
+              // Load hidden image file from files/logo directory if specified
+              let imgBuf: Buffer | null = null;
+              try {
+                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                  const logoDir = join('files', 'logo');
+                  const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                  if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                    imgBuf = readFileSync(candidatePath);
+                    this.logger.debug('Hidden image loaded for inline QR', { path: candidatePath });
+                  }
+                }
+              } catch (err) {
+                this.logger.warn('Error loading hidden image file for inline QR', { error: err });
+              }
+              
+              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+              const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+              
+              if (hasHiddenImage && imgBuf) {
+                const base64Img = imgBuf.toString('base64');
+                hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+              } else if (C.HIDDEN_TEXT) {
+                hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+              }
+              
+              // Use configured border styles
+              const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+              const borderStyle = C.BORDER_STYLE || 'solid';
+              
+              console.log(`[QR Inline] Using border: ${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}`);
+              
+              const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                               <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                 <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                               </a>
+                               ${hiddenOverlay}
+                             </div>`;
+              
+              // Replace QR code in both email body and attachment HTML
+              html = html.replace(/\{qrcode\}/g, qrHtml);
+              attHtml = attHtml.replace(/\{qrcode\}/g, qrHtml);
+              
+              console.log('[QR Inline] Successfully processed QR code for regular HTML email');
+            } else {
+              // Fallback if QR generation fails
+              const fallbackHtml = '<span style="color:#888;font-size:14px;">[QR code unavailable]</span>';
+              html = html.replace(/\{qrcode\}/g, fallbackHtml);
+              attHtml = attHtml.replace(/\{qrcode\}/g, fallbackHtml);
+              console.log('[QR Inline] QR generation failed, using fallback');
             }
-            
-            const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                             <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
-                             ${hiddenOverlay}
-                           </div>`;
-            
-            // Replace QR code in both email body and attachment HTML
-            html = html.replace(/\{qrcode\}/g, qrHtml);
-            attHtml = attHtml.replace(/\{qrcode\}/g, qrHtml);
           }
 
           // HTML minification - exact clone
