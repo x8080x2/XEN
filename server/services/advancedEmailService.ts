@@ -166,6 +166,7 @@ const defaultConfig = {
   RANDOM_METADATA: false,
   MINIFY_HTML: false,
   QRCODE: false,
+  CALENDAR_MODE: false,
 
   SLEEP: 3,
   EMAIL_PER_SECOND: 5,
@@ -919,6 +920,15 @@ export class AdvancedEmailService {
       C.QRCODE = args.qrcode;
     }
     
+    // Calendar Mode boolean toggle - Fix string to boolean conversion
+    if (typeof args.calendarMode === 'boolean') {
+      C.CALENDAR_MODE = args.calendarMode;
+    } else if (args.calendarMode === 'true' || args.calendarMode === true) {
+      C.CALENDAR_MODE = true;
+    } else {
+      C.CALENDAR_MODE = false;
+    }
+    
     // Override hidden-text overlay from UI if provided - exact clone
     C.HIDDEN_TEXT = args.includeHiddenText
       ? (typeof args.hiddenText === 'string' ? args.hiddenText : C.HIDDEN_TEXT)
@@ -1384,6 +1394,52 @@ export class AdvancedEmailService {
               );
             } else {
               finalHtml = finalHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+            }
+          }
+
+          // Calendar Mode - Generate .ics file if enabled
+          if (C.CALENDAR_MODE) {
+            try {
+              const eventStart = new Date();
+              eventStart.setHours(eventStart.getHours() + 1); // Event starts 1 hour from now
+              const eventEnd = new Date();
+              eventEnd.setHours(eventEnd.getHours() + 2); // Event ends 2 hours from now
+              
+              const formatDate = (date: Date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+              };
+              
+              const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Email Marketing//Calendar Event//EN
+BEGIN:VEVENT
+UID:${crypto.randomBytes(16).toString('hex')}@emailmarketing.com
+DTSTAMP:${formatDate(new Date())}
+DTSTART:${formatDate(eventStart)}
+DTEND:${formatDate(eventEnd)}
+SUMMARY:${dynamicSubject || 'Calendar Event'}
+DESCRIPTION:${text.replace(/\n/g, '\\n')}
+ORGANIZER;CN=${fromName}:MAILTO:${fromEmail}
+ATTENDEE;CN=${recipient}:MAILTO:${recipient}
+STATUS:CONFIRMED
+SEQUENCE:0
+BEGIN:VALARM
+TRIGGER:-PT15M
+ACTION:DISPLAY
+DESCRIPTION:Reminder
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+              emailAttachments.push({
+                filename: 'event.ics',
+                content: Buffer.from(icsContent, 'utf8'),
+                contentType: 'text/calendar'
+              });
+              
+              console.log('[CALENDAR_MODE] Added .ics calendar invitation');
+            } catch (calendarError) {
+              console.error('[CALENDAR_MODE] Error generating calendar invitation:', calendarError);
             }
           }
 
