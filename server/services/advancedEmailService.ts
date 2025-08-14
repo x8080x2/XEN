@@ -1146,7 +1146,7 @@ export class AdvancedEmailService {
                 console.log(`[Single Method] Applied text overlay: ${C.HIDDEN_TEXT}`);
               }
               
-              // Step 4: Replace QR placeholder (main.js lines 937-943)
+              // Step 4: Replace QR placeholder - use recipient-specific qrContent (main.js lines 937-943)
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
@@ -1158,6 +1158,8 @@ export class AdvancedEmailService {
                    ${hiddenImageHtml}
                  </div>`
               );
+              
+              console.log(`[Single Method] QR replacement completed with overlay for ${recipient}`);
               
               console.log(`[Single Method] QR processing completed - main.js approach`);
             } else {
