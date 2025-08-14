@@ -934,6 +934,65 @@ export default function OriginalEmailSender() {
               </div>
             </div>
 
+            {/* HTML Convert Settings - Moved to Front */}
+            <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
+              <h3 className="text-lg font-medium text-white mb-4">📄 HTML Convert Settings</h3>
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label className="text-sm text-[#a1a1aa]">Convert Formats (comma-separated: html,pdf,png,docx)</Label>
+                  <Input
+                    value={advancedSettings.htmlConvert}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="html,pdf,png,docx"
+                  />
+                  <p className="text-xs text-[#6b7280] mt-1">
+                    Converts HTML template to attachments. Available formats: html, pdf, png, docx
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
+                    <Input
+                      value={advancedSettings.fileName}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                      placeholder="attachment"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
+                    <Input
+                      type="password"
+                      value={advancedSettings.zipPassword}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={advancedSettings.zipUse}
+                      onCheckedChange={(checked) => 
+                        setAdvancedSettings({...advancedSettings, zipUse: !!checked})
+                      }
+                    />
+                    <Label className="text-xs text-[#a1a1aa]">ZIP Attachments</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={advancedSettings.htmlImgBody}
+                      onCheckedChange={(checked) => 
+                        setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
+                      }
+                    />
+                    <Label className="text-xs text-[#a1a1aa]">HTML as Image Body</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Advanced Settings */}
             <div className="mt-4 mb-8 bg-black rounded-xl p-4 border border-[#26262b]">
               <div className="flex flex-wrap items-center gap-6">
@@ -954,7 +1013,7 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">Randomize Metadata</Label>
+                  <Label className="text-xs text-[#a1a1aa]">Random Metadata</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -964,25 +1023,6 @@ export default function OriginalEmailSender() {
                     }
                   />
                   <Label className="text-xs text-[#a1a1aa]">Minify HTML</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.zipUse}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings({...advancedSettings, zipUse: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[#a1a1aa]">ZIP Attachments</Label>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.htmlImgBody}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[#a1a1aa]">HTML as Image Body</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
