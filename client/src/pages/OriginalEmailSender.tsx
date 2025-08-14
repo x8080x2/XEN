@@ -569,7 +569,7 @@ export default function OriginalEmailSender() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6">
+        <div className="flex-1 p-6 overflow-y-auto max-h-screen">
           <div className="max-w-7xl mx-auto">
             <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
               {/* Sender Email, Name, Subject Row */}
@@ -862,7 +862,7 @@ export default function OriginalEmailSender() {
               )}
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-4 sticky bottom-0 bg-[#131316] pt-4">
+              <div className="flex justify-end gap-4 mt-6">
                 <Button
                   onClick={handleSendEmails}
                   disabled={isLoading}
@@ -935,7 +935,7 @@ export default function OriginalEmailSender() {
             </div>
 
             {/* Advanced Settings */}
-            <div className="mt-4 bg-black rounded-xl p-4 border border-[#26262b]">
+            <div className="mt-4 mb-8 bg-black rounded-xl p-4 border border-[#26262b]">
               <div className="flex flex-wrap items-center gap-6">
                 <span className="text-sm text-[#a1a1aa] font-semibold">Checkbox Settings:</span>
                 <div className="flex items-center gap-2">
