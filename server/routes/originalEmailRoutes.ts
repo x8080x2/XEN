@@ -189,12 +189,6 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
   
-  // Cleanup on server shutdown
-  process.on('SIGTERM', () => {
-    advancedEmailService.cleanup();
-  });
-  
-  process.on('SIGINT', () => {
-    advancedEmailService.cleanup();
-  });
+  // Note: Cleanup handlers should be registered once in the main server file
+  // Removed duplicate process handlers to prevent conflicts
 }

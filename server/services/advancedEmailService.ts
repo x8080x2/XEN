@@ -234,6 +234,7 @@ class Logger {
 }
 
 export class AdvancedEmailService {
+  private static instance: AdvancedEmailService | null = null;
   private browserPool: BrowserPool[] = [];
   private isPaused = false;
   private limit = pLimit(3); // Concurrency control
@@ -261,9 +262,15 @@ export class AdvancedEmailService {
   };
 
   constructor() {
+    if (AdvancedEmailService.instance) {
+      this.logger.warn('Multiple AdvancedEmailService instances detected! Using existing instance.');
+      return AdvancedEmailService.instance;
+    }
+    
     this.logger.info('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
+    AdvancedEmailService.instance = this;
   }
 
   // Improvement 1: Browser Pool Management (Fixed connection issues)

@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { emailSendRequestSchema } from "@shared/schema";
-import { AdvancedEmailService } from "./services/advancedEmailService";
+import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 
@@ -14,9 +14,9 @@ import { readFileSync, existsSync } from "fs";
 const upload = multer({ dest: 'uploads/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  const emailService = new AdvancedEmailService();
+  const emailService = advancedEmailService; // Using the singleton instance
   const fileService = new FileService();
-  
+
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
 
@@ -131,13 +131,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { jobId } = req.params;
       const job = await storage.getEmailJob(jobId);
-      
+
       if (!job) {
         return res.status(404).json({ error: "Job not found" });
       }
 
       const logs = await storage.getEmailLogsByJob(jobId);
-      
+
       res.json({
         id: job.id,
         status: job.status,
@@ -172,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/html/process", async (req, res) => {
     try {
       const { htmlContent, recipient, settings } = req.body;
-      
+
       if (!htmlContent || !recipient) {
         return res.status(400).json({ error: "HTML content and recipient required" });
       }
