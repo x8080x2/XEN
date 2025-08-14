@@ -939,10 +939,10 @@ export default function OriginalEmailSender() {
                     value={advancedSettings.htmlConvert}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="html,pdf,png,docx"
+                    placeholder="pdf"
                   />
-                  <p className="text-xs text-[#6b7280] mt-1">
-                    Converts HTML template to attachments. Available formats: html, pdf, png, docx
+                  <p className="text-xs text-[red] mt-1">
+                    🍽️ Converts HTML  to PDF and More
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -982,7 +982,7 @@ export default function OriginalEmailSender() {
                         setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
                       }
                     />
-                    <Label className="text-xs text-[#ffa500]">⚠️ HTML as Image Body (May hurt delivery)</Label>
+                    <Label className="text-xs text-[#ffa500]">🌫️ HTML as Image Body </Label>
                   </div>
                 </div>
               </div>
@@ -999,7 +999,7 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, qrcode: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">QR Code</Label>
+                  <Label className="text-xs text-[red]">🫐 QR Code</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -1008,7 +1008,7 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#ffa500]">⚠️ Random Metadata (May hurt delivery)</Label>
+                  <Label className="text-xs text-[blue]"> 🍬 Random Metadata (May hurt delivery)</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
