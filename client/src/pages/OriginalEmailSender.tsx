@@ -114,7 +114,8 @@ export default function OriginalEmailSender() {
     proxyHost: "",
     proxyPort: "",
     proxyUser: "",
-    proxyPass: ""
+    proxyPass: "",
+    calendarMode: false // Added calendar mode
   });
 
   // Progress tracking
@@ -280,7 +281,8 @@ export default function OriginalEmailSender() {
           proxyUser: config.PROXY_USER || '',
           proxyPass: config.PROXY_PASS || '',
           qrForegroundColor: config.QR_FOREGROUND_COLOR || '#000000',
-          qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF'
+          qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF',
+          calendarMode: !!config.CALENDAR_MODE // Load calendar mode
         });
 
         // Auto-load leads from files/leads.txt - exact clone from main.js line 562
@@ -801,11 +803,11 @@ export default function OriginalEmailSender() {
                       </div>
                       <Progress value={progress} className="h-3" />
                     </div>
-                    
+
                     <div className="text-sm text-[#a1a1aa] mb-3 p-2 bg-[#0f0f12] rounded border border-[#26262b]">
                       {progressDetails || 'Preparing to send...'}
                     </div>
-                    
+
                     <div className="bg-[#0f0f12] border border-[#26262b] rounded-lg overflow-hidden">
                       <div className="bg-[#131316] px-3 py-2 border-b border-[#26262b]">
                         <span className="text-xs font-semibold text-[#a1a1aa]">📋 LIVE EMAIL LOG</span>
