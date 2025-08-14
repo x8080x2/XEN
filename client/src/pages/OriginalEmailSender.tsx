@@ -533,11 +533,11 @@ export default function OriginalEmailSender() {
         <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-[#ef4444] text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                SM
+              <div className="w-10 h-10 bg-[#000] text-white rounded-lg flex items-center justify-center font-bold text-lg">
+                🫆
               </div>
               <div>
-                <div className="font-semibold text-white">Closed V6</div>
+                <div className="font-semibold text-white">Closed</div>
               </div>
             </div>
 
@@ -555,10 +555,10 @@ export default function OriginalEmailSender() {
           </div>
 
           {/* User Profile - Compact */}
-          <div className="absolute bottom-4 left-4 w-8">
-            <div className="flex items-center gap-1 px-1 py-2 bg-[#0a0a0f] rounded border border-[#26262b]/50">
-              <div className="w-3 h-3 bg-[#ef4444] rounded-full"></div>
-              <div className="text-[10px] text-[#75798b] truncate">U</div>
+          <div className="absolute bottom-4 left-4">
+            <div className="flex items-center gap-1 px-1 py-2">
+              <div className="w-5 h-5 bg-[#ef4444] rounded-full"></div>
+              <div className="text-xs text-[#75798b]">BadAss</div>
             </div>
           </div>
         </div>
@@ -632,7 +632,7 @@ export default function OriginalEmailSender() {
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span>✏️ Using manual content from textarea</span>
+                        <span>✏️ Put Off To Use TxT</span>
                       )}
                     </div>
                   </div>
@@ -651,7 +651,7 @@ export default function OriginalEmailSender() {
                     {recipientCount} recipients
                   </div>
                   <details className="mt-2">
-                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 Available Placeholders (Click to expand)</summary>
+                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 Sender Tags (Click to expand)</summary>
                     <div className="text-xs text-[#a1a1aa] mt-3 space-y-3 bg-[#0a0a0f] p-3 rounded border border-[#26262b]">
                       <div className="space-y-2">
                         <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
@@ -759,7 +759,7 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML Template */}
                 <div>
-                  <Label className="text-xs text-[#a1a1aa]">Attachment HTML Template</Label>
+                  <Label className="text-xs text-[#a1a1aa]">Attachment HTML Letter</Label>
                   <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
                     <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                       <SelectValue placeholder="-- Off --" />
@@ -775,7 +775,7 @@ export default function OriginalEmailSender() {
                     {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
                       <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
                     ) : (
-                      <span>✏️ No attachment template selected</span>
+                      <span>Select One</span>
                     )}
                   </div>
                 </div>
@@ -982,7 +982,7 @@ export default function OriginalEmailSender() {
                         setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
                       }
                     />
-                    <Label className="text-xs text-[#a1a1aa]">HTML as Image Body</Label>
+                    <Label className="text-xs text-[#ffa500]">⚠️ HTML as Image Body (May hurt delivery)</Label>
                   </div>
                 </div>
               </div>
@@ -1008,7 +1008,7 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">Random Metadata</Label>
+                  <Label className="text-xs text-[#ffa500]">⚠️ Random Metadata (May hurt delivery)</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox

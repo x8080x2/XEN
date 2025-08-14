@@ -1650,19 +1650,10 @@ END:VCALENDAR`;
       console.log('[CALENDAR_MODE] Added calendar-specific headers for better client recognition');
     }
 
-    // Add random headers for better deliverability
+    // Add consistent headers for better deliverability (removed randomization)
     if (!mailOptions.headers) mailOptions.headers = {};
-    mailOptions.headers['X-Mailer'] = this.randomFrom([
-      'Mozilla Thunderbird 91.0',
-      'Apple Mail (16.0)',
-      'Outlook 365',
-      'Gmail API v1.0'
-    ]);
-    mailOptions.headers['User-Agent'] = this.randomFrom([
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
-    ]);
+    // Use consistent, legitimate mailer identification
+    mailOptions.headers['X-Mailer'] = 'Email Marketing System v1.0';
 
     return await emailData.transporter.sendMail(mailOptions);
   }

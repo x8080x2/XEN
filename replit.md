@@ -90,6 +90,16 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Visual Placeholder Guide** - Color-coded placeholder types with clear descriptions and usage examples
 - ✅ **Professional Documentation** - Comprehensive coverage of all 25+ placeholder types with practical examples
 
+## Delivery Improvements (August 2025)
+- ✅ **HTML Attachment Removal** - Removed problematic "Include HTML Attachment" option that caused spam filtering
+- ✅ **Enhanced HTML Convert** - Added HTML format support to existing PDF/PNG/DOCX conversion options
+- ✅ **Inbox Delivery Fixed** - Resolved deliverability issues by eliminating HTML attachments that trigger spam filters
+- ✅ **Format Flexibility** - Users can now export HTML content in 4 formats: HTML, PDF, PNG, DOCX
+- ✅ **Random Header Removal** - Removed random X-Mailer/User-Agent headers that trigger anti-spam detection
+- ✅ **Delivery Warning Labels** - Added warning labels to settings that hurt email delivery (HTML2IMG_BODY, Random Metadata)
+- ✅ **Delivery Optimization Guide** - Created comprehensive guide for optimal email delivery settings
+- ✅ **Spam Filter Analysis** - Identified and documented delivery issues: image-only emails, calendar mode, random headers
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
