@@ -554,16 +554,11 @@ export default function OriginalEmailSender() {
             </nav>
           </div>
 
-          {/* User Profile */}
+          {/* User Profile - Compact */}
           <div className="absolute bottom-4 left-4 right-4">
-            <div className="bg-[#131316] border border-[#26262b] rounded-lg p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-[#ef4444] rounded-full"></div>
-                <div>
-                  <div className="font-semibold text-sm text-white">User</div>
-                  <div className="text-xs text-[#ef4444]">Administrator</div>
-                </div>
-              </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#0a0a0f] rounded border border-[#26262b]/50">
+              <div className="w-5 h-5 bg-[#ef4444] rounded-full"></div>
+              <div className="text-xs text-[#75798b]">User</div>
             </div>
           </div>
         </div>
