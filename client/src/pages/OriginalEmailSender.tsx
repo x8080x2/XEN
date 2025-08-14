@@ -247,7 +247,7 @@ export default function OriginalEmailSender() {
           }
         }
 
-        // Load advanced settings
+        // Load advanced settings with delivery protection
         setAdvancedSettings({
           qrcode: !!config.QRCODE,
           randomMetadata: !!config.RANDOM_METADATA,
