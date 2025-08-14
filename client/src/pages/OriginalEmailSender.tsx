@@ -993,6 +993,15 @@ export default function OriginalEmailSender() {
                   />
                   <Label className="text-xs text-[#a1a1aa]">Include Hidden Text Overlay</Label>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={advancedSettings.calendarMode}
+                    onCheckedChange={(checked) => 
+                      setAdvancedSettings({...advancedSettings, calendarMode: !!checked})
+                    }
+                  />
+                  <Label className="text-xs text-[#a1a1aa]">Send as Calendar Invitation</Label>
+                </div>
               </div>
             </div>
           </div>
