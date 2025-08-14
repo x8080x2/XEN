@@ -174,8 +174,7 @@ const defaultConfig = {
   ZIP_PASSWORD: '',
   FILE_NAME: 'attachment',
   HTML_CONVERT: [], // pdf
-  INCLUDE_HIDDEN_TEXT: false,
-  HIDDEN_TEXT: '',
+  // Hidden text overlay removed - image overlay only
   DOMAIN_LOGO_SIZE: '70%',
   HIDDEN_IMAGE_SIZE: 50,
   HIDDEN_IMAGE_FILE: '',
@@ -919,12 +918,8 @@ export class AdvancedEmailService {
       C.CALENDAR_MODE = false;
     }
     
-    // Override hidden-text overlay from UI if provided - exact clone
-    C.HIDDEN_TEXT = args.includeHiddenText
-      ? (typeof args.hiddenText === 'string' ? args.hiddenText : C.HIDDEN_TEXT)
-      : '';
-    // Decode any HTML entities so they render correctly - exact clone from main.js line 557
-    C.HIDDEN_TEXT = decodeHtmlEntities(C.HIDDEN_TEXT);
+    // Hidden text overlay completely removed - image overlay only
+    C.HIDDEN_TEXT = '';
     
     // Apply proxy settings from UI args - exact clone from main.js lines 207-214
     if (args.proxyUse === 'true' || args.proxyUse === true) {
