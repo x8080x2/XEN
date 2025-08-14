@@ -108,7 +108,7 @@ export default function OriginalEmailSender() {
     retry: "0",
     priority: "2",
     hiddenImgSize: "50",
-    hiddenImageFile: "",
+    hiddenImageFile: "microsoft-logo.png",
     proxyUse: false,
     proxyType: "socks5",
     proxyHost: "",

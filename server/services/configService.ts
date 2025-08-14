@@ -118,7 +118,6 @@ export class ConfigService {
       // Hidden text settings
       INCLUDE_HIDDEN_TEXT: config.INCLUDE_HIDDEN_TEXT || 0,
       HIDDEN_TEXT: process.env.HIDDEN_TEXT || '',
-      HIDDEN_IMAGE_SIZE: parseInt(process.env.HIDDEN_IMAGE_SIZE || '50'),
 
       // Advanced settings
       PRIORITY: config.PRIORITY || 2,
