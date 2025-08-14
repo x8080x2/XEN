@@ -1090,10 +1090,10 @@ export class AdvancedEmailService {
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
           
+          // Initialize email attachments array early for QR processing
+          const emailAttachments: any[] = [];
+          
           // QR Code replacement - Process for normal HTML emails first (not HTML2IMG_BODY)  
-          console.log(`[QR Debug] HTML contains qrcode: ${html.includes('{qrcode}')}, HTML2IMG_BODY: ${C.HTML2IMG_BODY} (type: ${typeof C.HTML2IMG_BODY})`);
-          console.log(`[QR Debug] HTML content: ${html.substring(0, 100)}...`);
-          console.log(`[QR Debug] Condition result: ${html.includes('{qrcode}') && !C.HTML2IMG_BODY}`);
           if (html.includes('{qrcode}') && !C.HTML2IMG_BODY) {
             console.log('[QR Processing] Processing QR codes for normal HTML email body');
             
@@ -1194,8 +1194,7 @@ export class AdvancedEmailService {
             }
           }
 
-          // Prepare email attachments - exact clone logic
-          const emailAttachments: any[] = [];
+          // Add file attachments to existing emailAttachments array
           
           // Add file attachments
           if (args.attachments && args.attachments.length > 0) {
