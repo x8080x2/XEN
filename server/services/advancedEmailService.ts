@@ -1116,12 +1116,13 @@ export class AdvancedEmailService {
                 contentType: 'image/png'
               });
 
-              // Hidden image overlay logic for normal HTML QR
+              // Hidden image overlay logic - EXACT CLONE from main.js lines 890-943
               const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
               let hiddenImageHtml = '';
               let imgBuf: Buffer | null = null;
               let hasHiddenImage = false;
               
+              // Load hidden image buffer (exact clone from main.js)
               try {
                 if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                   const logoDir = join('files', 'logo');
@@ -1129,6 +1130,15 @@ export class AdvancedEmailService {
                   if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                     imgBuf = readFileSync(candidatePath);
                     hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
+                    
+                    // Add as CID attachment for email client compatibility (like main.js)
+                    emailAttachments.push({
+                      filename: basename(candidatePath),
+                      content: imgBuf,
+                      cid: 'hiddenImage',
+                      contentType: 'image/png'
+                    });
+                    
                     console.log(`[QR Overlay] Loaded overlay image: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
                   }
                 }
@@ -1136,7 +1146,7 @@ export class AdvancedEmailService {
                 console.log(`[QR Overlay] Error loading overlay image: ${err}`);
               }
               
-              // Apply overlay (base64 embedding for delivery safety)
+              // Apply overlay - EXACT positioning from main.js line 933-935
               if (hasHiddenImage && imgBuf) {
                 const base64Img = imgBuf.toString('base64');
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
