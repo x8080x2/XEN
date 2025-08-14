@@ -1144,10 +1144,8 @@ export class AdvancedEmailService {
                 const base64Img = imgBuf.toString('base64');
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                 console.log(`[Single Method] Applied base64 overlay (${hiddenImgWidth}px)`);
-              } else if (C.HIDDEN_TEXT) {
-                hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                console.log(`[Single Method] Applied text overlay: ${C.HIDDEN_TEXT}`);
               }
+              // Hidden text overlay removed - image only
               
               // Step 4: Replace QR placeholder - use recipient-specific qrContent (main.js lines 937-943)
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
@@ -1267,10 +1265,8 @@ export class AdvancedEmailService {
                   const base64Img = imgBuf.toString('base64');
                   hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                   console.log(`[HTML2IMG] Applied base64 overlay (${hiddenImgWidth}px)`);
-                } else if (C.HIDDEN_TEXT) {
-                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[HTML2IMG] Applied text overlay: ${C.HIDDEN_TEXT}`);
                 }
+                // Hidden text overlay removed - image only
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
@@ -1371,10 +1367,8 @@ export class AdvancedEmailService {
                   } catch (err) {
                     console.log(`[HTML_CONVERT] Overlay load failed: ${err}`);
                   }
-                } else if (C.HIDDEN_TEXT) {
-                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[HTML_CONVERT] Applied text overlay to PDF: ${C.HIDDEN_TEXT}`);
                 }
+                // Hidden text overlay removed - image only
                 
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
