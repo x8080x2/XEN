@@ -81,41 +81,60 @@ export default function OriginalEmailSender() {
   });
 
   // Advanced settings - exact match to original main.js
-  const [advancedSettings, setAdvancedSettings] = useState({
-    qrcode: false,
-    randomMetadata: false,
-    minifyHtml: false,
+  // Initialize state from localStorage or defaults
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem('emailFormData');
+    return saved ? JSON.parse(saved) : {
+      smtpHost: '',
+      smtpPort: '587',
+      smtpUser: '',
+      smtpPass: '',
+      senderEmail: '',
+      senderName: '',
+      subject: '',
+      recipients: '',
+      html: '',
+      attachments: []
+    };
+  });
 
-    htmlImgBody: false,
-    zipUse: false,
-    zipPassword: "",
-    emailPerSecond: "5",
-    sleep: "3",
-    fileName: "attachment",
-    htmlConvert: "", // User can select specific formats
-    qrSize: "200",
-    qrBorder: "2",
-    qrBorderColor: "#000000",
-    qrForegroundColor: "#000000",
-    qrBackgroundColor: "#FFFFFF",
-    qrLink: "https://example.com",
-    linkPlaceholder: "{email}",
-    includeHiddenText: false,
-    hiddenText: "&#9919;",
-    domainLogoSize: "50%",
-    borderStyle: "solid",
-    borderColor: "#000000",
-    retry: "0",
-    priority: "2",
-    hiddenImgSize: "50",
-    hiddenImageFile: "microsoft-logo.png",
-    proxyUse: false,
-    proxyType: "socks5",
-    proxyHost: "",
-    proxyPort: "",
-    proxyUser: "",
-    proxyPass: "",
-    calendarMode: false // Added calendar mode
+  const [advancedSettings, setAdvancedSettings] = useState(() => {
+    const saved = localStorage.getItem('emailAdvancedSettings');
+    return saved ? JSON.parse(saved) : {
+      qrcode: false,  // ✅ SAFE: Disabled by default to match config
+      qrSize: 200,
+      qrLink: 'https://example.com',
+      qrForegroundColor: '#000000',
+      qrBackgroundColor: '#FFFFFF',
+      qrBorder: 2,
+      qrBorderColor: '#000000',
+      linkPlaceholder: '',
+      htmlImgBody: false,  // ✅ SAFE: Disabled by default to match config
+      randomMetadata: false,
+      minifyHtml: false,
+      emailPerSecond: '5',
+      sleep: '3',
+      priority: 'normal',
+      retry: '0',
+      zipUse: false,
+      zipPassword: '',
+      fileName: 'attachment',
+      htmlConvert: '',
+      calendarMode: false,
+      includeHiddenText: false,
+      hiddenText: '',
+      hiddenImageFile: '',  // ✅ SAFE: Empty by default to match config
+      hiddenImgSize: 50,
+      domainLogoSize: '70%',
+      borderStyle: 'solid',
+      borderColor: '#000000',
+      proxyUse: false,
+      proxyType: 'socks5',
+      proxyHost: '',
+      proxyPort: '',
+      proxyUser: '',
+      proxyPass: ''
+    };
   });
 
   // Progress tracking
@@ -1143,7 +1162,7 @@ export default function OriginalEmailSender() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                 
+
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
                     <Input
@@ -1155,7 +1174,7 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-                
+
 
                 {/* Domain Logo Settings Section */}
                 <div>

@@ -30,7 +30,7 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
       logoSize: currentSettings?.html?.logoSize || "50%"
     },
     qr: {
-      enabled: currentSettings?.qr?.enabled ?? true,
+      enabled: currentSettings?.qr?.enabled ?? false,  // ✅ SAFE: Disabled by default
       link: currentSettings?.qr?.link || "https://fb.com",
       width: currentSettings?.qr?.width || 200,
       borderStyle: currentSettings?.qr?.borderStyle || "solid",
