@@ -1226,14 +1226,88 @@ export class AdvancedEmailService {
             }
           }
 
-          // HTML Convert attachments (PDF, PNG, DOCX) - exact clone
+          // HTML Convert attachments (PDF, PNG, DOCX) - Fixed QR processing
           if (C.HTML_CONVERT && C.HTML_CONVERT.length > 0 && finalAttHtml) {
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
+            
+            // Process QR codes in attachment HTML before conversion
+            let processedAttHtml = finalAttHtml;
+            
+            // Replace QR codes in attachment HTML with data URLs for PDF/PNG/DOCX conversion
+            if (processedAttHtml.includes('{qrcode}')) {
+              let qrContent = C.QR_LINK;
+              
+              // Apply link placeholder replacement for recipient-specific QR codes
+              if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+              }
+              
+              // Add random metadata to QR if enabled
+              if (C.RANDOM_METADATA) {
+                const rand = crypto.randomBytes(4).toString('hex');
+                qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+              }
+              
+              console.log(`[HTML_CONVERT] Processing QR for attachment with content: ${qrContent.substring(0, 50)}...`);
+              
+              // Generate QR as data URL for attachment conversion
+              const qrOpts = buildQrOpts(C);
+              try {
+                const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                  width: qrOpts.width,
+                  margin: qrOpts.margin,
+                  errorCorrectionLevel: 'H' as any,
+                  color: {
+                    dark: C.QR_FOREGROUND_COLOR || '#000000',
+                    light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                  }
+                });
+                
+                // Hidden text overlay for attachments
+                let hiddenOverlay = '';
+                if (C.HIDDEN_TEXT) {
+                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                }
+                
+                // Use QR border color if specified, otherwise use general border color
+                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                const borderStyle = C.BORDER_STYLE || 'solid';
+                
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  ${hiddenOverlay}
+                                </div>`;
+                
+                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
+                console.log(`[HTML_CONVERT] QR code processed for attachment conversion`);
+              } catch (qrError) {
+                console.error(`[HTML_CONVERT] QR generation failed for attachment:`, qrError);
+                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+              }
+            }
+            
+            // Process domain logo in attachment HTML if present
+            if (processedAttHtml.includes('{domainlogo}')) {
+              const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+              if (domainLogoBuffer) {
+                const dataLogo = domainLogoBuffer.toString('base64');
+                const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
+                processedAttHtml = processedAttHtml.replace(
+                  /\{domainlogo\}/g,
+                  `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
+                );
+              } else {
+                processedAttHtml = processedAttHtml.replace(
+                  /\{domainlogo\}/g,
+                  `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`
+                );
+              }
+            }
             
             for (const format of C.HTML_CONVERT) {
               try {
                 console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
-                const buffer = await this.renderHtml(format, finalAttHtml, C);
+                const buffer = await this.renderHtml(format, processedAttHtml, C);
                 if (buffer) {
                   // Process placeholders in filename - exact clone fix
                   const rawFileName = C.FILE_NAME || 'attachment';
