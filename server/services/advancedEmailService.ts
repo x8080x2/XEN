@@ -1134,9 +1134,9 @@ export class AdvancedEmailService {
             });
           }
 
-          // HTML to Image Body conversion - DISABLED for delivery optimization
-          if (false && C.HTML2IMG_BODY) {
-            console.log('[HTML2IMG_BODY] Feature disabled - causes spam filter issues with complex processing');
+          // HTML to Image Body conversion - Re-enabled with conflict resolution
+          if (C.HTML2IMG_BODY) {
+            console.log('[HTML2IMG_BODY] Converting HTML body to image with delivery-safe approach');
             try {
               let screenshotHtml = finalHtml;
               
@@ -1181,7 +1181,7 @@ export class AdvancedEmailService {
                     console.log(`[HTML2IMG_BODY] Looking for image at: ${candidatePath}`);
                     if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                       imgBuf = readFileSync(candidatePath);
-                      console.log(`[HTML2IMG_BODY] Hidden image loaded successfully: ${candidatePath} (${imgBuf?.length || 0} bytes)`);
+                      console.log(`[HTML2IMG_BODY] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     } else {
                       console.log(`[HTML2IMG_BODY] Hidden image file not found: ${candidatePath}`);
@@ -1247,10 +1247,11 @@ export class AdvancedEmailService {
             }
           }
 
-          // HTML Convert attachments - DISABLED for delivery optimization
-          const htmlConvertFormats: string[] = [];  // Disabled for spam filter compatibility
-          if (false && htmlConvertFormats.length > 0 && finalAttHtml) {
-            console.log('[HTML_CONVERT] Feature disabled - reduces attachment complexity for better delivery');
+          // HTML Convert attachments - Re-enabled with simplified processing
+          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
+          console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
+          if (htmlConvertFormats.length > 0 && finalAttHtml) {
+            console.log('[HTML_CONVERT] Processing attachments with simplified overlay approach');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
             // Process QR codes in attachment HTML before conversion
@@ -1286,44 +1287,8 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Hidden overlay logic - exact clone from main.js lines 931-936  
-                let hiddenOverlay = '';
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                
-                // Load hidden image - exact clone from main.js lines 890-904
-                let imgBuf: Buffer | null = null;
-                let hasHiddenImage = false;
-                console.log(`[HTML_CONVERT] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
-                try {
-                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
-                    const logoDir = join('files', 'logo');
-                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                    console.log(`[HTML_CONVERT] Looking for image at: ${candidatePath}`);
-                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                      imgBuf = readFileSync(candidatePath);
-                      console.log(`[HTML_CONVERT] Hidden image loaded successfully: ${candidatePath} (${imgBuf?.length || 0} bytes)`);
-                      hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
-                    } else {
-                      console.log(`[HTML_CONVERT] Hidden image file not found: ${candidatePath}`);
-                    }
-                  }
-                } catch (err) {
-                  console.log(`[HTML_CONVERT] Error loading hidden image: ${err}`);
-                }
-                
-                console.log(`[HTML_CONVERT] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}`);
-                
-                // Exact overlay logic from main.js lines 931-936
-                if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf!.toString('base64');
-                  hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[HTML_CONVERT] Using hidden image overlay (${hiddenImgWidth}px width)`);
-                } else if (C.HIDDEN_TEXT) {
-                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[HTML_CONVERT] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
-                } else {
-                  console.log(`[HTML_CONVERT] No overlay applied - no image and no text available`);
-                }
+                // SIMPLIFIED: Use clean QR without complex overlay processing for attachments
+                console.log(`[HTML_CONVERT] Using simplified QR processing for attachment conversion`);
                 
                 // Use QR border color if specified, otherwise use general border color
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
@@ -1331,7 +1296,6 @@ export class AdvancedEmailService {
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                  ${hiddenOverlay}
                                 </div>`;
                 
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
@@ -1488,16 +1452,8 @@ export class AdvancedEmailService {
                     console.log(`[QR Overlay] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
                     hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     
-                    // SIMPLIFIED: Only add CID for email client compatibility (like original main.js)
-                    if (hasHiddenImage) {
-                      emailAttachments.push({
-                        filename: basename(candidatePath),
-                        content: imgBuf,
-                        cid: 'hiddenImage',
-                        contentType: 'image/png'
-                      });
-                      console.log(`[QR Overlay] Hidden image attached as CID for email compatibility`);
-                    }
+                    // Skip CID attachment for QR overlays - base64 embedding is sufficient for delivery
+                    console.log(`[QR Overlay] Using base64 embedding only - no CID attachment needed`);
                   } else {
                     console.log(`[QR Overlay] Hidden image file not found: ${candidatePath}`);
                   }
