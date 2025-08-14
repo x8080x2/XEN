@@ -1214,7 +1214,7 @@ export class AdvancedEmailService {
           }
 
           // HTML Convert attachments (PDF, PNG, DOCX) - Fixed QR processing
-          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? C.HTML_CONVERT.split(',').map((f: string) => f.trim()).filter(Boolean) : []);
+          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
           if (htmlConvertFormats.length > 0 && finalAttHtml) {
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
