@@ -1468,8 +1468,9 @@ export class AdvancedEmailService {
               const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
               let hiddenImageHtml = '';
               
-              // Load hidden image file from files/logo directory - exact clone
+              // Load hidden image file from files/logo directory - exact clone from main.js
               let imgBuf: Buffer | null = null;
+              let hasHiddenImage = false;
               console.log(`[QR Overlay] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
               try {
                 if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
@@ -1479,7 +1480,18 @@ export class AdvancedEmailService {
                   if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                     imgBuf = readFileSync(candidatePath);
                     console.log(`[QR Overlay] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
-                    this.logger.debug('Hidden image loaded', { path: candidatePath });
+                    hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
+                    
+                    // Add hidden image as CID attachment - matching main.js lines 907-914
+                    if (hasHiddenImage) {
+                      emailAttachments.push({
+                        filename: C.HIDDEN_IMAGE_FILE,
+                        content: imgBuf,
+                        cid: 'hiddenImage',
+                        contentType: 'image/png'
+                      });
+                      console.log(`[QR Overlay] Hidden image attached as CID: hiddenImage`);
+                    }
                   } else {
                     console.log(`[QR Overlay] Hidden image file not found: ${candidatePath}`);
                   }
@@ -1491,20 +1503,20 @@ export class AdvancedEmailService {
                 this.logger.warn('Error loading hidden image file', { error: err });
               }
               
-              const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
-              console.log(`[QR Overlay] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}, Include hidden text: ${C.INCLUDE_HIDDEN_TEXT}`);
+              console.log(`[QR Overlay] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}`);
               
+              // Exact overlay logic from main.js lines 931-936
               if (hasHiddenImage && imgBuf) {
                 const base64Img = imgBuf.toString('base64');
                 // Exact positioning from main.js line 933
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                 console.log(`[QR Overlay] Using hidden image overlay (${hiddenImgWidth}px width)`);
-              } else if (C.INCLUDE_HIDDEN_TEXT && C.HIDDEN_TEXT) {
-                // Match exact positioning from HTML2IMG_BODY and HTML_CONVERT overlays
+              } else if (C.HIDDEN_TEXT) {
+                // Exact fallback from main.js line 935
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                 console.log(`[QR Overlay] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
               } else {
-                console.log(`[QR Overlay] No overlay applied - no image and no text enabled`);
+                console.log(`[QR Overlay] No overlay applied - no image and no text available`);
               }
               
               // Use QR border color if specified, otherwise use general border color
