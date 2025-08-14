@@ -938,11 +938,11 @@ export default function OriginalEmailSender() {
                   <Input
                     value={advancedSettings.htmlConvert}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="pdf,png,docx (leave empty for no conversion)"
+                    className="bg-[#0f0f12] border-[#26262b] text-brown"
+                    placeholder="pdf,png,docx"
                   />
                   <p className="text-xs text-[#a1a1aa] mt-1">
-                    Available formats: pdf, png, docx, html • Leave empty to disable conversion
+                    Available formats: pdf, png, docx, html • 
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -1026,7 +1026,7 @@ export default function OriginalEmailSender() {
                       setAdvancedSettings({...advancedSettings, includeHiddenText: !!checked})
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">Include Hidden Text Overlay</Label>
+                  <Label className="text-xs text-[#a1a1aa]">QR Overlay</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
@@ -1143,15 +1143,7 @@ export default function OriginalEmailSender() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
-                    <Input
-                      type="password"
-                      value={advancedSettings.zipPassword}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
+                 
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
                     <Input
