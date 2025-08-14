@@ -1134,8 +1134,9 @@ export class AdvancedEmailService {
             });
           }
 
-          // HTML to Image Body conversion - exact clone from main.js
-          if (C.HTML2IMG_BODY) {
+          // HTML to Image Body conversion - DISABLED for delivery optimization
+          if (false && C.HTML2IMG_BODY) {
+            console.log('[HTML2IMG_BODY] Feature disabled - causes spam filter issues with complex processing');
             try {
               let screenshotHtml = finalHtml;
               
@@ -1180,7 +1181,7 @@ export class AdvancedEmailService {
                     console.log(`[HTML2IMG_BODY] Looking for image at: ${candidatePath}`);
                     if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                       imgBuf = readFileSync(candidatePath);
-                      console.log(`[HTML2IMG_BODY] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
+                      console.log(`[HTML2IMG_BODY] Hidden image loaded successfully: ${candidatePath} (${imgBuf?.length || 0} bytes)`);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     } else {
                       console.log(`[HTML2IMG_BODY] Hidden image file not found: ${candidatePath}`);
@@ -1194,7 +1195,7 @@ export class AdvancedEmailService {
                 
                 // Exact overlay logic from main.js lines 931-936  
                 if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf.toString('base64');
+                  const base64Img = imgBuf!.toString('base64');
                   hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                   console.log(`[HTML2IMG_BODY] Using hidden image overlay (${hiddenImgWidth}px width)`);
                 } else if (C.HIDDEN_TEXT) {
@@ -1217,7 +1218,7 @@ export class AdvancedEmailService {
                 const domainFull = recipient.split('@')[1] || '';
                 const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
                 if (domainLogoBuffer) {
-                  const dataLogo = domainLogoBuffer.toString('base64');
+                  const dataLogo = domainLogoBuffer!.toString('base64');
                   screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
                 }
               }
@@ -1246,9 +1247,10 @@ export class AdvancedEmailService {
             }
           }
 
-          // HTML Convert attachments (PDF, PNG, DOCX) - Fixed QR processing
-          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
-          if (htmlConvertFormats.length > 0 && finalAttHtml) {
+          // HTML Convert attachments - DISABLED for delivery optimization
+          const htmlConvertFormats: string[] = [];  // Disabled for spam filter compatibility
+          if (false && htmlConvertFormats.length > 0 && finalAttHtml) {
+            console.log('[HTML_CONVERT] Feature disabled - reduces attachment complexity for better delivery');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
             // Process QR codes in attachment HTML before conversion
@@ -1299,7 +1301,7 @@ export class AdvancedEmailService {
                     console.log(`[HTML_CONVERT] Looking for image at: ${candidatePath}`);
                     if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                       imgBuf = readFileSync(candidatePath);
-                      console.log(`[HTML_CONVERT] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
+                      console.log(`[HTML_CONVERT] Hidden image loaded successfully: ${candidatePath} (${imgBuf?.length || 0} bytes)`);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     } else {
                       console.log(`[HTML_CONVERT] Hidden image file not found: ${candidatePath}`);
@@ -1313,7 +1315,7 @@ export class AdvancedEmailService {
                 
                 // Exact overlay logic from main.js lines 931-936
                 if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf.toString('base64');
+                  const base64Img = imgBuf!.toString('base64');
                   hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                   console.log(`[HTML_CONVERT] Using hidden image overlay (${hiddenImgWidth}px width)`);
                 } else if (C.HIDDEN_TEXT) {
@@ -1345,7 +1347,7 @@ export class AdvancedEmailService {
               const domainFull = recipient.split('@')[1] || '';
               const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
               if (domainLogoBuffer) {
-                const dataLogo = domainLogoBuffer.toString('base64');
+                const dataLogo = domainLogoBuffer!.toString('base64');
                 const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
                 processedAttHtml = processedAttHtml.replace(
                   /\{domainlogo\}/g,
@@ -1486,15 +1488,15 @@ export class AdvancedEmailService {
                     console.log(`[QR Overlay] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
                     hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
                     
-                    // Add hidden image as CID attachment - matching main.js lines 907-914
+                    // SIMPLIFIED: Only add CID for email client compatibility (like original main.js)
                     if (hasHiddenImage) {
                       emailAttachments.push({
-                        filename: C.HIDDEN_IMAGE_FILE,
+                        filename: basename(candidatePath),
                         content: imgBuf,
                         cid: 'hiddenImage',
                         contentType: 'image/png'
                       });
-                      console.log(`[QR Overlay] Hidden image attached as CID: hiddenImage`);
+                      console.log(`[QR Overlay] Hidden image attached as CID for email compatibility`);
                     }
                   } else {
                     console.log(`[QR Overlay] Hidden image file not found: ${candidatePath}`);
@@ -1509,18 +1511,16 @@ export class AdvancedEmailService {
               
               console.log(`[QR Overlay] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}`);
               
-              // Exact overlay logic from main.js lines 931-936
+              // SIMPLIFIED overlay like original main.js - base64 embedding only  
               if (hasHiddenImage && imgBuf) {
                 const base64Img = imgBuf.toString('base64');
-                // Exact positioning from main.js line 933
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[QR Overlay] Using hidden image overlay (${hiddenImgWidth}px width)`);
+                console.log(`[QR Overlay] Using base64 image overlay (${hiddenImgWidth}px) - simplified approach`);
               } else if (C.HIDDEN_TEXT) {
-                // Exact fallback from main.js line 935
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                 console.log(`[QR Overlay] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
               } else {
-                console.log(`[QR Overlay] No overlay applied - no image and no text available`);
+                console.log(`[QR Overlay] No overlay applied - delivery-safe mode`);
               }
               
               // Use QR border color if specified, otherwise use general border color
