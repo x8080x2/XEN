@@ -1324,7 +1324,7 @@ export class AdvancedEmailService {
             // Process QR codes in attachment HTML - Simple clean approach
             let processedAttHtml = finalAttHtml;
             
-            // Simple QR replacement for attachments (no overlays needed in static attachments)
+            // QR replacement for attachments with base64 overlay (same as main processing)
             if (processedAttHtml.includes('{qrcode}')) {
               let qrContent = C.QR_LINK;
               
@@ -1337,9 +1337,9 @@ export class AdvancedEmailService {
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
               
-              console.log(`[HTML_CONVERT] Clean QR processing for attachment`);
+              console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
               
-              // Generate clean QR for attachment
+              // Generate QR for attachment
               const qrOpts = buildQrOpts(C);
               try {
                 const qrDataUrl = await QRCode.toDataURL(qrContent, {
@@ -1352,16 +1352,43 @@ export class AdvancedEmailService {
                   }
                 });
                 
+                // Load hidden image for attachment overlay (same method as main processing)
+                let hiddenOverlay = '';
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                
+                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                  try {
+                    const logoDir = join('files', 'logo');
+                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                      const imgBuf = readFileSync(candidatePath);
+                      if (imgBuf && imgBuf.length > 0) {
+                        const base64Img = imgBuf.toString('base64');
+                        hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                        console.log(`[HTML_CONVERT] Applied base64 overlay to PDF: ${candidatePath} (${imgBuf.length} bytes)`);
+                      }
+                    }
+                  } catch (err) {
+                    console.log(`[HTML_CONVERT] Overlay load failed: ${err}`);
+                  }
+                } else if (C.HIDDEN_TEXT) {
+                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[HTML_CONVERT] Applied text overlay to PDF: ${C.HIDDEN_TEXT}`);
+                }
+                
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
-                // Clean QR without overlays (static attachment doesn't need overlays)
+                // QR with base64 overlay for attachment
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  </a>
+                                  ${hiddenOverlay}
                                 </div>`;
                 
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[HTML_CONVERT] Clean QR applied to attachment`);
+                console.log(`[HTML_CONVERT] QR with base64 overlay applied to attachment`);
               } catch (qrError) {
                 console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
