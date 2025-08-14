@@ -173,7 +173,7 @@ const defaultConfig = {
   ZIP_USE: false,
   ZIP_PASSWORD: '',
   FILE_NAME: 'attachment',
-  HTML_CONVERT: ['html', 'pdf', 'png', 'docx'], // html, pdf, png, docx
+  HTML_CONVERT: [], // pdf
   INCLUDE_HIDDEN_TEXT: false,
   HIDDEN_TEXT: '',
   DOMAIN_LOGO_SIZE: '70%',
