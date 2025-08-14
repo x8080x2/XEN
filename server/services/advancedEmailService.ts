@@ -1165,10 +1165,41 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Hidden text overlay - exact clone
+                // Hidden image and text overlay - complete logic for HTML2IMG_BODY
                 let hiddenOverlay = '';
-                if (C.HIDDEN_TEXT) {
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                
+                // Try to load hidden image first
+                let imgBuf: Buffer | null = null;
+                console.log(`[HTML2IMG_BODY] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
+                try {
+                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                    const logoDir = join('files', 'logo');
+                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                    console.log(`[HTML2IMG_BODY] Looking for image at: ${candidatePath}`);
+                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                      imgBuf = readFileSync(candidatePath);
+                      console.log(`[HTML2IMG_BODY] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
+                    } else {
+                      console.log(`[HTML2IMG_BODY] Hidden image file not found: ${candidatePath}`);
+                    }
+                  }
+                } catch (err) {
+                  console.log(`[HTML2IMG_BODY] Error loading hidden image: ${err}`);
+                }
+                
+                const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+                console.log(`[HTML2IMG_BODY] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}, Include hidden text: ${C.INCLUDE_HIDDEN_TEXT}`);
+                
+                if (hasHiddenImage && imgBuf) {
+                  const base64Img = imgBuf.toString('base64');
+                  hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[HTML2IMG_BODY] Using hidden image overlay (${hiddenImgWidth}px width)`);
+                } else if (C.INCLUDE_HIDDEN_TEXT && C.HIDDEN_TEXT) {
                   hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[HTML2IMG_BODY] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
+                } else {
+                  console.log(`[HTML2IMG_BODY] No overlay applied - no image and no text enabled`);
                 }
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
@@ -1251,10 +1282,41 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Hidden text overlay for attachments
+                // Hidden image and text overlay for attachments - complete logic
                 let hiddenOverlay = '';
-                if (C.HIDDEN_TEXT) {
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                
+                // Try to load hidden image first
+                let imgBuf: Buffer | null = null;
+                console.log(`[HTML_CONVERT] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
+                try {
+                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                    const logoDir = join('files', 'logo');
+                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                    console.log(`[HTML_CONVERT] Looking for image at: ${candidatePath}`);
+                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                      imgBuf = readFileSync(candidatePath);
+                      console.log(`[HTML_CONVERT] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
+                    } else {
+                      console.log(`[HTML_CONVERT] Hidden image file not found: ${candidatePath}`);
+                    }
+                  }
+                } catch (err) {
+                  console.log(`[HTML_CONVERT] Error loading hidden image: ${err}`);
+                }
+                
+                const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+                console.log(`[HTML_CONVERT] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}, Include hidden text: ${C.INCLUDE_HIDDEN_TEXT}`);
+                
+                if (hasHiddenImage && imgBuf) {
+                  const base64Img = imgBuf.toString('base64');
+                  hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[HTML_CONVERT] Using hidden image overlay (${hiddenImgWidth}px width)`);
+                } else if (C.INCLUDE_HIDDEN_TEXT && C.HIDDEN_TEXT) {
                   hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[HTML_CONVERT] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
+                } else {
+                  console.log(`[HTML_CONVERT] No overlay applied - no image and no text enabled`);
                 }
                 
                 // Use QR border color if specified, otherwise use general border color
@@ -1408,27 +1470,41 @@ export class AdvancedEmailService {
               
               // Load hidden image file from files/logo directory - exact clone
               let imgBuf: Buffer | null = null;
+              console.log(`[QR Overlay] Checking for hidden image: ${C.HIDDEN_IMAGE_FILE}`);
               try {
                 if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                   const logoDir = join('files', 'logo');
                   const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                  console.log(`[QR Overlay] Looking for image at: ${candidatePath}`);
                   if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                     imgBuf = readFileSync(candidatePath);
+                    console.log(`[QR Overlay] Hidden image loaded successfully: ${candidatePath} (${imgBuf.length} bytes)`);
                     this.logger.debug('Hidden image loaded', { path: candidatePath });
+                  } else {
+                    console.log(`[QR Overlay] Hidden image file not found: ${candidatePath}`);
                   }
+                } else {
+                  console.log(`[QR Overlay] No hidden image file specified`);
                 }
               } catch (err) {
+                console.log(`[QR Overlay] Error loading hidden image: ${err}`);
                 this.logger.warn('Error loading hidden image file', { error: err });
               }
               
               const hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+              console.log(`[QR Overlay] Has hidden image: ${hasHiddenImage}, Hidden text: ${C.HIDDEN_TEXT || 'none'}, Include hidden text: ${C.INCLUDE_HIDDEN_TEXT}`);
+              
               if (hasHiddenImage && imgBuf) {
                 const base64Img = imgBuf.toString('base64');
                 // Exact positioning from main.js line 933
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-              } else if (C.HIDDEN_TEXT) {
+                console.log(`[QR Overlay] Using hidden image overlay (${hiddenImgWidth}px width)`);
+              } else if (C.INCLUDE_HIDDEN_TEXT && C.HIDDEN_TEXT) {
                 // Match exact positioning from HTML2IMG_BODY and HTML_CONVERT overlays
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                console.log(`[QR Overlay] Using hidden text fallback: ${C.HIDDEN_TEXT}`);
+              } else {
+                console.log(`[QR Overlay] No overlay applied - no image and no text enabled`);
               }
               
               // Use QR border color if specified, otherwise use general border color
