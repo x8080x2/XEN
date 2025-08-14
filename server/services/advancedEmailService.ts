@@ -1427,7 +1427,7 @@ export class AdvancedEmailService {
                 // Exact positioning from main.js line 933
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
               } else if (C.HIDDEN_TEXT) {
-                // Exact positioning from main.js line 935
+                // Match exact positioning from HTML2IMG_BODY and HTML_CONVERT overlays
                 hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
               }
               
