@@ -1163,15 +1163,7 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-                <div>
-                  <Label className="text-sm text-[#a1a1aa]">HTML Convert Formats (comma-separated: html,pdf,png,docx)</Label>
-                  <Input
-                    value={advancedSettings.htmlConvert}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="html,pdf,png,docx"
-                  />
-                </div>
+                
 
                 {/* Domain Logo Settings Section */}
                 <div>
