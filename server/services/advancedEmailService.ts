@@ -1107,15 +1107,18 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            const qrBuffer = await this.generateQRCodeInternal(qrContent, C);
-            if (qrBuffer) {
-              // Step 1: Add QR as CID attachment (for email client compatibility)
-              emailAttachments.push({
-                filename: 'qrcode.png',
-                content: qrBuffer,
-                cid: 'qrcode',
-                contentType: 'image/png'
-              });
+            // Generate QR as Data URL (consistent with PDF/HTML Convert approach)
+            const qrDataUrl = await QRCode.toDataURL(qrContent, {
+              width: C.QR_WIDTH || 200,
+              margin: 4,
+              errorCorrectionLevel: 'H' as any,
+              color: {
+                dark: C.QR_FOREGROUND_COLOR || '#000000',
+                light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+              }
+            });
+            
+            if (qrDataUrl) {
 
               // Step 2: Load hidden image once (main.js lines 890-904)
               let imgBuf: Buffer | null = null;
@@ -1153,7 +1156,7 @@ export class AdvancedEmailService {
               html = html.replace(/\{qrcode\}/g,
                 `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                     <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                    </a>
                    ${hiddenImageHtml}
                  </div>`
