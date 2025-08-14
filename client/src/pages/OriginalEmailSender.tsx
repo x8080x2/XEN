@@ -92,7 +92,7 @@ export default function OriginalEmailSender() {
     emailPerSecond: "5",
     sleep: "3",
     fileName: "attachment",
-    htmlConvert: "html,pdf,png,docx", // Support HTML export plus other formats
+    htmlConvert: "", // User can select specific formats
     qrSize: "200",
     qrBorder: "2",
     qrBorderColor: "#000000",
@@ -259,7 +259,7 @@ export default function OriginalEmailSender() {
           emailPerSecond: config.EMAILPERSECOND?.toString() || '5',
           sleep: config.SLEEP?.toString() || '3',
           fileName: config.FILE_NAME || 'attachment',
-          htmlConvert: config.HTML_CONVERT || 'html,pdf,png,docx',
+          htmlConvert: config.HTML_CONVERT || '',
           qrSize: config.QR_WIDTH?.toString() || '200',
           qrBorder: config.QR_BORDER_WIDTH?.toString() || '2',
           qrBorderColor: config.QR_BORDER_COLOR || '#000000',
@@ -934,15 +934,15 @@ export default function OriginalEmailSender() {
               <h3 className="text-lg font-medium text-white mb-4">📄 HTML Convert Settings</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">Convert Formats (comma-separated: html,pdf,png,docx)</Label>
+                  <Label className="text-sm text-[#a1a1aa]">Convert Formats (comma-separated)</Label>
                   <Input
                     value={advancedSettings.htmlConvert}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="pdf"
+                    placeholder="pdf,png,docx (leave empty for no conversion)"
                   />
-                  <p className="text-xs text-[red] mt-1">
-                    🍽️ Converts HTML  to PDF and More
+                  <p className="text-xs text-[#a1a1aa] mt-1">
+                    Available formats: pdf, png, docx, html • Leave empty to disable conversion
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
