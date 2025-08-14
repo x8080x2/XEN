@@ -1397,6 +1397,9 @@ export class AdvancedEmailService {
             }
           }
 
+          // Send email - exact clone
+          const text = htmlToText(finalHtml);
+
           // Calendar Mode - Generate .ics file if enabled
           if (C.CALENDAR_MODE) {
             try {
@@ -1442,9 +1445,6 @@ END:VCALENDAR`;
               console.error('[CALENDAR_MODE] Error generating calendar invitation:', calendarError);
             }
           }
-
-          // Send email - exact clone
-          const text = htmlToText(finalHtml);
           const result = await this.sendOneEmail({
             to: recipient,
             subject: dynamicSubject,
@@ -1639,6 +1639,15 @@ END:VCALENDAR`;
           mailOptions.headers = { 'X-Priority': '3', 'X-MSMail-Priority': 'Normal' };
           break;
       }
+    }
+
+    // Add calendar-specific headers if calendar mode is enabled
+    if (emailData.C.CALENDAR_MODE) {
+      if (!mailOptions.headers) mailOptions.headers = {};
+      mailOptions.headers['Content-Class'] = 'urn:content-classes:calendarmessage';
+      mailOptions.headers['X-MS-OLK-FORCEINSPECTOROPEN'] = 'TRUE';
+      mailOptions.headers['Method'] = 'REQUEST';
+      console.log('[CALENDAR_MODE] Added calendar-specific headers for better client recognition');
     }
 
     // Add random headers for better deliverability
