@@ -9,7 +9,7 @@ export class ConfigService {
   loadConfig(): any {
     const configPath = join(process.cwd(), 'config', 'setup.ini');
     const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
-    
+
     try {
       // Load setup.ini
       if (existsSync(configPath)) {
@@ -42,27 +42,27 @@ export class ConfigService {
   private parseIniFile(content: string): any {
     const result: any = {};
     let currentSection = '';
-    
+
     const lines = content.split('\n');
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.startsWith(';') || trimmed.startsWith('#')) {
         continue;
       }
-      
+
       // Section header
       if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
         currentSection = trimmed.slice(1, -1);
         result[currentSection] = {};
         continue;
       }
-      
+
       // Key-value pair
       const equalIndex = trimmed.indexOf('=');
       if (equalIndex > 0) {
         const key = trimmed.substring(0, equalIndex).trim();
         const value = trimmed.substring(equalIndex + 1).trim();
-        
+
         if (currentSection) {
           result[currentSection][key] = this.parseValue(value);
         } else {
@@ -70,7 +70,7 @@ export class ConfigService {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -97,43 +97,44 @@ export class ConfigService {
       EMAILPERSECOND: config.EMAILPERSECOND || 5,
       SLEEP: config.SLEEP || 1,
       FILE_NAME: config.FILE_NAME || 'attachment',
-      
+
       // HTML settings
       HTML_CONVERT: config.HTML_CONVERT || '',
       HTML2IMG_BODY: config.HTML2IMG_BODY || 0,
       INCLUDE_HTML_ATTACHMENT: config.INCLUDE_HTML_ATTACHMENT || 0,
       MINIFY_HTML: config.MINIFY_HTML || 0,
-      
+
       // QR Code settings
       QRCODE: config.QRCODE || 0,
-      QR_WIDTH: config.QR_WIDTH || 200,
-      QR_BORDER_WIDTH: config.QR_BORDER_WIDTH || 2,
-      QR_LINK: config.QR_LINK || '',
-      QR_BORDER_COLOR: config.QR_BORDER_COLOR || '#000000',
-      QR_FOREGROUND_COLOR: config.QR_FOREGROUND_COLOR || '#000000',
-      QR_BACKGROUND_COLOR: config.QR_BACKGROUND_COLOR || '#FFFFFF',
-      
+      QR_WIDTH: parseInt(process.env.QR_WIDTH || '150'),
+      QR_BORDER_WIDTH: parseInt(process.env.QR_BORDER_WIDTH || '2'),
+      QR_BORDER_COLOR: process.env.QR_BORDER_COLOR || '#000000',
+      QR_FOREGROUND_COLOR: process.env.QR_FOREGROUND_COLOR || '#000000',
+      QR_BACKGROUND_COLOR: process.env.QR_BACKGROUND_COLOR || '#FFFFFF',
+      QR_LINK: process.env.QR_LINK || 'https://example.com',
+      HIDDEN_IMAGE_FILE: process.env.HIDDEN_IMAGE_FILE || 'microsoft-logo.png',
+      HIDDEN_IMAGE_SIZE: parseInt(process.env.HIDDEN_IMAGE_SIZE || '50'),
+
       // Hidden text settings
       INCLUDE_HIDDEN_TEXT: config.INCLUDE_HIDDEN_TEXT || 0,
-      HIDDEN_TEXT: config.HIDDEN_TEXT || '',
-      HIDDEN_IMAGE_SIZE: config.HIDDEN_IMAGE_SIZE || 50,
-      HIDDEN_IMAGE_FILE: config.HIDDEN_IMAGE_FILE || '',
-      
+      HIDDEN_TEXT: process.env.HIDDEN_TEXT || '',
+      HIDDEN_IMAGE_SIZE: parseInt(process.env.HIDDEN_IMAGE_SIZE || '50'),
+
       // Advanced settings
       PRIORITY: config.PRIORITY || 2,
       RETRY: config.RETRY || 0,
       RANDOM_METADATA: config.RANDOM_METADATA || 0,
       LINK_PLACEHOLDER: config.LINK_PLACEHOLDER || '{email}',
-      
+
       // Domain logo
       DOMAIN_LOGO_SIZE: config.DOMAIN_LOGO_SIZE || '50%',
       BORDER_STYLE: config.BORDER_STYLE || 'solid',
       BORDER_COLOR: config.BORDER_COLOR || '#000000',
-      
+
       // ZIP settings
       ZIP_USE: config.ZIP_USE || 0,
       ZIP_PASSWORD: config.ZIP_PASSWORD || '',
-      
+
       // Proxy settings
       PROXY_USE: config.PROXY_USE || 0,
       PROXY_TYPE: config.TYPE || 'socks5',
@@ -141,7 +142,7 @@ export class ConfigService {
       PROXY_PORT: config.PORT || '',
       PROXY_USER: config.USER || '',
       PROXY_PASS: config.PASS || '',
-      
+
       // SMTP settings
       SMTP: config.SMTP || {}
     };
