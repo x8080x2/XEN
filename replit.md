@@ -82,6 +82,8 @@ This is a complete web-based clone of the original Electron email sender applica
 - ✅ **Full Functionality Preserved** - All features working with file name placeholders fixed
 - ✅ **Advanced Dashboard Removed** - Completely removed advanced dashboard, analytics routes, and related services per user request
 - ✅ **404 Page Removed** - Completely removed NotFound component and 404 routing per user request
+- ✅ **QR Code Synchronization Complete** - All QR generation points now use identical settings (colors, borders, sizing)
+- ✅ **HTML Convert Format Flexibility** - Fixed hardcoded formats, users can now select specific conversion formats
 
 ## UI/UX Improvements (August 2025)
 - ✅ **Enhanced Placeholder UI** - Comprehensive, color-coded placeholder documentation in both email sender pages

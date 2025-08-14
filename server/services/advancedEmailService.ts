@@ -792,27 +792,10 @@ export class AdvancedEmailService {
 
 
 
-  // Generate QR Code with config colors - exact clone from main.js lines 735-744
-  private async generateQRCode(link: string): Promise<Buffer | null> {
-    const emailConfig = configService.getEmailConfig();
-    const foregroundColor = emailConfig.QR_FOREGROUND_COLOR || '#000000';
-    const backgroundColor = emailConfig.QR_BACKGROUND_COLOR || '#FFFFFF';
-    
-    try {
-      const qrBuffer = await QRCode.toBuffer(link, {
-        width: emailConfig.QR_WIDTH || 200,
-        margin: 4,
-        errorCorrectionLevel: 'H' as 'L' | 'M' | 'Q' | 'H',
-        color: {
-          dark: foregroundColor,
-          light: backgroundColor
-        }
-      });
-      return qrBuffer;
-    } catch (e) {
-      console.error('QR code generation failed:', e);
-      return null;
-    }
+  // Generate QR Code with config colors - standardized to use same settings as generateQRCodeInternal
+  private async generateQRCode(link: string, C: any = {}): Promise<Buffer | null> {
+    // Use the standardized QR generation function for consistency
+    return await this.generateQRCodeInternal(link, C);
   }
 
   // Complete sendMail function with all advanced features - exact clone
@@ -1175,7 +1158,11 @@ export class AdvancedEmailService {
                 const qrDataUrl = await QRCode.toDataURL(qrContent, {
                   width: qrOpts.width,
                   margin: qrOpts.margin,
-                  errorCorrectionLevel: 'H' as any
+                  errorCorrectionLevel: 'H' as any,
+                  color: {
+                    dark: C.QR_FOREGROUND_COLOR || '#000000',
+                    light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                  }
                 });
                 
                 // Hidden text overlay - exact clone
@@ -1227,7 +1214,8 @@ export class AdvancedEmailService {
           }
 
           // HTML Convert attachments (PDF, PNG, DOCX) - Fixed QR processing
-          if (C.HTML_CONVERT && C.HTML_CONVERT.length > 0 && finalAttHtml) {
+          const htmlConvertFormats = typeof C.HTML_CONVERT === 'string' ? C.HTML_CONVERT.split(',').map((f: string) => f.trim()).filter(Boolean) : [];
+          if (htmlConvertFormats.length > 0 && finalAttHtml) {
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
             // Process QR codes in attachment HTML before conversion
@@ -1286,8 +1274,9 @@ export class AdvancedEmailService {
               }
             }
             
-            // Process domain logo in attachment HTML if present
+            // Process domain logo in attachment HTML if present  
             if (processedAttHtml.includes('{domainlogo}')) {
+              const domainFull = recipient.split('@')[1] || '';
               const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
               if (domainLogoBuffer) {
                 const dataLogo = domainLogoBuffer.toString('base64');
@@ -1304,7 +1293,8 @@ export class AdvancedEmailService {
               }
             }
             
-            for (const format of C.HTML_CONVERT) {
+            for (const format of htmlConvertFormats) {
+              if (!format) continue;
               try {
                 console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
                 const buffer = await this.renderHtml(format, processedAttHtml, C);
