@@ -7,52 +7,57 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface SettingsOverlayProps {
   onClose: () => void;
+  currentSettings?: any;
+  onSettingsChange?: (settings: any) => void;
 }
 
-export default function SettingsOverlay({ onClose }: SettingsOverlayProps) {
+export default function SettingsOverlay({ onClose, currentSettings, onSettingsChange }: SettingsOverlayProps) {
   const [settings, setSettings] = useState({
     smtp: {
-      host: "smtp.gmail.com",
-      port: 587,
-      security: "tls",
-      username: "",
-      password: "",
-      priority: 2
+      host: currentSettings?.smtp?.host || "smtp.gmail.com",
+      port: currentSettings?.smtp?.port || 587,
+      security: currentSettings?.smtp?.security || "tls",
+      username: currentSettings?.smtp?.username || "",
+      password: currentSettings?.smtp?.password || "",
+      priority: currentSettings?.smtp?.priority || 2
     },
     html: {
-      minify: true,
-      includeAttachment: false,
-      bodyOnly: false,
-      hiddenText: "",
-      convertTo: "",
-      logoSize: "50%"
+      minify: currentSettings?.html?.minify ?? true,
+      includeAttachment: currentSettings?.html?.includeAttachment ?? false,
+      bodyOnly: currentSettings?.html?.bodyOnly ?? false,
+      hiddenText: currentSettings?.html?.hiddenText || "",
+      convertTo: currentSettings?.html?.convertTo || "", // Preserve current HTML convert settings
+      logoSize: currentSettings?.html?.logoSize || "50%"
     },
     qr: {
-      enabled: true,
-      link: "https://fb.com",
-      width: 200,
-      borderStyle: "solid",
-      borderColor: "#000000",
-      randomMetadata: false
+      enabled: currentSettings?.qr?.enabled ?? true,
+      link: currentSettings?.qr?.link || "https://fb.com",
+      width: currentSettings?.qr?.width || 200,
+      borderStyle: currentSettings?.qr?.borderStyle || "solid",
+      borderColor: currentSettings?.qr?.borderColor || "#000000",
+      randomMetadata: currentSettings?.qr?.randomMetadata ?? false
     },
     zip: {
-      enabled: false,
-      password: "",
-      filenameTemplate: "{user}_{date}"
+      enabled: currentSettings?.zip?.enabled ?? false,
+      password: currentSettings?.zip?.password || "",
+      filenameTemplate: currentSettings?.zip?.filenameTemplate || "{user}_{date}"
     },
     proxy: {
-      enabled: false,
-      type: "socks5",
-      host: "127.0.0.1",
-      port: 1080,
-      username: "",
-      password: ""
+      enabled: currentSettings?.proxy?.enabled ?? false,
+      type: currentSettings?.proxy?.type || "socks5",
+      host: currentSettings?.proxy?.host || "127.0.0.1",
+      port: currentSettings?.proxy?.port || 1080,
+      username: currentSettings?.proxy?.username || "",
+      password: currentSettings?.proxy?.password || ""
     }
   });
 
   const handleSave = () => {
-    // Save settings logic here
+    // Save settings and notify parent component
     console.log("Saving settings:", settings);
+    if (onSettingsChange) {
+      onSettingsChange(settings);
+    }
     onClose();
   };
 
