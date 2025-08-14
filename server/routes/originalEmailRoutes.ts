@@ -1,11 +1,11 @@
 import type { Express } from "express";
-import { AdvancedEmailService } from "../services/advancedEmailService";
+import { advancedEmailService } from "../services/advancedEmailService";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
-  const emailService = new AdvancedEmailService();
+  // Use the singleton instance instead of creating a new one
   
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
@@ -102,7 +102,7 @@ export function setupOriginalEmailRoutes(app: Express) {
       let totalFailed = 0;
       
       try {
-        const result = await emailService.sendMail(args, (progress) => {
+        const result = await advancedEmailService.sendMail(args, (progress) => {
           if (progress.status === 'success') {
             totalSent++;
           } else {
@@ -152,49 +152,49 @@ export function setupOriginalEmailRoutes(app: Express) {
   
   // Pause send endpoint
   app.post("/api/original/pause", (req, res) => {
-    emailService.pauseSend();
+    advancedEmailService.pauseSend();
     res.json({ success: true, message: 'Email sending paused' });
   });
   
   // Resume send endpoint
   app.post("/api/original/resume", (req, res) => {
-    emailService.resumeSend();
+    advancedEmailService.resumeSend();
     res.json({ success: true, message: 'Email sending resumed' });
   });
   
   // List files endpoint
   app.get("/api/original/listFiles", async (req, res) => {
     const folder = req.query.folder as string || 'files';
-    const result = await emailService.listFiles(folder);
+    const result = await advancedEmailService.listFiles(folder);
     res.json(result);
   });
   
   // List logo files endpoint
   app.get("/api/original/listLogoFiles", async (req, res) => {
-    const result = await emailService.listLogoFiles();
+    const result = await advancedEmailService.listLogoFiles();
     res.json(result);
   });
   
   // Read file endpoint
   app.post("/api/original/readFile", async (req, res) => {
     const { filepath } = req.body;
-    const result = await emailService.readFile(filepath);
+    const result = await advancedEmailService.readFile(filepath);
     res.json(result);
   });
   
   // Write file endpoint
   app.post("/api/original/writeFile", async (req, res) => {
     const { filepath, content } = req.body;
-    const result = await emailService.writeFile(filepath, content);
+    const result = await advancedEmailService.writeFile(filepath, content);
     res.json(result);
   });
   
   // Cleanup on server shutdown
   process.on('SIGTERM', () => {
-    emailService.cleanup();
+    advancedEmailService.cleanup();
   });
   
   process.on('SIGINT', () => {
-    emailService.cleanup();
+    advancedEmailService.cleanup();
   });
 }
