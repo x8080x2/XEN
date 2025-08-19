@@ -380,7 +380,7 @@ export default function OriginalEmailSender() {
         bodyHtml = '';
       }
     }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)  
+    // Priority 2: Direct HTML from textarea (args.html equivalent)
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
@@ -560,7 +560,7 @@ export default function OriginalEmailSender() {
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
                 Mailer
               </div>
-              <div 
+              <div
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
@@ -833,8 +833,8 @@ export default function OriginalEmailSender() {
                               <div
                                 key={index}
                                 className={`text-xs py-2 px-3 rounded flex items-start gap-2 ${
-                                  log.status === 'success' 
-                                    ? 'bg-green-900/20 border-l-2 border-green-500' 
+                                  log.status === 'success'
+                                    ? 'bg-green-900/20 border-l-2 border-green-500'
                                     : 'bg-red-900/20 border-l-2 border-red-500'
                                 }`}
                               >
@@ -958,14 +958,14 @@ export default function OriginalEmailSender() {
                       { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
                     ].map(({ format, label, color }) => {
                       const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
-                      
+
                       return (
                         <Button
                           key={format}
                           type="button"
                           onClick={() => {
                             const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
-                            const newFormats = isActive 
+                            const newFormats = isActive
                               ? formats.filter((f: string) => f !== format)
                               : [...formats, format];
                             setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
@@ -996,7 +996,7 @@ export default function OriginalEmailSender() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={advancedSettings.zipUse}
-                      onCheckedChange={(checked: boolean) => 
+                      onCheckedChange={(checked: boolean) =>
                         setAdvancedSettings({...advancedSettings, zipUse: !!checked})
                       }
                     />
@@ -1005,7 +1005,7 @@ export default function OriginalEmailSender() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={advancedSettings.htmlImgBody}
-                      onCheckedChange={(checked: boolean) => 
+                      onCheckedChange={(checked: boolean) =>
                         setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
                       }
                     />
@@ -1022,7 +1022,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.qrcode}
-                    onCheckedChange={(checked: boolean) => 
+                    onCheckedChange={(checked: boolean) =>
                       setAdvancedSettings({...advancedSettings, qrcode: !!checked})
                     }
                   />
@@ -1031,7 +1031,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.randomMetadata}
-                    onCheckedChange={(checked: boolean) => 
+                    onCheckedChange={(checked: boolean) =>
                       setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
                     }
                   />
@@ -1042,7 +1042,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.calendarMode}
-                    onCheckedChange={(checked: boolean) => 
+                    onCheckedChange={(checked: boolean) =>
                       setAdvancedSettings({...advancedSettings, calendarMode: !!checked})
                     }
                   />
@@ -1190,7 +1190,7 @@ export default function OriginalEmailSender() {
                   </div>
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Priority</Label>
-                    <select 
+                    <select
                       value={advancedSettings.priority}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, priority: e.target.value})}
                       className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
@@ -1216,7 +1216,7 @@ export default function OriginalEmailSender() {
                   </div>
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Proxy Type</Label>
-                    <select 
+                    <select
                       value={advancedSettings.proxyType}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, proxyType: e.target.value})}
                       className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
