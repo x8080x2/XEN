@@ -1348,35 +1348,21 @@ export class AdvancedEmailService {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
                 
-                // Check for cached logo first
-                let cachedLogo = this.logoCache.get(domainFull);
+                // Always fetch fresh logo for HTML2IMG - no caching for multi-domain campaigns
+                console.log('[HTML2IMG_BODY] Fetching fresh domain logo (no caching for multi-domain support)');
+                const freshLogo = await this.fetchDomainLogo(domainFull, true); // Always skip cache
                 
-                // If no cached logo (happens in cross-domain scenarios), fetch fresh for HTML2IMG
-                if (!cachedLogo) {
-                  console.log('[HTML2IMG_BODY] No cached logo found, fetching fresh for screenshot');
-                  const fromEmail = args.smtpUser || '';
-                  const senderDomain = this.extractDomainFromEmail(fromEmail);
-                  const skipCache = senderDomain && senderDomain !== domainFull;
-                  
-                  cachedLogo = await this.fetchDomainLogo(domainFull, !!skipCache);
-                  // Cache the logo for HTML2IMG processing even in cross-domain scenarios
-                  if (cachedLogo) {
-                    this.logoCache.set(domainFull, cachedLogo);
-                    console.log(`[HTML2IMG_BODY] Fetched and cached logo for ${domainFull} for screenshot use`);
-                  }
-                }
-                
-                if (cachedLogo) {
-                  console.log('[HTML2IMG_BODY] Using domain logo for screenshot');
-                  const dataLogo = cachedLogo.toString('base64');
+                if (freshLogo) {
+                  console.log('[HTML2IMG_BODY] Using fresh domain logo for screenshot');
+                  const dataLogo = freshLogo.toString('base64');
                   const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
                   
                   // Apply EXACT same domain logo styling as main HTML but using data URL
                   const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
-                  console.log(`[HTML2IMG_BODY] Domain logo processed with EXACT main HTML settings for ${domainFull}`);
+                  console.log(`[HTML2IMG_BODY] Domain logo processed with fresh fetch for ${domainFull}`);
                 } else {
-                  console.log('[HTML2IMG_BODY] Logo fetch failed, using fallback text');
+                  console.log('[HTML2IMG_BODY] Fresh logo fetch failed, using fallback text');
                   const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
                 }
