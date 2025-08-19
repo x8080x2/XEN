@@ -1102,10 +1102,11 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            // Generate QR as Data URL (same as other QR processing)
+            // Generate QR as Data URL using same method as other QR processing
+            const qrOpts = buildQrOpts(C);
             const qrDataUrl = await QRCode.toDataURL(qrContent, {
-              width: C.QR_WIDTH || 200,
-              margin: 4,
+              width: qrOpts.width,
+              margin: qrOpts.margin,
               errorCorrectionLevel: 'H' as any,
               color: {
                 dark: C.QR_FOREGROUND_COLOR || '#000000',
@@ -1135,7 +1136,7 @@ export class AdvancedEmailService {
                 }
               }
               
-              // Replace QR placeholder with Data URL + overlay (same as other QR processing)
+              // Replace QR placeholder with Data URL + overlay (exact same as other QR processing)
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
