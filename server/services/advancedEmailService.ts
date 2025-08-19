@@ -1089,7 +1089,7 @@ export class AdvancedEmailService {
           const emailAttachments: any[] = [];
           
           // QR Code replacement - DATA URL APPROACH (Same as other QR processing)
-          if (html.includes('{qrcode}')) {
+          if (html.includes('{qrcode}') && C.QRCODE) {
             console.log('[QR Processing] Data URL approach for main HTML - same as other QR processing');
             
             // Generate recipient-specific QR content
@@ -1152,6 +1152,10 @@ export class AdvancedEmailService {
             } else {
               html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
             }
+          } else if (html.includes('{qrcode}')) {
+            // QR disabled but placeholder exists - remove placeholder
+            html = html.replace(/\{qrcode\}/g, '');
+            console.log('[Main HTML] QR disabled - removed {qrcode} placeholder');
           }
 
           // HTML processing - no minification
