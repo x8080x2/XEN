@@ -490,17 +490,14 @@ export class AdvancedEmailService {
   private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
     
-    // Skip cache if requested (for cross-domain scenarios)
-    if (!skipCache && this.logoCache.has(domain)) {
+    // Always check cache first - performance optimization for all scenarios
+    if (this.logoCache.has(domain)) {
       const cached = this.logoCache.get(domain);
-      console.log(`[fetchDomainLogo] Using cached logo for ${domain} (${cached ? 'valid' : 'null'} entry)`);
+      console.log(`[fetchDomainLogo] Using cached logo for ${domain} (performance boost)`);
       return cached || null;
     }
     
-    // If skipCache is requested but domain is already cached, we need to handle cross-domain differently
-    if (skipCache && !this.logoCache.has(domain)) {
-      console.log(`[fetchDomainLogo] Cross-domain scenario: fetching fresh logo for ${domain}`);
-    }
+    console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain}`);
     
     // Optimized logo sources - fastest first for better performance
     const logoSources = [
@@ -544,11 +541,8 @@ export class AdvancedEmailService {
           
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            if (!skipCache) {
-              this.logoCache.set(domain, buffer); // Cache only if not skipped
-            } else {
-              console.log(`[fetchDomainLogo] Skipping cache for cross-domain scenario`);
-            }
+            // Always cache for performance - cross-domain caching is beneficial
+            this.logoCache.set(domain, buffer);
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);

@@ -1,8 +1,38 @@
 # Email Delivery Performance Analysis
 
-## Latest Test Results (After Optimization)
+## Critical Issues Found in Latest Logs
 
-**Total Time: 2,373ms** (vs previous 1,621ms - actually slower)
+**Total Time: 4,625ms for 2 emails** - SEVERELY DEGRADED PERFORMANCE
+
+### Major Errors Identified:
+
+**1. Logo Fetching Failures & Extreme Delays**
+```
+[fetchDomainLogo] Failed to fetch from https://icons.duckduckgo.com/ip3/eeu.jp.ico: Request failed with status code 404
+[Main HTML Domain Logo] Logo fetch completed in 2156ms
+```
+- **2,156ms logo fetch** (46% of total time for 1 email)
+- Multiple fallback attempts causing cascading delays
+- 404 errors from primary logo sources
+
+**2. Cache Still Not Working**
+```
+[fetchDomainLogo] Skipping cache for cross-domain scenario
+```
+- Logo caching completely bypassed for cross-domain
+- Same logos fetched 3x per email (HTML, HTML2IMG, HTML_CONVERT)
+
+**3. Multiple Browser Launches**
+```
+{"message":"Browser launched with system chromium"} - 3 separate instances
+```
+- No browser reuse happening
+- Each launch adds ~200ms overhead
+
+**4. Process Sequence Issues**
+- Email 1 sends at 18:43:07 (854ms SMTP)
+- HTML2IMG processes AFTER email sent
+- HTML_CONVERT processes separately with fresh logo fetches
 
 ### Performance Breakdown:
 
