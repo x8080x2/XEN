@@ -474,9 +474,19 @@ export class AdvancedEmailService {
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
 
-  // Domain Logo Fetching - exact clone from main.js lines 690-712
+  // Caching for faster subsequent fetches
+  private logoCache = new Map<string, Buffer | null>();
+  private qrCache = new Map<string, Buffer>();
+  
   private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
+    
+    // Check cache first for significant speed improvement
+    if (this.logoCache.has(domain)) {
+      const cached = this.logoCache.get(domain);
+      console.log(`[fetchDomainLogo] Using cached logo for ${domain}`);
+      return cached || null;
+    }
     
     // Try multiple logo sources for better color logo availability
     const logoSources = [
@@ -494,7 +504,7 @@ export class AdvancedEmailService {
         
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
-          timeout: 10000,
+          timeout: 3000, // Reduced timeout from 10s to 3s for faster failure
           headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)' }
         });
         
@@ -503,6 +513,7 @@ export class AdvancedEmailService {
           // Skip very small images (likely placeholders or low quality)
           if (buffer.length > 1000) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
+            this.logoCache.set(domain, buffer); // Cache for future use
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes), trying next source`);
@@ -515,12 +526,22 @@ export class AdvancedEmailService {
     }
     
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
+    this.logoCache.set(domain, null); // Cache the failure to avoid retries
     return null;
   }
 
-  // QR Code generation with colors from merged config (Fixed)
+  // QR Code generation with caching and colors from merged config (Fixed)
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
+    
+    // Create cache key based on link and visual settings
+    const cacheKey = `${link}_${C.QR_WIDTH || 200}_${C.QR_FOREGROUND_COLOR || '#000000'}_${C.QR_BACKGROUND_COLOR || '#FFFFFF'}`;
+    
+    // Check cache first
+    if (this.qrCache.has(cacheKey)) {
+      console.log(`[QR Generation] Using cached QR code`);
+      return this.qrCache.get(cacheKey)!;
+    }
     
     try {
       // Use merged configuration colors
@@ -538,6 +559,11 @@ export class AdvancedEmailService {
           light: backgroundColor
         }
       });
+      
+      // Cache the result
+      this.qrCache.set(cacheKey, buffer);
+      console.log(`[QR Generation] Generated and cached QR code`);
+      
       this.logger.debug('Generated QR code with custom colors', { 
         link: link.substring(0, 50),
         foregroundColor,
@@ -1041,8 +1067,8 @@ export class AdvancedEmailService {
       processedAttachmentHtml = replacePlaceholders(processedAttachmentHtml);
       processedBodyHtml = replacePlaceholders(processedBodyHtml);
 
-      // Recreate render concurrency limiter with updated rate
-      this.limit = pLimit(C.EMAIL_PER_SECOND || 5);
+      // Recreate render concurrency limiter with higher performance defaults
+      this.limit = pLimit(C.EMAIL_PER_SECOND || 15); // Increased default from 5 to 15
 
       // Use processedBodyHtml as the email html body from now on
       const templateHtmlBase = processedBodyHtml;
@@ -1053,15 +1079,15 @@ export class AdvancedEmailService {
       let failed = 0;
       const errors: string[] = [];
 
-      // Batch processing - exact clone from main.js lines 1078-1152
+      // Batch processing with performance optimizations
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
-      const batchSize = C.EMAIL_PER_SECOND || 5;
+      const batchSize = C.EMAIL_PER_SECOND || 15; // Increased default batch size
       console.log(`[sendMail] Using EMAIL_PER_SECOND: ${batchSize}, SLEEP: ${C.SLEEP}s, PRIORITY: ${C.PRIORITY}, RETRY: ${C.RETRY}`);
       const batches = [];
       for (let i = 0; i < recipients.length; i += batchSize) {
         batches.push(recipients.slice(i, i + batchSize));
       }
-      const sleepMs = (C.SLEEP || 0) * 1000;
+      const sleepMs = Math.max(0, (C.SLEEP || 0) * 1000); // Ensure no negative sleep
       
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         // Pause/Resume Check - exact clone
@@ -1073,10 +1099,8 @@ export class AdvancedEmailService {
         const batch = batches[batchIndex];
         console.log(`[Batch ${batchIndex + 1}/${batches.length}] Processing ${batch.length} recipients`);
         
-        // Process emails sequentially for better progress tracking
-        const batchResults = [];
-        for (let i = 0; i < batch.length; i++) {
-          const recipient = batch[i];
+        // Process emails in parallel within batches for maximum speed
+        const batchPromises = batch.map(async (recipient: string) => {
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -1088,8 +1112,7 @@ export class AdvancedEmailService {
                 error,
                 timestamp: new Date().toISOString()
               });
-              batchResults.push({ success: false, error, recipient });
-              continue;
+              return { success: false, error, recipient };
             }
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
@@ -1502,7 +1525,7 @@ END:VCALENDAR`;
               error: result.success ? null : result.error || 'Unknown error',
               timestamp: new Date().toISOString()
             });
-            batchResults.push(result);
+            return result;
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
             progressCallback?.({
@@ -1512,12 +1535,15 @@ END:VCALENDAR`;
               error: err && err.message ? err.message : String(err),
               timestamp: new Date().toISOString()
             });
-            batchResults.push({ success: false, error: err && err.message ? err.message : String(err), recipient });
+            return { success: false, error: err && err.message ? err.message : String(err), recipient };
           }
-        }
+        });
+        
+        // Wait for all batch promises to complete
+        const batchResults = await Promise.all(batchPromises);
         
         // Count results - exact clone
-        batchResults.forEach(result => {
+        batchResults.forEach((result: any) => {
           if (result.success) {
             sent++;
           } else {

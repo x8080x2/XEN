@@ -94,7 +94,7 @@ export class ConfigService {
     const config = this.configData;
     return {
       // Basic settings
-      EMAILPERSECOND: config.EMAILPERSECOND || 5,
+      EMAILPERSECOND: config.EMAILPERSECOND || 15, // Increased default for better performance
       SLEEP: config.SLEEP || 1,
       FILE_NAME: config.FILE_NAME || 'attachment',
 
