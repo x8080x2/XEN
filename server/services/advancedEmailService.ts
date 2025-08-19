@@ -1088,77 +1088,82 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - SINGLE METHOD APPROACH (Delivery-safe Data URL)
-          if (html.includes('{qrcode}') && C.QRCODE) {
-            console.log('[QR Processing] Single method approach for main HTML QR');
-            
-            // Generate recipient-specific QR content
-            let qrContent = C.QR_LINK;
-            if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-              qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-            }
-            if (C.RANDOM_METADATA) {
-              const rand = crypto.randomBytes(4).toString('hex');
-              qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
-            }
-            
-            // Generate QR as Data URL for delivery safety
-            const qrOpts = buildQrOpts(C);
-            console.log(`[Single Method] Using QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
-            const qrDataUrl = await QRCode.toDataURL(qrContent, {
-              width: qrOpts.width,
-              margin: qrOpts.margin,
-              errorCorrectionLevel: 'H' as any,
-              color: {
-                dark: C.QR_FOREGROUND_COLOR || '#000000',
-                light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
-              }
-            });
-            console.log(`[Single Method] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
-            
-            if (qrDataUrl) {
-              // Load hidden image for overlay
-              let hiddenOverlay = '';
-              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+          // QR Code replacement - MAIN HTML QR PROCESSING
+          if (html.includes('{qrcode}')) {
+            if (C.QRCODE) {
+              console.log('[Main HTML QR] Processing QR code for main HTML email body');
               
-              if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
-                try {
-                  const logoDir = join('files', 'logo');
-                  const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                  if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                    const imgBuf = readFileSync(candidatePath);
-                    if (imgBuf && imgBuf.length > 0) {
-                      const base64Img = imgBuf.toString('base64');
-                      hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                      console.log(`[Single Method] Applied base64 overlay (${hiddenImgWidth}px)`);
-                    }
-                  }
-                } catch (err) {
-                  console.log(`[Single Method] Overlay load failed: ${err}`);
+              // Generate recipient-specific QR content
+              let qrContent = C.QR_LINK;
+              if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+              }
+              if (C.RANDOM_METADATA) {
+                const rand = crypto.randomBytes(4).toString('hex');
+                qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+              }
+              
+              // Generate QR as Data URL for main HTML display
+              const qrOpts = buildQrOpts(C);
+              console.log(`[Main HTML QR] QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
+              const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                width: qrOpts.width,
+                margin: qrOpts.margin,
+                errorCorrectionLevel: 'H' as any,
+                color: {
+                  dark: C.QR_FOREGROUND_COLOR || '#000000',
+                  light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
                 }
+              });
+              console.log(`[Main HTML QR] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
+              
+              if (qrDataUrl) {
+                // Load hidden image for overlay if specified
+                let hiddenOverlay = '';
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                
+                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
+                  try {
+                    const logoDir = join('files', 'logo');
+                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                      const imgBuf = readFileSync(candidatePath);
+                      if (imgBuf && imgBuf.length > 0) {
+                        const base64Img = imgBuf.toString('base64');
+                        hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                        console.log(`[Main HTML QR] Applied base64 overlay: ${C.HIDDEN_IMAGE_FILE} (${hiddenImgWidth}px)`);
+                      }
+                    }
+                  } catch (err) {
+                    console.log(`[Main HTML QR] Overlay load failed: ${err}`);
+                  }
+                } else {
+                  console.log(`[Main HTML QR] No hidden image file specified - QR only`);
+                }
+                
+                // Create QR HTML with proper styling
+                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                const borderStyle = C.BORDER_STYLE || 'solid';
+                
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
+                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  </a>
+                                  ${hiddenOverlay}
+                                </div>`;
+                
+                html = html.replace(/\{qrcode\}/g, qrHtml);
+                console.log(`[Main HTML QR] QR replacement completed for ${recipient}`);
+                console.log(`[Main HTML QR] QR content: ${qrContent}`);
+              } else {
+                console.log(`[Main HTML QR] QR generation failed`);
+                html = html.replace(/\{qrcode\}/g, '<span style="color:red; font-weight:bold;">[QR code generation failed]</span>');
               }
-              
-              // Replace QR placeholder with Data URL + overlay
-              const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-              const borderStyle = C.BORDER_STYLE || 'solid';
-              
-              const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                </a>
-                                ${hiddenOverlay}
-                              </div>`;
-              
-              html = html.replace(/\{qrcode\}/g, qrHtml);
-              console.log(`[Single Method] QR replacement completed with overlay for ${recipient}`);
-              console.log(`[Single Method] QR processing completed - main.js approach`);
             } else {
-              html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+              // QR disabled - show message instead of removing completely
+              console.log('[Main HTML QR] QR code disabled in settings');
+              html = html.replace(/\{qrcode\}/g, '<span style="color:#888; font-style:italic;">[QR code disabled]</span>');
             }
-          } else if (html.includes('{qrcode}')) {
-            // QR disabled but placeholder exists - remove placeholder
-            html = html.replace(/\{qrcode\}/g, '');
-            console.log('[Single Method] QR disabled - removed {qrcode} placeholder');
           }
 
           // HTML processing - no minification
