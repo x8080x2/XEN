@@ -949,15 +949,37 @@ export default function OriginalEmailSender() {
               <h3 className="text-lg font-medium text-white mb-4">📄 HTML Convert Settings</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">Convert Formats (comma-separated)</Label>
-                  <Input
-                    value={advancedSettings.htmlConvert}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, htmlConvert: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-brown"
-                    placeholder="pdf,png,docx"
-                  />
-                  <p className="text-xs text-[#a1a1aa] mt-1">
-                    Available formats: pdf, png, docx, html • 
+                  <Label className="text-sm text-[#a1a1aa] mb-3 block">Convert Formats</Label>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
+                      { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
+                      { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
+                      { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
+                    ].map(({ format, label, color }) => {
+                      const isActive = advancedSettings.htmlConvert.split(',').map(f => f.trim().toLowerCase()).includes(format);
+                      
+                      return (
+                        <Button
+                          key={format}
+                          type="button"
+                          onClick={() => {
+                            const formats = advancedSettings.htmlConvert.split(',').map(f => f.trim().toLowerCase()).filter(Boolean);
+                            const newFormats = isActive 
+                              ? formats.filter(f => f !== format)
+                              : [...formats, format];
+                            setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
+                          }}
+                          className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                        >
+                          {label}
+                          {isActive && <span className="ml-1 text-xs">✓</span>}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-[#a1a1aa] mt-2">
+                    Click to toggle conversion formats. Selected formats will be generated as attachments.
                   </p>
                 </div>
                 <div>
