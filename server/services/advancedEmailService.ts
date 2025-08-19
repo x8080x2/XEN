@@ -917,9 +917,6 @@ export class AdvancedEmailService {
     }
     
     // Hidden text overlay completely removed - image overlay only
-    if ('HIDDEN_TEXT' in C) {
-      (C as any).HIDDEN_TEXT = '';
-    }
     
     // Apply proxy settings from UI args - exact clone from main.js lines 207-214
     if (args.proxyUse === 'true' || args.proxyUse === true) {
@@ -1136,10 +1133,6 @@ export class AdvancedEmailService {
                   } catch (err) {
                     console.log(`[Main HTML QR] Overlay load failed: ${err}`);
                   }
-                } else if (args.includeHiddenText && args.hiddenText) {
-                  // Fallback to hidden text if no image specified
-                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${args.hiddenText}</span>`;
-                  console.log(`[Main HTML QR] Applied hidden text overlay: ${args.hiddenText}`);
                 } else {
                   console.log(`[Main HTML QR] No overlay specified - QR only`);
                 }
