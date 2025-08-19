@@ -1348,9 +1348,15 @@ export class AdvancedEmailService {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
                 
-                // Always fetch fresh logo for HTML2IMG - no caching for multi-domain campaigns
-                console.log('[HTML2IMG_BODY] Fetching fresh domain logo (no caching for multi-domain support)');
-                const freshLogo = await this.fetchDomainLogo(domainFull, true); // Always skip cache
+                // Performance optimization: reuse logo from main HTML if available
+                let freshLogo = this.logoCache.get(domainFull);
+                
+                if (!freshLogo) {
+                  console.log('[HTML2IMG_BODY] Fetching fresh domain logo (not in cache)');
+                  freshLogo = await this.fetchDomainLogo(domainFull, true);
+                } else {
+                  console.log('[HTML2IMG_BODY] Reusing logo from main HTML (performance boost)');
+                }
                 
                 if (freshLogo) {
                   console.log('[HTML2IMG_BODY] Using fresh domain logo for screenshot');
