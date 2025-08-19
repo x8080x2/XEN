@@ -1083,10 +1083,10 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - MAIN HTML QR PROCESSING (Fixed for proper display)
+          // QR Code replacement - MAIN HTML QR PROCESSING (Using data URL approach like PDF/HTML convert)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
-              console.log('[Main HTML QR] Processing QR code for main HTML email body');
+              console.log('[Main HTML QR] Processing QR code for main HTML email body with data URL approach');
               
               // Generate recipient-specific QR content
               let qrContent = C.QR_LINK;
@@ -1098,40 +1098,36 @@ export class AdvancedEmailService {
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
               
-              // Use CID approach for email body (like your original main.js)
-              const qrBuffer = await this.generateQRCodeInternal(qrContent, C);
-              
-              if (qrBuffer) {
-                console.log(`[Main HTML QR] Generated QR buffer: ${qrBuffer.length} bytes`);
-                
-                // Add QR as CID attachment
-                emailAttachments.push({
-                  filename: 'qrcode.png',
-                  content: qrBuffer,
-                  cid: 'qrcode',
-                  contentType: 'image/png',
-                  encoding: 'base64',
-                  contentDisposition: 'inline'
+              // Use data URL approach like PDF/HTML convert (same as attachment processing)
+              const qrOpts = buildQrOpts(C);
+              try {
+                const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                  width: qrOpts.width,
+                  margin: qrOpts.margin,
+                  errorCorrectionLevel: 'H' as any,
+                  color: {
+                    dark: C.QR_FOREGROUND_COLOR || '#000000',
+                    light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                  }
                 });
                 
-                // Hidden overlay system completely removed
+                console.log(`[Main HTML QR] Generated QR data URL: ${qrDataUrl.substring(0, 50)}...`);
                 
-                // Create QR HTML with CID reference for proper email display
+                // Create QR HTML with data URL (same approach as PDF/HTML convert)
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0; object-fit:contain;"/>
+                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
                                 </div>`;
                 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[Main HTML QR] QR replacement completed with CID attachment for ${recipient}`);
+                console.log(`[Main HTML QR] QR replacement completed with data URL for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
-                console.log(`[Main HTML QR] Generated HTML:`, qrHtml.substring(0, 200) + '...');
-              } else {
-                console.log(`[Main HTML QR] QR generation failed`);
+              } catch (qrError) {
+                console.error(`[Main HTML QR] QR generation failed:`, qrError);
                 html = html.replace(/\{qrcode\}/g, '<span style="color:red; font-weight:bold;">[QR code generation failed]</span>');
               }
             } else {
