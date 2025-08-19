@@ -710,15 +710,14 @@ export class AdvancedEmailService {
       
       try {
         page = await browser.newPage();
-        // Simplified request interception for better performance
+        // Ultra-fast request interception - block ALL external resources
         await page.setRequestInterception(true);
         page.on('request', (req: any) => {
-          const resourceType = req.resourceType();
-          if (resourceType === 'stylesheet' || resourceType === 'font' || 
-              (resourceType === 'image' && !req.url().startsWith('data:'))) {
-            req.abort();
-          } else {
+          const url = req.url();
+          if (url.startsWith('data:') || url.startsWith('about:')) {
             req.continue();
+          } else {
+            req.abort(); // Block all external requests for fastest rendering
           }
         });
         await page.setCacheEnabled(true);
@@ -759,33 +758,36 @@ export class AdvancedEmailService {
     });
   }
 
-  // HTML to Image conversion - IMPROVED with fallback handling
+  // HTML to Image conversion - OPTIMIZED for speed
   private async convertHtmlToImage(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
     return this.limit(async () => {
+      const conversionStart = Date.now();
       this.logger.debug('Image conversion starting', { 
         queuePending: (this.limit as any).pendingCount, 
-        active: (this.limit as any).activeCount 
+        active: (this.limit as any).activeCount,
+        timestamp: conversionStart
       });
       
-      let browser = await this.getBrowserFromPool();
+      // Direct browser launch for maximum HTML2IMG_BODY speed
+      let browser = await this.launchBrowser({});
       let page: any = null;
-      let usingPool = true;
-      
-      // Fallback to direct browser launch if pool fails
-      if (!browser) {
-        browser = await this.launchBrowser({});
-        usingPool = false;
-      }
+      let usingPool = false;
       
       try {
         page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 8000 });
-        const pngBuffer = await page.screenshot({ fullPage: true });
+        // Optimized page loading - skip unnecessary network wait
+        await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
+        // Fast screenshot with optimized settings
+        const pngBuffer = await page.screenshot({ 
+          fullPage: true,
+          optimizeForSpeed: true,
+          captureBeyondViewport: false
+        });
         
         if (page) await page.close();
         if (usingPool) {
@@ -794,10 +796,12 @@ export class AdvancedEmailService {
           await browser.close();
         }
         
+        const conversionEnd = Date.now();
         this.logger.debug('Image conversion completed', { 
           sizeKB: Math.round(pngBuffer.length / 1024),
           queuePending: (this.limit as any).pendingCount, 
-          active: (this.limit as any).activeCount 
+          active: (this.limit as any).activeCount,
+          duration: conversionEnd - conversionStart
         });
         return pngBuffer;
       } catch (e) {
@@ -1338,9 +1342,12 @@ export class AdvancedEmailService {
                   screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, '');
                 }
               }
-              // Convert to PNG
+              // Convert to PNG with performance timing
+              const imgStartTime = Date.now();
               console.log('[HTML2IMG_BODY] Converting HTML to PNG...');
               const result = await this.renderHtml('png', screenshotHtml, C);
+              const imgEndTime = Date.now();
+              console.log(`[HTML2IMG_BODY] PNG conversion completed in ${imgEndTime - imgStartTime}ms`);
               if (result) {
                 const cid = 'htmlimgbody';
                 // Process placeholders in HTML2IMG filename - exact clone fix

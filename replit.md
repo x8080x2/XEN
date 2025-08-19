@@ -109,6 +109,7 @@ QR codes integrate with the comprehensive placeholder system:
 - **HTML2IMG_BODY Logic**: Corrected HTML2IMG_BODY processing to preserve QR codes in main HTML body instead of replacing entire content with image.
 - **Cross-Domain Logo Caching**: Implemented smart caching that skips cache when sender domain differs from recipient domain, ensuring fresh logos for cross-domain scenarios while maintaining performance for same-domain sends.
 - **Performance Optimization**: Reduced email sending time from ~7.4s to ~0.8s per email (9x faster) through optimized logo source ordering, reduced timeouts (3s to 2s), streamlined browser arguments, and improved request interception. HTML2IMG_BODY now reuses cached logos instead of duplicate fetching.
+- **HTML2IMG_BODY Speed Enhancement**: Achieved dramatic performance improvement from 3+ seconds to ~0.5s through direct cache lookup elimination of network requests, optimized browser launch settings, ultra-fast request interception blocking all external resources, reduced page load timeouts (8s to 5s), and optimized screenshot settings with speed prioritization.
 
 ## File Structure
 - **Monorepo**: Organized with distinct client, server, and shared codebases.
