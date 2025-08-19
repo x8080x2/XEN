@@ -548,7 +548,7 @@ export default function OriginalEmailSender() {
         <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-[#000] text-white rounded-lg flex items-center justify-center font-bold text-lg">
+              <div className="w-10 h-10 bg-[] text-white rounded-lg flex items-center justify-center font-bold text-lg">
                 🫆
               </div>
               <div>
