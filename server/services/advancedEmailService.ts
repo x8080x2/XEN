@@ -1797,6 +1797,16 @@ END:VCALENDAR`;
     transporter: any;
     C: any;
   }): Promise<any> {
+    // Debug attachment details before sending
+    console.log(`[MAIL_DEBUG] Preparing email for ${emailData.to}:`);
+    console.log(`[MAIL_DEBUG] - Attachments count: ${emailData.attachments.length}`);
+    emailData.attachments.forEach((att, idx) => {
+      console.log(`[MAIL_DEBUG] - Attachment ${idx}: ${att.filename} (${att.content?.length || 'unknown'} bytes)`);
+      if (att.content && att.content.length < 100) {
+        console.log(`[MAIL_DEBUG] - Warning: Attachment ${att.filename} seems very small (${att.content.length} bytes)`);
+      }
+    });
+
     const mailOptions: any = {
       from: `${emailData.fromName} <${emailData.from}>`,
       to: emailData.to,
@@ -1841,7 +1851,15 @@ END:VCALENDAR`;
     // Use consistent, legitimate mailer identification
     mailOptions.headers['X-Mailer'] = 'Email Marketing System v1.0';
 
-    return await emailData.transporter.sendMail(mailOptions);
+    const result = await emailData.transporter.sendMail(mailOptions);
+    console.log(`[MAIL_DEBUG] Nodemailer result for ${emailData.to}:`, {
+      messageId: result.messageId,
+      accepted: result.accepted,
+      rejected: result.rejected,
+      pending: result.pending,
+      response: result.response
+    });
+    return result;
   }
 
   // Enhanced progress method using improvement 4
