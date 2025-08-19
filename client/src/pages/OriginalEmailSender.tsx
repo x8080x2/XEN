@@ -1018,36 +1018,31 @@ export default function OriginalEmailSender() {
             {/* Advanced Settings */}
             <div className="mt-4 mb-8 bg-black rounded-xl p-4 border border-[#26262b]">
               <div className="flex flex-wrap items-center gap-6">
-                <span className="text-sm text-[#a1a1aa] font-semibold">Checkbox Settings:</span>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.qrcode}
-                    onCheckedChange={(checked: boolean) => 
-                      setAdvancedSettings({...advancedSettings, qrcode: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[red]">🫐 QR Code</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.randomMetadata}
-                    onCheckedChange={(checked: boolean) => 
-                      setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[blue]"> 🍬 Random Metadata (May hurt delivery)</Label>
-                </div>
-
-
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.calendarMode}
-                    onCheckedChange={(checked: boolean) => 
-                      setAdvancedSettings({...advancedSettings, calendarMode: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[#a1a1aa]">Send as Calendar Invitation</Label>
-                </div>
+                <span className="text-sm text-[#a1a1aa] font-semibold">Button Settings:</span>
+                <Button
+                  type="button"
+                  onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                  className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                >
+                  🫐 QR Code
+                  {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                  className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                >
+                  🍬 Random Metadata
+                  {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                  className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                >
+                  📅 Calendar Mode
+                  {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
+                </Button>
               </div>
             </div>
           </div>
