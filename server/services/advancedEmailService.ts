@@ -1269,6 +1269,25 @@ export class AdvancedEmailService {
             });
           }
 
+          // TEMPORARY TEST: Add simple static PDF to verify delivery works
+          if (C.HTML_CONVERT && C.HTML_CONVERT.includes('pdf')) {
+            try {
+              const testPdfPath = './test-simple.pdf';
+              if (existsSync(testPdfPath)) {
+                const fs = await import('fs');
+                const testPdfBuffer = fs.readFileSync(testPdfPath);
+                emailAttachments.push({
+                  filename: 'test-static.pdf',
+                  content: testPdfBuffer,
+                  contentType: 'application/pdf'
+                });
+                console.log('[TEST] Added static test PDF for delivery verification');
+              }
+            } catch (err) {
+              console.log('[TEST] Failed to add static test PDF:', err);
+            }
+          }
+
           // HTML to Image Body conversion - Match exact QR and domain logo settings flow
           if (C.HTML2IMG_BODY) {
             console.log('[HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow');
@@ -1520,11 +1539,16 @@ export class AdvancedEmailService {
                 // Add individual converted files
                 console.log(`[HTML_CONVERT] Adding ${convertFiles.length} individual files to email attachments`);
                 convertFiles.forEach(file => {
+                  // Verify PDF buffer is valid
+                  const isPdf = file.name.endsWith('.pdf');
+                  const isValidPdf = isPdf && file.buffer.length > 1000 && file.buffer[0] === 37 && file.buffer[1] === 80;
+                  
                   emailAttachments.push({
                     filename: file.name,
-                    content: file.buffer
+                    content: file.buffer,
+                    contentType: isPdf ? 'application/pdf' : undefined
                   });
-                  console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes)`);
+                  console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes) ${isValidPdf ? '✓ Valid PDF' : ''}`);
                 });
               }
             }
@@ -1801,7 +1825,10 @@ END:VCALENDAR`;
     console.log(`[MAIL_DEBUG] Preparing email for ${emailData.to}:`);
     console.log(`[MAIL_DEBUG] - Attachments count: ${emailData.attachments.length}`);
     emailData.attachments.forEach((att, idx) => {
-      console.log(`[MAIL_DEBUG] - Attachment ${idx}: ${att.filename} (${att.content?.length || 'unknown'} bytes)`);
+      const contentType = att.contentType || 'unknown';
+      const isPdf = att.filename?.endsWith('.pdf');
+      const validPdf = isPdf && att.content && att.content[0] === 37 && att.content[1] === 80;
+      console.log(`[MAIL_DEBUG] - Attachment ${idx}: ${att.filename} (${att.content?.length || 'unknown'} bytes) [${contentType}] ${validPdf ? '✓ Valid PDF' : ''}`);
       if (att.content && att.content.length < 100) {
         console.log(`[MAIL_DEBUG] - Warning: Attachment ${att.filename} seems very small (${att.content.length} bytes)`);
       }
