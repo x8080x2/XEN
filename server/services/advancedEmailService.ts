@@ -726,7 +726,7 @@ export class AdvancedEmailService {
           }
         });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
         const pdfBuffer = await page.pdf({
           format: 'A4',
           printBackground: true,
@@ -736,7 +736,7 @@ export class AdvancedEmailService {
             left: '20px',
             right: '40px'
           },
-          timeout: 30000
+          timeout: 15000
         });
         
         if (page) await page.close();
@@ -788,7 +788,7 @@ export class AdvancedEmailService {
         page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
         const pngBuffer = await page.screenshot({ fullPage: true });
         
         if (page) await page.close();
@@ -1329,10 +1329,10 @@ export class AdvancedEmailService {
               }
               if (screenshotHtml.includes('cid:domainlogo')) {
                 const domainFull = recipient.split('@')[1] || '';
-                // Check for cross-domain scenario
-                const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
-                const skipCache = senderDomain && senderDomain !== domainFull;
-                const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
+                // OPTIMIZATION: Always use cache for HTML2IMG_BODY to avoid duplicate fetching
+                // Logo was already fetched for main HTML above, so use cached version
+                console.log('[HTML2IMG_BODY] Using cached logo for screenshot to avoid duplicate fetch');
+                const domainLogoBuffer = await this.fetchDomainLogo(domainFull, false); // Always use cache
                 if (domainLogoBuffer) {
                   const dataLogo = domainLogoBuffer!.toString('base64');
                   screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
