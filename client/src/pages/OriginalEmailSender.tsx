@@ -1078,8 +1078,10 @@ export default function OriginalEmailSender() {
                       <Label className="text-sm text-[#a1a1aa]">QR Border Width (px)</Label>
                       <Input
                         type="number"
+                        min="0"
+                        max="10"
                         value={advancedSettings.qrBorder}
-                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorder: e.target.value})}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorder: parseInt(e.target.value) || 0})}
                         className="bg-[#0f0f12] border-[#26262b] text-white"
                       />
                     </div>
