@@ -1117,7 +1117,7 @@ export class AdvancedEmailService {
                   contentType: 'image/png'
                 });
                 
-                // Load hidden image overlay if specified
+                // Load hidden image overlay if specified (image takes precedence over text)
                 let hiddenOverlay = '';
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 
@@ -1136,8 +1136,12 @@ export class AdvancedEmailService {
                   } catch (err) {
                     console.log(`[Main HTML QR] Overlay load failed: ${err}`);
                   }
+                } else if (args.includeHiddenText && args.hiddenText) {
+                  // Fallback to hidden text if no image specified
+                  hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${args.hiddenText}</span>`;
+                  console.log(`[Main HTML QR] Applied hidden text overlay: ${args.hiddenText}`);
                 } else {
-                  console.log(`[Main HTML QR] No hidden image file specified - QR only`);
+                  console.log(`[Main HTML QR] No overlay specified - QR only`);
                 }
                 
                 // Create QR HTML with CID reference for proper email display
@@ -1146,7 +1150,7 @@ export class AdvancedEmailService {
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
                                   ${hiddenOverlay}
                                 </div>`;
@@ -1154,6 +1158,7 @@ export class AdvancedEmailService {
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed with CID attachment for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
+                console.log(`[Main HTML QR] Generated HTML:`, qrHtml.substring(0, 200) + '...');
               } else {
                 console.log(`[Main HTML QR] QR generation failed`);
                 html = html.replace(/\{qrcode\}/g, '<span style="color:red; font-weight:bold;">[QR code generation failed]</span>');
