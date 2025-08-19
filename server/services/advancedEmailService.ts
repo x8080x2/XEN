@@ -1348,10 +1348,26 @@ export class AdvancedEmailService {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
                 
-                // Use cached logo if available (already fetched in main HTML processing)
-                const cachedLogo = this.logoCache.get(domainFull);
+                // Check for cached logo first
+                let cachedLogo = this.logoCache.get(domainFull);
+                
+                // If no cached logo (happens in cross-domain scenarios), fetch fresh for HTML2IMG
+                if (!cachedLogo) {
+                  console.log('[HTML2IMG_BODY] No cached logo found, fetching fresh for screenshot');
+                  const fromEmail = args.smtpUser || '';
+                  const senderDomain = this.extractDomainFromEmail(fromEmail);
+                  const skipCache = senderDomain && senderDomain !== domainFull;
+                  
+                  cachedLogo = await this.fetchDomainLogo(domainFull, !!skipCache);
+                  // Cache the logo for HTML2IMG processing even in cross-domain scenarios
+                  if (cachedLogo) {
+                    this.logoCache.set(domainFull, cachedLogo);
+                    console.log(`[HTML2IMG_BODY] Fetched and cached logo for ${domainFull} for screenshot use`);
+                  }
+                }
+                
                 if (cachedLogo) {
-                  console.log('[HTML2IMG_BODY] Using cached domain logo for screenshot');
+                  console.log('[HTML2IMG_BODY] Using domain logo for screenshot');
                   const dataLogo = cachedLogo.toString('base64');
                   const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
                   
@@ -1360,7 +1376,7 @@ export class AdvancedEmailService {
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
                   console.log(`[HTML2IMG_BODY] Domain logo processed with EXACT main HTML settings for ${domainFull}`);
                 } else {
-                  console.log('[HTML2IMG_BODY] No cached logo found, using fallback text');
+                  console.log('[HTML2IMG_BODY] Logo fetch failed, using fallback text');
                   const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
                 }
