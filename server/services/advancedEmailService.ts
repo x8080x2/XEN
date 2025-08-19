@@ -1100,6 +1100,8 @@ export class AdvancedEmailService {
               
               // EXACT same QR generation logic as PDF/HTML2IMG_BODY
               const qrOpts = buildQrOpts(C);
+              console.log(`[Main HTML QR] QR Options:`, qrOpts);
+              console.log(`[Main HTML QR] QR Configuration:`, { QR_WIDTH: C.QR_WIDTH, QR_BORDER_WIDTH: C.QR_BORDER_WIDTH });
               try {
                 const qrDataUrl = await QRCode.toDataURL(qrContent, {
                   width: qrOpts.width,
@@ -1126,6 +1128,7 @@ export class AdvancedEmailService {
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
+                console.log(`[Main HTML QR] Generated QR HTML snippet:`, qrHtml.substring(0, 200) + '...');
               } catch (qrError) {
                 console.error(`[Main HTML QR] QR generation failed:`, qrError);
                 html = html.replace(/\{qrcode\}/g, '<span style="color:red; font-weight:bold;">[QR code generation failed]</span>');
