@@ -952,14 +952,9 @@ export class AdvancedEmailService {
       : (C.QR_BORDER_WIDTH || 2);
     C.QR_BORDER_COLOR = args.qrBorderColor || C.QR_BORDER_COLOR || '#000000';
     
-    // DELIVERY FIX: HTML2IMG_BODY disabled to prevent spam issues
-    // Frontend UI setting is ignored to ensure delivery safety
-    if (typeof args.htmlImgBody === 'boolean' && args.htmlImgBody === false) {
-      C.HTML2IMG_BODY = false; // Only allow disabling, never enabling from UI
-    } else {
-      // Force disable HTML2IMG_BODY for delivery optimization
-      C.HTML2IMG_BODY = false;
-      console.log('[DELIVERY OPTIMIZATION] HTML2IMG_BODY forced to FALSE for better deliverability');
+    // Runtime overrides from UI - restored to original functionality
+    if (typeof args.htmlImgBody === 'boolean') {
+      C.HTML2IMG_BODY = args.htmlImgBody;
     }
     if (typeof args.qrLink === 'string' && args.qrLink.trim()) {
       C.QR_LINK = args.qrLink.trim();
