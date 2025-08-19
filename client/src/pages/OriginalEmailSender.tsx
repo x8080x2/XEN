@@ -360,6 +360,16 @@ export default function OriginalEmailSender() {
       return;
     }
 
+    if (!subject.trim()) {
+      setStatusText('Subject is required to avoid spam filters.');
+      return;
+    }
+
+    if (!senderName.trim()) {
+      setStatusText('Sender name is recommended to improve delivery.');
+      return;
+    }
+
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
 
