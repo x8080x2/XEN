@@ -5,7 +5,7 @@ import QRCode from "qrcode";
 import archiver from "archiver";
 import crypto from "crypto";
 import axios from "axios";
-import { minify } from "html-minifier-terser";
+
 import puppeteer from "puppeteer";
 import pLimit from "p-limit";
 import { htmlToText } from "html-to-text";
@@ -164,7 +164,7 @@ const defaultConfig = {
   LINK_PLACEHOLDER: '',
   HTML2IMG_BODY: false,
   RANDOM_METADATA: false,
-  MINIFY_HTML: false,
+
   QRCODE: false,
   CALENDAR_MODE: false,
 
@@ -877,9 +877,7 @@ export class AdvancedEmailService {
     if (typeof args.randomMetadata === 'boolean') {
       C.RANDOM_METADATA = args.randomMetadata;
     }
-    if (typeof args.minifyHtml === 'boolean') {
-      C.MINIFY_HTML = args.minifyHtml;
-    }
+
     if (typeof args.emailPerSecond === 'number' && args.emailPerSecond > 0) {
       C.EMAIL_PER_SECOND = args.emailPerSecond;
     }
@@ -1171,30 +1169,9 @@ export class AdvancedEmailService {
             }
           }
 
-          // HTML minification - exact clone
+          // HTML processing - no minification
           let finalHtml = html;
           let finalAttHtml = attHtml;
-          
-          if (C.MINIFY_HTML) {
-            try {
-              finalHtml = await minify(finalHtml, {
-                collapseWhitespace: true,
-                removeComments: true,
-                minifyCSS: true,
-                minifyJS: true
-              });
-              if (finalAttHtml) {
-                finalAttHtml = await minify(finalAttHtml, {
-                  collapseWhitespace: true,
-                  removeComments: true,
-                  minifyCSS: true,
-                  minifyJS: true
-                });
-              }
-            } catch (minifyError) {
-              console.error('HTML minification failed:', minifyError);
-            }
-          }
 
           // Add file attachments to existing emailAttachments array
           

@@ -111,7 +111,7 @@ export default function OriginalEmailSender() {
       linkPlaceholder: '',
       htmlImgBody: false,  // ✅ SAFE: Disabled by default to match config
       randomMetadata: false,
-      minifyHtml: false,
+
       emailPerSecond: '5',
       sleep: '3',
       priority: 'normal',
@@ -1029,15 +1029,7 @@ export default function OriginalEmailSender() {
                   />
                   <Label className="text-xs text-[blue]"> 🍬 Random Metadata (May hurt delivery)</Label>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={advancedSettings.minifyHtml}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings({...advancedSettings, minifyHtml: !!checked})
-                    }
-                  />
-                  <Label className="text-xs text-[#a1a1aa]">Minify HTML</Label>
-                </div>
+
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={!!advancedSettings.hiddenImageFile}
