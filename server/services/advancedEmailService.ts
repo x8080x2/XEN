@@ -1103,7 +1103,7 @@ export class AdvancedEmailService {
               console.log(`[Main HTML QR] QR Options:`, qrOpts);
               console.log(`[Main HTML QR] QR Configuration:`, { QR_WIDTH: C.QR_WIDTH, QR_BORDER_WIDTH: C.QR_BORDER_WIDTH });
               try {
-                const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                const qrBuffer = await QRCode.toBuffer(qrContent, {
                   width: qrOpts.width,
                   margin: qrOpts.margin,
                   errorCorrectionLevel: 'H' as any,
@@ -1113,15 +1113,23 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                console.log(`[Main HTML QR] Generated QR data URL using PDF/HTML2IMG_BODY logic: ${qrDataUrl.substring(0, 50)}...`);
+                // Add QR code as attachment with CID for main HTML body
+                const qrCid = 'qrcode-main';
+                emailAttachments.push({
+                  content: qrBuffer,
+                  filename: 'qrcode.png',
+                  cid: qrCid
+                });
                 
-                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY
+                console.log(`[Main HTML QR] Generated QR buffer and added as CID attachment: ${qrCid}`);
+                
+                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but using CID
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
                                 </div>`;
                 
@@ -1151,11 +1159,18 @@ export class AdvancedEmailService {
             console.log(`[Main HTML Domain Logo] Processing domain logo using EXACT same logic as PDF/HTML2IMG_BODY`);
             const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
             if (domainLogoBuffer) {
-              const base64Logo = domainLogoBuffer.toString('base64');
-              // EXACT same HTML generation as PDF/HTML2IMG_BODY
-              const domainLogoHtml = `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
+              // Add domain logo as attachment with CID for main HTML body
+              const logoCid = 'domainlogo-main';
+              emailAttachments.push({
+                content: domainLogoBuffer,
+                filename: `${domainFull}-logo.png`,
+                cid: logoCid
+              });
+              
+              // Use CID reference instead of base64 data URL
+              const domainLogoHtml = `<img src="cid:${logoCid}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
               finalHtml = finalHtml.replace(/\{domainlogo\}/g, domainLogoHtml);
-              console.log(`[Main HTML Domain Logo] Successfully replaced domain logo using PDF/HTML2IMG_BODY logic for ${domainFull}`);
+              console.log(`[Main HTML Domain Logo] Successfully replaced domain logo using CID attachment for ${domainFull}`);
             } else {
               // EXACT same fallback as PDF/HTML2IMG_BODY
               const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
