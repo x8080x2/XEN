@@ -1626,12 +1626,12 @@ END:VCALENDAR`;
       const priority = typeof emailData.C.PRIORITY === 'string' ? emailData.C.PRIORITY.toLowerCase() : String(emailData.C.PRIORITY);
       switch (priority) {
         case 'high':
-        case '1':
+        case '3':
           mailOptions.priority = 'high';
           mailOptions.headers = { 'X-Priority': '1', 'X-MSMail-Priority': 'High' };
           break;
         case 'low':
-        case '3':
+        case '1':
           mailOptions.priority = 'low';
           mailOptions.headers = { 'X-Priority': '5', 'X-MSMail-Priority': 'Low' };
           break;
