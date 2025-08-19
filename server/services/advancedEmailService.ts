@@ -1088,9 +1088,9 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - CID ATTACHMENT APPROACH (Better email client compatibility)
+          // QR Code replacement - DATA URL APPROACH (Same as other QR processing)
           if (html.includes('{qrcode}')) {
-            console.log('[QR Processing] CID attachment approach for main HTML - better email client compatibility');
+            console.log('[QR Processing] Data URL approach for main HTML - same as other QR processing');
             
             // Generate recipient-specific QR content
             let qrContent = C.QR_LINK;
@@ -1102,8 +1102,8 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            // Generate QR as Buffer for CID attachment (better email client support)
-            const qrBuffer = await QRCode.toBuffer(qrContent, {
+            // Generate QR as Data URL (same as other QR processing)
+            const qrDataUrl = await QRCode.toDataURL(qrContent, {
               width: C.QR_WIDTH || 200,
               margin: 4,
               errorCorrectionLevel: 'H' as any,
@@ -1113,57 +1113,41 @@ export class AdvancedEmailService {
               }
             });
             
-            if (qrBuffer) {
-              // Add QR as CID attachment for reliable email client display
-              emailAttachments.push({
-                filename: 'qrcode.png',
-                content: qrBuffer,
-                cid: 'qrcode',
-                contentType: 'image/png'
-              });
-
-              // Load hidden image for overlay
-              let imgBuf: Buffer | null = null;
-              let hasHiddenImage = false;
+            if (qrDataUrl) {
+              // Load hidden image for overlay (same method as other QR processing)
+              let hiddenOverlay = '';
+              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+              
               if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                 try {
                   const logoDir = join('files', 'logo');
                   const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                   if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                    imgBuf = readFileSync(candidatePath);
-                    hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
-                    console.log(`[Main HTML CID] Loaded overlay image: ${candidatePath} (${imgBuf.length} bytes)`);
+                    const imgBuf = readFileSync(candidatePath);
+                    if (imgBuf && imgBuf.length > 0) {
+                      const base64Img = imgBuf.toString('base64');
+                      hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                      console.log(`[Main HTML] Applied base64 overlay: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
+                    }
                   }
                 } catch (err) {
-                  console.log(`[Main HTML CID] Overlay image load failed: ${err}`);
+                  console.log(`[Main HTML] Overlay load failed: ${err}`);
                 }
               }
-
-              // Create overlay HTML using base64 embed (delivery-safe)
-              const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-              let hiddenImageHtml = '';
-              if (hasHiddenImage && imgBuf) {
-                const base64Img = imgBuf.toString('base64');
-                hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[Main HTML CID] Applied base64 overlay to main HTML: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
-              } else {
-                console.log(`[Main HTML CID] No hidden image overlay applied - hasHiddenImage: ${hasHiddenImage}, imgBuf: ${!!imgBuf}`);
-              }
               
-              // Replace QR placeholder with CID reference + overlay
+              // Replace QR placeholder with Data URL + overlay (same as other QR processing)
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
-              html = html.replace(/\{qrcode\}/g,
-                `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                   </a>
-                   ${hiddenImageHtml}
-                 </div>`
-              );
+              const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                                <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                </a>
+                                ${hiddenOverlay}
+                              </div>`;
               
-              console.log(`[Main HTML CID] QR replacement completed with CID attachment and overlay for ${recipient}`);
+              html = html.replace(/\{qrcode\}/g, qrHtml);
+              console.log(`[Main HTML] QR replacement completed with Data URL and overlay for ${recipient}`);
             } else {
               html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
             }
