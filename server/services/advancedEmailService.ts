@@ -1104,6 +1104,7 @@ export class AdvancedEmailService {
             
             // Generate QR as Data URL using same method as other QR processing
             const qrOpts = buildQrOpts(C);
+            console.log(`[Main HTML QR] Using QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
             const qrDataUrl = await QRCode.toDataURL(qrContent, {
               width: qrOpts.width,
               margin: qrOpts.margin,
@@ -1113,6 +1114,7 @@ export class AdvancedEmailService {
                 light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
               }
             });
+            console.log(`[Main HTML QR] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
             
             if (qrDataUrl) {
               // Load hidden image for overlay (same method as other QR processing)
