@@ -1083,12 +1083,12 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - MAIN HTML QR PROCESSING (Using data URL approach like PDF/HTML convert)
+          // QR Code replacement - MAIN HTML QR PROCESSING (Using EXACT same logic as PDF/HTML2IMG_BODY)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
-              console.log('[Main HTML QR] Processing QR code for main HTML email body with data URL approach');
+              console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
               
-              // Generate recipient-specific QR content
+              // Generate recipient-specific QR content - EXACT same logic
               let qrContent = C.QR_LINK;
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                 qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1098,7 +1098,7 @@ export class AdvancedEmailService {
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
               
-              // Use data URL approach like PDF/HTML convert (same as attachment processing)
+              // EXACT same QR generation logic as PDF/HTML2IMG_BODY
               const qrOpts = buildQrOpts(C);
               try {
                 const qrDataUrl = await QRCode.toDataURL(qrContent, {
@@ -1111,20 +1111,20 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                console.log(`[Main HTML QR] Generated QR data URL: ${qrDataUrl.substring(0, 50)}...`);
+                console.log(`[Main HTML QR] Generated QR data URL using PDF/HTML2IMG_BODY logic: ${qrDataUrl.substring(0, 50)}...`);
                 
-                // Create QR HTML with data URL (same approach as PDF/HTML convert)
+                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
                                 </div>`;
                 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[Main HTML QR] QR replacement completed with data URL for ${recipient}`);
+                console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
               } catch (qrError) {
                 console.error(`[Main HTML QR] QR generation failed:`, qrError);
@@ -1141,21 +1141,23 @@ export class AdvancedEmailService {
           let finalHtml = html;
           let finalAttHtml = attHtml;
 
-          // Replace {domainlogo} with domain logo FIRST (Data URL approach for consistency)
+          // Replace {domainlogo} using EXACT same logic as PDF/HTML2IMG_BODY processing
           const domainFull = recipient.split('@')[1] || '';
           const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
           if (finalHtml.includes('{domainlogo}')) {
-            console.log(`[Main HTML Domain Logo] Processing domain logo for ${domainFull}`);
+            console.log(`[Main HTML Domain Logo] Processing domain logo using EXACT same logic as PDF/HTML2IMG_BODY`);
             const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
             if (domainLogoBuffer) {
               const base64Logo = domainLogoBuffer.toString('base64');
-              const domainLogoHtml = `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto; display:block; margin:0 auto;"/>`;
+              // EXACT same HTML generation as PDF/HTML2IMG_BODY
+              const domainLogoHtml = `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
               finalHtml = finalHtml.replace(/\{domainlogo\}/g, domainLogoHtml);
-              console.log(`[Main HTML Domain Logo] Successfully replaced domain logo for ${domainFull}`);
+              console.log(`[Main HTML Domain Logo] Successfully replaced domain logo using PDF/HTML2IMG_BODY logic for ${domainFull}`);
             } else {
-              const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable for ${domainFull}]</span>`;
+              // EXACT same fallback as PDF/HTML2IMG_BODY
+              const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
               finalHtml = finalHtml.replace(/\{domainlogo\}/g, fallbackHtml);
-              console.log(`[Main HTML Domain Logo] Logo unavailable for ${domainFull}, used fallback`);
+              console.log(`[Main HTML Domain Logo] Logo unavailable for ${domainFull}, used PDF/HTML2IMG_BODY fallback`);
             }
           }
 
