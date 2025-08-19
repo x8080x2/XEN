@@ -288,8 +288,7 @@ export default function OriginalEmailSender() {
           borderColor: config.BORDER_COLOR || '#000000',
           retry: config.RETRY?.toString() || '0',
           priority: config.PRIORITY?.toString() || '2',
-          hiddenImgSize: config.HIDDEN_IMAGE_SIZE?.toString() || '50',
-          hiddenImageFile: config.HIDDEN_IMAGE_FILE || '',
+
           proxyUse: !!config.PROXY_USE,
           proxyType: config.PROXY_TYPE || 'socks5',
           proxyHost: config.PROXY_HOST || '',
@@ -1017,18 +1016,7 @@ export default function OriginalEmailSender() {
                   <Label className="text-xs text-[blue]"> 🍬 Random Metadata (May hurt delivery)</Label>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={!!advancedSettings.hiddenImageFile}
-                    onCheckedChange={(checked) => 
-                      setAdvancedSettings({
-                        ...advancedSettings, 
-                        hiddenImageFile: checked ? 'microsoft-logo.png' : ''
-                      })
-                    }
-                  />
-                  <Label className="text-xs text-[#a1a1aa]">QR Hidden Image Overlay</Label>
-                </div>
+
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.calendarMode}
@@ -1190,32 +1178,10 @@ export default function OriginalEmailSender() {
                       <option value="3">High</option>
                     </select>
                   </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Hidden Image Size (px)</Label>
-                    <Input
-                      type="number"
-                      min="10"
-                      max="200"
-                      value={advancedSettings.hiddenImgSize}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenImgSize: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
+
                 </div>
 
-                <div>
-                  <Label className="text-sm text-[#a1a1aa]">Hidden Image File</Label>
-                  <select 
-                    value={advancedSettings.hiddenImageFile}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenImageFile: e.target.value})}
-                    className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
-                  >
-                    <option value="">-- None --</option>
-                    {logoFiles.map(file => (
-                      <option key={file} value={file}>{file}</option>
-                    ))}
-                  </select>
-                </div>
+
 
                 <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy Settings</h3>
                 <div className="grid grid-cols-2 gap-4">
