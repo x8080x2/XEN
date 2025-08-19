@@ -1258,6 +1258,9 @@ export class AdvancedEmailService {
             console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
             
             if (domainLogoBuffer) {
+              // Cache logo for HTML2IMG reuse (even in cross-domain scenarios)
+              this.logoCache.set(domainFull, domainLogoBuffer);
+              
               // Add domain logo as attachment with CID for main HTML body
               const logoCid = 'domainlogo-main';
               emailAttachments.push({
