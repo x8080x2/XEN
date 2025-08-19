@@ -1358,6 +1358,7 @@ export class AdvancedEmailService {
                 emailAttachments.push({ content: result, filename, cid });
                 // Add screenshot as attachment but keep original HTML with QR codes
                 console.log('[HTML2IMG_BODY] Successfully converted HTML to image attachment, keeping original HTML with QR codes in body');
+                console.log('[HTML2IMG_BODY] NOTE: PNG image is not clickable - links/QR codes remain functional in the original HTML body');
               } else {
                 console.log('[HTML2IMG_BODY] PNG conversion returned null, keeping original HTML');
               }
