@@ -487,11 +487,11 @@ export class AdvancedEmailService {
     console.log(`[Cache] Cleared ${logoCount} logo entries and ${qrCount} QR entries from cache`);
   }
   
-  private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
+  private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
     
-    // Check cache first for significant speed improvement
-    if (this.logoCache.has(domain)) {
+    // Skip cache if requested (for cross-domain scenarios)
+    if (!skipCache && this.logoCache.has(domain)) {
       const cached = this.logoCache.get(domain);
       console.log(`[fetchDomainLogo] Using cached logo for ${domain} (${cached ? 'valid' : 'null'} entry)`);
       return cached || null;
@@ -541,7 +541,11 @@ export class AdvancedEmailService {
           
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            this.logoCache.set(domain, buffer); // Cache for future use
+            if (!skipCache) {
+              this.logoCache.set(domain, buffer); // Cache only if not skipped
+            } else {
+              console.log(`[fetchDomainLogo] Skipping cache for cross-domain scenario`);
+            }
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -554,7 +558,13 @@ export class AdvancedEmailService {
     }
     
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    this.logoCache.set(domain, null); // Cache the failure to avoid retries
+    // Cache negative result only if not skipped
+    if (!skipCache) {
+      this.logoCache.set(domain, null);
+      console.log(`[fetchDomainLogo] All sources failed for ${domain}, cached negative result`);
+    } else {
+      console.log(`[fetchDomainLogo] All sources failed for ${domain}, no caching for cross-domain scenario`);
+    }
     return null;
   }
 
@@ -602,6 +612,13 @@ export class AdvancedEmailService {
       this.logger.error('Error generating QR code', { error, link });
       return null;
     }
+  }
+
+  // Extract domain from email address
+  private extractDomainFromEmail(email: string): string | null {
+    if (!email || typeof email !== 'string') return null;
+    const match = email.match(/@([^@]+)$/);
+    return match ? match[1] : null;
   }
 
   // Random helper functions - exact clone from main.js
@@ -1227,9 +1244,15 @@ export class AdvancedEmailService {
           if (finalHtml.includes('{domainlogo}')) {
             console.log(`[Main HTML Domain Logo] Processing domain logo with optimized color logo fetching`);
             
-            // Start logo fetching with performance timing
+            // Start logo fetching with performance timing and cross-domain detection
             const logoStartTime = Date.now();
-            const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+            // Check if sender domain differs from recipient domain
+            const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
+            const skipCache = senderDomain && senderDomain !== domainFull;
+            if (skipCache) {
+              console.log(`[Main HTML Domain Logo] Cross-domain detected (sender: ${senderDomain}, recipient: ${domainFull}), skipping cache`);
+            }
+            const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
             const logoFetchTime = Date.now() - logoStartTime;
             console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
             
@@ -1306,7 +1329,10 @@ export class AdvancedEmailService {
               }
               if (screenshotHtml.includes('cid:domainlogo')) {
                 const domainFull = recipient.split('@')[1] || '';
-                const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+                // Check for cross-domain scenario
+                const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
+                const skipCache = senderDomain && senderDomain !== domainFull;
+                const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
                 if (domainLogoBuffer) {
                   const dataLogo = domainLogoBuffer!.toString('base64');
                   screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
@@ -1400,7 +1426,10 @@ export class AdvancedEmailService {
             // Process domain logo in attachment HTML if present  
             if (processedAttHtml.includes('{domainlogo}')) {
               const domainFull = recipient.split('@')[1] || '';
-              const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+              // Check for cross-domain scenario
+              const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
+              const skipCache = senderDomain && senderDomain !== domainFull;
+              const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
               if (domainLogoBuffer) {
                 const dataLogo = domainLogoBuffer!.toString('base64');
                 const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
