@@ -1088,7 +1088,7 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - MAIN HTML QR PROCESSING
+          // QR Code replacement - MAIN HTML QR PROCESSING (Fixed for proper display)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
               console.log('[Main HTML QR] Processing QR code for main HTML email body');
@@ -1103,22 +1103,21 @@ export class AdvancedEmailService {
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
               
-              // Generate QR as Data URL for main HTML display
-              const qrOpts = buildQrOpts(C);
-              console.log(`[Main HTML QR] QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
-              const qrDataUrl = await QRCode.toDataURL(qrContent, {
-                width: qrOpts.width,
-                margin: qrOpts.margin,
-                errorCorrectionLevel: 'H' as any,
-                color: {
-                  dark: C.QR_FOREGROUND_COLOR || '#000000',
-                  light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
-                }
-              });
-              console.log(`[Main HTML QR] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
+              // Use CID approach for email body (like your original main.js)
+              const qrBuffer = await this.generateQRCodeInternal(qrContent, C);
               
-              if (qrDataUrl) {
-                // Load hidden image for overlay if specified
+              if (qrBuffer) {
+                console.log(`[Main HTML QR] Generated QR buffer: ${qrBuffer.length} bytes`);
+                
+                // Add QR as CID attachment
+                emailAttachments.push({
+                  filename: 'qrcode.png',
+                  content: qrBuffer,
+                  cid: 'qrcode',
+                  contentType: 'image/png'
+                });
+                
+                // Load hidden image overlay if specified
                 let hiddenOverlay = '';
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 
@@ -1141,19 +1140,19 @@ export class AdvancedEmailService {
                   console.log(`[Main HTML QR] No hidden image file specified - QR only`);
                 }
                 
-                // Create QR HTML with proper styling
+                // Create QR HTML with CID reference for proper email display
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
                                   ${hiddenOverlay}
                                 </div>`;
                 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[Main HTML QR] QR replacement completed for ${recipient}`);
+                console.log(`[Main HTML QR] QR replacement completed with CID attachment for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
               } else {
                 console.log(`[Main HTML QR] QR generation failed`);
