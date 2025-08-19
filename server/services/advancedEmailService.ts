@@ -1136,7 +1136,8 @@ export class AdvancedEmailService {
               });
               return { success: false, error, recipient };
             }
-          // Apply placeholders to both HTML content and subject - exact clone
+            
+            // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
           
