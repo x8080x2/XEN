@@ -146,7 +146,7 @@ export function useEmailSender() {
   });
 
   // Update progress when job status changes
-  useState(() => {
+  useEffect(() => {
     if (jobStatus) {
       const { sent, failed, total, status, logs: jobLogs } = jobStatus;
       const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
@@ -167,7 +167,7 @@ export function useEmailSender() {
         queryClient.invalidateQueries({ queryKey: ['/api/emails/status'] });
       }
     }
-  });
+  }, [jobStatus, logs.length, addLog, queryClient]);
 
   const startSending = useCallback(async (data: EmailSendRequest) => {
     setLogs([]); // Clear previous logs

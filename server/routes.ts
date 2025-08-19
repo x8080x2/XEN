@@ -80,9 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = emailSendRequestSchema.parse({
         configId: "default", // Using default config for now
         subject,
-        htmlContent,
+        content: htmlContent,
         recipients: parsedRecipients,
-        settings: parsedSettings,
       });
 
       // Create email job
@@ -90,22 +89,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: "default-user", // Using default user for now
         configId: validatedData.configId,
         subject: validatedData.subject,
-        htmlContent: validatedData.htmlContent,
+        content: validatedData.content,
         recipients: validatedData.recipients,
-        attachments: files?.map(file => ({
-          filename: file.originalname,
-          path: file.path,
-          contentType: file.mimetype,
-        })) || [],
+        status: 'pending',
         totalRecipients: validatedData.recipients.length,
-        settings: validatedData.settings,
       });
 
       // Start processing emails in background  
       emailService.sendMail({
         recipients: validatedData.recipients,
         subject: validatedData.subject,
-        html: validatedData.htmlContent,
+        html: validatedData.content,
         attachments: files?.map(file => ({
           filename: file.originalname,
           path: file.path,
@@ -147,7 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logs: logs.map(log => ({
           recipient: log.recipient,
           status: log.status,
-          message: log.status === 'sent' 
+          message: log.status === 'success' 
             ? `Successfully sent to ${log.recipient}`
             : `Failed to send to ${log.recipient}: ${log.error}`,
           timestamp: log.sentAt,
