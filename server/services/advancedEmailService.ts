@@ -1485,7 +1485,7 @@ export class AdvancedEmailService {
                   processedFileName = replacePlaceholders(processedFileName);
                   const filename = `${processedFileName}.${format}`;
                   convertFiles.push({ name: filename, buffer });
-                  console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename}`);
+                  console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename} (${buffer.length} bytes)`);
                 } else {
                   console.log(`[HTML_CONVERT] ${format.toUpperCase()} conversion returned null`);
                 }
@@ -1518,11 +1518,13 @@ export class AdvancedEmailService {
                 }
               } else {
                 // Add individual converted files
+                console.log(`[HTML_CONVERT] Adding ${convertFiles.length} individual files to email attachments`);
                 convertFiles.forEach(file => {
                   emailAttachments.push({
                     filename: file.name,
                     content: file.buffer
                   });
+                  console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes)`);
                 });
               }
             }
