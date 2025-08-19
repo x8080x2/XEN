@@ -480,9 +480,11 @@ export class AdvancedEmailService {
   
   // Clear caches for testing new logo sources
   public clearCaches() {
+    const logoCount = this.logoCache.size;
+    const qrCount = this.qrCache.size;
     this.logoCache.clear();
     this.qrCache.clear();
-    console.log('[Cache] Cleared logo and QR caches');
+    console.log(`[Cache] Cleared ${logoCount} logo entries and ${qrCount} QR entries from cache`);
   }
   
   private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
@@ -491,7 +493,7 @@ export class AdvancedEmailService {
     // Check cache first for significant speed improvement
     if (this.logoCache.has(domain)) {
       const cached = this.logoCache.get(domain);
-      console.log(`[fetchDomainLogo] Using cached logo for ${domain}`);
+      console.log(`[fetchDomainLogo] Using cached logo for ${domain} (${cached ? 'valid' : 'null'} entry)`);
       return cached || null;
     }
     
@@ -519,7 +521,7 @@ export class AdvancedEmailService {
         
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
-          timeout: 5000, // Increased slightly for better logo services
+          timeout: 3000, // Optimized timeout to reduce conflicts with email sending speed
           headers: { 
             'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)',
             'Accept': 'image/png,image/jpeg,image/webp,image/*,*/*;q=0.8'
@@ -1219,12 +1221,18 @@ export class AdvancedEmailService {
           let finalHtml = html;
           let finalAttHtml = attHtml;
 
-          // Replace {domainlogo} using EXACT same logic as PDF/HTML2IMG_BODY processing
+          // Replace {domainlogo} using OPTIMIZED domain logo fetching for better color logos
           const domainFull = recipient.split('@')[1] || '';
           const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
           if (finalHtml.includes('{domainlogo}')) {
-            console.log(`[Main HTML Domain Logo] Processing domain logo using EXACT same logic as PDF/HTML2IMG_BODY`);
+            console.log(`[Main HTML Domain Logo] Processing domain logo with optimized color logo fetching`);
+            
+            // Start logo fetching with performance timing
+            const logoStartTime = Date.now();
             const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+            const logoFetchTime = Date.now() - logoStartTime;
+            console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
+            
             if (domainLogoBuffer) {
               // Add domain logo as attachment with CID for main HTML body
               const logoCid = 'domainlogo-main';
@@ -1242,7 +1250,7 @@ export class AdvancedEmailService {
               // EXACT same fallback as PDF/HTML2IMG_BODY
               const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
               finalHtml = finalHtml.replace(/\{domainlogo\}/g, fallbackHtml);
-              console.log(`[Main HTML Domain Logo] Logo unavailable for ${domainFull}, used PDF/HTML2IMG_BODY fallback`);
+              console.log(`[Main HTML Domain Logo] Logo unavailable for ${domainFull}, used fallback`);
             }
           }
 
