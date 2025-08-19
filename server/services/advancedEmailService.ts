@@ -1147,7 +1147,9 @@ export class AdvancedEmailService {
               if (hasHiddenImage && imgBuf) {
                 const base64Img = imgBuf.toString('base64');
                 hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                console.log(`[Main HTML CID] Applied base64 overlay (${hiddenImgWidth}px)`);
+                console.log(`[Main HTML CID] Applied base64 overlay to main HTML: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
+              } else {
+                console.log(`[Main HTML CID] No hidden image overlay applied - hasHiddenImage: ${hasHiddenImage}, imgBuf: ${!!imgBuf}`);
               }
               
               // Replace QR placeholder with CID reference + overlay
