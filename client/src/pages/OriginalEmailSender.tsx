@@ -231,9 +231,13 @@ export default function OriginalEmailSender() {
   useEffect(() => {
     loadConfigFromFiles();
   }, []); // Run once on component mount
+  
+  // Prevent multiple config loads during development hot reloads
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   // Load configuration from files - exact clone from main.js
   const loadConfigFromFiles = async () => {
+    if (configLoaded) return; // Prevent multiple loads
     try {
       const response = await fetch('/api/config/load');
       const data = await response.json();
@@ -329,6 +333,7 @@ export default function OriginalEmailSender() {
 
         setStatusText('Configuration and maillist loaded automatically');
         setTimeout(() => setStatusText("Ready to send emails"), 2000);
+        setConfigLoaded(true);
       } else {
         setStatusText('Failed to load configuration');
       }
