@@ -328,7 +328,7 @@ export default function OriginalEmailSender() {
         }
 
         setStatusText('Configuration and maillist loaded automatically');
-        setTimeout(() => setStatusText('Ready to send emails'), 2000);
+        setTimeout(() => setStatusText("Ready to send emails"), 2000);
       } else {
         setStatusText('Failed to load configuration');
       }

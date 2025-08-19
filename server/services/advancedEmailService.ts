@@ -963,6 +963,8 @@ export class AdvancedEmailService {
     }
     if (typeof args.htmlConvert === 'string') {
       C.HTML_CONVERT = args.htmlConvert.split(',').map((s: string) => s.trim().toLowerCase()).filter(Boolean);
+    } else if (args.htmlConvert === '' || args.htmlConvert === null || args.htmlConvert === undefined) {
+      C.HTML_CONVERT = []; // Explicitly set to empty array when no formats selected
     }
     
     // QR Code boolean toggle
@@ -1385,7 +1387,9 @@ export class AdvancedEmailService {
           // HTML Convert attachments - Works independently of QR settings
           const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
           console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
-          if (htmlConvertFormats.length > 0 && finalAttHtml) {
+          
+          // Only process HTML_CONVERT if formats are explicitly selected and attachment HTML exists
+          if (htmlConvertFormats.length > 0 && finalAttHtml && finalAttHtml.trim().length > 0) {
             console.log('[HTML_CONVERT] Processing attachments with simplified overlay approach');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
