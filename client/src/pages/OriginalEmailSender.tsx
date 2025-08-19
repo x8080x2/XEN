@@ -517,9 +517,20 @@ export default function OriginalEmailSender() {
       }
 
     } catch (error: any) {
-      setIsLoading(false);
-      setStatusText(`Error: ${error.message}`);
       console.error('Email sending error:', error);
+      setIsLoading(false);
+      setStatusText(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      setEmailLogs(prev => [...prev, {
+        type: 'error',
+        message: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: new Date().toISOString(),
+        recipient: "N/A", // Added for type safety
+        subject: "N/A", // Added for type safety
+        status: "fail" // Added for type safety
+      }]);
+    } finally {
+      // Always ensure sending state is reset
+      setIsLoading(false);
     }
   };
 
@@ -560,7 +571,7 @@ export default function OriginalEmailSender() {
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
                 Mailer
               </div>
-              <div 
+              <div
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
@@ -833,8 +844,8 @@ export default function OriginalEmailSender() {
                               <div
                                 key={index}
                                 className={`text-xs py-2 px-3 rounded flex items-start gap-2 ${
-                                  log.status === 'success' 
-                                    ? 'bg-green-900/20 border-l-2 border-green-500' 
+                                  log.status === 'success'
+                                    ? 'bg-green-900/20 border-l-2 border-green-500'
                                     : 'bg-red-900/20 border-l-2 border-red-500'
                                 }`}
                               >
@@ -965,7 +976,7 @@ export default function OriginalEmailSender() {
                           type="button"
                           onClick={() => {
                             const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
-                            const newFormats = isActive 
+                            const newFormats = isActive
                               ? formats.filter((f: string) => f !== format)
                               : [...formats, format];
                             setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
@@ -1185,7 +1196,7 @@ export default function OriginalEmailSender() {
                   </div>
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Priority</Label>
-                    <select 
+                    <select
                       value={advancedSettings.priority}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, priority: e.target.value})}
                       className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
@@ -1211,7 +1222,7 @@ export default function OriginalEmailSender() {
                   </div>
                   <div>
                     <Label className="text-sm text-[#a1a1aa]">Proxy Type</Label>
-                    <select 
+                    <select
                       value={advancedSettings.proxyType}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, proxyType: e.target.value})}
                       className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
