@@ -1040,12 +1040,15 @@ export default function OriginalEmailSender() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
-                    checked={advancedSettings.includeHiddenText}
+                    checked={!!advancedSettings.hiddenImageFile}
                     onCheckedChange={(checked) => 
-                      setAdvancedSettings({...advancedSettings, includeHiddenText: !!checked})
+                      setAdvancedSettings({
+                        ...advancedSettings, 
+                        hiddenImageFile: checked ? 'microsoft-logo.png' : ''
+                      })
                     }
                   />
-                  <Label className="text-xs text-[#a1a1aa]">QR Overlay</Label>
+                  <Label className="text-xs text-[#a1a1aa]">QR Hidden Image Overlay</Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Checkbox
