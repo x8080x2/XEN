@@ -497,6 +497,11 @@ export class AdvancedEmailService {
       return cached || null;
     }
     
+    // If skipCache is requested but domain is already cached, we need to handle cross-domain differently
+    if (skipCache && !this.logoCache.has(domain)) {
+      console.log(`[fetchDomainLogo] Cross-domain scenario: fetching fresh logo for ${domain}`);
+    }
+    
     // Optimized logo sources - fastest first for better performance
     const logoSources = [
       // DuckDuckGo Icons - fastest and most reliable
@@ -779,7 +784,7 @@ export class AdvancedEmailService {
         page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 8000 });
         const pngBuffer = await page.screenshot({ fullPage: true });
         
         if (page) await page.close();
@@ -1321,13 +1326,16 @@ export class AdvancedEmailService {
               }
               if (screenshotHtml.includes('cid:domainlogo')) {
                 const domainFull = recipient.split('@')[1] || '';
-                // OPTIMIZATION: Always use cache for HTML2IMG_BODY to avoid duplicate fetching
-                // Logo was already fetched for main HTML above, so use cached version
-                console.log('[HTML2IMG_BODY] Using cached logo for screenshot to avoid duplicate fetch');
-                const domainLogoBuffer = await this.fetchDomainLogo(domainFull, false); // Always use cache
-                if (domainLogoBuffer) {
-                  const dataLogo = domainLogoBuffer!.toString('base64');
+                // CRITICAL FIX: Force cache lookup only, no network requests for HTML2IMG_BODY
+                console.log('[HTML2IMG_BODY] Checking cache for logo to avoid duplicate fetch');
+                const cachedLogo = this.logoCache.get(domainFull);
+                if (cachedLogo) {
+                  console.log('[HTML2IMG_BODY] Using cached logo for screenshot');
+                  const dataLogo = cachedLogo.toString('base64');
                   screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
+                } else {
+                  console.log('[HTML2IMG_BODY] No cached logo found, skipping logo in screenshot');
+                  screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, '');
                 }
               }
               // Convert to PNG
