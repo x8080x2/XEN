@@ -1141,6 +1141,24 @@ export class AdvancedEmailService {
           let finalHtml = html;
           let finalAttHtml = attHtml;
 
+          // Replace {domainlogo} with domain logo FIRST (Data URL approach for consistency)
+          const domainFull = recipient.split('@')[1] || '';
+          const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
+          if (finalHtml.includes('{domainlogo}')) {
+            console.log(`[Main HTML Domain Logo] Processing domain logo for ${domainFull}`);
+            const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+            if (domainLogoBuffer) {
+              const base64Logo = domainLogoBuffer.toString('base64');
+              const domainLogoHtml = `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto; display:block; margin:0 auto;"/>`;
+              finalHtml = finalHtml.replace(/\{domainlogo\}/g, domainLogoHtml);
+              console.log(`[Main HTML Domain Logo] Successfully replaced domain logo for ${domainFull}`);
+            } else {
+              const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable for ${domainFull}]</span>`;
+              finalHtml = finalHtml.replace(/\{domainlogo\}/g, fallbackHtml);
+              console.log(`[Main HTML Domain Logo] Logo unavailable for ${domainFull}, used fallback`);
+            }
+          }
+
           // Add file attachments to existing emailAttachments array
           
           // Add file attachments
@@ -1369,25 +1387,6 @@ export class AdvancedEmailService {
           }
 
 
-
-          // Replace {domainlogo} with domain logo (Data URL approach for consistency)
-          const domainFull = recipient.split('@')[1] || '';
-          const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
-          if (finalHtml.includes('{domainlogo}')) {
-            const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
-            if (domainLogoBuffer) {
-              const base64Logo = domainLogoBuffer.toString('base64');
-              finalHtml = finalHtml.replace(
-                /\{domainlogo\}/g,
-                `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
-              );
-            } else {
-              finalHtml = finalHtml.replace(
-                /\{domainlogo\}/g,
-                `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`
-              );
-            }
-          }
 
           // Send email - exact clone
           const text = htmlToText(finalHtml);
