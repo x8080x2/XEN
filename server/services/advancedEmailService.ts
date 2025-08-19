@@ -474,30 +474,20 @@ export class AdvancedEmailService {
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
 
-  // Caching for faster subsequent fetches
-  private logoCache = new Map<string, Buffer | null>();
+  // QR caching only (logo caching disabled per user request)
   private qrCache = new Map<string, Buffer>();
   
-  // Clear caches for testing new logo sources
+  // Clear QR cache only
   public clearCaches() {
-    const logoCount = this.logoCache.size;
     const qrCount = this.qrCache.size;
-    this.logoCache.clear();
     this.qrCache.clear();
-    console.log(`[Cache] Cleared ${logoCount} logo entries and ${qrCount} QR entries from cache`);
+    console.log(`[Cache] Cleared ${qrCount} QR entries from cache (logo caching disabled)`);
   }
   
   private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
     
-    // Always check cache first - performance optimization for all scenarios
-    if (this.logoCache.has(domain)) {
-      const cached = this.logoCache.get(domain);
-      console.log(`[fetchDomainLogo] Using cached logo for ${domain} (performance boost)`);
-      return cached || null;
-    }
-    
-    console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain}`);
+    console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain} (caching disabled)`);
     
     // Optimized logo sources - fastest first for better performance
     const logoSources = [
@@ -541,8 +531,6 @@ export class AdvancedEmailService {
           
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            // Always cache for performance - cross-domain caching is beneficial
-            this.logoCache.set(domain, buffer);
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -554,14 +542,7 @@ export class AdvancedEmailService {
       }
     }
     
-    console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    // Cache negative result only if not skipped
-    if (!skipCache) {
-      this.logoCache.set(domain, null);
-      console.log(`[fetchDomainLogo] All sources failed for ${domain}, cached negative result`);
-    } else {
-      console.log(`[fetchDomainLogo] All sources failed for ${domain}, no caching for cross-domain scenario`);
-    }
+    console.log(`[fetchDomainLogo] All logo sources failed for ${domain} (caching disabled)`);
     return null;
   }
 
@@ -1252,9 +1233,6 @@ export class AdvancedEmailService {
             console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
             
             if (domainLogoBuffer) {
-              // Cache logo for HTML2IMG reuse (even in cross-domain scenarios)
-              this.logoCache.set(domainFull, domainLogoBuffer);
-              
               // Add domain logo as attachment with CID for main HTML body
               const logoCid = 'domainlogo-main';
               emailAttachments.push({
@@ -1345,15 +1323,9 @@ export class AdvancedEmailService {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
                 
-                // Performance optimization: reuse logo from main HTML if available
-                let freshLogo = this.logoCache.get(domainFull);
-                
-                if (!freshLogo) {
-                  console.log('[HTML2IMG_BODY] Fetching fresh domain logo (not in cache)');
-                  freshLogo = await this.fetchDomainLogo(domainFull, true);
-                } else {
-                  console.log('[HTML2IMG_BODY] Reusing logo from main HTML (performance boost)');
-                }
+                // Always fetch fresh logo (caching disabled per user request)
+                console.log('[HTML2IMG_BODY] Fetching fresh domain logo');
+                const freshLogo = await this.fetchDomainLogo(domainFull, true);
                 
                 if (freshLogo) {
                   console.log('[HTML2IMG_BODY] Using fresh domain logo for screenshot');
