@@ -1088,9 +1088,9 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
           
-          // QR Code replacement - DATA URL APPROACH (Same as other QR processing)
+          // QR Code replacement - SINGLE METHOD APPROACH (Delivery-safe Data URL)
           if (html.includes('{qrcode}') && C.QRCODE) {
-            console.log('[QR Processing] Data URL approach for main HTML - same as other QR processing');
+            console.log('[QR Processing] Single method approach for main HTML QR');
             
             // Generate recipient-specific QR content
             let qrContent = C.QR_LINK;
@@ -1102,9 +1102,9 @@ export class AdvancedEmailService {
               qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
             }
             
-            // Generate QR as Data URL using same method as other QR processing
+            // Generate QR as Data URL for delivery safety
             const qrOpts = buildQrOpts(C);
-            console.log(`[Main HTML QR] Using QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
+            console.log(`[Single Method] Using QR options:`, qrOpts, `Colors: ${C.QR_FOREGROUND_COLOR}, ${C.QR_BACKGROUND_COLOR}`);
             const qrDataUrl = await QRCode.toDataURL(qrContent, {
               width: qrOpts.width,
               margin: qrOpts.margin,
@@ -1114,10 +1114,10 @@ export class AdvancedEmailService {
                 light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
               }
             });
-            console.log(`[Main HTML QR] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
+            console.log(`[Single Method] Generated QR DataURL length:`, qrDataUrl ? qrDataUrl.length : 'null');
             
             if (qrDataUrl) {
-              // Load hidden image for overlay (same method as other QR processing)
+              // Load hidden image for overlay
               let hiddenOverlay = '';
               const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
               
@@ -1130,15 +1130,15 @@ export class AdvancedEmailService {
                     if (imgBuf && imgBuf.length > 0) {
                       const base64Img = imgBuf.toString('base64');
                       hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                      console.log(`[Main HTML] Applied base64 overlay: ${C.HIDDEN_IMAGE_FILE} (${imgBuf.length} bytes)`);
+                      console.log(`[Single Method] Applied base64 overlay (${hiddenImgWidth}px)`);
                     }
                   }
                 } catch (err) {
-                  console.log(`[Main HTML] Overlay load failed: ${err}`);
+                  console.log(`[Single Method] Overlay load failed: ${err}`);
                 }
               }
               
-              // Replace QR placeholder with Data URL + overlay (exact same as other QR processing)
+              // Replace QR placeholder with Data URL + overlay
               const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
               const borderStyle = C.BORDER_STYLE || 'solid';
               
@@ -1150,14 +1150,15 @@ export class AdvancedEmailService {
                               </div>`;
               
               html = html.replace(/\{qrcode\}/g, qrHtml);
-              console.log(`[Main HTML] QR replacement completed with Data URL and overlay for ${recipient}`);
+              console.log(`[Single Method] QR replacement completed with overlay for ${recipient}`);
+              console.log(`[Single Method] QR processing completed - main.js approach`);
             } else {
               html = html.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
             }
           } else if (html.includes('{qrcode}')) {
             // QR disabled but placeholder exists - remove placeholder
             html = html.replace(/\{qrcode\}/g, '');
-            console.log('[Main HTML] QR disabled - removed {qrcode} placeholder');
+            console.log('[Single Method] QR disabled - removed {qrcode} placeholder');
           }
 
           // HTML processing - no minification
@@ -1436,22 +1437,16 @@ export class AdvancedEmailService {
 
 
 
-          // Replace {domainlogo} with domain logo - exact clone from main.js lines 865-887
+          // Replace {domainlogo} with domain logo (Data URL approach for consistency)
           const domainFull = recipient.split('@')[1] || '';
           const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
-          let domainLogoBuffer = null;
           if (finalHtml.includes('{domainlogo}')) {
-            domainLogoBuffer = await this.fetchDomainLogo(domainFull);
+            const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
             if (domainLogoBuffer) {
-              emailAttachments.push({
-                filename: 'domainlogo.png',
-                content: domainLogoBuffer,
-                cid: 'domainlogo',
-                contentType: 'image/png'
-              });
+              const base64Logo = domainLogoBuffer.toString('base64');
               finalHtml = finalHtml.replace(
                 /\{domainlogo\}/g,
-                `<img src="cid:domainlogo" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
+                `<img src="data:image/png;base64,${base64Logo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
               );
             } else {
               finalHtml = finalHtml.replace(
@@ -1460,8 +1455,6 @@ export class AdvancedEmailService {
               );
             }
           }
-
-          // QR processing now unified above - no separate processing needed
 
           // Send email - exact clone
           const text = htmlToText(finalHtml);
