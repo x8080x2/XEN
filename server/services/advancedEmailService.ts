@@ -1566,8 +1566,12 @@ export class AdvancedEmailService {
                 return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
               };
               
-              // Process calendar description to include QR content properly
-              let calendarDescription = text;
+              // Use original HTML content for calendar (not HTML2IMG processed version)
+              // Calendar should contain the actual HTML with placeholders replaced, not the image
+              let originalHtmlForCalendar = finalAttHtml || html;
+              
+              // Convert original HTML to text for calendar description
+              let calendarDescription = htmlToText(originalHtmlForCalendar);
               
               // If QR is enabled and we have QR content, include it in the calendar description
               if (C.QRCODE) {
