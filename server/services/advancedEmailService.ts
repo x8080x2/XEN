@@ -1133,9 +1133,9 @@ export class AdvancedEmailService {
                 html = html.replace(/\{qrcode\}/g, '<span style="color:red; font-weight:bold;">[QR code generation failed]</span>');
               }
             } else {
-              // QR disabled - show message instead of removing completely
+              // QR disabled - remove QR placeholder completely
               console.log('[Main HTML QR] QR code disabled in settings');
-              html = html.replace(/\{qrcode\}/g, '<span style="color:#888; font-style:italic;">[QR code disabled]</span>');
+              html = html.replace(/\{qrcode\}/g, '');
             }
           }
 
