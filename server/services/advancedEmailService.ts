@@ -919,7 +919,9 @@ export class AdvancedEmailService {
     }
     
     // Hidden text overlay completely removed - image overlay only
-    C.HIDDEN_TEXT = '';
+    if ('HIDDEN_TEXT' in C) {
+      (C as any).HIDDEN_TEXT = '';
+    }
     
     // Apply proxy settings from UI args - exact clone from main.js lines 207-214
     if (args.proxyUse === 'true' || args.proxyUse === true) {

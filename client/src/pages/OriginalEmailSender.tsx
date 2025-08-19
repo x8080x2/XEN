@@ -449,7 +449,7 @@ export default function OriginalEmailSender() {
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
-        formData.append(key, value.toString());
+        formData.append(key, String(value));
       });
 
       // Add files
