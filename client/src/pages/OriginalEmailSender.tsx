@@ -958,7 +958,7 @@ export default function OriginalEmailSender() {
                       { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
                     ].map(({ format, label, color }) => {
                       const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
-                      
+
                       return (
                         <Button
                           key={format}
@@ -993,24 +993,22 @@ export default function OriginalEmailSender() {
                   />
                 </div>
                 <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={advancedSettings.zipUse}
-                      onCheckedChange={(checked: boolean) => 
-                        setAdvancedSettings({...advancedSettings, zipUse: !!checked})
-                      }
-                    />
-                    <Label className="text-xs text-[#a1a1aa]">ZIP Attachments</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={advancedSettings.htmlImgBody}
-                      onCheckedChange={(checked: boolean) => 
-                        setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
-                      }
-                    />
-                    <Label className="text-xs text-[#ffa500]">🌫️ HTML as Image Body </Label>
-                  </div>
+                  <Button
+                    type="button"
+                    onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
+                    className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                  >
+                    📦 ZIP Attachments
+                    {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
+                    className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                  >
+                    🌫️ HTML as Image Body
+                    {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
+                  </Button>
                 </div>
               </div>
             </div>
