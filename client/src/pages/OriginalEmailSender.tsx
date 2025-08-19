@@ -964,25 +964,15 @@ export default function OriginalEmailSender() {
                     Available formats: pdf, png, docx, html • 
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
-                    <Input
-                      value={advancedSettings.fileName}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                      placeholder="attachment"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
-                    <Input
-                      type="password"
-                      value={advancedSettings.zipPassword}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
+                <div>
+                  <Label className="text-sm text-[#a1a1aa]">ZIP Password (for attachments)</Label>
+                  <Input
+                    type="password"
+                    value={advancedSettings.zipPassword}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="Optional password for ZIP files"
+                  />
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2">
