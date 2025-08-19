@@ -35,6 +35,11 @@ Preferred communication style: Simple, everyday language.
 - **QR Code Generation**: Capable of generating QR codes with configurable colors and borders, attaching them as CIDs.
 - **Configuration**: Loads settings from setup.ini and smtp.ini, with automatic application on startup.
 
+## Recent Bug Fixes (August 2025)
+- **QR Code Display Bug**: Fixed main HTML body QR code display issue where QR codes showed as text instead of images. Root cause was using data URLs (data:image/png;base64,...) which email clients block for security. Solution: Changed to use CID (Content-ID) attachments like `src="cid:qrcode-main"` for proper email client compatibility.
+- **Domain Logo Display**: Fixed domain logo display in main HTML body using same CID attachment approach as QR codes.
+- **HTML2IMG_BODY Logic**: Corrected HTML2IMG_BODY processing to preserve QR codes in main HTML body instead of replacing entire content with image.
+
 ## File Structure
 - **Monorepo**: Organized with distinct client, server, and shared codebases.
 - **Shared Types**: Common schemas and types are shared across frontend and backend.
