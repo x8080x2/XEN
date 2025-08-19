@@ -102,11 +102,13 @@ QR codes integrate with the comprehensive placeholder system:
 - **Date/Time Stamps**: `{date}`, `{time}` for temporal tracking
 - **Link Replacement**: LINK_PLACEHOLDER enables per-recipient URL customization
 
-## Recent Bug Fixes (August 2025)
+## Recent Bug Fixes and Performance Improvements (August 2025)
 - **QR Code Display Bug**: Fixed main HTML body QR code display issue where QR codes showed as text instead of images. Root cause was using data URLs (data:image/png;base64,...) which email clients block for security. Solution: Changed to use CID (Content-ID) attachments like `src="cid:qrcode-main"` for proper email client compatibility.
 - **Domain Logo Display**: Fixed domain logo display in main HTML body using same CID attachment approach as QR codes.
 - **Domain Logo Color Enhancement**: Implemented multiple logo sources including Logo.dev, Brandfetch, and improved Clearbit integration. Added caching system and better headers for higher quality color logos. Includes cache clearing endpoint for testing new sources.
 - **HTML2IMG_BODY Logic**: Corrected HTML2IMG_BODY processing to preserve QR codes in main HTML body instead of replacing entire content with image.
+- **Cross-Domain Logo Caching**: Implemented smart caching that skips cache when sender domain differs from recipient domain, ensuring fresh logos for cross-domain scenarios while maintaining performance for same-domain sends.
+- **Performance Optimization**: Reduced email sending time from ~7.4s to ~0.8s per email (9x faster) through optimized logo source ordering, reduced timeouts (3s to 2s), streamlined browser arguments, and improved request interception. HTML2IMG_BODY now reuses cached logos instead of duplicate fetching.
 
 ## File Structure
 - **Monorepo**: Organized with distinct client, server, and shared codebases.

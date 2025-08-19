@@ -497,22 +497,20 @@ export class AdvancedEmailService {
       return cached || null;
     }
     
-    // Try multiple logo sources for better color logo availability
+    // Optimized logo sources - fastest first for better performance
     const logoSources = [
-      // Favicone API - often has good color logos
-      `https://favicone.com/${encodeURIComponent(domain)}?s=200`,
-      // Icon Horse - reliable logo service
-      `https://icon.horse/icon/${encodeURIComponent(domain)}`,
-      // Logo API direct
-      `https://logo.uplead.com/${encodeURIComponent(domain)}`,
-      // DuckDuckGo Icons - reliable and fast
+      // DuckDuckGo Icons - fastest and most reliable
       `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
-      // Clearbit with explicit color parameters
-      `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`,
-      // Alternative Clearbit endpoint with different params
-      `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=256&format=png`,
-      // Favicon service as final fallback
+      // Icon Horse - fast and reliable logo service
+      `https://icon.horse/icon/${encodeURIComponent(domain)}`,
+      // Google Favicons - fast fallback
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
+      // Clearbit - higher quality but slower
+      `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`,
+      // Favicone API - good quality but can timeout
+      `https://favicone.com/${encodeURIComponent(domain)}?s=200`,
+      // Logo API direct - backup option
+      `https://logo.uplead.com/${encodeURIComponent(domain)}`,
     ];
     
     for (const url of logoSources) {
@@ -521,7 +519,7 @@ export class AdvancedEmailService {
         
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
-          timeout: 3000, // Optimized timeout to reduce conflicts with email sending speed
+          timeout: 2000, // Reduced timeout for faster fallback to next source
           headers: { 
             'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)',
             'Accept': 'image/png,image/jpeg,image/webp,image/*,*/*;q=0.8'
@@ -644,16 +642,11 @@ export class AdvancedEmailService {
         '--disable-javascript',
         '--disable-gpu',
         '--no-first-run',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--disable-features=VizDisplayCompositor',
         '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--disable-dev-shm-usage',
-        '--memory-pressure-off'
+        '--memory-pressure-off',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync'
       ]
     };
     
@@ -712,14 +705,12 @@ export class AdvancedEmailService {
       
       try {
         page = await browser.newPage();
+        // Simplified request interception for better performance
         await page.setRequestInterception(true);
         page.on('request', (req: any) => {
-          const url = req.url();
-          if (
-            req.resourceType() === 'stylesheet' ||
-            (req.resourceType() === 'image' && !url.startsWith('data:')) ||
-            req.resourceType() === 'font'
-          ) {
+          const resourceType = req.resourceType();
+          if (resourceType === 'stylesheet' || resourceType === 'font' || 
+              (resourceType === 'image' && !req.url().startsWith('data:'))) {
             req.abort();
           } else {
             req.continue();
@@ -1247,12 +1238,13 @@ export class AdvancedEmailService {
             // Start logo fetching with performance timing and cross-domain detection
             const logoStartTime = Date.now();
             // Check if sender domain differs from recipient domain
-            const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
+            const fromEmail = args.smtpUser || '';
+            const senderDomain = this.extractDomainFromEmail(fromEmail);
             const skipCache = senderDomain && senderDomain !== domainFull;
             if (skipCache) {
               console.log(`[Main HTML Domain Logo] Cross-domain detected (sender: ${senderDomain}, recipient: ${domainFull}), skipping cache`);
             }
-            const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
+            const domainLogoBuffer = await this.fetchDomainLogo(domainFull, !!skipCache);
             const logoFetchTime = Date.now() - logoStartTime;
             console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
             
@@ -1427,9 +1419,10 @@ export class AdvancedEmailService {
             if (processedAttHtml.includes('{domainlogo}')) {
               const domainFull = recipient.split('@')[1] || '';
               // Check for cross-domain scenario
-              const senderDomain = this.extractDomainFromEmail(C.FROM_EMAIL || '');
+              const fromEmail = args.smtpUser || '';
+              const senderDomain = this.extractDomainFromEmail(fromEmail);
               const skipCache = senderDomain && senderDomain !== domainFull;
-              const domainLogoBuffer = await this.fetchDomainLogo(domainFull, skipCache);
+              const domainLogoBuffer = await this.fetchDomainLogo(domainFull, !!skipCache);
               if (domainLogoBuffer) {
                 const dataLogo = domainLogoBuffer!.toString('base64');
                 const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
