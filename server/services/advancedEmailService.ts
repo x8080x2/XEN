@@ -1406,6 +1406,25 @@ export class AdvancedEmailService {
                 return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
               };
               
+              // Process calendar description to include QR content properly
+              let calendarDescription = text;
+              
+              // If QR is enabled and we have QR content, include it in the calendar description
+              if (C.QRCODE) {
+                let qrContent = C.QR_LINK;
+                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                }
+                if (C.RANDOM_METADATA) {
+                  const rand = crypto.randomBytes(4).toString('hex');
+                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                }
+                
+                // Replace QR placeholder in calendar description with the actual QR link
+                calendarDescription = calendarDescription.replace(/QR Code.*?https:\/\/[^\s]*/g, `QR Code: ${qrContent}`);
+                calendarDescription = calendarDescription.replace(/\[cid:qrcode\]/g, `${qrContent}`);
+              }
+              
               const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Email Marketing//Calendar Event//EN
@@ -1415,7 +1434,7 @@ DTSTAMP:${formatDate(new Date())}
 DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
-DESCRIPTION:${text.replace(/\n/g, '\\n')}
+DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
 ORGANIZER;CN=${fromName}:MAILTO:${fromEmail}
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
@@ -1434,7 +1453,7 @@ END:VCALENDAR`;
                 contentType: 'text/calendar'
               });
               
-              console.log('[CALENDAR_MODE] Added .ics calendar invitation');
+              console.log('[CALENDAR_MODE] Added .ics calendar invitation with processed QR content');
             } catch (calendarError) {
               console.error('[CALENDAR_MODE] Error generating calendar invitation:', calendarError);
             }
