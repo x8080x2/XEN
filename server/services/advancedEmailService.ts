@@ -478,26 +478,44 @@ export class AdvancedEmailService {
   private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
     
-    try {
-      const url = `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`;
-      console.log(`[fetchDomainLogo] Fetching ${domain} logo from:`, url);
-      
-      const response = await axios.get(url, {
-        responseType: 'arraybuffer',
-        timeout: 10000,
-        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)' }
-      });
-      
-      if (response.status === 200 && response.data) {
-        const buffer = Buffer.from(response.data);
-        console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes)`);
-        return buffer;
+    // Try multiple logo sources for better color logo availability
+    const logoSources = [
+      // Clearbit with explicit color parameters
+      `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false&color=true`,
+      // Alternative Clearbit endpoint
+      `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png`,
+      // Favicon service as fallback
+      `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
+    ];
+    
+    for (const url of logoSources) {
+      try {
+        console.log(`[fetchDomainLogo] Trying ${domain} logo from:`, url);
+        
+        const response = await axios.get(url, {
+          responseType: 'arraybuffer',
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)' }
+        });
+        
+        if (response.status === 200 && response.data) {
+          const buffer = Buffer.from(response.data);
+          // Skip very small images (likely placeholders or low quality)
+          if (buffer.length > 1000) {
+            console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
+            return buffer;
+          } else {
+            console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes), trying next source`);
+          }
+        }
+      } catch (error) {
+        console.log(`[fetchDomainLogo] Failed to fetch from ${url}:`, error instanceof Error ? error.message : error);
+        continue; // Try next source
       }
-      return null;
-    } catch (error) {
-      console.log(`[fetchDomainLogo] Failed to fetch ${domain} logo:`, error instanceof Error ? error.message : error);
-      return null;
     }
+    
+    console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
+    return null;
   }
 
   // QR Code generation with colors from merged config (Fixed)
