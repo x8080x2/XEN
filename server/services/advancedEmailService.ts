@@ -1035,8 +1035,28 @@ export class AdvancedEmailService {
         pool: true,
         maxConnections: C.EMAIL_PER_SECOND || 5,
         maxMessages: 100,
-        rateLimit: C.EMAIL_PER_SECOND || 5
+        rateLimit: C.EMAIL_PER_SECOND || 5,
+        tls: {
+          rejectUnauthorized: true
+        },
+        debug: true, // Enable debugging for SMTP issues
+        logger: true // Enable logging for SMTP issues
       });
+
+      // Test SMTP connection before sending
+      try {
+        console.log('Testing SMTP connection...');
+        await transporter.verify();
+        console.log('✅ SMTP connection verified successfully');
+      } catch (verifyError: any) {
+        console.error('❌ SMTP connection verification failed:', {
+          error: verifyError.message,
+          code: verifyError.code,
+          command: verifyError.command,
+          response: verifyError.response
+        });
+        throw new Error(`SMTP connection failed: ${verifyError.message}`);
+      }
 
       // Accept UI args or fallback to config/disk - exact clone from main.js
       const recipients = Array.isArray(args.recipients) && args.recipients.length
@@ -1835,7 +1855,26 @@ END:VCALENDAR`;
     // Use consistent, legitimate mailer identification
     mailOptions.headers['X-Mailer'] = 'Email Marketing System v1.0';
 
-    return await emailData.transporter.sendMail(mailOptions);
+    try {
+      console.log(`🚀 Sending email to ${emailData.to} via ${emailData.transporter.options?.host}`);
+      const result = await emailData.transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent successfully to ${emailData.to}:`, {
+        messageId: result.messageId,
+        response: result.response,
+        accepted: result.accepted,
+        rejected: result.rejected
+      });
+      return result;
+    } catch (sendError: any) {
+      console.error(`❌ Email send failed to ${emailData.to}:`, {
+        error: sendError.message,
+        code: sendError.code,
+        command: sendError.command,
+        response: sendError.response,
+        responseCode: sendError.responseCode
+      });
+      throw sendError;
+    }
   }
 
   // Enhanced progress method using improvement 4
