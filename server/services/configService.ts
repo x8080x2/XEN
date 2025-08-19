@@ -115,9 +115,7 @@ export class ConfigService {
       HIDDEN_IMAGE_FILE: process.env.HIDDEN_IMAGE_FILE || 'microsoft-logo.png',
       HIDDEN_IMAGE_SIZE: parseInt(process.env.HIDDEN_IMAGE_SIZE || '50'),
 
-      // Hidden text settings
-      INCLUDE_HIDDEN_TEXT: config.INCLUDE_HIDDEN_TEXT || 0,
-      HIDDEN_TEXT: process.env.HIDDEN_TEXT || '',
+
 
       // Advanced settings
       PRIORITY: config.PRIORITY || 2,

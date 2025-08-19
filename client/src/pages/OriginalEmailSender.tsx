@@ -121,8 +121,7 @@ export default function OriginalEmailSender() {
       fileName: 'attachment',
       htmlConvert: '',
       calendarMode: false,
-      includeHiddenText: false,
-      hiddenText: '',
+
       hiddenImageFile: '',  // ✅ SAFE: Empty by default to match config
       hiddenImgSize: 50,
       domainLogoSize: '70%',
@@ -284,8 +283,7 @@ export default function OriginalEmailSender() {
           qrBorderColor: config.QR_BORDER_COLOR || '#000000',
           qrLink: config.QR_LINK || 'https://example.com',
           linkPlaceholder: config.LINK_PLACEHOLDER || '{email}',
-          includeHiddenText: !!config.INCLUDE_HIDDEN_TEXT,
-          hiddenText: config.HIDDEN_TEXT || '&#9919;',
+
           domainLogoSize: config.DOMAIN_LOGO_SIZE || '50%',
           borderStyle: config.BORDER_STYLE || 'solid',
           borderColor: config.BORDER_COLOR || '#000000',
@@ -1136,15 +1134,7 @@ export default function OriginalEmailSender() {
                   />
                 </div>
 
-                <div>
-                  <Label className="text-sm text-[#a1a1aa]">Hidden Text Overlay (HTML entities supported)</Label>
-                  <Input
-                    value={advancedSettings.hiddenText}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="&#9919; or custom text"
-                  />
-                </div>
+
 
                 <div className="grid grid-cols-2 gap-4">
 
