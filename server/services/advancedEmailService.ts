@@ -1356,9 +1356,24 @@ export class AdvancedEmailService {
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
-                // Add screenshot as attachment but keep original HTML with QR codes
-                console.log('[HTML2IMG_BODY] Successfully converted HTML to image attachment, keeping original HTML with QR codes in body');
-                console.log('[HTML2IMG_BODY] NOTE: PNG image is not clickable - links/QR codes remain functional in the original HTML body');
+                
+                // REPLACE email body with clickable image (exact same as main.js)
+                let qrContent = C.QR_LINK;
+                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                }
+                if (C.RANDOM_METADATA) {
+                  const rand = crypto.randomBytes(4).toString('hex');
+                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                }
+                
+                const htmlImgTag = `<a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                  <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
+                </a>`;
+                finalHtml = htmlImgTag;
+                
+                console.log('[HTML2IMG_BODY] Successfully replaced email body with clickable image (matches main.js behavior)');
+                console.log(`[HTML2IMG_BODY] Image links to: ${qrContent}`);
               } else {
                 console.log('[HTML2IMG_BODY] PNG conversion returned null, keeping original HTML');
               }
