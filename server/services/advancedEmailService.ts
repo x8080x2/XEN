@@ -1292,54 +1292,77 @@ export class AdvancedEmailService {
             });
           }
 
-          // HTML to Image Body conversion - Skip if QR is disabled
+          // HTML to Image Body conversion - Match exact QR and domain logo settings flow
           if (C.HTML2IMG_BODY) {
-            console.log('[HTML2IMG_BODY] Converting HTML body to image with delivery-safe approach');
+            console.log('[HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow');
             try {
               let screenshotHtml = finalHtml;
               
-              // QR codes have already been processed in main HTML processing above
-              // Just need to handle cid:qrcode references for screenshots
-              if (screenshotHtml.includes('cid:qrcode')) {
-                const qrOpts = buildQrOpts(C);
-                let qrContent = C.QR_LINK;
-                
-                // Apply link placeholder replacement - exact clone from main.js
-                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-                }
-                
-                // Add random metadata to QR if enabled
-                if (C.RANDOM_METADATA) {
-                  const rand = crypto.randomBytes(4).toString('hex');
-                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
-                }
-                
-                const qrDataUrl = await QRCode.toDataURL(qrContent, {
-                  width: qrOpts.width,
-                  margin: qrOpts.margin,
-                  errorCorrectionLevel: 'H' as any,
-                  color: {
-                    dark: C.QR_FOREGROUND_COLOR || '#000000',
-                    light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+              // Process QR codes with EXACT same settings as main HTML processing
+              if (screenshotHtml.includes('cid:qrcode-main')) {
+                if (C.QRCODE) {
+                  console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
+                  
+                  // Generate QR content with EXACT same logic as main HTML
+                  let qrContent = C.QR_LINK;
+                  if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
                   }
-                });
-                
-                // Only replace cid:qrcode references for screenshots
-                screenshotHtml = screenshotHtml.replace(/cid:qrcode/g, qrDataUrl);
+                  if (C.RANDOM_METADATA) {
+                    const rand = crypto.randomBytes(4).toString('hex');
+                    qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                  }
+                  
+                  // Generate QR with EXACT same settings as main HTML
+                  const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                    width: C.QR_WIDTH || 200,
+                    margin: 4,
+                    errorCorrectionLevel: 'H' as any,
+                    color: {
+                      dark: C.QR_FOREGROUND_COLOR || '#000000',
+                      light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                    }
+                  });
+                  
+                  // Apply EXACT same QR styling as main HTML but using data URL
+                  const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                  const borderStyle = C.BORDER_STYLE || 'solid';
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    </a>
+                                  </div>`;
+                  
+                  // Replace the entire CID reference with styled QR HTML
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
+                  console.log(`[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: ${qrContent}`);
+                } else {
+                  // QR disabled - remove QR completely, matching main HTML behavior
+                  screenshotHtml = screenshotHtml.replace(/<div[^>]*qrcode-main[^>]*>.*?<\/div>/gs, '');
+                  console.log('[HTML2IMG_BODY] QR disabled, removed from screenshot');
+                }
               }
-              if (screenshotHtml.includes('cid:domainlogo')) {
+              
+              // Process domain logo with EXACT same settings as main HTML processing
+              if (screenshotHtml.includes('cid:domainlogo-main')) {
+                console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
-                // CRITICAL FIX: Force cache lookup only, no network requests for HTML2IMG_BODY
-                console.log('[HTML2IMG_BODY] Checking cache for logo to avoid duplicate fetch');
+                
+                // Use cached logo if available (already fetched in main HTML processing)
                 const cachedLogo = this.logoCache.get(domainFull);
                 if (cachedLogo) {
-                  console.log('[HTML2IMG_BODY] Using cached logo for screenshot');
+                  console.log('[HTML2IMG_BODY] Using cached domain logo for screenshot');
                   const dataLogo = cachedLogo.toString('base64');
-                  screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, `data:image/png;base64,${dataLogo}`);
+                  const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
+                  
+                  // Apply EXACT same domain logo styling as main HTML but using data URL
+                  const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
+                  console.log(`[HTML2IMG_BODY] Domain logo processed with EXACT main HTML settings for ${domainFull}`);
                 } else {
-                  console.log('[HTML2IMG_BODY] No cached logo found, skipping logo in screenshot');
-                  screenshotHtml = screenshotHtml.replace(/cid:domainlogo/g, '');
+                  console.log('[HTML2IMG_BODY] No cached logo found, using fallback text');
+                  const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
                 }
               }
               // Convert to PNG with performance timing
