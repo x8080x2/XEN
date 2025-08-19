@@ -67,7 +67,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
   }
@@ -88,7 +88,6 @@ export class MemStorage implements IStorage {
       ...insertConfig,
       id,
       createdAt: new Date(),
-      updatedAt: new Date(),
     };
     this.emailConfigs.set(id, config);
     return config;
@@ -124,7 +123,8 @@ export class MemStorage implements IStorage {
       ...insertJob,
       id,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      sentCount: 0,
+      failedCount: 0,
     };
     this.emailJobs.set(id, job);
     return job;
@@ -177,7 +177,6 @@ export class MemStorage implements IStorage {
       const settings: AppSettings = {
         ...insertSettings,
         id,
-        createdAt: new Date(),
         updatedAt: new Date(),
       };
       this.appSettings.set(id, settings);

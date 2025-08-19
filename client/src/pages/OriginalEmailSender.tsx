@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -957,16 +957,16 @@ export default function OriginalEmailSender() {
                       { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
                       { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
                     ].map(({ format, label, color }) => {
-                      const isActive = advancedSettings.htmlConvert.split(',').map(f => f.trim().toLowerCase()).includes(format);
+                      const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
                       
                       return (
                         <Button
                           key={format}
                           type="button"
                           onClick={() => {
-                            const formats = advancedSettings.htmlConvert.split(',').map(f => f.trim().toLowerCase()).filter(Boolean);
+                            const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
                             const newFormats = isActive 
-                              ? formats.filter(f => f !== format)
+                              ? formats.filter((f: string) => f !== format)
                               : [...formats, format];
                             setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
                           }}
@@ -996,7 +996,7 @@ export default function OriginalEmailSender() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={advancedSettings.zipUse}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked: boolean) => 
                         setAdvancedSettings({...advancedSettings, zipUse: !!checked})
                       }
                     />
@@ -1005,7 +1005,7 @@ export default function OriginalEmailSender() {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       checked={advancedSettings.htmlImgBody}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked: boolean) => 
                         setAdvancedSettings({...advancedSettings, htmlImgBody: !!checked})
                       }
                     />
@@ -1022,7 +1022,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.qrcode}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked: boolean) => 
                       setAdvancedSettings({...advancedSettings, qrcode: !!checked})
                     }
                   />
@@ -1031,7 +1031,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.randomMetadata}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked: boolean) => 
                       setAdvancedSettings({...advancedSettings, randomMetadata: !!checked})
                     }
                   />
@@ -1042,7 +1042,7 @@ export default function OriginalEmailSender() {
                 <div className="flex items-center gap-2">
                   <Checkbox
                     checked={advancedSettings.calendarMode}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked: boolean) => 
                       setAdvancedSettings({...advancedSettings, calendarMode: !!checked})
                     }
                   />
@@ -1210,7 +1210,7 @@ export default function OriginalEmailSender() {
                   <div className="flex items-center space-x-2">
                     <Checkbox
                       checked={advancedSettings.proxyUse}
-                      onCheckedChange={(checked) => setAdvancedSettings({...advancedSettings, proxyUse: !!checked})}
+                      onCheckedChange={(checked: boolean) => setAdvancedSettings({...advancedSettings, proxyUse: !!checked})}
                     />
                     <Label className="text-sm text-[#a1a1aa]">Use Proxy</Label>
                   </div>
