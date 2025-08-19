@@ -1482,14 +1482,13 @@ END:VCALENDAR`;
           await new Promise(r => setTimeout(r, sleepMs));
         }
       }
-        
-        // Memory cleanup after each batch
-        if (batchIndex % 5 === 0) {
-          await this.cleanupBrowserPool();
-          if (global.gc) {
-            global.gc();
-          }
+      // Memory cleanup after each batch
+      if (batchIndex % 5 === 0) {
+        await this.cleanupBrowserPool();
+        if (global.gc) {
+          global.gc();
         }
+      }
       
       // Close transporter
       transporter.close();

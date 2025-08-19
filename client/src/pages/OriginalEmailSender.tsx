@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, FormEvent } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -228,8 +228,12 @@ export default function OriginalEmailSender() {
   };
 
   // Auto-load configuration on startup - exact clone from main.js line 308
-  // The useCallback and empty dependency array below ensures this only runs once.
-  const loadConfigFromFiles = useCallback(async () => {
+  useEffect(() => {
+    loadConfigFromFiles();
+  }, []); // Run once on component mount
+
+  // Load configuration from files - exact clone from main.js
+  const loadConfigFromFiles = async () => {
     try {
       const response = await fetch('/api/config/load');
       const data = await response.json();
@@ -329,15 +333,10 @@ export default function OriginalEmailSender() {
         setStatusText('Failed to load configuration');
       }
     } catch (error) {
-      console.error('[Config Load] Error loading config:', error);
+      console.error('Config load error:', error);
+      setStatusText('Failed to load configuration');
     }
-  }, []); // Empty dependency array since this function doesn't depend on any state
-
-  // Call the memoized function
-  useEffect(() => {
-    loadConfigFromFiles();
-  }, [loadConfigFromFiles]);
-
+  };
 
   const saveSMTPSettings = async () => {
     // In the original, this saves to config file
@@ -959,7 +958,7 @@ export default function OriginalEmailSender() {
                       { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
                     ].map(({ format, label, color }) => {
                       const isActive = advancedSettings.htmlConvert.split(',').map(f => f.trim().toLowerCase()).includes(format);
-
+                      
                       return (
                         <Button
                           key={format}
