@@ -32,8 +32,75 @@ Preferred communication style: Simple, everyday language.
 - **Progress Tracking**: Provides real-time updates and logging for email sending operations.
 - **Conversion**: Supports HTML content conversion to HTML, PDF, PNG, and DOCX formats.
 - **Image Overlays**: Integrates hidden image overlay system for precise positioning.
-- **QR Code Generation**: Capable of generating QR codes with configurable colors and borders, attaching them as CIDs.
+- **QR Code Generation**: Advanced QR code system with multiple rendering modes and comprehensive customization options.
 - **Configuration**: Loads settings from setup.ini and smtp.ini, with automatic application on startup.
+
+## QR Code System Architecture
+
+### QR Code Processing Modes
+The application supports three distinct QR code rendering contexts, each optimized for different delivery methods:
+
+#### 1. Main HTML Body QR Processing
+- **Purpose**: Displays QR codes directly in the email body for maximum visibility and interaction
+- **Implementation**: Uses CID (Content-ID) attachments for email client compatibility
+- **Process Flow**:
+  1. Detects `{qrcode}` placeholder in HTML template
+  2. Generates recipient-specific QR content with link placeholder replacement
+  3. Creates QR code as PNG buffer using configured colors and dimensions
+  4. Attaches QR as email attachment with CID `qrcode-main`
+  5. Replaces `{qrcode}` with `<img src="cid:qrcode-main">`
+- **Configuration**: Uses QR_WIDTH, QR_BORDER_WIDTH, QR_FOREGROUND_COLOR, QR_BACKGROUND_COLOR
+- **Email Client Support**: Compatible with all major email clients (Gmail, Outlook, Apple Mail)
+
+#### 2. HTML2IMG_BODY QR Processing  
+- **Purpose**: Converts entire HTML body to PNG screenshot while preserving QR functionality
+- **Implementation**: Renders QR codes within full-page screenshots for delivery bypass
+- **Process Flow**:
+  1. Takes final HTML with embedded QR codes
+  2. Processes any remaining `cid:qrcode` references for screenshot rendering
+  3. Converts complete HTML to PNG using Puppeteer
+  4. Attaches screenshot as email attachment
+  5. Preserves original HTML body with QR codes (fixed bug: previously replaced entire body)
+- **Use Case**: Bypasses email filtering by delivering content as image attachment
+- **Integration**: Works with existing QR codes from main HTML processing
+
+#### 3. HTML_CONVERT Attachment QR Processing
+- **Purpose**: Generates QR codes within PDF, PNG, and DOCX attachments
+- **Implementation**: Embeds QR codes directly in document attachments
+- **Process Flow**:
+  1. Processes attachment HTML templates with `{qrcode}` placeholders
+  2. Generates recipient-specific QR codes with same configuration as main HTML
+  3. Embeds QR codes using data URLs (safe within document context)
+  4. Converts to specified formats (PDF, PNG, DOCX) using Puppeteer/html-docx-js
+  5. Attaches converted documents to email
+- **Document Types**: PDF (most common), PNG images, DOCX documents
+- **Styling**: Supports borders, custom colors, and positioning within documents
+
+### QR Code Configuration System
+- **Link Generation**: Base QR_LINK with LINK_PLACEHOLDER replacement per recipient
+- **Randomization**: Optional RANDOM_METADATA adds unique parameters to prevent caching
+- **Visual Customization**: 
+  - QR_FOREGROUND_COLOR (default: #000000)
+  - QR_BACKGROUND_COLOR (default: #FFFFFF) 
+  - QR_WIDTH (default: 150px)
+  - QR_BORDER_WIDTH (default: 2px)
+  - BORDER_STYLE (solid, dotted, dashed)
+  - QR_BORDER_COLOR (default: #000000)
+- **Error Correction**: Uses 'H' level for maximum reliability
+
+### Technical Implementation Details
+- **Library**: Uses `qrcode` npm package for generation
+- **Format Support**: PNG buffers for attachments, data URLs for documents
+- **Performance**: Concurrent generation with pLimit for rate limiting
+- **Error Handling**: Graceful fallback to error messages if QR generation fails
+- **Memory Management**: Efficient buffer handling for large campaigns
+
+### Placeholder System Integration
+QR codes integrate with the comprehensive placeholder system:
+- **Recipient Personalization**: `{user}`, `{email}`, `{domain}` in QR links
+- **Dynamic Content**: `{hash6}`, `{randnum4}` for unique tracking
+- **Date/Time Stamps**: `{date}`, `{time}` for temporal tracking
+- **Link Replacement**: LINK_PLACEHOLDER enables per-recipient URL customization
 
 ## Recent Bug Fixes (August 2025)
 - **QR Code Display Bug**: Fixed main HTML body QR code display issue where QR codes showed as text instead of images. Root cause was using data URLs (data:image/png;base64,...) which email clients block for security. Solution: Changed to use CID (Content-ID) attachments like `src="cid:qrcode-main"` for proper email client compatibility.
