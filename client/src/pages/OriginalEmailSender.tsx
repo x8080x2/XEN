@@ -347,45 +347,18 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
-    console.log('🚀 Send button clicked - starting validation...');
-    
-    // Enhanced validation logic with better error messages
+    // Validation logic - exact clone from sender.html lines 1307-1321
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
     if (!recipientList.length) {
-      setStatusText('❌ Please enter at least one recipient email address.');
-      console.log('❌ Validation failed: No recipients');
-      return;
-    }
-
-    // Validate SMTP settings first
-    if (!smtpSettings.host || !smtpSettings.port || !smtpSettings.user || !smtpSettings.pass) {
-      setStatusText('❌ SMTP settings incomplete. Please configure SMTP settings below.');
-      console.log('❌ Validation failed: Incomplete SMTP settings');
+      setStatusText('Please enter at least one recipient.');
       return;
     }
 
     if (!senderEmail.trim()) {
-      setStatusText('❌ Sender email is required. Check SMTP config or enter manually.');
-      console.log('❌ Validation failed: No sender email');
+      setStatusText('Sender email is required (from SMTP config).');
       return;
     }
-
-    if (!subject.trim()) {
-      setStatusText('❌ Subject is required to avoid spam filters.');
-      console.log('❌ Validation failed: No subject');
-      return;
-    }
-
-    // Email format validation
-    const invalidEmails = recipientList.filter(email => !email.includes('@') || !email.includes('.'));
-    if (invalidEmails.length > 0) {
-      setStatusText(`❌ Invalid email format: ${invalidEmails[0]}`);
-      console.log('❌ Validation failed: Invalid email format');
-      return;
-    }
-    
-    console.log('✅ All validations passed');
 
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
@@ -431,11 +404,9 @@ export default function OriginalEmailSender() {
 
     if (!bodyHtml) {
       setStatusText('Email content cannot be empty.');
-      console.log('❌ Validation failed: No email content');
       return;
     }
 
-    console.log('✅ Email content loaded successfully');
     // Set mainHtml for FormData - this was missing
     const mainHtml = bodyHtml;
 
@@ -451,41 +422,11 @@ export default function OriginalEmailSender() {
 
     setIsLoading(true);
     setProgress(0);
-    setStatusText("🔄 Testing SMTP connection...");
+    setStatusText("Preparing to send emails...");
     setEmailLogs([]);
     setProgressDetails("");
 
-    // Test SMTP connection first
     try {
-      console.log('🔌 Testing SMTP connection...');
-      const testResponse = await fetch('/api/original/testConnection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          smtpHost: smtpSettings.host,
-          smtpPort: smtpSettings.port,
-          smtpUser: smtpSettings.user,
-          smtpPass: smtpSettings.pass
-        })
-      });
-
-      const testResult = await testResponse.json();
-      if (!testResult.success) {
-        setIsLoading(false);
-        setStatusText(`❌ SMTP Connection Failed: ${testResult.error}`);
-        console.error('❌ SMTP test failed:', testResult.error);
-        return;
-      }
-      
-      console.log('✅ SMTP connection successful');
-      setStatusText("✅ SMTP Connected! Preparing to send emails...");
-    } catch (error) {
-      console.log('⚠️ SMTP test skipped, proceeding with send...');
-      setStatusText("🔄 Preparing to send emails...");
-    }
-
-    try {
-      console.log('📦 Building FormData...');
       const formData = new FormData();
 
       // Add all form data - exact match to original args
@@ -503,7 +444,6 @@ export default function OriginalEmailSender() {
       formData.append('smtpPass', smtpSettings.pass);
 
       // Advanced settings
-      console.log('📋 Advanced settings being sent:', advancedSettings);
       Object.entries(advancedSettings).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
@@ -516,25 +456,13 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-      console.log('🚀 Starting email send request...');
-      console.log('📊 Request details:', {
-        recipients: recipients.split('\n').filter(r => r.trim()).length,
-        smtpHost: smtpSettings.host,
-        subject: subject,
-        hasContent: !!mainHtml
-      });
-      
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
 
-      console.log('📡 Response status:', response.status, response.statusText);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Response error:', errorText);
-        throw new Error(`Failed to start email sending: ${response.status} - ${errorText}`);
+        throw new Error('Failed to start email sending');
       }
 
       const reader = response.body?.getReader();

@@ -186,38 +186,6 @@ export function setupOriginalEmailRoutes(app: Express) {
     const result = await advancedEmailService.writeFile(filepath, content);
     res.json(result);
   });
-
-  // Test SMTP connection endpoint
-  app.post("/api/original/testConnection", async (req, res) => {
-    try {
-      const { smtpHost, smtpPort, smtpUser, smtpPass } = req.body;
-      
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        return res.json({ success: false, error: 'Missing SMTP credentials' });
-      }
-
-      const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransporter({
-        host: smtpHost,
-        port: parseInt(smtpPort),
-        secure: parseInt(smtpPort) === 465,
-        auth: { user: smtpUser, pass: smtpPass },
-        connectionTimeout: 10000,
-        greetingTimeout: 5000
-      });
-
-      await transporter.verify();
-      transporter.close();
-      
-      res.json({ success: true, message: 'SMTP connection successful' });
-    } catch (error: any) {
-      console.error('SMTP test error:', error);
-      res.json({ 
-        success: false, 
-        error: error.message || 'SMTP connection failed'
-      });
-    }
-  });
   
   // Note: Cleanup handlers should be registered once in the main server file
   // Removed duplicate process handlers to prevent conflicts
