@@ -478,6 +478,13 @@ export class AdvancedEmailService {
   private logoCache = new Map<string, Buffer | null>();
   private qrCache = new Map<string, Buffer>();
   
+  // Clear caches for testing new logo sources
+  public clearCaches() {
+    this.logoCache.clear();
+    this.qrCache.clear();
+    console.log('[Cache] Cleared logo and QR caches');
+  }
+  
   private async fetchDomainLogo(domain: string): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
     
@@ -490,11 +497,17 @@ export class AdvancedEmailService {
     
     // Try multiple logo sources for better color logo availability
     const logoSources = [
+      // Logo.dev - often has better color logos
+      `https://img.logo.dev/${encodeURIComponent(domain)}?token=pk_X-1ZO13GSVOmJCBX_Ex0tQ&format=png&size=200`,
+      // Brandfetch API alternative
+      `https://logo.brandfetch.io/${encodeURIComponent(domain)}`,
       // Clearbit with explicit color parameters
       `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false&color=true`,
       // Alternative Clearbit endpoint
       `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png`,
-      // Favicon service as fallback
+      // Company logo API
+      `https://companieslogo.com/img/orig/${encodeURIComponent(domain.split('.')[0])}.png`,
+      // Favicon service as final fallback
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
     ];
     
@@ -504,14 +517,18 @@ export class AdvancedEmailService {
         
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
-          timeout: 3000, // Reduced timeout from 10s to 3s for faster failure
-          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)' }
+          timeout: 5000, // Increased slightly for better logo services
+          headers: { 
+            'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)',
+            'Accept': 'image/png,image/jpeg,image/webp,image/*,*/*;q=0.8'
+          }
         });
         
         if (response.status === 200 && response.data) {
           const buffer = Buffer.from(response.data);
-          // Skip very small images (likely placeholders or low quality)
-          if (buffer.length > 1000) {
+          // More lenient size check for better logo sources
+          const minSize = url.includes('logo.dev') || url.includes('brandfetch') ? 500 : 1000;
+          if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
             this.logoCache.set(domain, buffer); // Cache for future use
             return buffer;
