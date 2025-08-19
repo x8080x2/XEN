@@ -1109,7 +1109,9 @@ export class AdvancedEmailService {
                   filename: 'qrcode.png',
                   content: qrBuffer,
                   cid: 'qrcode',
-                  contentType: 'image/png'
+                  contentType: 'image/png',
+                  encoding: 'base64',
+                  contentDisposition: 'inline'
                 });
                 
                 // Hidden overlay system completely removed
@@ -1120,7 +1122,7 @@ export class AdvancedEmailService {
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0; object-fit:contain;"/>
                                   </a>
                                 </div>`;
                 
