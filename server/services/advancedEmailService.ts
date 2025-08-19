@@ -1176,13 +1176,14 @@ export class AdvancedEmailService {
           }
 
           // HTML to Image Body conversion - Skip if QR is disabled
-          if (C.HTML2IMG_BODY && C.QRCODE) {
+          if (C.HTML2IMG_BODY) {
             console.log('[HTML2IMG_BODY] Converting HTML body to image with delivery-safe approach');
             try {
               let screenshotHtml = finalHtml;
               
-              // Process QR code for screenshot with recipient-specific content
-              if (screenshotHtml.includes('{qrcode}') || screenshotHtml.includes('cid:qrcode')) {
+              // QR codes have already been processed in main HTML processing above
+              // Just need to handle cid:qrcode references for screenshots
+              if (screenshotHtml.includes('cid:qrcode')) {
                 const qrOpts = buildQrOpts(C);
                 let qrContent = C.QR_LINK;
                 
@@ -1207,14 +1208,7 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Hidden overlay system completely removed
-                
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                  <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
-                                </div>`;
-                
-                // Replace both {qrcode} placeholders and cid:qrcode references
-                screenshotHtml = screenshotHtml.replace(/\{qrcode\}/g, qrHtml);
+                // Only replace cid:qrcode references for screenshots
                 screenshotHtml = screenshotHtml.replace(/cid:qrcode/g, qrDataUrl);
               }
               if (screenshotHtml.includes('cid:domainlogo')) {
@@ -1236,12 +1230,8 @@ export class AdvancedEmailService {
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
-                // Always show only the clickable image in the body if HTML2IMG_BODY is enabled
-                const htmlImgTag = `<a href="${C.QR_LINK || ''}" target="_blank" rel="noopener noreferrer">
-      <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
-    </a>`;
-                finalHtml = htmlImgTag;
-                console.log('[HTML2IMG_BODY] Successfully converted and replaced HTML with image');
+                // Add screenshot as attachment but keep original HTML with QR codes
+                console.log('[HTML2IMG_BODY] Successfully converted HTML to image attachment, keeping original HTML with QR codes in body');
               } else {
                 console.log('[HTML2IMG_BODY] PNG conversion returned null, keeping original HTML');
               }

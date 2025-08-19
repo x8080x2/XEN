@@ -730,6 +730,15 @@ export default function OriginalEmailSender() {
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <div className="text-red-400 font-semibold">📱 QR Code & Media Placeholders:</div>
+                        <div className="font-mono text-[10px] space-y-1 pl-2">
+                          <div><span className="text-red-300">{'{qrcode}'}</span> - QR code image (requires QR settings)</div>
+                          <div><span className="text-red-300">{'{domainlogo}'}</span> - Domain logo from recipient email</div>
+                          <div><span className="text-red-300">{'{link}'}</span> - Configured link URL</div>
+                        </div>
+                      </div>
+
                       <div className="mt-3 p-2 bg-[#1a1a1f] rounded border-l-2 border-[#ef4444]">
                         <div className="text-[#ef4444] font-semibold text-[10px] mb-1">💡 Pro Tips:</div>
                         <div className="text-[10px] space-y-1">
