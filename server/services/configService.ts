@@ -112,8 +112,7 @@ export class ConfigService {
       QR_FOREGROUND_COLOR: process.env.QR_FOREGROUND_COLOR || '#000000',
       QR_BACKGROUND_COLOR: process.env.QR_BACKGROUND_COLOR || '#FFFFFF',
       QR_LINK: process.env.QR_LINK || 'https://example.com',
-      HIDDEN_IMAGE_FILE: process.env.HIDDEN_IMAGE_FILE || 'microsoft-logo.png',
-      HIDDEN_IMAGE_SIZE: parseInt(process.env.HIDDEN_IMAGE_SIZE || '50'),
+
 
 
 

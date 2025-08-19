@@ -68,16 +68,14 @@ export function setupOriginalEmailRoutes(app: Express) {
         zipPassword: req.body.zipPassword,
         fileName: req.body.fileName,
         htmlConvert: req.body.htmlConvert,
-        includeHiddenText: req.body.includeHiddenText === 'true' || req.body.includeHiddenText === true,
-        hiddenText: req.body.hiddenText,
+
         // Additional missing parameters with proper conversion
         retry: parseInt(req.body.retry) || 0,
         priority: req.body.priority || '2',
         domainLogoSize: req.body.domainLogoSize || '70%',
         borderStyle: req.body.borderStyle || 'solid',
         borderColor: req.body.borderColor || '#000000',
-        hiddenImgSize: parseInt(req.body.hiddenImgSize) || 50,
-        hiddenImageFile: req.body.hiddenImageFile || '',
+
         // Proxy settings
         proxyUse: req.body.proxyUse === 'true' || req.body.proxyUse === true,
         proxyType: req.body.proxyType || 'socks5',

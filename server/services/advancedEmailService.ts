@@ -176,8 +176,7 @@ const defaultConfig = {
   HTML_CONVERT: [], // pdf
   // Hidden text overlay removed - image overlay only
   DOMAIN_LOGO_SIZE: '70%',
-  HIDDEN_IMAGE_SIZE: 50,
-  HIDDEN_IMAGE_FILE: '',
+
   PRIORITY: 'normal', // Fix 1: Add missing PRIORITY
   RETRY: 0, // Fix 1: Add missing RETRY
   PROXY: {
@@ -929,8 +928,7 @@ export class AdvancedEmailService {
     }
     
     // Apply hidden image settings from UI args - exact clone
-    C.HIDDEN_IMAGE_SIZE = args.hiddenImgSize || C.HIDDEN_IMAGE_SIZE || 50;
-    C.HIDDEN_IMAGE_FILE = args.hiddenImageFile || C.HIDDEN_IMAGE_FILE || '';
+
     C.DOMAIN_LOGO_SIZE = args.domainLogoSize || C.DOMAIN_LOGO_SIZE || '70%';
     
     // Apply border settings from UI args - sync fix
@@ -1114,28 +1112,7 @@ export class AdvancedEmailService {
                   contentType: 'image/png'
                 });
                 
-                // Load hidden image overlay if specified (image takes precedence over text)
-                let hiddenOverlay = '';
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                
-                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
-                  try {
-                    const logoDir = join('files', 'logo');
-                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                      const imgBuf = readFileSync(candidatePath);
-                      if (imgBuf && imgBuf.length > 0) {
-                        const base64Img = imgBuf.toString('base64');
-                        hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                        console.log(`[Main HTML QR] Applied base64 overlay: ${C.HIDDEN_IMAGE_FILE} (${hiddenImgWidth}px)`);
-                      }
-                    }
-                  } catch (err) {
-                    console.log(`[Main HTML QR] Overlay load failed: ${err}`);
-                  }
-                } else {
-                  console.log(`[Main HTML QR] No overlay specified - QR only`);
-                }
+                // Hidden overlay system completely removed
                 
                 // Create QR HTML with CID reference for proper email display
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
@@ -1145,7 +1122,6 @@ export class AdvancedEmailService {
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="cid:qrcode" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
-                                  ${hiddenOverlay}
                                 </div>`;
                 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
@@ -1213,38 +1189,10 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Use same single method overlay logic as main QR processing
-                let hiddenOverlay = '';
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                
-                // Load hidden image using same method
-                let imgBuf: Buffer | null = null;
-                let hasHiddenImage = false;
-                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
-                  try {
-                    const logoDir = join('files', 'logo');
-                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                      imgBuf = readFileSync(candidatePath);
-                      hasHiddenImage = Boolean(imgBuf && imgBuf.length > 0);
-                      console.log(`[HTML2IMG] Loaded overlay: ${candidatePath} (${imgBuf.length} bytes)`);
-                    }
-                  } catch (err) {
-                    console.log(`[HTML2IMG] Overlay load failed: ${err}`);
-                  }
-                }
-                
-                // Apply same overlay logic as main processing
-                if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf.toString('base64');
-                  hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[HTML2IMG] Applied base64 overlay (${hiddenImgWidth}px)`);
-                }
-                // Hidden text overlay removed - image only
+                // Hidden overlay system completely removed
                 
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${C.BORDER_STYLE} ${C.QR_BORDER_COLOR}; padding:2px;"/>
-                                  ${hiddenOverlay}
                                 </div>`;
                 
                 // Replace both {qrcode} placeholders and cid:qrcode references
@@ -1322,41 +1270,20 @@ export class AdvancedEmailService {
                   }
                 });
                 
-                // Load hidden image for attachment overlay (same method as main processing)
-                let hiddenOverlay = '';
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                
-                if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
-                  try {
-                    const logoDir = join('files', 'logo');
-                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                      const imgBuf = readFileSync(candidatePath);
-                      if (imgBuf && imgBuf.length > 0) {
-                        const base64Img = imgBuf.toString('base64');
-                        hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                        console.log(`[HTML_CONVERT] Applied base64 overlay to PDF: ${candidatePath} (${imgBuf.length} bytes)`);
-                      }
-                    }
-                  } catch (err) {
-                    console.log(`[HTML_CONVERT] Overlay load failed: ${err}`);
-                  }
-                }
-                // Hidden text overlay removed - image only
+                // Hidden overlay system completely removed
                 
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
-                // QR with base64 overlay for attachment
+                // QR without overlay for attachment
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
-                                  ${hiddenOverlay}
                                 </div>`;
                 
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[HTML_CONVERT] QR with base64 overlay applied to attachment`);
+                console.log(`[HTML_CONVERT] QR applied to attachment`);
               } catch (qrError) {
                 console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');

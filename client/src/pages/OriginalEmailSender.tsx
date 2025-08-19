@@ -122,8 +122,7 @@ export default function OriginalEmailSender() {
       htmlConvert: '',
       calendarMode: false,
 
-      hiddenImageFile: '',  // ✅ SAFE: Empty by default to match config
-      hiddenImgSize: 50,
+
       domainLogoSize: '70%',
       borderStyle: 'solid',
       borderColor: '#000000',
