@@ -1269,24 +1269,7 @@ export class AdvancedEmailService {
             });
           }
 
-          // TEMPORARY TEST: Add simple static PDF to verify delivery works
-          if (C.HTML_CONVERT && C.HTML_CONVERT.includes('pdf')) {
-            try {
-              const testPdfPath = './test-simple.pdf';
-              if (existsSync(testPdfPath)) {
-                const fs = await import('fs');
-                const testPdfBuffer = fs.readFileSync(testPdfPath);
-                emailAttachments.push({
-                  filename: 'test-static.pdf',
-                  content: testPdfBuffer,
-                  contentType: 'application/pdf'
-                });
-                console.log('[TEST] Added static test PDF for delivery verification');
-              }
-            } catch (err) {
-              console.log('[TEST] Failed to add static test PDF:', err);
-            }
-          }
+
 
           // HTML to Image Body conversion - Match exact QR and domain logo settings flow
           if (C.HTML2IMG_BODY) {
@@ -1419,137 +1402,138 @@ export class AdvancedEmailService {
             if (processedAttHtml.includes('{qrcode}')) {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
-                
-                // Apply recipient-specific replacements
-                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-                }
-                if (C.RANDOM_METADATA) {
-                  const rand = crypto.randomBytes(4).toString('hex');
-                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
-                }
-                
-                console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
-                
-                // Generate QR for attachment
-                const qrOpts = buildQrOpts(C);
-                try {
-                  const qrDataUrl = await QRCode.toDataURL(qrContent, {
-                    width: qrOpts.width,
-                    margin: qrOpts.margin,
-                    errorCorrectionLevel: 'H' as any,
-                    color: {
-                      dark: C.QR_FOREGROUND_COLOR || '#000000',
-                      light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
-                    }
-                  });
                   
-                  // Hidden overlay system completely removed
+                  // Apply recipient-specific replacements
+                  if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  }
+                  if (C.RANDOM_METADATA) {
+                    const rand = crypto.randomBytes(4).toString('hex');
+                    qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                  }
                   
-                  const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-                  const borderStyle = C.BORDER_STYLE || 'solid';
+                  console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
                   
-                  // QR without overlay for attachment
-                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                    </a>
-                                  </div>`;
-                  
-                  processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
-                  console.log(`[HTML_CONVERT] QR applied to attachment`);
-                } catch (qrError) {
-                  console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
-                  processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
-                }
-              } else {
-                // QR disabled - remove QR placeholder completely from attachments
-                console.log('[HTML_CONVERT] QR code disabled, removing QR from attachments');
-                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '');
-              }
-            }
-            
-            // Process domain logo in attachment HTML if present  
-            if (processedAttHtml.includes('{domainlogo}')) {
-              const domainFull = recipient.split('@')[1] || '';
-              // Check for cross-domain scenario
-              const fromEmail = args.smtpUser || '';
-              const senderDomain = this.extractDomainFromEmail(fromEmail);
-              const skipCache = senderDomain && senderDomain !== domainFull;
-              const domainLogoBuffer = await this.fetchDomainLogo(domainFull, !!skipCache);
-              if (domainLogoBuffer) {
-                const dataLogo = domainLogoBuffer!.toString('base64');
-                const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
-                processedAttHtml = processedAttHtml.replace(
-                  /\{domainlogo\}/g,
-                  `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
-                );
-              } else {
-                processedAttHtml = processedAttHtml.replace(
-                  /\{domainlogo\}/g,
-                  `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`
-                );
-              }
-            }
-            
-            for (const format of htmlConvertFormats) {
-              if (!format) continue;
-              try {
-                console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
-                const buffer = await this.renderHtml(format, processedAttHtml, C);
-                if (buffer) {
-                  // Process placeholders in filename - exact clone fix
-                  const rawFileName = C.FILE_NAME || 'attachment';
-                  let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
-                  processedFileName = replacePlaceholders(processedFileName);
-                  const filename = `${processedFileName}.${format}`;
-                  convertFiles.push({ name: filename, buffer });
-                  console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename} (${buffer.length} bytes)`);
+                  // Generate QR for attachment
+                  const qrOpts = buildQrOpts(C);
+                  try {
+                    const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                      width: qrOpts.width,
+                      margin: qrOpts.margin,
+                      errorCorrectionLevel: 'H' as any,
+                      color: {
+                        dark: C.QR_FOREGROUND_COLOR || '#000000',
+                        light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                      }
+                    });
+                    
+                    // Hidden overlay system completely removed
+                    
+                    const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                    const borderStyle = C.BORDER_STYLE || 'solid';
+                    
+                    // QR without overlay for attachment
+                    const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                                      <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                        <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                      </a>
+                                    </div>`;
+                    
+                    processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
+                    console.log(`[HTML_CONVERT] QR applied to attachment`);
+                  } catch (qrError) {
+                    console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
+                    processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+                  }
                 } else {
-                  console.log(`[HTML_CONVERT] ${format.toUpperCase()} conversion returned null`);
+                  // QR disabled - remove QR placeholder completely from attachments
+                  console.log('[HTML_CONVERT] QR code disabled, removing QR from attachments');
+                  processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '');
                 }
-              } catch (convertError) {
-                console.error(`[HTML_CONVERT] ${format.toUpperCase()} conversion failed:`, convertError);
               }
-            }
-
-            // Handle ZIP compression - exact clone from main.js
-            if (convertFiles.length > 0) {
-              if (C.ZIP_USE) {
+              
+              // Process domain logo in attachment HTML if present  
+              if (processedAttHtml.includes('{domainlogo}')) {
+                const domainFull = recipient.split('@')[1] || '';
+                // Check for cross-domain scenario
+                const fromEmail = args.smtpUser || '';
+                const senderDomain = this.extractDomainFromEmail(fromEmail);
+                const skipCache = senderDomain && senderDomain !== domainFull;
+                const domainLogoBuffer = await this.fetchDomainLogo(domainFull, !!skipCache);
+                if (domainLogoBuffer) {
+                  const dataLogo = domainLogoBuffer!.toString('base64');
+                  const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
+                  processedAttHtml = processedAttHtml.replace(
+                    /\{domainlogo\}/g,
+                    `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`
+                  );
+                } else {
+                  processedAttHtml = processedAttHtml.replace(
+                    /\{domainlogo\}/g,
+                    `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`
+                  );
+                }
+              }
+              
+              for (const format of htmlConvertFormats) {
+                if (!format) continue;
                 try {
-                  const zipBuffer = await this.createZipBuffer(convertFiles, C.ZIP_PASSWORD);
-                  const rawFileName = C.FILE_NAME || 'attachments';
-                  let replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
-                  replacedFileName = replacePlaceholders(replacedFileName);
-                  emailAttachments.push({
-                    filename: `${replacedFileName}.zip`,
-                    content: zipBuffer
-                  });
-                } catch (zipError) {
-                  console.error('ZIP creation failed:', zipError);
-                  // Add individual files if ZIP fails
+                  console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
+                  const buffer = await this.renderHtml(format, processedAttHtml, C);
+                  if (buffer) {
+                    // Process placeholders in filename - exact clone fix
+                    const rawFileName = C.FILE_NAME || 'attachment';
+                    let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                    processedFileName = replacePlaceholders(processedFileName);
+                    const filename = `${processedFileName}.${format}`;
+                    convertFiles.push({ name: filename, buffer });
+                    console.log(`[HTML_CONVERT] Successfully converted to ${format.toUpperCase()}: ${filename} (${buffer.length} bytes)`);
+                  } else {
+                    console.log(`[HTML_CONVERT] ${format.toUpperCase()} conversion returned null`);
+                  }
+                } catch (convertError) {
+                  console.error(`[HTML_CONVERT] ${format.toUpperCase()} conversion failed:`, convertError);
+                }
+              }
+
+              // Handle ZIP compression - exact clone from main.js
+              if (convertFiles.length > 0) {
+                if (C.ZIP_USE) {
+                  try {
+                    const zipBuffer = await this.createZipBuffer(convertFiles, C.ZIP_PASSWORD);
+                    const rawFileName = C.FILE_NAME || 'attachments';
+                    let replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                    replacedFileName = replacePlaceholders(replacedFileName);
+                    emailAttachments.push({
+                      filename: `${replacedFileName}.zip`,
+                      content: zipBuffer
+                    });
+                  } catch (zipError) {
+                    console.error('ZIP creation failed:', zipError);
+                    // Add individual files if ZIP fails
+                    convertFiles.forEach(file => {
+                      emailAttachments.push({
+                        filename: file.name,
+                        content: file.buffer
+                      });
+                    });
+                  }
+                } else {
+                  // Add individual converted files
+                  console.log(`[HTML_CONVERT] Adding ${convertFiles.length} individual files to email attachments`);
                   convertFiles.forEach(file => {
+                    // Verify PDF buffer is valid
+                    const isPdf = file.name.endsWith('.pdf');
+                    const isValidPdf = isPdf && file.buffer.length > 1000 && file.buffer[0] === 37 && file.buffer[1] === 80;
+                    
                     emailAttachments.push({
                       filename: file.name,
-                      content: file.buffer
+                      content: file.buffer,
+                      contentType: isPdf ? 'application/pdf' : undefined
                     });
+                    console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes) ${isValidPdf ? '✓ Valid PDF' : ''}`);
                   });
                 }
-              } else {
-                // Add individual converted files
-                console.log(`[HTML_CONVERT] Adding ${convertFiles.length} individual files to email attachments`);
-                convertFiles.forEach(file => {
-                  // Verify PDF buffer is valid
-                  const isPdf = file.name.endsWith('.pdf');
-                  const isValidPdf = isPdf && file.buffer.length > 1000 && file.buffer[0] === 37 && file.buffer[1] === 80;
-                  
-                  emailAttachments.push({
-                    filename: file.name,
-                    content: file.buffer,
-                    contentType: isPdf ? 'application/pdf' : undefined
-                  });
-                  console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes) ${isValidPdf ? '✓ Valid PDF' : ''}`);
-                });
               }
             }
           }
@@ -1561,40 +1545,40 @@ export class AdvancedEmailService {
 
           // Calendar Mode - Generate .ics file if enabled
           if (C.CALENDAR_MODE) {
-            try {
-              const eventStart = new Date();
-              eventStart.setHours(eventStart.getHours() + 1); // Event starts 1 hour from now
-              const eventEnd = new Date();
-              eventEnd.setHours(eventEnd.getHours() + 2); // Event ends 2 hours from now
-              
-              const formatDate = (date: Date) => {
-                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-              };
-              
-              // Use original HTML content for calendar (not HTML2IMG processed version)
-              // Calendar should contain the actual HTML with placeholders replaced, not the image
-              let originalHtmlForCalendar = finalAttHtml || html;
-              
-              // Convert original HTML to text for calendar description
-              let calendarDescription = htmlToText(originalHtmlForCalendar);
-              
-              // If QR is enabled and we have QR content, include it in the calendar description
-              if (C.QRCODE) {
-                let qrContent = C.QR_LINK;
-                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-                }
-                if (C.RANDOM_METADATA) {
-                  const rand = crypto.randomBytes(4).toString('hex');
-                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+              try {
+                const eventStart = new Date();
+                eventStart.setHours(eventStart.getHours() + 1); // Event starts 1 hour from now
+                const eventEnd = new Date();
+                eventEnd.setHours(eventEnd.getHours() + 2); // Event ends 2 hours from now
+                
+                const formatDate = (date: Date) => {
+                  return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+                };
+                
+                // Use original HTML content for calendar (not HTML2IMG processed version)
+                // Calendar should contain the actual HTML with placeholders replaced, not the image
+                let originalHtmlForCalendar = finalAttHtml || html;
+                
+                // Convert original HTML to text for calendar description
+                let calendarDescription = htmlToText(originalHtmlForCalendar);
+                
+                // If QR is enabled and we have QR content, include it in the calendar description
+                if (C.QRCODE) {
+                  let qrContent = C.QR_LINK;
+                  if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  }
+                  if (C.RANDOM_METADATA) {
+                    const rand = crypto.randomBytes(4).toString('hex');
+                    qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                  }
+                  
+                  // Replace QR placeholder in calendar description with the actual QR link
+                  calendarDescription = calendarDescription.replace(/QR Code.*?https:\/\/[^\s]*/g, `QR Code: ${qrContent}`);
+                  calendarDescription = calendarDescription.replace(/\[cid:qrcode\]/g, `${qrContent}`);
                 }
                 
-                // Replace QR placeholder in calendar description with the actual QR link
-                calendarDescription = calendarDescription.replace(/QR Code.*?https:\/\/[^\s]*/g, `QR Code: ${qrContent}`);
-                calendarDescription = calendarDescription.replace(/\[cid:qrcode\]/g, `${qrContent}`);
-              }
-              
-              const icsContent = `BEGIN:VCALENDAR
+                const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Email Marketing//Calendar Event//EN
 BEGIN:VEVENT
