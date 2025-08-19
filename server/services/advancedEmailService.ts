@@ -1088,7 +1088,7 @@ export class AdvancedEmailService {
             if (C.QRCODE) {
               console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
               
-              // Generate recipient-specific QR content - EXACT same logic
+              // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
               let qrContent = C.QR_LINK;
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                 qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1117,9 +1117,9 @@ export class AdvancedEmailService {
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
                                 </div>`;
                 
@@ -1143,7 +1143,7 @@ export class AdvancedEmailService {
 
           // Replace {domainlogo} using EXACT same logic as PDF/HTML2IMG_BODY processing
           const domainFull = recipient.split('@')[1] || '';
-          const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '50%';
+          const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
           if (finalHtml.includes('{domainlogo}')) {
             console.log(`[Main HTML Domain Logo] Processing domain logo using EXACT same logic as PDF/HTML2IMG_BODY`);
             const domainLogoBuffer = await this.fetchDomainLogo(domainFull);
