@@ -952,9 +952,14 @@ export class AdvancedEmailService {
       : (C.QR_BORDER_WIDTH || 2);
     C.QR_BORDER_COLOR = args.qrBorderColor || C.QR_BORDER_COLOR || '#000000';
     
-    // Runtime overrides from UI - exact clone
-    if (typeof args.htmlImgBody === 'boolean') {
-      C.HTML2IMG_BODY = args.htmlImgBody;
+    // DELIVERY FIX: HTML2IMG_BODY disabled to prevent spam issues
+    // Frontend UI setting is ignored to ensure delivery safety
+    if (typeof args.htmlImgBody === 'boolean' && args.htmlImgBody === false) {
+      C.HTML2IMG_BODY = false; // Only allow disabling, never enabling from UI
+    } else {
+      // Force disable HTML2IMG_BODY for delivery optimization
+      C.HTML2IMG_BODY = false;
+      console.log('[DELIVERY OPTIMIZATION] HTML2IMG_BODY forced to FALSE for better deliverability');
     }
     if (typeof args.qrLink === 'string' && args.qrLink.trim()) {
       C.QR_LINK = args.qrLink.trim();
@@ -1338,7 +1343,7 @@ export class AdvancedEmailService {
                   console.log(`[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: ${qrContent}`);
                 } else {
                   // QR disabled - remove QR completely, matching main HTML behavior
-                  screenshotHtml = screenshotHtml.replace(/<div[^>]*qrcode-main[^>]*>.*?<\/div>/gs, '');
+                  screenshotHtml = screenshotHtml.replace(/<div[^>]*qrcode-main[^>]*>.*?<\/div>/g, '');
                   console.log('[HTML2IMG_BODY] QR disabled, removed from screenshot');
                 }
               }

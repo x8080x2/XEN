@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,20 @@ interface LogEntry {
   timestamp: string;
   message: string;
   status: 'success' | 'error';
+}
+
+interface JobStatus {
+  id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  total: number;
+  sent: number;
+  failed: number;
+  logs: Array<{
+    recipient: string;
+    status: 'success' | 'failed';
+    message: string;
+    timestamp: string;
+  }>;
 }
 
 const defaultFormData: EmailFormData = {
@@ -139,7 +153,7 @@ export function useEmailSender() {
   });
 
   // Poll job status
-  const { data: jobStatus } = useQuery({
+  const { data: jobStatus } = useQuery<JobStatus>({
     queryKey: ['/api/emails/status', currentJobId],
     enabled: !!currentJobId,
     refetchInterval: 1000, // Poll every second
