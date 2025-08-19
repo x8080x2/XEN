@@ -4,6 +4,17 @@ import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
 
+// Handle unhandled promise rejections to prevent crashes
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  // Log the error but don't exit the process
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Log the error but don't exit the process in development
+});
+
 // Automatic cleanup function (non-blocking)
 function performStartupCleanup() {
   // Run cleanup asynchronously to avoid blocking startup

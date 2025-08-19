@@ -1666,8 +1666,19 @@ END:VCALENDAR`;
       const sentCount = sent;
       return { success: true, sent: sentCount, failed, errors, details: `Sent: ${sent}, Failed: ${failed}` };
     } catch (err: any) {
-      console.error('Error during sendMail:', err && err.stack ? err.stack : err);
-      return { success: false, error: err && err.message ? err.message : String(err) };
+      // Enhanced error handling and logging
+      const errorMessage = err?.message || err?.toString() || 'Unknown sendMail error';
+      const errorDetails = {
+        error: errorMessage,
+        errorType: err?.constructor?.name || 'UnknownError',
+        errorCode: err?.code,
+        stack: err?.stack
+      };
+      
+      console.error('Error during sendMail:', errorDetails);
+      this.logger.error('SendMail operation failed', errorDetails);
+      
+      return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
     }
   }
 
@@ -1752,13 +1763,20 @@ END:VCALENDAR`;
       trackResponse(false);
       this.progressMetrics.emailsFailed++;
       
-      this.logger.error('Email failed to send', { 
+      // Enhanced error logging with more details
+      const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
+      const errorDetails = {
         to: emailData.to, 
-        error: error.message,
-        responseTime: Date.now() - startTime 
-      });
+        error: errorMessage,
+        errorType: error?.constructor?.name || 'UnknownError',
+        errorCode: error?.code,
+        responseTime: Date.now() - startTime
+      };
       
-      return { success: false, error: error.message, recipient: emailData.to };
+      this.logger.error('Email failed to send', errorDetails);
+      console.error('Email sending error:', errorDetails);
+      
+      return { success: false, error: errorMessage, recipient: emailData.to };
     }
   }
 
