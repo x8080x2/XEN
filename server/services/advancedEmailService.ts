@@ -1242,51 +1242,57 @@ export class AdvancedEmailService {
             // Process QR codes in attachment HTML - Simple clean approach
             let processedAttHtml = finalAttHtml;
             
-            // QR replacement for attachments with base64 overlay (same as main processing)
+            // QR replacement for attachments - only if QR is enabled
             if (processedAttHtml.includes('{qrcode}')) {
-              let qrContent = C.QR_LINK;
-              
-              // Apply recipient-specific replacements
-              if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-              }
-              if (C.RANDOM_METADATA) {
-                const rand = crypto.randomBytes(4).toString('hex');
-                qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
-              }
-              
-              console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
-              
-              // Generate QR for attachment
-              const qrOpts = buildQrOpts(C);
-              try {
-                const qrDataUrl = await QRCode.toDataURL(qrContent, {
-                  width: qrOpts.width,
-                  margin: qrOpts.margin,
-                  errorCorrectionLevel: 'H' as any,
-                  color: {
-                    dark: C.QR_FOREGROUND_COLOR || '#000000',
-                    light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
-                  }
-                });
+              if (C.QRCODE) {
+                let qrContent = C.QR_LINK;
                 
-                // Hidden overlay system completely removed
+                // Apply recipient-specific replacements
+                if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                }
+                if (C.RANDOM_METADATA) {
+                  const rand = crypto.randomBytes(4).toString('hex');
+                  qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                }
                 
-                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-                const borderStyle = C.BORDER_STYLE || 'solid';
+                console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
                 
-                // QR without overlay for attachment
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                  </a>
-                                </div>`;
-                
-                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
-                console.log(`[HTML_CONVERT] QR applied to attachment`);
-              } catch (qrError) {
-                console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
-                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+                // Generate QR for attachment
+                const qrOpts = buildQrOpts(C);
+                try {
+                  const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                    width: qrOpts.width,
+                    margin: qrOpts.margin,
+                    errorCorrectionLevel: 'H' as any,
+                    color: {
+                      dark: C.QR_FOREGROUND_COLOR || '#000000',
+                      light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                    }
+                  });
+                  
+                  // Hidden overlay system completely removed
+                  
+                  const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                  const borderStyle = C.BORDER_STYLE || 'solid';
+                  
+                  // QR without overlay for attachment
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    </a>
+                                  </div>`;
+                  
+                  processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
+                  console.log(`[HTML_CONVERT] QR applied to attachment`);
+                } catch (qrError) {
+                  console.error(`[HTML_CONVERT] QR generation failed:`, qrError);
+                  processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '<span>[QR code unavailable]</span>');
+                }
+              } else {
+                // QR disabled - remove QR placeholder completely from attachments
+                console.log('[HTML_CONVERT] QR code disabled, removing QR from attachments');
+                processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '');
               }
             }
             
