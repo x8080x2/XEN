@@ -1232,10 +1232,10 @@ export class AdvancedEmailService {
             }
           }
 
-          // HTML Convert attachments - Skip if QR is disabled  
+          // HTML Convert attachments - Works independently of QR settings
           const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
-          console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}, QR enabled=${C.QRCODE}`);
-          if (htmlConvertFormats.length > 0 && finalAttHtml && C.QRCODE) {
+          console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
+          if (htmlConvertFormats.length > 0 && finalAttHtml) {
             console.log('[HTML_CONVERT] Processing attachments with simplified overlay approach');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
             
