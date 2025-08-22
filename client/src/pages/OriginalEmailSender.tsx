@@ -131,7 +131,10 @@ export default function OriginalEmailSender() {
       proxyHost: '',
       proxyPort: '',
       proxyUser: '',
-      proxyPass: ''
+      proxyPass: '',
+      hiddenImageFile: '',
+      hiddenImageSize: 50,
+      hiddenText: '',
     };
   });
 
@@ -231,7 +234,7 @@ export default function OriginalEmailSender() {
   useEffect(() => {
     loadConfigFromFiles();
   }, []); // Run once on component mount
-  
+
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -301,7 +304,10 @@ export default function OriginalEmailSender() {
           proxyPass: config.PROXY_PASS || '',
           qrForegroundColor: config.QR_FOREGROUND_COLOR || '#000000',
           qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF',
-          calendarMode: !!config.CALENDAR_MODE // Load calendar mode
+          calendarMode: !!config.CALENDAR_MODE, // Load calendar mode
+          hiddenImageFile: config.HIDDEN_IMAGE_FILE || '',
+          hiddenImageSize: config.HIDDEN_IMAGE_SIZE?.toString() || '50',
+          hiddenText: config.HIDDEN_TEXT || ''
         });
 
         // Auto-load leads from files/leads.txt - exact clone from main.js line 562

@@ -37,14 +37,14 @@ function pickRand(arr: any[]): any {
 // Complete placeholder replacement - exact clone from main.js
 function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
   if (!text) return '';
-  
+
   // Recipient logic
   const username = user?.split('@')[0] || '';
   const domain = user?.split('@')[1] || '';
   const domainBase = domain?.split('.')[0] || '';
   const initials = username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).join('');
   const userId = Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6);
-  
+
   // Generate random values for placeholders
   const randfirst = pickRand(randFirstNames);
   const randlast = pickRand(randLastNames);
@@ -65,7 +65,7 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
              .replace(/{domainbase}/g, domainBase)
              .replace(/{initials}/g, initials)
              .replace(/{userid}/g, userId);
-             
+
   // New random placeholders
   text = text.replace(/{randfirst}/g, randfirst)
              .replace(/{randlast}/g, randlast)
@@ -85,9 +85,9 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
   // {randomname}
   const names = ['John Smith','Jane Doe','Alex Johnson','Chris Lee','Pat Morgan','Kim Davis','Sam Carter'];
   text = text.replace(/\{randomname\}/g, names[Math.floor(Math.random() * names.length)]);
-             
+
   // NOTE: hashN and randnumN are handled by replacePlaceholders() function later
-  
+
   return text;
 }
 
@@ -102,13 +102,13 @@ function replacePlaceholders(str: string): string {
     while (num.length < n) num += Math.floor(Math.random()*10);
     return num.slice(0, n);
   });
-  
+
   // Replace {hashN} with random N-character hex string
   str = str.replace(/\{hash(\d+)\}/gi, (_, n) => {
     n = parseInt(n, 10);
     return crypto.randomBytes(Math.ceil(n/2)).toString('hex').slice(0, n);
   });
-  
+
   // Replace {randcharN} with random N-character alphanumeric string
   str = str.replace(/\{randchar(\d+)\}/gi, (_, n) => {
     n = parseInt(n, 10);
@@ -118,7 +118,7 @@ function replacePlaceholders(str: string): string {
     }
     return chars.slice(0, n);
   });
-  
+
   // Replace {randomnumN} (alternative spelling) with random N-digit numbers  
   str = str.replace(/\{randomnum(\d+)\}/gi, (_, n) => {
     n = parseInt(n, 10);
@@ -126,7 +126,7 @@ function replacePlaceholders(str: string): string {
     while (num.length < n) num += Math.floor(Math.random()*10);
     return num.slice(0, n);
   });
-  
+
   return str;
 }
 
@@ -240,23 +240,23 @@ export class AdvancedEmailService {
   private isPaused = false;
   private limit = pLimit(3); // Concurrency control
   private logger = new Logger();
-  
+
   // Activity Tracking - prevents cleanup during active operations
   private activeOperations = new Set<string>();
   private activeCampaigns = new Map<string, { startTime: number; emailCount: number }>();
-  
+
   // Improvement 2: Memory monitoring
   private memoryThreshold = 800 * 1024 * 1024; // 800MB
   private lastMemoryCheck = 0;
   private memoryCheckInterval = 30000; // 30 seconds
-  
+
   // Improvement 3: Gradual Adaptive rate limiting
   private smtpResponseTimes: number[] = [];
   private currentRateLimit = 5;
   private maxRateLimit = 20;
   private minRateLimit = 1;
   private rateChangeStep = 0.5; // Gradual rate changes
-  
+
   // Improvement 4: Progress tracking
   private progressMetrics = {
     startTime: 0,
@@ -272,7 +272,7 @@ export class AdvancedEmailService {
       this.logger.warn('Multiple AdvancedEmailService instances detected! Using existing instance.');
       return AdvancedEmailService.instance;
     }
-    
+
     this.logger.info('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
@@ -282,13 +282,13 @@ export class AdvancedEmailService {
   // Improvement 1: Browser Pool Management (Fixed connection issues)
   private async getBrowserFromPool(): Promise<any> {
     const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Track browser operation activity
     this.activeOperations.add(operationId);
-    
+
     try {
       const now = Date.now();
-      
+
       // Clean up any closed browsers first
       this.browserPool = this.browserPool.filter(pool => {
         try {
@@ -298,12 +298,12 @@ export class AdvancedEmailService {
           return false;
         }
       });
-      
+
       // Find available browser or create new one
       let availableBrowser = this.browserPool.find(pool => 
         pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
       );
-      
+
       if (!availableBrowser && this.browserPool.length < 2) { // Reduced max browsers to 2
         try {
           // Create new browser in pool
@@ -322,13 +322,13 @@ export class AdvancedEmailService {
           return null;
         }
       }
-      
+
       if (availableBrowser) {
         availableBrowser.activePages++;
         availableBrowser.lastUsed = now;
         return { browser: availableBrowser.instance, operationId };
       }
-      
+
       // Last resort - create temporary browser
       try {
         const browser = await this.launchBrowser({});
@@ -346,7 +346,7 @@ export class AdvancedEmailService {
 
   private releaseBrowserFromPool(browserInfo: any) {
     let browser, operationId;
-    
+
     // Handle both old format (direct browser) and new format (browser + operationId)
     if (browserInfo && typeof browserInfo === 'object' && browserInfo.browser) {
       browser = browserInfo.browser;
@@ -355,13 +355,13 @@ export class AdvancedEmailService {
       browser = browserInfo;
       operationId = null;
     }
-    
+
     // Release browser from pool
     const poolEntry = this.browserPool.find(pool => pool.instance === browser);
     if (poolEntry) {
       poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
     }
-    
+
     // Remove operation tracking
     if (operationId) {
       this.activeOperations.delete(operationId);
@@ -380,7 +380,7 @@ export class AdvancedEmailService {
         this.logger.warn('High memory usage detected', { memUsage });
         this.cleanupBrowserPool();
       }
-      
+
       // Log memory stats every 5 minutes
       if (Date.now() - this.lastMemoryCheck > 300000) {
         this.logger.info('Memory status', { memUsage, browserPoolSize: this.browserPool.length });
@@ -397,10 +397,10 @@ export class AdvancedEmailService {
       });
       return;
     }
-    
+
     const now = Date.now();
     const staleThreshold = 600000; // 10 minutes
-    
+
     for (let i = this.browserPool.length - 1; i >= 0; i--) {
       const pool = this.browserPool[i];
       if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
@@ -421,10 +421,10 @@ export class AdvancedEmailService {
     if (this.smtpResponseTimes.length > 10) {
       this.smtpResponseTimes.shift();
     }
-    
+
     const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
     const oldRate = this.currentRateLimit;
-    
+
     // Gradual rate limiting - smaller increments to reduce conflicts
     if (success && avgResponseTime < 2000) {
       // Fast responses - gradual increase
@@ -433,7 +433,7 @@ export class AdvancedEmailService {
       // Slow responses or failures - gradual decrease
       this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
     }
-    
+
     // Only log when rate actually changes significantly
     if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
       this.logger.debug('Rate limit updated gradually', { 
@@ -451,7 +451,7 @@ export class AdvancedEmailService {
     const elapsed = Date.now() - this.progressMetrics.startTime;
     const processed = this.progressMetrics.emailsSent + this.progressMetrics.emailsFailed;
     const remaining = this.progressMetrics.totalEmails - processed;
-    
+
     if (processed > 0) {
       const avgTimePerEmail = elapsed / processed;
       this.progressMetrics.estimatedTimeRemaining = remaining * avgTimePerEmail;
@@ -459,7 +459,7 @@ export class AdvancedEmailService {
         ? this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length 
         : 0;
     }
-    
+
     return {
       processed,
       remaining,
@@ -477,13 +477,13 @@ export class AdvancedEmailService {
     initialDelay: number = 1000
   ): Promise<T> {
     let lastError: Error;
-    
+
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt < maxRetries) {
           const delay = initialDelay * Math.pow(2, attempt);
           this.logger.warn(`Retry attempt ${attempt + 1}/${maxRetries + 1}`, { 
@@ -494,26 +494,26 @@ export class AdvancedEmailService {
         }
       }
     }
-    
+
     throw lastError!;
   }
 
   // Improvement 7: Configuration Validation
   private validateConfig(config: any): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     if (!config.EMAIL_PER_SECOND || config.EMAIL_PER_SECOND < 1) {
       errors.push('EMAIL_PER_SECOND must be at least 1');
     }
-    
+
     if (config.QR_WIDTH && (config.QR_WIDTH < 50 || config.QR_WIDTH > 1000)) {
       errors.push('QR_WIDTH must be between 50 and 1000');
     }
-    
+
     if (config.SLEEP && config.SLEEP < 0) {
       errors.push('SLEEP cannot be negative');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors
@@ -525,7 +525,7 @@ export class AdvancedEmailService {
     const baseSize = this.currentRateLimit;
     const performanceMultiplier = serverPerformance > 2000 ? 0.5 : 1.5;
     const optimal = Math.floor(baseSize * performanceMultiplier);
-    
+
     // Ensure batch size is reasonable
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
@@ -533,7 +533,7 @@ export class AdvancedEmailService {
   // QR caching with cache locking
   private qrCache = new Map<string, Buffer>();
   private qrCacheLocks = new Set<string>(); // Cache locking mechanism
-  
+
   // Clear QR cache only - with conditional safety check
   public clearCaches() {
     // Conditional cleanup - don't clear if operations in progress
@@ -542,17 +542,17 @@ export class AdvancedEmailService {
       setTimeout(() => this.clearCaches(), 5000); // Retry in 5s
       return;
     }
-    
+
     const qrCount = this.qrCache.size;
     this.qrCache.clear();
     console.log(`[Cache] Safely cleared ${qrCount} QR entries from cache (logo caching disabled)`);
   }
-  
+
   private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
-    
+
     console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain} (caching disabled)`);
-    
+
     // Optimized logo sources - fastest first for better performance
     const logoSources = [
       // DuckDuckGo Icons - fastest and most reliable
@@ -568,11 +568,11 @@ export class AdvancedEmailService {
       // Logo API direct - backup option
       `https://logo.uplead.com/${encodeURIComponent(domain)}`,
     ];
-    
+
     for (const url of logoSources) {
       try {
         console.log(`[fetchDomainLogo] Trying ${domain} logo from:`, url);
-        
+
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
           timeout: 2000, // Reduced timeout for faster fallback to next source
@@ -581,10 +581,10 @@ export class AdvancedEmailService {
             'Accept': 'image/png,image/jpeg,image/webp,image/*,*/*;q=0.8'
           }
         });
-        
+
         if (response.status === 200 && response.data) {
           const buffer = Buffer.from(response.data);
-          
+
           // Adjust minimum size based on source quality
           let minSize = 500; // Default minimum
           if (url.includes('favicone.com') || url.includes('icon.horse') || url.includes('uplead.com')) {
@@ -592,7 +592,7 @@ export class AdvancedEmailService {
           } else if (url.includes('clearbit.com')) {
             minSize = 2000; // Clearbit often returns larger files, prefer substantial logos
           }
-          
+
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
             return buffer;
@@ -605,7 +605,7 @@ export class AdvancedEmailService {
         continue; // Try next source
       }
     }
-    
+
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain} (caching disabled)`);
     return null;
   }
@@ -613,31 +613,31 @@ export class AdvancedEmailService {
   // QR Code generation with cache locking and activity tracking
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
-    
+
     // Create cache key based on link and visual settings
     const cacheKey = `${link}_${C.QR_WIDTH || 200}_${C.QR_FOREGROUND_COLOR || '#000000'}_${C.QR_BACKGROUND_COLOR || '#FFFFFF'}`;
-    
+
     // Wait for ongoing operations on this cache key
     while (this.qrCacheLocks.has(cacheKey)) {
       await new Promise(resolve => setTimeout(resolve, 10));
     }
-    
+
     // Check cache again after waiting
     if (this.qrCache.has(cacheKey)) {
       console.log(`[QR Generation] Using cached QR code`);
       return this.qrCache.get(cacheKey)!;
     }
-    
+
     // Lock cache key during generation
     this.qrCacheLocks.add(cacheKey);
-    
+
     try {
       // Use merged configuration colors
       const foregroundColor = C.QR_FOREGROUND_COLOR || '#000000';
       const backgroundColor = C.QR_BACKGROUND_COLOR || '#FFFFFF';
-      
+
       console.log(`[QR Generation] Using colors - Foreground: ${foregroundColor}, Background: ${backgroundColor}`);
-      
+
       const buffer = await QRCode.toBuffer(link, {
         width: C.QR_WIDTH || 200,
         margin: 4,
@@ -647,11 +647,11 @@ export class AdvancedEmailService {
           light: backgroundColor
         }
       });
-      
+
       // Cache the result
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
-      
+
       this.logger.debug('Generated QR code with custom colors', { 
         link: link.substring(0, 50),
         foregroundColor,
@@ -704,7 +704,7 @@ export class AdvancedEmailService {
         '--disable-sync'
       ]
     };
-    
+
     // Add proxy support
     if (C.PROXY && C.PROXY.PROXY_USE === 1) {
       const proxyHost = C.PROXY.HOST || '';
@@ -715,7 +715,7 @@ export class AdvancedEmailService {
         this.logger.info('Using proxy', { scheme, host: proxyHost, port: proxyPort });
       }
     }
-    
+
     let browser;
     try {
       // Try system chromium first
@@ -729,7 +729,7 @@ export class AdvancedEmailService {
       browser = await puppeteer.launch(launchOptions);
       this.logger.info('Browser launched with bundled chrome');
     }
-    
+
     // Setup proxy authentication if needed
     if (C.PROXY && C.PROXY.PROXY_USE === 1 && C.PROXY.USER && C.PROXY.PASS) {
       const pages = await browser.pages();
@@ -737,7 +737,7 @@ export class AdvancedEmailService {
       await page.authenticate({ username: C.PROXY.USER, password: C.PROXY.PASS });
       this.logger.info('Proxy authentication configured');
     }
-    
+
     return browser;
   }
 
@@ -751,7 +751,7 @@ export class AdvancedEmailService {
       let browserInfo = await this.getBrowserFromPool();
       let browser, page: any = null;
       let usingPool = true;
-      
+
       // Handle new browser activity tracking format
       if (!browserInfo) {
         browser = await this.launchBrowser({});
@@ -762,7 +762,7 @@ export class AdvancedEmailService {
         browser = browserInfo;
         usingPool = false;
       }
-      
+
       try {
         page = await browser.newPage();
         // Ultra-fast request interception - block ALL external resources
@@ -788,14 +788,14 @@ export class AdvancedEmailService {
           },
           timeout: 15000
         });
-        
+
         if (page) await page.close();
         if (usingPool) {
           this.releaseBrowserFromPool(browserInfo);
         } else {
           await browser.close();
         }
-        
+
         this.logger.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
         return pdfBuffer;
       } catch (e) {
@@ -825,12 +825,12 @@ export class AdvancedEmailService {
         active: (this.limit as any).activeCount,
         timestamp: conversionStart
       });
-      
+
       // Direct browser launch for maximum HTML2IMG_BODY speed
       let browser = await this.launchBrowser({});
       let page: any = null;
       let usingPool = false;
-      
+
       try {
         page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
@@ -843,14 +843,14 @@ export class AdvancedEmailService {
           optimizeForSpeed: true,
           captureBeyondViewport: false
         });
-        
+
         if (page) await page.close();
         if (usingPool) {
           this.releaseBrowserFromPool(browser);
         } else {
           await browser.close();
         }
-        
+
         const conversionEnd = Date.now();
         this.logger.debug('Image conversion completed', { 
           sizeKB: Math.round(pngBuffer.length / 1024),
@@ -919,16 +919,16 @@ export class AdvancedEmailService {
   // Create ZIP buffer - exact clone from main.js
   private async createZipBuffer(files: Array<{ name: string; buffer: Buffer }>, password?: string): Promise<Buffer> {
     const zip = new AdmZip();
-    
+
     files.forEach(file => {
       zip.addFile(file.name, file.buffer);
     });
-    
+
     if (password) {
       // Password functionality would require external library like node-7z
       console.log('ZIP password requested but not implemented');
     }
-    
+
     return zip.toBuffer();
   }
 
@@ -945,24 +945,24 @@ export class AdvancedEmailService {
     console.log('Advanced sendMail invoked with args:', args);
     const sendMailStart = Date.now();
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Register campaign activity tracking
     this.activeCampaigns.set(campaignId, {
       startTime: sendMailStart,
       emailCount: args.recipients?.length || 0
     });
-    
+
     this.logger.info('Campaign started with activity tracking', { 
       campaignId, 
       emailCount: args.recipients?.length || 0,
       activeOperations: this.activeOperations.size,
       activeCampaigns: this.activeCampaigns.size
     });
-    
+
     // Load SMTP configuration from config files first - exact clone from main.js lines 656-712
     const configData = configService.loadConfig();
     const emailConfig = configService.getEmailConfig();
-    
+
     // Auto-apply SMTP sender settings from config - exact clone from main.js behavior
     if (emailConfig.SMTP && emailConfig.SMTP.fromEmail) {
       if (!args.senderEmail || args.senderEmail.trim() === '') {
@@ -973,7 +973,7 @@ export class AdvancedEmailService {
         args.senderName = emailConfig.SMTP.fromName || '';
         console.log('[AdvancedEmailService] Auto-applied sender name from config:', args.senderName);
       }
-      
+
       // Auto-apply SMTP settings if not provided - exact clone from main.js
       if (!args.smtpHost && emailConfig.SMTP.host) {
         args.smtpHost = emailConfig.SMTP.host;
@@ -983,10 +983,10 @@ export class AdvancedEmailService {
         console.log('[AdvancedEmailService] Auto-applied SMTP settings from config');
       }
     }
-    
+
     // Load and merge configuration - exact clone from main.js  
     const C = { ...defaultConfig };
-    
+
     // Merge config file values if available
     if (emailConfig) {
       Object.keys(emailConfig).forEach(key => {
@@ -995,11 +995,11 @@ export class AdvancedEmailService {
         }
       });
     }
-    
+
     // Override with frontend values if provided
     if (args.qrForegroundColor) C.QR_FOREGROUND_COLOR = args.qrForegroundColor;
     if (args.qrBackgroundColor) C.QR_BACKGROUND_COLOR = args.qrBackgroundColor;
-    
+
     console.log('Loaded Config with Border Settings:', {
       BORDER_STYLE: C.BORDER_STYLE,
       BORDER_COLOR: C.BORDER_COLOR,
@@ -1008,7 +1008,7 @@ export class AdvancedEmailService {
       QR_BACKGROUND_COLOR: C.QR_BACKGROUND_COLOR,
       RANDOM_METADATA: C.RANDOM_METADATA
     });
-    
+
     // Override settings from args - exact clone logic
     if (args.sleep !== undefined && !isNaN(Number(args.sleep))) {
       C.SLEEP = Number(args.sleep);
@@ -1020,7 +1020,7 @@ export class AdvancedEmailService {
       ? args.qrBorder
       : (C.QR_BORDER_WIDTH || 2);
     C.QR_BORDER_COLOR = args.qrBorderColor || C.QR_BORDER_COLOR || '#000000';
-    
+
     // Runtime overrides from UI - restored to original functionality
     if (typeof args.htmlImgBody === 'boolean') {
       C.HTML2IMG_BODY = args.htmlImgBody;
@@ -1060,12 +1060,12 @@ export class AdvancedEmailService {
     } else if (args.htmlConvert === '' || args.htmlConvert === null || args.htmlConvert === undefined) {
       C.HTML_CONVERT = []; // Explicitly set to empty array when no formats selected
     }
-    
+
     // QR Code boolean toggle
     if (typeof args.qrcode === 'boolean') {
       C.QRCODE = args.qrcode;
     }
-    
+
     // Calendar Mode boolean toggle - Fix string to boolean conversion
     if (typeof args.calendarMode === 'boolean') {
       C.CALENDAR_MODE = args.calendarMode;
@@ -1074,9 +1074,9 @@ export class AdvancedEmailService {
     } else {
       C.CALENDAR_MODE = false;
     }
-    
+
     // Hidden text overlay completely removed - image overlay only
-    
+
     // Apply proxy settings from UI args - exact clone from main.js lines 207-214
     if (args.proxyUse === 'true' || args.proxyUse === true) {
       C.PROXY.PROXY_USE = 1;
@@ -1086,7 +1086,7 @@ export class AdvancedEmailService {
       C.PROXY.USER = args.proxyUser || '';
       C.PROXY.PASS = args.proxyPass || '';
     }
-    
+
     // Apply hidden image settings from UI args - exact clone
     if (typeof args.hiddenImageFile === 'string') {
       C.HIDDEN_IMAGE_FILE = args.hiddenImageFile;
@@ -1099,7 +1099,7 @@ export class AdvancedEmailService {
     }
 
     C.DOMAIN_LOGO_SIZE = args.domainLogoSize || C.DOMAIN_LOGO_SIZE || '70%';
-    
+
     // Apply border settings from UI args - sync fix
     if (typeof args.borderStyle === 'string') {
       C.BORDER_STYLE = args.borderStyle;
@@ -1111,11 +1111,11 @@ export class AdvancedEmailService {
     let sent = 0;
     let failed = 0;
     const errors: string[] = [];
-    
+
     try {
       // SMTP Configuration - exact clone
       const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
-      
+
       if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
         throw new Error('SMTP configuration is incomplete');
       }
@@ -1131,7 +1131,7 @@ export class AdvancedEmailService {
       console.log('SMTP Config Loaded:', {
         host, port, user, fromEmail, fromName, secure
       });
-      
+
       const transporter = nodemailer.createTransport({
         host,
         port,
@@ -1147,7 +1147,7 @@ export class AdvancedEmailService {
       const recipients = Array.isArray(args.recipients) && args.recipients.length
         ? args.recipients
         : (typeof args.recipients === 'string' ? args.recipients.split('\n').filter((r: string) => r.trim()) : []);
-      
+
       if (!recipients.length) {
         throw new Error('No recipients provided');
       }
@@ -1213,17 +1213,17 @@ export class AdvancedEmailService {
         batches.push(recipients.slice(i, i + batchSize));
       }
       const sleepMs = Math.max(0, (C.SLEEP || 0) * 1000); // Ensure no negative sleep
-      
+
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         // Pause/Resume Check - exact clone
         while (this.isPaused) {
           console.log('[sendMail] Currently paused, waiting to resume...');
           await new Promise(r => setTimeout(r, 500));
         }
-        
+
         const batch = batches[batchIndex];
         console.log(`[Batch ${batchIndex + 1}/${batches.length}] Processing ${batch.length} recipients`);
-        
+
         // Process emails in parallel within batches for maximum speed
         const batchPromises = batch.map(async (recipient: string) => {
           try {
@@ -1242,18 +1242,18 @@ export class AdvancedEmailService {
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
-          
+
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
-          
+
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
-          
+
           // QR Code replacement - MAIN HTML QR PROCESSING (Using EXACT same logic as PDF/HTML2IMG_BODY)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
               console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
-              
+
               // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
               let qrContent = C.QR_LINK;
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
@@ -1263,22 +1263,22 @@ export class AdvancedEmailService {
                 const rand = crypto.randomBytes(4).toString('hex');
                 qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
               }
-              
+
               // EXACT same QR generation logic as PDF/HTML2IMG_BODY
               const qrOpts = buildQrOpts(C);
               console.log(`[Main HTML QR] QR Options:`, qrOpts);
               console.log(`[Main HTML QR] QR Configuration:`, { QR_WIDTH: C.QR_WIDTH, QR_BORDER_WIDTH: C.QR_BORDER_WIDTH });
               try {
                 const qrBuffer = await QRCode.toBuffer(qrContent, {
-                  width: qrOpts.width,
-                  margin: qrOpts.margin,
+                  width: C.QR_WIDTH || 200,
+                  margin: 4,
                   errorCorrectionLevel: 'H' as any,
                   color: {
                     dark: C.QR_FOREGROUND_COLOR || '#000000',
                     light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
                   }
                 });
-                
+
                 // Add QR code as attachment with CID for main HTML body
                 const qrCid = 'qrcode-main';
                 emailAttachments.push({
@@ -1286,21 +1286,21 @@ export class AdvancedEmailService {
                   filename: 'qrcode.png',
                   cid: qrCid
                 });
-                
+
                 console.log(`[Main HTML QR] Generated QR buffer and added as CID attachment: ${qrCid}`);
-                
+
                 // Load hidden image for main HTML QR overlay - exact clone from main.js
                 const logoDir = join('files', 'logo');
                 let imgBuf = null;
                 let hasHiddenImage = false;
-                
+
                 try {
                   if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                     const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                     if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
-                      
+
                       // Add hidden image as CID attachment for main HTML
                       const hiddenImageCid = 'hiddenImage';
                       emailAttachments.push({
@@ -1315,7 +1315,7 @@ export class AdvancedEmailService {
                 } catch (e) {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
-                
+
                 // Generate overlay HTML for main HTML
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
@@ -1326,18 +1326,18 @@ export class AdvancedEmailService {
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                   console.log(`[Main HTML QR] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                 }
-                
+
                 // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
-                
+
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
                                   ${hiddenImageHtml}
                                 </div>`;
-                
+
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
                 console.log(`[Main HTML QR] QR content: ${qrContent}`);
@@ -1362,7 +1362,7 @@ export class AdvancedEmailService {
           const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
           if (finalHtml.includes('{domainlogo}')) {
             console.log(`[Main HTML Domain Logo] Processing domain logo with optimized color logo fetching`);
-            
+
             // Start logo fetching with performance timing and cross-domain detection
             const logoStartTime = Date.now();
             // Check if sender domain differs from recipient domain
@@ -1375,7 +1375,7 @@ export class AdvancedEmailService {
             const domainLogoBuffer = await this.fetchDomainLogo(domainFull, !!skipCache);
             const logoFetchTime = Date.now() - logoStartTime;
             console.log(`[Main HTML Domain Logo] Logo fetch completed in ${logoFetchTime}ms`);
-            
+
             if (domainLogoBuffer) {
               // Add domain logo as attachment with CID for main HTML body
               const logoCid = 'domainlogo-main';
@@ -1384,7 +1384,7 @@ export class AdvancedEmailService {
                 filename: `${domainFull}-logo.png`,
                 cid: logoCid
               });
-              
+
               // Use CID reference instead of base64 data URL
               const domainLogoHtml = `<img src="cid:${logoCid}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
               finalHtml = finalHtml.replace(/\{domainlogo\}/g, domainLogoHtml);
@@ -1398,7 +1398,7 @@ export class AdvancedEmailService {
           }
 
           // Add file attachments to existing emailAttachments array
-          
+
           // Add file attachments
           if (args.attachments && args.attachments.length > 0) {
             args.attachments.forEach((filePath: string) => {
@@ -1416,12 +1416,12 @@ export class AdvancedEmailService {
             console.log('[HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow');
             try {
               let screenshotHtml = finalHtml;
-              
+
               // Process QR codes with EXACT same settings as main HTML processing
               if (screenshotHtml.includes('cid:qrcode-main')) {
                 if (C.QRCODE) {
                   console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
-                  
+
                   // Generate QR content with EXACT same logic as main HTML
                   let qrContent = C.QR_LINK;
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
@@ -1431,7 +1431,7 @@ export class AdvancedEmailService {
                     const rand = crypto.randomBytes(4).toString('hex');
                     qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
                   }
-                  
+
                   // Generate QR with EXACT same settings as main HTML
                   const qrDataUrl = await QRCode.toDataURL(qrContent, {
                     width: C.QR_WIDTH || 200,
@@ -1442,7 +1442,7 @@ export class AdvancedEmailService {
                       light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
                     }
                   });
-                  
+
                   // Apply EXACT same QR styling as main HTML but using data URL
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
@@ -1451,7 +1451,7 @@ export class AdvancedEmailService {
                                       <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                     </a>
                                   </div>`;
-                  
+
                   // Replace the entire CID reference with styled QR HTML
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
                   console.log(`[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: ${qrContent}`);
@@ -1461,21 +1461,21 @@ export class AdvancedEmailService {
                   console.log('[HTML2IMG_BODY] QR disabled, removed from screenshot');
                 }
               }
-              
+
               // Process domain logo with EXACT same settings as main HTML processing
               if (screenshotHtml.includes('cid:domainlogo-main')) {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
-                
+
                 // Always fetch fresh logo (caching disabled per user request)
                 console.log('[HTML2IMG_BODY] Fetching fresh domain logo');
                 const freshLogo = await this.fetchDomainLogo(domainFull, true);
-                
+
                 if (freshLogo) {
                   console.log('[HTML2IMG_BODY] Using fresh domain logo for screenshot');
                   const dataLogo = freshLogo.toString('base64');
                   const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
-                  
+
                   // Apply EXACT same domain logo styling as main HTML but using data URL
                   const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
                   screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
@@ -1500,7 +1500,7 @@ export class AdvancedEmailService {
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
-                
+
                 // REPLACE email body with clickable image (exact same as main.js)
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
@@ -1510,12 +1510,12 @@ export class AdvancedEmailService {
                   const rand = crypto.randomBytes(4).toString('hex');
                   qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
                 }
-                
+
                 const htmlImgTag = `<a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                   <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
                 </a>`;
                 finalHtml = htmlImgTag;
-                
+
                 console.log('[HTML2IMG_BODY] Successfully replaced email body with clickable image (matches main.js behavior)');
                 console.log(`[HTML2IMG_BODY] Image links to: ${qrContent}`);
               } else {
@@ -1529,20 +1529,20 @@ export class AdvancedEmailService {
           // HTML Convert attachments - Works independently of QR settings
           const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
           console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
-          
+
           // Only process HTML_CONVERT if formats are explicitly selected and attachment HTML exists
           if (htmlConvertFormats.length > 0 && finalAttHtml && finalAttHtml.trim().length > 0) {
             console.log('[HTML_CONVERT] Processing attachments with simplified overlay approach');
             const convertFiles: Array<{ name: string; buffer: Buffer }> = [];
-            
+
             // Process QR codes in attachment HTML - Simple clean approach
             let processedAttHtml = finalAttHtml;
-            
+
             // QR replacement for attachments - only if QR is enabled
             if (processedAttHtml.includes('{qrcode}')) {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
-                
+
                 // Apply recipient-specific replacements
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                   qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1551,9 +1551,9 @@ export class AdvancedEmailService {
                   const rand = crypto.randomBytes(4).toString('hex');
                   qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
                 }
-                
+
                 console.log(`[HTML_CONVERT] QR processing for attachment with base64 overlay`);
-                
+
                 // Generate QR for attachment
                 const qrOpts = buildQrOpts(C);
                 try {
@@ -1566,16 +1566,16 @@ export class AdvancedEmailService {
                       light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
                     }
                   });
-                  
+
                   // QR overlay image system - restore exact technical implementation
                   let hiddenOverlay = '';
                   const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                  
+
                   // Load hidden image from files/logo directory - exact clone from main.js
                   const logoDir = join('files', 'logo');
                   let attImgBuf = null;
                   let hasAttHiddenImage = false;
-                  
+
                   try {
                     if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
                       const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
@@ -1588,7 +1588,7 @@ export class AdvancedEmailService {
                   } catch (e) {
                     console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
-                  
+
                   // Generate overlay HTML for attachments using base64 data URL
                   if (hasAttHiddenImage) {
                     const base64Img = attImgBuf.toString('base64');
@@ -1598,10 +1598,10 @@ export class AdvancedEmailService {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                   }
-                  
+
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
-                  
+
                   // QR with overlay for attachment - exact positioning from main.js
                   const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
@@ -1609,7 +1609,7 @@ export class AdvancedEmailService {
                                     </a>
                                     ${hiddenOverlay}
                                   </div>`;
-                  
+
                   processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
                   console.log(`[HTML_CONVERT] QR applied to attachment`);
                 } catch (qrError) {
@@ -1622,7 +1622,7 @@ export class AdvancedEmailService {
                 processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, '');
               }
             }
-            
+
             // Process domain logo in attachment HTML if present  
             if (processedAttHtml.includes('{domainlogo}')) {
               const domainFull = recipient.split('@')[1] || '';
@@ -1645,7 +1645,7 @@ export class AdvancedEmailService {
                 );
               }
             }
-            
+
             for (const format of htmlConvertFormats) {
               if (!format) continue;
               try {
@@ -1715,18 +1715,18 @@ export class AdvancedEmailService {
               eventStart.setHours(eventStart.getHours() + 1); // Event starts 1 hour from now
               const eventEnd = new Date();
               eventEnd.setHours(eventEnd.getHours() + 2); // Event ends 2 hours from now
-              
+
               const formatDate = (date: Date) => {
                 return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
               };
-              
+
               // Use original HTML content for calendar (not HTML2IMG processed version)
               // Calendar should contain the actual HTML with placeholders replaced, not the image
               let originalHtmlForCalendar = finalAttHtml || html;
-              
+
               // Convert original HTML to text for calendar description
               let calendarDescription = htmlToText(originalHtmlForCalendar);
-              
+
               // If QR is enabled and we have QR content, include it in the calendar description
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
@@ -1737,12 +1737,12 @@ export class AdvancedEmailService {
                   const rand = crypto.randomBytes(4).toString('hex');
                   qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
                 }
-                
+
                 // Replace QR placeholder in calendar description with the actual QR link
                 calendarDescription = calendarDescription.replace(/QR Code.*?https:\/\/[^\s]*/g, `QR Code: ${qrContent}`);
                 calendarDescription = calendarDescription.replace(/\[cid:qrcode\]/g, `${qrContent}`);
               }
-              
+
               const icsContent = `BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//Email Marketing//Calendar Event//EN
@@ -1770,7 +1770,7 @@ END:VCALENDAR`;
                 content: Buffer.from(icsContent, 'utf8'),
                 contentType: 'text/calendar'
               });
-              
+
               console.log('[CALENDAR_MODE] Added .ics calendar invitation with processed QR content');
             } catch (calendarError) {
               console.error('[CALENDAR_MODE] Error generating calendar invitation:', calendarError);
@@ -1808,10 +1808,10 @@ END:VCALENDAR`;
             return { success: false, error: err && err.message ? err.message : String(err), recipient };
           }
         });
-        
+
         // Wait for all batch promises to complete
         const batchResults = await Promise.all(batchPromises);
-        
+
         // Count results - exact clone
         batchResults.forEach((result: any) => {
           if (result.success) {
@@ -1835,7 +1835,7 @@ END:VCALENDAR`;
           }
         }
       }
-      
+
       // Close transporter
       transporter.close();
 
@@ -1863,10 +1863,10 @@ END:VCALENDAR`;
         errorCode: err?.code,
         stack: err?.stack
       };
-      
+
       console.error('Error during sendMail:', errorDetails);
       this.logger.error('SendMail operation failed', errorDetails);
-      
+
       // Clean up campaign tracking on error
       this.activeCampaigns.delete(campaignId);
       this.logger.info('Campaign failed and cleaned up', { 
@@ -1875,7 +1875,7 @@ END:VCALENDAR`;
         duration: Date.now() - sendMailStart,
         activeCampaigns: this.activeCampaigns.size 
       });
-      
+
       return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
     }
   }
@@ -1935,7 +1935,7 @@ END:VCALENDAR`;
     C: any;
   }): Promise<{ success: boolean; error?: string; recipient?: string }> {
     const startTime = Date.now();
-    
+
     // Improvement 3: Track response time for rate limiting
     const trackResponse = (success: boolean) => {
       const responseTime = Date.now() - startTime;
@@ -1950,17 +1950,17 @@ END:VCALENDAR`;
 
       trackResponse(true);
       this.progressMetrics.emailsSent++;
-      
+
       this.logger.info('Email sent successfully', { 
         to: emailData.to, 
         responseTime: Date.now() - startTime 
       });
-      
+
       return { success: true, recipient: emailData.to };
     } catch (error: any) {
       trackResponse(false);
       this.progressMetrics.emailsFailed++;
-      
+
       // Enhanced error logging with more details
       const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
       const errorDetails = {
@@ -1970,10 +1970,10 @@ END:VCALENDAR`;
         errorCode: error?.code,
         responseTime: Date.now() - startTime
       };
-      
+
       this.logger.error('Email failed to send', errorDetails);
       console.error('Email sending error:', errorDetails);
-      
+
       return { success: false, error: errorMessage, recipient: emailData.to };
     }
   }
@@ -2043,36 +2043,36 @@ END:VCALENDAR`;
 
   // Improvement 5: Template Management
   private templateCache = new Map<string, { content: string; lastModified: number }>();
-  
+
   async getTemplate(templateName: string): Promise<string> {
     const templatePath = join('files', templateName);
-    
+
     if (!existsSync(templatePath)) {
       throw new Error(`Template not found: ${templateName}`);
     }
-    
+
     const stat = statSync(templatePath);
     const lastModified = stat.mtime.getTime();
-    
+
     // Check cache
     const cached = this.templateCache.get(templateName);
     if (cached && cached.lastModified === lastModified) {
       this.logger.debug('Template served from cache', { templateName });
       return cached.content;
     }
-    
+
     // Load from disk and cache
     const content = readFileSync(templatePath, 'utf-8');
     this.templateCache.set(templateName, { content, lastModified });
     this.logger.debug('Template loaded and cached', { templateName, sizeKB: Math.round(content.length / 1024) });
-    
+
     return content;
   }
 
   // Cleanup method to be called on service shutdown
   async cleanup() {
     this.logger.info('Starting cleanup');
-    
+
     // Close all browser instances
     for (const pool of this.browserPool) {
       try {
@@ -2082,10 +2082,10 @@ END:VCALENDAR`;
       }
     }
     this.browserPool = [];
-    
+
     // Clear template cache
     this.templateCache.clear();
-    
+
     this.logger.info('Cleanup completed');
   }
   async writeFile(filepath: string, content: string) {

@@ -4,9 +4,11 @@ import crypto from "crypto";
 
 export class FileService {
   private uploadDir = "uploads";
+  private filesDir = "files"; // Assuming 'files' is a base directory for templates/logos
 
   constructor() {
     this.ensureUploadDir();
+    this.ensureFilesDir(); // Ensure the base files directory exists
   }
 
   private async ensureUploadDir(): Promise<void> {
@@ -14,6 +16,14 @@ export class FileService {
       await fs.access(this.uploadDir);
     } catch {
       await fs.mkdir(this.uploadDir, { recursive: true });
+    }
+  }
+
+  private async ensureFilesDir(): Promise<void> {
+    try {
+      await fs.access(this.filesDir);
+    } catch {
+      await fs.mkdir(this.filesDir, { recursive: true });
     }
   }
 
@@ -41,7 +51,7 @@ export class FileService {
       try {
         await fs.unlink(file.path);
       } catch {}
-      
+
       throw new Error(`Failed to process uploaded file: ${error}`);
     }
   }
@@ -50,7 +60,7 @@ export class FileService {
     try {
       // Read file content
       const content = await fs.readFile(attachment.path);
-      
+
       return {
         filename: attachment.filename,
         content,
@@ -85,6 +95,40 @@ export class FileService {
       return filepath;
     } catch (error) {
       throw new Error(`Failed to save processed file: ${error}`);
+    }
+  }
+
+  async listFiles(): Promise<{ files: string[] }> {
+    try {
+      const files = await fs.readdir(this.filesDir);
+      const htmlFiles = files.filter(file => file.endsWith('.html'));
+      return { files: htmlFiles };
+    } catch (error) {
+      console.error('Error reading files directory:', error);
+      return { files: [] };
+    }
+  }
+
+  async listLogoFiles(): Promise<{ files: string[] }> {
+    try {
+      const logoDir = path.join(this.filesDir, 'logo');
+
+      // Check if logo directory exists
+      try {
+        await fs.access(logoDir);
+      } catch {
+        // Directory doesn't exist, return empty array
+        return { files: [] };
+      }
+
+      const files = await fs.readdir(logoDir);
+      const imageFiles = files.filter(file =>
+        /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
+      );
+      return { files: imageFiles };
+    } catch (error) {
+      console.error('Error reading logo files directory:', error);
+      return { files: [] };
     }
   }
 }
