@@ -6,15 +6,15 @@ const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
   // Use the singleton instance instead of creating a new one
-  
+
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with:', req.body);
-      
+
       const files = req.files as Express.Multer.File[];
       const attachments = files?.map(file => file.path) || [];
-      
+
       // Parse recipients if it's a string
       let recipients = req.body.recipients;
       if (typeof recipients === 'string') {
@@ -24,7 +24,7 @@ export function setupOriginalEmailRoutes(app: Express) {
           recipients = recipients.split('\n').filter((r: string) => r.trim());
         }
       }
-      
+
       // Parse settings if it's a string
       let settings = req.body.settings;
       if (typeof settings === 'string') {
@@ -34,7 +34,7 @@ export function setupOriginalEmailRoutes(app: Express) {
           settings = {};
         }
       }
-      
+
       const args = {
         ...req.body,
         ...settings,
@@ -54,10 +54,14 @@ export function setupOriginalEmailRoutes(app: Express) {
         sleep: req.body.sleep,
         qrSize: parseInt(req.body.qrSize) || 200,
         qrBorder: parseInt(req.body.qrBorder) || 2,
-        qrBorderColor: req.body.qrBorderColor,
         qrForegroundColor: req.body.qrForegroundColor || '#000000',
         qrBackgroundColor: req.body.qrBackgroundColor || '#FFFFFF',
-        qrLink: req.body.qrLink,
+        // Hidden image overlay settings
+        hiddenImageFile: req.body.hiddenImageFile || '',
+        hiddenImageSize: parseInt(req.body.hiddenImageSize) || 50,
+        hiddenText: req.body.hiddenText || '',
+        // QR Code boolean
+        qrcode: req.body.qrcode === 'true' || req.body.qrcode === true,
         linkPlaceholder: req.body.linkPlaceholder,
         htmlImgBody: req.body.htmlImgBody === 'true' || req.body.htmlImgBody === true,
         randomMetadata: req.body.randomMetadata === 'true' || req.body.randomMetadata === true,
@@ -83,10 +87,8 @@ export function setupOriginalEmailRoutes(app: Express) {
         proxyPort: req.body.proxyPort || '',
         proxyUser: req.body.proxyUser || '',
         proxyPass: req.body.proxyPass || '',
-        // QR Code boolean
-        qrcode: req.body.qrcode === 'true' || req.body.qrcode === true
       };
-      
+
       // Send progress updates via Server-Sent Events
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
@@ -95,10 +97,10 @@ export function setupOriginalEmailRoutes(app: Express) {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Cache-Control'
       });
-      
+
       let totalSent = 0;
       let totalFailed = 0;
-      
+
       try {
         const result = await advancedEmailService.sendMail(args, (progress) => {
           if (progress.status === 'success') {
@@ -106,7 +108,7 @@ export function setupOriginalEmailRoutes(app: Express) {
           } else {
             totalFailed++;
           }
-          
+
           // Send progress update
           res.write(`data: ${JSON.stringify({
             type: 'progress',
@@ -120,7 +122,7 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalRecipients: recipients.length
           })}\n\n`);
         });
-        
+
         // Send completion
         res.write(`data: ${JSON.stringify({
           type: 'complete',
@@ -129,57 +131,57 @@ export function setupOriginalEmailRoutes(app: Express) {
           error: result.error,
           details: result.details
         })}\n\n`);
-        
+
       } catch (error: any) {
         res.write(`data: ${JSON.stringify({
           type: 'error',
           error: error.message || 'Unknown error occurred'
         })}\n\n`);
       }
-      
+
       res.end();
-      
+
     } catch (error: any) {
       console.error('Error in sendMail:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error.message || 'Internal server error' 
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Internal server error'
       });
     }
   });
-  
+
   // Pause send endpoint
   app.post("/api/original/pause", (req, res) => {
     advancedEmailService.pauseSend();
     res.json({ success: true, message: 'Email sending paused' });
   });
-  
+
   // Resume send endpoint
   app.post("/api/original/resume", (req, res) => {
     advancedEmailService.resumeSend();
     res.json({ success: true, message: 'Email sending resumed' });
   });
-  
+
   // List files endpoint
   app.get("/api/original/listFiles", async (req, res) => {
     const folder = req.query.folder as string || 'files';
     const result = await advancedEmailService.listFiles(folder);
     res.json(result);
   });
-  
+
   // List logo files endpoint
   app.get("/api/original/listLogoFiles", async (req, res) => {
     const result = await advancedEmailService.listLogoFiles();
     res.json(result);
   });
-  
+
   // Read file endpoint
   app.post("/api/original/readFile", async (req, res) => {
     const { filepath } = req.body;
     const result = await advancedEmailService.readFile(filepath);
     res.json(result);
   });
-  
+
   // Write file endpoint
   app.post("/api/original/writeFile", async (req, res) => {
     const { filepath, content } = req.body;
@@ -197,7 +199,7 @@ export function setupOriginalEmailRoutes(app: Express) {
       res.status(500).json({ success: false, error: 'Failed to clear caches' });
     }
   });
-  
+
   // Note: Cleanup handlers should be registered once in the main server file
   // Removed duplicate process handlers to prevent conflicts
 }

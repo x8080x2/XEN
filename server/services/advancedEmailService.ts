@@ -164,6 +164,9 @@ const defaultConfig = {
   LINK_PLACEHOLDER: '',
   HTML2IMG_BODY: false,
   RANDOM_METADATA: false,
+  HIDDEN_IMAGE_FILE: '',
+  HIDDEN_IMAGE_SIZE: 50,
+  HIDDEN_TEXT: '',
 
   QRCODE: false,
   CALENDAR_MODE: false,
@@ -1085,6 +1088,15 @@ export class AdvancedEmailService {
     }
     
     // Apply hidden image settings from UI args - exact clone
+    if (typeof args.hiddenImageFile === 'string') {
+      C.HIDDEN_IMAGE_FILE = args.hiddenImageFile;
+    }
+    if (typeof args.hiddenImageSize === 'number' && args.hiddenImageSize > 0) {
+      C.HIDDEN_IMAGE_SIZE = args.hiddenImageSize;
+    }
+    if (typeof args.hiddenText === 'string') {
+      C.HIDDEN_TEXT = args.hiddenText;
+    }
 
     C.DOMAIN_LOGO_SIZE = args.domainLogoSize || C.DOMAIN_LOGO_SIZE || '70%';
     
@@ -1277,7 +1289,45 @@ export class AdvancedEmailService {
                 
                 console.log(`[Main HTML QR] Generated QR buffer and added as CID attachment: ${qrCid}`);
                 
-                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but using CID
+                // Load hidden image for main HTML QR overlay - exact clone from main.js
+                const logoDir = join('files', 'logo');
+                let imgBuf = null;
+                let hasHiddenImage = false;
+                
+                try {
+                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                    const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                    if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                      imgBuf = readFileSync(candidatePath);
+                      hasHiddenImage = Boolean(imgBuf && imgBuf.length);
+                      
+                      // Add hidden image as CID attachment for main HTML
+                      const hiddenImageCid = 'hiddenImage';
+                      emailAttachments.push({
+                        filename: basename(candidatePath),
+                        content: imgBuf,
+                        cid: hiddenImageCid,
+                        contentType: 'image/png'
+                      });
+                      console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
+                    }
+                  }
+                } catch (e) {
+                  console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
+                }
+                
+                // Generate overlay HTML for main HTML
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                let hiddenImageHtml = '';
+                if (hasHiddenImage) {
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated hidden overlay using CID reference`);
+                } else if (C.HIDDEN_TEXT) {
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
+                }
+                
+                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
                 
@@ -1285,6 +1335,7 @@ export class AdvancedEmailService {
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                   </a>
+                                  ${hiddenImageHtml}
                                 </div>`;
                 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
@@ -1516,16 +1567,47 @@ export class AdvancedEmailService {
                     }
                   });
                   
-                  // Hidden overlay system completely removed
+                  // QR overlay image system - restore exact technical implementation
+                  let hiddenOverlay = '';
+                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                  
+                  // Load hidden image from files/logo directory - exact clone from main.js
+                  const logoDir = join('files', 'logo');
+                  let attImgBuf = null;
+                  let hasAttHiddenImage = false;
+                  
+                  try {
+                    if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                      const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                      if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                        attImgBuf = readFileSync(candidatePath);
+                        hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
+                        console.log(`[HTML_CONVERT] Loaded hidden image: ${candidatePath}`);
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
+                  }
+                  
+                  // Generate overlay HTML for attachments using base64 data URL
+                  if (hasAttHiddenImage) {
+                    const base64Img = attImgBuf.toString('base64');
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:70px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML_CONVERT] Generated hidden overlay for attachment`);
+                  } else if (C.HIDDEN_TEXT) {
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML_CONVERT] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
+                  }
                   
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
                   
-                  // QR without overlay for attachment
+                  // QR with overlay for attachment - exact positioning from main.js
                   const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                       <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                     </a>
+                                    ${hiddenOverlay}
                                   </div>`;
                   
                   processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
