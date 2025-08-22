@@ -1591,7 +1591,7 @@ export class AdvancedEmailService {
                   }
 
                   // Generate overlay HTML for attachments using base64 data URL
-                  if (hasAttHiddenImage) {
+                  if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
                     hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); width:${hiddenImgWidth}px; height:auto; border:2px solid red; background:white; padding:2px;"/>`;
                     console.log(`[HTML_CONVERT] Generated hidden overlay for attachment with test styling`);
