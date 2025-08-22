@@ -1320,10 +1320,11 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage) {
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated hidden overlay using CID reference`);
+                  // Make overlay more visible for testing - centered and larger
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); width:${hiddenImgWidth}px; height:auto; border:2px solid red; background:white; padding:2px;"/>`;
+                  console.log(`[Main HTML QR] Generated hidden overlay using CID reference with test styling`);
                 } else if (C.HIDDEN_TEXT) {
-                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); padding:4px 8px; font-size:16px; color:red; background:yellow; border:2px solid red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
                   console.log(`[Main HTML QR] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                 }
 
@@ -1592,10 +1593,10 @@ export class AdvancedEmailService {
                   // Generate overlay HTML for attachments using base64 data URL
                   if (hasAttHiddenImage) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:70px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML_CONVERT] Generated hidden overlay for attachment`);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); width:${hiddenImgWidth}px; height:auto; border:2px solid red; background:white; padding:2px;"/>`;
+                    console.log(`[HTML_CONVERT] Generated hidden overlay for attachment with test styling`);
                   } else if (C.HIDDEN_TEXT) {
-                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); padding:4px 8px; font-size:16px; color:red; background:yellow; border:2px solid red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                   }
 
