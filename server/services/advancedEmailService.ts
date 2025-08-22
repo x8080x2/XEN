@@ -238,16 +238,21 @@ export class AdvancedEmailService {
   private limit = pLimit(3); // Concurrency control
   private logger = new Logger();
   
+  // Activity Tracking - prevents cleanup during active operations
+  private activeOperations = new Set<string>();
+  private activeCampaigns = new Map<string, { startTime: number; emailCount: number }>();
+  
   // Improvement 2: Memory monitoring
   private memoryThreshold = 800 * 1024 * 1024; // 800MB
   private lastMemoryCheck = 0;
   private memoryCheckInterval = 30000; // 30 seconds
   
-  // Improvement 3: Adaptive rate limiting
+  // Improvement 3: Gradual Adaptive rate limiting
   private smtpResponseTimes: number[] = [];
   private currentRateLimit = 5;
   private maxRateLimit = 20;
   private minRateLimit = 1;
+  private rateChangeStep = 0.5; // Gradual rate changes
   
   // Improvement 4: Progress tracking
   private progressMetrics = {
@@ -273,61 +278,94 @@ export class AdvancedEmailService {
 
   // Improvement 1: Browser Pool Management (Fixed connection issues)
   private async getBrowserFromPool(): Promise<any> {
-    const now = Date.now();
+    const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    // Clean up any closed browsers first
-    this.browserPool = this.browserPool.filter(pool => {
-      try {
-        // Check if browser is still connected
-        return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
-      } catch {
-        return false;
-      }
-    });
+    // Track browser operation activity
+    this.activeOperations.add(operationId);
     
-    // Find available browser or create new one
-    let availableBrowser = this.browserPool.find(pool => 
-      pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
-    );
-    
-    if (!availableBrowser && this.browserPool.length < 2) { // Reduced max browsers to 2
-      try {
-        // Create new browser in pool
-        const browser = await this.launchBrowser({});
-        availableBrowser = {
-          instance: browser,
-          activePages: 0,
-          lastUsed: now,
-          maxPages: 3 // Reduced max pages per browser
-        };
-        this.browserPool.push(availableBrowser);
-        this.logger.info('Created new browser in pool', { poolSize: this.browserPool.length });
-      } catch (error) {
-        this.logger.error('Failed to create browser', { error });
-        // Return null to fall back to direct browser launch
-        return null;
-      }
-    }
-    
-    if (availableBrowser) {
-      availableBrowser.activePages++;
-      availableBrowser.lastUsed = now;
-      return availableBrowser.instance;
-    }
-    
-    // Last resort - create temporary browser
     try {
-      return await this.launchBrowser({});
+      const now = Date.now();
+      
+      // Clean up any closed browsers first
+      this.browserPool = this.browserPool.filter(pool => {
+        try {
+          // Check if browser is still connected
+          return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
+        } catch {
+          return false;
+        }
+      });
+      
+      // Find available browser or create new one
+      let availableBrowser = this.browserPool.find(pool => 
+        pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
+      );
+      
+      if (!availableBrowser && this.browserPool.length < 2) { // Reduced max browsers to 2
+        try {
+          // Create new browser in pool
+          const browser = await this.launchBrowser({});
+          availableBrowser = {
+            instance: browser,
+            activePages: 0,
+            lastUsed: now,
+            maxPages: 3 // Reduced max pages per browser
+          };
+          this.browserPool.push(availableBrowser);
+          this.logger.info('Created new browser in pool', { poolSize: this.browserPool.length });
+        } catch (error) {
+          this.logger.error('Failed to create browser', { error });
+          // Return null to fall back to direct browser launch
+          return null;
+        }
+      }
+      
+      if (availableBrowser) {
+        availableBrowser.activePages++;
+        availableBrowser.lastUsed = now;
+        return { browser: availableBrowser.instance, operationId };
+      }
+      
+      // Last resort - create temporary browser
+      try {
+        const browser = await this.launchBrowser({});
+        return { browser, operationId };
+      } catch (error) {
+        this.logger.error('Failed to launch fallback browser', { error });
+        throw error;
+      }
     } catch (error) {
-      this.logger.error('Failed to launch fallback browser', { error });
+      // Remove operation tracking on error
+      this.activeOperations.delete(operationId);
       throw error;
     }
   }
 
-  private releaseBrowserFromPool(browser: any) {
+  private releaseBrowserFromPool(browserInfo: any) {
+    let browser, operationId;
+    
+    // Handle both old format (direct browser) and new format (browser + operationId)
+    if (browserInfo && typeof browserInfo === 'object' && browserInfo.browser) {
+      browser = browserInfo.browser;
+      operationId = browserInfo.operationId;
+    } else {
+      browser = browserInfo;
+      operationId = null;
+    }
+    
+    // Release browser from pool
     const poolEntry = this.browserPool.find(pool => pool.instance === browser);
     if (poolEntry) {
       poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
+    }
+    
+    // Remove operation tracking
+    if (operationId) {
+      this.activeOperations.delete(operationId);
+      this.logger.debug('Released browser operation', { 
+        operationId, 
+        activeOperations: this.activeOperations.size 
+      });
     }
   }
 
@@ -349,6 +387,14 @@ export class AdvancedEmailService {
   }
 
   private async cleanupBrowserPool() {
+    // Conditional cleanup - skip if active operations detected
+    if (this.activeOperations.size > 0) {
+      this.logger.info('Skipping browser cleanup - active operations detected', { 
+        activeCount: this.activeOperations.size 
+      });
+      return;
+    }
+    
     const now = Date.now();
     const staleThreshold = 600000; // 10 minutes
     
@@ -374,20 +420,27 @@ export class AdvancedEmailService {
     }
     
     const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
+    const oldRate = this.currentRateLimit;
     
+    // Gradual rate limiting - smaller increments to reduce conflicts
     if (success && avgResponseTime < 2000) {
-      // Fast responses - can increase rate
-      this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + 1);
+      // Fast responses - gradual increase
+      this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + this.rateChangeStep);
     } else if (!success || avgResponseTime > 5000) {
-      // Slow responses or failures - decrease rate
-      this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - 1);
+      // Slow responses or failures - gradual decrease
+      this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
     }
     
-    this.logger.debug('Rate limit updated', { 
-      currentRate: this.currentRateLimit, 
-      avgResponseTime,
-      success 
-    });
+    // Only log when rate actually changes significantly
+    if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
+      this.logger.debug('Rate limit updated gradually', { 
+        oldRate,
+        newRate: this.currentRateLimit, 
+        avgResponseTime,
+        success,
+        change: this.currentRateLimit - oldRate
+      });
+    }
   }
 
   // Improvement 4: Enhanced Progress Tracking
@@ -474,14 +527,22 @@ export class AdvancedEmailService {
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
 
-  // QR caching only (logo caching disabled per user request)
+  // QR caching with cache locking
   private qrCache = new Map<string, Buffer>();
+  private qrCacheLocks = new Set<string>(); // Cache locking mechanism
   
-  // Clear QR cache only
+  // Clear QR cache only - with conditional safety check
   public clearCaches() {
+    // Conditional cleanup - don't clear if operations in progress
+    if (this.qrCacheLocks.size > 0 || this.activeOperations.size > 0) {
+      console.log('[Cache] Deferring clear - operations in progress');
+      setTimeout(() => this.clearCaches(), 5000); // Retry in 5s
+      return;
+    }
+    
     const qrCount = this.qrCache.size;
     this.qrCache.clear();
-    console.log(`[Cache] Cleared ${qrCount} QR entries from cache (logo caching disabled)`);
+    console.log(`[Cache] Safely cleared ${qrCount} QR entries from cache (logo caching disabled)`);
   }
   
   private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
@@ -546,18 +607,26 @@ export class AdvancedEmailService {
     return null;
   }
 
-  // QR Code generation with caching and colors from merged config (Fixed)
+  // QR Code generation with cache locking and activity tracking
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
     
     // Create cache key based on link and visual settings
     const cacheKey = `${link}_${C.QR_WIDTH || 200}_${C.QR_FOREGROUND_COLOR || '#000000'}_${C.QR_BACKGROUND_COLOR || '#FFFFFF'}`;
     
-    // Check cache first
+    // Wait for ongoing operations on this cache key
+    while (this.qrCacheLocks.has(cacheKey)) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    
+    // Check cache again after waiting
     if (this.qrCache.has(cacheKey)) {
       console.log(`[QR Generation] Using cached QR code`);
       return this.qrCache.get(cacheKey)!;
     }
+    
+    // Lock cache key during generation
+    this.qrCacheLocks.add(cacheKey);
     
     try {
       // Use merged configuration colors
@@ -589,6 +658,9 @@ export class AdvancedEmailService {
     } catch (error) {
       this.logger.error('Error generating QR code', { error, link });
       return null;
+    } finally {
+      // Always unlock cache key
+      this.qrCacheLocks.delete(cacheKey);
     }
   }
 
@@ -673,13 +745,18 @@ export class AdvancedEmailService {
     }
 
     return this.limit(async () => {
-      let browser = await this.getBrowserFromPool();
-      let page: any = null;
+      let browserInfo = await this.getBrowserFromPool();
+      let browser, page: any = null;
       let usingPool = true;
       
-      // Fallback to direct browser launch if pool fails
-      if (!browser) {
+      // Handle new browser activity tracking format
+      if (!browserInfo) {
         browser = await this.launchBrowser({});
+        usingPool = false;
+      } else if (typeof browserInfo === 'object' && browserInfo.browser) {
+        browser = browserInfo.browser;
+      } else {
+        browser = browserInfo;
         usingPool = false;
       }
       
@@ -711,7 +788,7 @@ export class AdvancedEmailService {
         
         if (page) await page.close();
         if (usingPool) {
-          this.releaseBrowserFromPool(browser);
+          this.releaseBrowserFromPool(browserInfo);
         } else {
           await browser.close();
         }
@@ -723,7 +800,7 @@ export class AdvancedEmailService {
           try { await page.close(); } catch {}
         }
         if (usingPool) {
-          this.releaseBrowserFromPool(browser);
+          this.releaseBrowserFromPool(browserInfo);
         } else {
           try { await browser.close(); } catch {}
         }
@@ -864,6 +941,20 @@ export class AdvancedEmailService {
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
     console.log('Advanced sendMail invoked with args:', args);
     const sendMailStart = Date.now();
+    const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Register campaign activity tracking
+    this.activeCampaigns.set(campaignId, {
+      startTime: sendMailStart,
+      emailCount: args.recipients?.length || 0
+    });
+    
+    this.logger.info('Campaign started with activity tracking', { 
+      campaignId, 
+      emailCount: args.recipients?.length || 0,
+      activeOperations: this.activeOperations.size,
+      activeCampaigns: this.activeCampaigns.size
+    });
     
     // Load SMTP configuration from config files first - exact clone from main.js lines 656-712
     const configData = configService.loadConfig();
@@ -1669,6 +1760,16 @@ END:VCALENDAR`;
       const elapsed = Date.now() - sendMailStart;
       console.log(`[sendMail] Completed in ${elapsed}ms. Sent: ${sent}, Failed: ${failed}`);
 
+      // Clean up campaign tracking on success
+      this.activeCampaigns.delete(campaignId);
+      this.logger.info('Campaign completed successfully', { 
+        campaignId, 
+        sent, 
+        failed, 
+        duration: elapsed,
+        activeCampaigns: this.activeCampaigns.size 
+      });
+
       const sentCount = sent;
       return { success: true, sent: sentCount, failed, errors, details: `Sent: ${sent}, Failed: ${failed}` };
     } catch (err: any) {
@@ -1683,6 +1784,15 @@ END:VCALENDAR`;
       
       console.error('Error during sendMail:', errorDetails);
       this.logger.error('SendMail operation failed', errorDetails);
+      
+      // Clean up campaign tracking on error
+      this.activeCampaigns.delete(campaignId);
+      this.logger.info('Campaign failed and cleaned up', { 
+        campaignId, 
+        error: errorMessage,
+        duration: Date.now() - sendMailStart,
+        activeCampaigns: this.activeCampaigns.size 
+      });
       
       return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
     }
