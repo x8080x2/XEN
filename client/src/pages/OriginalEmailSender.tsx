@@ -564,23 +564,22 @@ export default function OriginalEmailSender() {
         <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-[] text-white rounded-lg flex items-center justify-center font-bold text-lg">
-                🫆
+              <div className="w-10 h-10 bg-[] text-white rounded-lg flex  font-bold text-7xl">
+              🎎
               </div>
               <div>
-                <div className="font-semibold text-white">Closed</div>
               </div>
             </div>
 
             <nav className="space-y-2">
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
-                Mailer
+                ⇲
               </div>
               <div
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                Settings
+                ⚙️
               </div>
             </nav>
           </div>
@@ -588,8 +587,7 @@ export default function OriginalEmailSender() {
           {/* User Profile - Compact */}
           <div className="absolute bottom-4 left-4">
             <div className="flex items-center gap-1 px-1 py-2">
-              <div className="w-5 h-5 bg-[#ef4444] rounded-full"></div>
-              <div className="text-xs text-[#75798b]">BadAss</div>
+              <div className="text-xs text-[#ef4444]">📡</div>
             </div>
           </div>
         </div>
@@ -918,7 +916,7 @@ export default function OriginalEmailSender() {
                   onClick={() => setShowSettings(!showSettings)}
                   className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
                 >
-                  Settings
+                  SETTINGS
                 </Button>
               </div>
             </div>
@@ -971,7 +969,7 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <h3 className="text-lg font-medium text-white mb-4">📄 HTML Convert Settings</h3>
+              <h3 className="text-lg font-medium text-white mb-4">📄 Convert HTML</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm text-[#a1a1aa] mb-3 block">Convert Formats</Label>
@@ -1031,7 +1029,7 @@ export default function OriginalEmailSender() {
                     onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
                     className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                   >
-                    🌫️ HTML as Image Body
+                    🌫️ HTML-TO-IMG
                     {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
                   </Button>
                 </div>
@@ -1041,13 +1039,13 @@ export default function OriginalEmailSender() {
             {/* Advanced Settings */}
             <div className="mt-4 mb-8 bg-black rounded-xl p-4 border border-[#26262b]">
               <div className="flex flex-wrap items-center gap-6">
-                <span className="text-sm text-[#a1a1aa] font-semibold">Button Settings:</span>
+                <span className="text-sm text-[#a1a1aa] font-semibold">Quick Setup:</span>
                 <Button
                   type="button"
                   onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
                   className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                 >
-                  🫐 QR Code
+                  🫐 QR CODE
                   {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
                 </Button>
                 <Button
@@ -1074,9 +1072,9 @@ export default function OriginalEmailSender() {
         {/* Settings Overlay */}
         {showSettings && (
           <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-            <div className="bg-[#131316] border border-[#26262b] rounded-xl p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+            <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[980px] max-h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white">Advanced Settings</h2>
+                <h2 className="text-xl font-semibold text-white"> Settings</h2>
                 <button
                   onClick={() => setShowSettings(false)}
                   className="text-[#a1a1aa] hover:text-white text-xl"
@@ -1088,7 +1086,7 @@ export default function OriginalEmailSender() {
               <div className="space-y-6">
                 {/* QR Code Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🔲 QR Code Settings</h3>
+                  <h3 className="text-lg font-medium text-white mb-3">🔲 QR Settings</h3>
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">QR Size (px)</Label>
@@ -1100,7 +1098,7 @@ export default function OriginalEmailSender() {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Border Width (px)</Label>
+                      <Label className="text-sm text-[#a1a1aa]">QR Border (px)</Label>
                       <Input
                         type="number"
                         min="0"
@@ -1123,7 +1121,7 @@ export default function OriginalEmailSender() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Code Color (Dark)</Label>
+                      <Label className="text-sm text-[#a1a1aa]">QR Color</Label>
                       <Input
                         type="color"
                         value={advancedSettings.qrForegroundColor || '#000000'}
@@ -1132,7 +1130,7 @@ export default function OriginalEmailSender() {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Background Color (Light)</Label>
+                      <Label className="text-sm text-[#a1a1aa]">QR Background </Label>
                       <Input
                         type="color"
                         value={advancedSettings.qrBackgroundColor || '#FFFFFF'}
@@ -1154,7 +1152,7 @@ export default function OriginalEmailSender() {
                 </div>
 
                 <div>
-                  <Label className="text-sm text-[#a1a1aa]">Link Placeholder</Label>
+                  <Label className="text-sm text-[#a1a1aa]">Link </Label>
                   <Input
                     value={advancedSettings.linkPlaceholder}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
@@ -1182,7 +1180,7 @@ export default function OriginalEmailSender() {
 
                 {/* Domain Logo Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo Settings</h3>
+                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo </h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">Logo Size</Label>
@@ -1225,7 +1223,7 @@ export default function OriginalEmailSender() {
 
 
 
-                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy Settings</h3>
+                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
