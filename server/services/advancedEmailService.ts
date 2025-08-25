@@ -1320,14 +1320,13 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Generate overlay HTML for main HTML using base64 data URL (EXACT main.js method)
+                // Generate overlay HTML using CID attachment method (EXACT main.js method)
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  const base64Img = imgBuf.toString('base64');
-                  // EXACT same positioning as main.js lines 820-830
-                  hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated hidden overlay using EXACT main.js positioning and base64 method`);
+                  // Use CID reference instead of base64 data URL (EXACT main.js method)
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated hidden overlay using CID attachment method (EXACT main.js method)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
