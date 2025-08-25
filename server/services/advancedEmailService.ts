@@ -1327,7 +1327,9 @@ export class AdvancedEmailService {
                   // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:0.95; pointer-events:none; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.4);"/>`;
+                  hiddenImageHtml = `<div style="position:absolute; top:${topPosition}px; left:50%; width:${hiddenImgWidth}px; height:${hiddenImgWidth}px; margin-left:-${Math.floor(hiddenImgWidth/2)}px; z-index:999;">
+                                        <img src="cid:hiddenImage" style="display:block; width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
+                                      </div>`;
                   console.log(`[Main HTML QR] Generated perfectly centered overlay floating in QR middle (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
@@ -1341,11 +1343,18 @@ export class AdvancedEmailService {
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
 
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
-                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="position:relative; z-index:1;">
-                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                  </a>
-                                  ${hiddenImageHtml}
+                // Email-client friendly overlay using table-based positioning
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; margin:10px auto;">
+                                  <table cellpadding="0" cellspacing="0" style="position:relative; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:0 auto;">
+                                    <tr>
+                                      <td style="position:relative; vertical-align:top; text-align:center;">
+                                        <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                          <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                        </a>
+                                        ${hiddenImageHtml}
+                                      </td>
+                                    </tr>
+                                  </table>
                                 </div>`;
 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
@@ -1604,7 +1613,9 @@ export class AdvancedEmailService {
                     const base64Img = attImgBuf.toString('base64');
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:0.95; pointer-events:none; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.4);"/>`;
+                    hiddenOverlay = `<div style="position:absolute; top:${topPosition}px; left:50%; width:${hiddenImgWidth}px; height:${hiddenImgWidth}px; margin-left:-${Math.floor(hiddenImgWidth/2)}px; z-index:999;">
+                                      <img src="data:image/png;base64,${base64Img}" style="display:block; width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
+                                    </div>`;
                     console.log(`[HTML_CONVERT] Generated perfectly centered overlay for attachment (top:${topPosition}px, QR:${qrSize}px, size:${hiddenImgWidth}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1614,11 +1625,17 @@ export class AdvancedEmailService {
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
 
-                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
-                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="position:relative; z-index:1;">
-                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                    </a>
-                                    ${hiddenOverlay}
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; margin:10px auto;">
+                                    <table cellpadding="0" cellspacing="0" style="position:relative; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:0 auto;">
+                                      <tr>
+                                        <td style="position:relative; vertical-align:top; text-align:center;">
+                                          <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                            <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                          </a>
+                                          ${hiddenOverlay}
+                                        </td>
+                                      </tr>
+                                    </table>
                                   </div>`;
 
                   processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
