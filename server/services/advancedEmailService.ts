@@ -1599,12 +1599,13 @@ export class AdvancedEmailService {
                     console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Generate overlay HTML for attachments using base64 data URL (since attachments don't support CID)
+                  // Perfect center positioning for attachments (match main HTML exactly)
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.3);
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:1.0; pointer-events:none; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
-                    console.log(`[HTML_CONVERT] Generated base64 overlay centered on QR for attachment (top:${topPosition}px)`);
+                    const qrSize = C.QR_WIDTH || 200;
+                    const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:0.95; pointer-events:none; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.4);"/>`;
+                    console.log(`[HTML_CONVERT] Generated perfectly centered overlay for attachment (top:${topPosition}px, QR:${qrSize}px, size:${hiddenImgWidth}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
