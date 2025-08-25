@@ -691,15 +691,22 @@ export class AdvancedEmailService {
     qrBorderWidth: number;
     qrBorderColor: string;
     borderStyle: string;
-    hiddenOverlayHtml?: string; // already-constructed overlay html (positioned absolute)
+    hiddenOverlayHtml?: string; // inner HTML for overlay (img or span)
   }): string {
     const { imgSrc, qrContent, qrWidth, qrBorderWidth, qrBorderColor, borderStyle, hiddenOverlayHtml } = params;
-    // Use container-relative sizing and a centered overlay so the overlay always centers across different QR sizes
-    return `<div style="position:relative; display:inline-block; width:${qrWidth}px; height:${qrWidth}px; margin:10px auto;">
+
+    // Wrap the provided inner overlay HTML in an absolute overlay wrapper.
+    const overlayWrapper = hiddenOverlayHtml
+      ? `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:2;">${hiddenOverlayHtml}</div>`
+      : '';
+
+    // Add overflow:hidden to ensure overlay cannot paint outside the QR square,
+    // give the image a lower z-index and the overlay a higher z-index, clamp via CSS.
+    return `<div style="position:relative; display:inline-block; width:${qrWidth}px; height:${qrWidth}px; margin:10px auto; overflow:hidden; box-sizing:border-box;">
               <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; height:100%;">
-                <img src="${imgSrc}" alt="QR Code" style="display:block; width:100%; height:100%; border:${qrBorderWidth}px ${borderStyle} ${qrBorderColor}; box-sizing:border-box;"/>
+                <img src="${imgSrc}" alt="QR Code" style="display:block; width:100%; height:100%; border:${qrBorderWidth}px ${borderStyle} ${qrBorderColor}; box-sizing:border-box; position:relative; z-index:1; object-fit:contain;"/>
               </a>
-              ${hiddenOverlayHtml || ''}
+              ${overlayWrapper}
             </div>`;
   }
 
@@ -1313,6 +1320,7 @@ export class AdvancedEmailService {
                 const logoDir = join('files', 'logo');
                 let imgBuf = null;
                 let hasHiddenImage = false;
+                let hiddenImageCid: string | null = null;
 
                 try {
                   if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
@@ -1322,7 +1330,7 @@ export class AdvancedEmailService {
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
                       // Add hidden image as CID attachment for main HTML with unique cid
-                      const hiddenImageCid = `hidden-${crypto.randomBytes(6).toString('hex')}`;
+                      hiddenImageCid = `hidden-${crypto.randomBytes(6).toString('hex')}`;
                       emailAttachments.push({
                         filename: basename(candidatePath),
                         content: imgBuf,
@@ -1341,21 +1349,20 @@ export class AdvancedEmailService {
                 }
 
                 // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                let hiddenImageHtml = '';
-                if (hasHiddenImage && imgBuf) {
-                  // Center overlay using flexbox so it remains centered for any QR size
-                  const hiddenImageCidRef = emailAttachments.find(a => a.content === imgBuf || (a.cid && a.cid.startsWith('hidden-')))?.cid || 'hiddenImage';
-                  hiddenImageHtml = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                       <img src="cid:${hiddenImageCidRef}" style="width:${hiddenImgWidth}px; height:auto; display:block;"/>
-                                     </div>`;
-                  console.log(`[Main HTML QR] Generated centered overlay (size:${hiddenImgWidth}px, QR:${C.QR_WIDTH}px)`);
+                // CLAMP the hidden image size so it cannot exceed QR inner area.
+                const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                const qrInnerAvailable = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
+                const hiddenImgWidthClamped = Math.min(rawHiddenImgWidth, qrInnerAvailable);
+
+                let hiddenImageInner = '';
+                if (hasHiddenImage && imgBuf && hiddenImageCid) {
+                  // inner only - buildQrHtml will place the wrapper and z-index
+                  hiddenImageInner = `<img src="cid:${hiddenImageCid}" style="max-width:${hiddenImgWidthClamped}px; max-height:${hiddenImgWidthClamped}px; width:auto; height:auto; display:block;"/>`;
+                  console.log(`[Main HTML QR] Generated centered overlay inner (max:${hiddenImgWidthClamped}px, QR:${C.QR_WIDTH}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  // Center text overlay
-                  hiddenImageHtml = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                       <span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>
-                                     </div>`;
-                  console.log(`[Main HTML QR] Using centered hidden text overlay: ${C.HIDDEN_TEXT}`);
+                  const fontSize = Math.max(12, Math.floor((C.QR_WIDTH || 200) / 6));
+                  hiddenImageInner = `<span style="padding:2px 6px; font-size:${fontSize}px; color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using centered hidden text overlay inner: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
@@ -1370,7 +1377,7 @@ export class AdvancedEmailService {
                   qrBorderWidth: C.QR_BORDER_WIDTH || 2,
                   qrBorderColor,
                   borderStyle,
-                  hiddenOverlayHtml: hiddenImageHtml
+                  hiddenOverlayHtml: hiddenImageInner
                 });
 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
@@ -1480,26 +1487,26 @@ export class AdvancedEmailService {
 
                   // Build hidden overlay (if any) as data/image overlay so the screenshot gets it inline
                   let hiddenOverlayHtml = '';
-                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                  // CLAMP overlay size relative to QR
+                  const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                  const qrInnerAvailable2 = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
+                  const hiddenImgWidthClamped2 = Math.min(rawHiddenImgWidth, qrInnerAvailable2);
+
                   if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
                     try {
                       const candidatePath = join('files', 'logo', C.HIDDEN_IMAGE_FILE);
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         const attImgBuf = readFileSync(candidatePath);
                         const base64Img = attImgBuf.toString('base64');
-                        // Center overlay using flexbox and embed as data URL
-                        hiddenOverlayHtml = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                               <img src="data:image/png;base64,${base64Img}" style="width:${hiddenImgWidth}px; height:auto; display:block;"/>
-                                             </div>`;
-                        console.log('[HTML2IMG_BODY] Using embedded hidden image overlay for screenshot');
+                        // inner only - buildQrHtml will place wrapper
+                        hiddenOverlayHtml = `<img src="data:image/png;base64,${base64Img}" style="max-width:${hiddenImgWidthClamped2}px; max-height:${hiddenImgWidthClamped2}px; width:auto; height:auto; display:block;"/>`;
+                        console.log('[HTML2IMG_BODY] Using embedded hidden image overlay for screenshot (inner only)');
                       }
                     } catch (e) {
                       console.warn('[HTML2IMG_BODY] Could not load hidden image for screenshot:', e instanceof Error ? e.message : e);
                     }
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    hiddenOverlayHtml = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                           <span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>
-                                         </div>`;
+                    hiddenOverlayHtml = `<span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
                   }
 
                   // Apply EXACT same QR styling as main HTML but using data URL
@@ -1640,7 +1647,9 @@ export class AdvancedEmailService {
 
                   // QR overlay image system - restore exact technical implementation
                   let hiddenOverlay = '';
-                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                  const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                  const qrInnerAvailable3 = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
+                  const hiddenImgWidthClamped3 = Math.min(rawHiddenImgWidth, qrInnerAvailable3);
 
                   // Load hidden image from files/logo directory - exact clone from main.js
                   const logoDir = join('files', 'logo');
@@ -1663,15 +1672,11 @@ export class AdvancedEmailService {
                   // Center overlay for attachments (consistent with main HTML)
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                       <img src="data:image/png;base64,${base64Img}" style="width:${hiddenImgWidth}px; height:auto; display:block;"/>
-                                     </div>`;
-                    console.log(`[HTML_CONVERT] Generated centered overlay using original main.js positioning for attachment (QR:${qrOpts.width}px)`);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="max-width:${hiddenImgWidthClamped3}px; max-height:${hiddenImgWidthClamped3}px; width:auto; height:auto; display:block;"/>`;
+                    console.log(`[HTML_CONVERT] Generated centered overlay inner using original main.js positioning for attachment (QR:${qrOpts.width}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    hiddenOverlay = `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none;">
-                                       <span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>
-                                     </div>`;
-                    console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
+                    hiddenOverlay = `<span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML_CONVERT] Using hidden text overlay inner with original main.js positioning: ${C.HIDDEN_TEXT}`);
                   }
 
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
