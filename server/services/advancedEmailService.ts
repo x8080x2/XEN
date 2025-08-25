@@ -1324,10 +1324,11 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  // Use CID reference with proper positioning to overlay on QR code center
-                  const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.3); // Center positioning on QR
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:1.0; pointer-events:none; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
-                  console.log(`[Main HTML QR] Generated CID-based overlay centered on QR (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH}px)`);
+                  // Perfect center positioning inside QR code middle
+                  const qrSize = C.QR_WIDTH || 200;
+                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:0.95; pointer-events:none; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.4);"/>`;
+                  console.log(`[Main HTML QR] Generated perfectly centered overlay floating in QR middle (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
