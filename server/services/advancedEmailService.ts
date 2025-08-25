@@ -1327,16 +1327,9 @@ export class AdvancedEmailService {
                   // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Calculate actual QR total height including border and padding
-                  const borderWidth = (C.QR_BORDER_WIDTH || 0) * 2; // top + bottom
-                  const padding = 2 * 2; // 2px padding top + bottom
-                  const actualQrHeight = qrSize + borderWidth + padding;
-                  const actualCenterPos = Math.floor((actualQrHeight - hiddenImgWidth) / 2);
-                  const pullBackDistance = actualCenterPos + hiddenImgWidth; // Pull it back to center position
-                  hiddenImageHtml = `<div style="text-align:center; margin-top:-${pullBackDistance}px; position:relative; z-index:10;">
-                                        <img src="cid:hiddenImage" style="width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
-                                      </div>`;
-                  console.log(`[Main HTML QR] Generated perfectly centered overlay (actualHeight:${actualQrHeight}px, pullBack:${pullBackDistance}px, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  // Use EXACT same positioning as original main.js line 933
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1349,10 +1342,10 @@ export class AdvancedEmailService {
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
 
-                // Reliable email client overlay using negative margin technique
-                const qrHtml = `<div style="text-align:center; margin:10px auto;">
+                // EXACT same HTML structure as original main.js lines 938-943
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0 auto;"/>
+                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
                                   ${hiddenImageHtml}
                                 </div>`;
@@ -1613,16 +1606,9 @@ export class AdvancedEmailService {
                     const base64Img = attImgBuf.toString('base64');
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
-                    // Calculate actual QR total height for attachments too
-                    const borderWidth = (C.QR_BORDER_WIDTH || 0) * 2; // top + bottom
-                    const padding = 2 * 2; // 2px padding top + bottom
-                    const actualQrHeight = qrSize + borderWidth + padding;
-                    const actualCenterPos = Math.floor((actualQrHeight - hiddenImgWidth) / 2);
-                    const pullBackDistance = actualCenterPos + hiddenImgWidth;
-                  hiddenOverlay = `<div style="text-align:center; margin-top:-${pullBackDistance}px; position:relative; z-index:10;">
-                                      <img src="data:image/png;base64,${base64Img}" style="width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
-                                    </div>`;
-                    console.log(`[HTML_CONVERT] Generated perfectly centered overlay for attachment (actualHeight:${actualQrHeight}px, pullBack:${pullBackDistance}px, QR:${qrSize}px)`);
+                    // Use EXACT same positioning as original main.js for attachments
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment (top:77px, left:56%, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
@@ -1631,9 +1617,9 @@ export class AdvancedEmailService {
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
 
-                  const qrHtml = `<div style="text-align:center; margin:10px auto;">
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0 auto;"/>
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                     </a>
                                     ${hiddenOverlay}
                                   </div>`;
