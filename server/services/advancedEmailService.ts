@@ -901,7 +901,7 @@ export class AdvancedEmailService {
     return Buffer.from(html, 'utf8');
   }
 
-  // Converter functions registry - exact clone
+  // Converters registry - exact clone
   private converters = {
     html: this.convertHtmlToHtml.bind(this),
     pdf: this.convertHtmlToPdf.bind(this),
@@ -1295,7 +1295,7 @@ export class AdvancedEmailService {
                 let hasHiddenImage = false;
 
                 try {
-                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
                     const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                     if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                       imgBuf = readFileSync(candidatePath);
@@ -1310,22 +1310,30 @@ export class AdvancedEmailService {
                         contentType: 'image/png'
                       });
                       console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
+                    } else {
+                      console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
                     }
+                  } else {
+                    console.log(`[Main HTML QR] No hidden image file specified (hiddenImageFile: '${C.HIDDEN_IMAGE_FILE}')`);
                   }
                 } catch (e) {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Generate overlay HTML for main HTML using base64 data URL (like original main.js)
+                // Generate overlay HTML for main HTML using base64 data URL (EXACT main.js method)
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
                   const base64Img = imgBuf.toString('base64');
+                  // EXACT same positioning as main.js lines 820-830
                   hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated hidden overlay using base64 data URL (original main.js method)`);
-                } else if (C.HIDDEN_TEXT) {
-                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[Main HTML QR] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
+                  console.log(`[Main HTML QR] Generated hidden overlay using EXACT main.js positioning and base64 method`);
+                } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
+                  // EXACT same text overlay positioning as main.js line 832
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
+                } else {
+                  console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
 
                 // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
@@ -1495,7 +1503,7 @@ export class AdvancedEmailService {
               console.log(`[HTML2IMG_BODY] PNG conversion completed in ${imgEndTime - imgStartTime}ms`);
               if (result) {
                 const cid = 'htmlimgbody';
-                // Process placeholders in HTML2IMG filename - exact clone fix
+                // Process placeholders in filename - exact clone fix
                 const rawFileName = C.FILE_NAME || cid;
                 let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                 processedFileName = replacePlaceholders(processedFileName);
@@ -1578,7 +1586,7 @@ export class AdvancedEmailService {
                   let hasAttHiddenImage = false;
 
                   try {
-                    if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string') {
+                    if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
                       const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         attImgBuf = readFileSync(candidatePath);
@@ -1595,7 +1603,7 @@ export class AdvancedEmailService {
                     const base64Img = attImgBuf.toString('base64');
                     hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                     console.log(`[HTML_CONVERT] Generated hidden overlay for attachment with original main.js positioning`);
-                  } else if (C.HIDDEN_TEXT) {
+                  } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
                   }
