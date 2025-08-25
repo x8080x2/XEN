@@ -1594,7 +1594,11 @@ export class AdvancedEmailService {
           }
 
           // HTML Convert attachments - Works independently of QR settings
-          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim())[...]
+          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT)
+            ? C.HTML_CONVERT
+            : (typeof C.HTML_CONVERT === 'string' && C.HTML_CONVERT.trim()
+               ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean)
+               : []);
           console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
 
           // Only process HTML_CONVERT if formats are explicitly selected and attachment HTML exists
