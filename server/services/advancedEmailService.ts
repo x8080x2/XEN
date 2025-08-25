@@ -1324,10 +1324,10 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  // Use CID reference like domain logos and QR codes for better email client compatibility
-                  const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.4); // Dynamic positioning based on QR size
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute !important; z-index:999 !important; top:${topPosition}px; left:50%; margin-left:-${Math.floor(hiddenImgWidth/2)}px; width:${hiddenImgWidth}px; height:auto; opacity:1.0; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
-                  console.log(`[Main HTML QR] Generated CID-based overlay using same pattern as domain logos (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH}px)`);
+                  // Use CID reference with proper positioning to overlay on QR code center
+                  const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.3); // Center positioning on QR
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:1.0; pointer-events:none; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
+                  console.log(`[Main HTML QR] Generated CID-based overlay centered on QR (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1340,8 +1340,8 @@ export class AdvancedEmailService {
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
 
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
+                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="position:relative; z-index:1;">
                                     <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
                                   ${hiddenImageHtml}
@@ -1601,9 +1601,9 @@ export class AdvancedEmailService {
                   // Generate overlay HTML for attachments using base64 data URL (since attachments don't support CID)
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.4);
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:999 !important; top:${topPosition}px; left:50%; margin-left:-${Math.floor(hiddenImgWidth/2)}px; width:${hiddenImgWidth}px; height:auto; opacity:1.0; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
-                    console.log(`[HTML_CONVERT] Generated base64 overlay for attachment (CID not supported in static attachments) (top:${topPosition}px)`);
+                    const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.3);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:9999 !important; top:${topPosition}px; left:50%; transform:translateX(-50%) !important; width:${hiddenImgWidth}px; height:auto; opacity:1.0; pointer-events:none; border:2px solid red; box-shadow:0 0 10px rgba(255,0,0,0.8);"/>`;
+                    console.log(`[HTML_CONVERT] Generated base64 overlay centered on QR for attachment (top:${topPosition}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
@@ -1612,8 +1612,8 @@ export class AdvancedEmailService {
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
 
-                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px;">
-                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="position:relative; z-index:1;">
                                       <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                     </a>
                                     ${hiddenOverlay}
