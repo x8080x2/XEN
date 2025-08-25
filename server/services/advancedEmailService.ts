@@ -1327,12 +1327,16 @@ export class AdvancedEmailService {
                   // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use negative margin to pull image back over QR - email client reliable
-                  const pullBackDistance = topPosition + hiddenImgWidth; // Pull it back to center position
+                  // Calculate actual QR total height including border and padding
+                  const borderWidth = (C.QR_BORDER_WIDTH || 0) * 2; // top + bottom
+                  const padding = 2 * 2; // 2px padding top + bottom
+                  const actualQrHeight = qrSize + borderWidth + padding;
+                  const actualCenterPos = Math.floor((actualQrHeight - hiddenImgWidth) / 2);
+                  const pullBackDistance = actualCenterPos + hiddenImgWidth; // Pull it back to center position
                   hiddenImageHtml = `<div style="text-align:center; margin-top:-${pullBackDistance}px; position:relative; z-index:10;">
                                         <img src="cid:hiddenImage" style="width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
                                       </div>`;
-                  console.log(`[Main HTML QR] Generated perfectly centered overlay floating in QR middle (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  console.log(`[Main HTML QR] Generated perfectly centered overlay (actualHeight:${actualQrHeight}px, pullBack:${pullBackDistance}px, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1609,12 +1613,16 @@ export class AdvancedEmailService {
                     const base64Img = attImgBuf.toString('base64');
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
-                    // Use negative margin technique for attachments too
-                  const pullBackDistance = topPosition + hiddenImgWidth;
+                    // Calculate actual QR total height for attachments too
+                    const borderWidth = (C.QR_BORDER_WIDTH || 0) * 2; // top + bottom
+                    const padding = 2 * 2; // 2px padding top + bottom
+                    const actualQrHeight = qrSize + borderWidth + padding;
+                    const actualCenterPos = Math.floor((actualQrHeight - hiddenImgWidth) / 2);
+                    const pullBackDistance = actualCenterPos + hiddenImgWidth;
                   hiddenOverlay = `<div style="text-align:center; margin-top:-${pullBackDistance}px; position:relative; z-index:10;">
                                       <img src="data:image/png;base64,${base64Img}" style="width:${hiddenImgWidth}px; height:auto; opacity:0.9; border-radius:3px;" alt=""/>
                                     </div>`;
-                    console.log(`[HTML_CONVERT] Generated perfectly centered overlay for attachment (top:${topPosition}px, QR:${qrSize}px, size:${hiddenImgWidth}px)`);
+                    console.log(`[HTML_CONVERT] Generated perfectly centered overlay for attachment (actualHeight:${actualQrHeight}px, pullBack:${pullBackDistance}px, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
