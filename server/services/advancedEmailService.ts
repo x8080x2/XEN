@@ -1324,10 +1324,11 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  // EXACT main.js method: base64 data URL for overlay (not CID reference)
+                  // Enhanced email-client compatible overlay with better visibility
                   const base64Img = imgBuf.toString('base64');
-                  hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated hidden overlay using EXACT main.js method (base64 data URL)`);
+                  const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.4); // Dynamic positioning based on QR size
+                  hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:999 !important; top:${topPosition}px; left:50%; margin-left:-${Math.floor(hiddenImgWidth/2)}px; width:${hiddenImgWidth}px; height:auto; opacity:0.9; border:1px solid rgba(255,255,255,0.5);"/>`;
+                  console.log(`[Main HTML QR] Generated enhanced visible overlay (top:${topPosition}px, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1598,11 +1599,12 @@ export class AdvancedEmailService {
                     console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Generate overlay HTML for attachments using base64 data URL
+                  // Generate overlay HTML for attachments using enhanced positioning
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML_CONVERT] Generated hidden overlay for attachment with original main.js positioning`);
+                    const topPosition = Math.floor((C.QR_WIDTH || 200) * 0.4);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute !important; z-index:999 !important; top:${topPosition}px; left:50%; margin-left:-${Math.floor(hiddenImgWidth/2)}px; width:${hiddenImgWidth}px; height:auto; opacity:0.9; border:1px solid rgba(255,255,255,0.5);"/>`;
+                    console.log(`[HTML_CONVERT] Generated enhanced visible overlay for attachment (top:${topPosition}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
