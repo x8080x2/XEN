@@ -683,33 +683,6 @@ export class AdvancedEmailService {
     return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
   }
 
-  // Helper: build consistent QR HTML with centered overlay (fixes overlay issues)
-  private buildQrHtml(params: {
-    imgSrc: string; // either cid:... or data url
-    qrContent: string;
-    qrWidth: number;
-    qrBorderWidth: number;
-    qrBorderColor: string;
-    borderStyle: string;
-    hiddenOverlayHtml?: string; // inner HTML for overlay (img or span)
-  }): string {
-    const { imgSrc, qrContent, qrWidth, qrBorderWidth, qrBorderColor, borderStyle, hiddenOverlayHtml } = params;
-
-    // Wrap the provided inner overlay HTML in an absolute overlay wrapper.
-    const overlayWrapper = hiddenOverlayHtml
-      ? `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; z-index:2;">${hiddenOverlayHtml}</div>`
-      : '';
-
-    // Add overflow:hidden to ensure overlay cannot paint outside the QR square,
-    // give the image a lower z-index and the overlay a higher z-index, clamp via CSS.
-    return `<div style="position:relative; display:inline-block; width:${qrWidth}px; height:${qrWidth}px; margin:10px auto; overflow:hidden; box-sizing:border-box;">
-              <a href="${qrContent}" target="_blank" rel="noopener noreferrer" style="display:block; width:100%; height:100%;">
-                <img src="${imgSrc}" alt="QR Code" style="display:block; width:100%; height:100%; border:${qrBorderWidth}px ${borderStyle} ${qrBorderColor}; box-sizing:border-box; position:relative; z-index:1; object-fit:contain;"/>
-              </a>
-              ${overlayWrapper}
-            </div>`;
-  }
-
   // Launch browser with proxy support - IMPROVED VERSION with pooling
   private async launchBrowser(C: any = {}): Promise<any> {
     const launchOptions: any = { 
@@ -1306,8 +1279,8 @@ export class AdvancedEmailService {
                   }
                 });
 
-                // Use unique CIDs per recipient to avoid CID collisions in multi-send scenarios
-                const qrCid = `qrcode-${crypto.randomBytes(6).toString('hex')}`;
+                // Add QR code as attachment with CID for main HTML body
+                const qrCid = 'qrcode-main';
                 emailAttachments.push({
                   content: qrBuffer,
                   filename: 'qrcode.png',
@@ -1320,7 +1293,6 @@ export class AdvancedEmailService {
                 const logoDir = join('files', 'logo');
                 let imgBuf = null;
                 let hasHiddenImage = false;
-                let hiddenImageCid: string | null = null;
 
                 try {
                   if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
@@ -1329,8 +1301,8 @@ export class AdvancedEmailService {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
-                      // Add hidden image as CID attachment for main HTML with unique cid
-                      hiddenImageCid = `hidden-${crypto.randomBytes(6).toString('hex')}`;
+                      // Add hidden image as CID attachment for main HTML
+                      const hiddenImageCid = 'hiddenImage';
                       emailAttachments.push({
                         filename: basename(candidatePath),
                         content: imgBuf,
@@ -1349,36 +1321,34 @@ export class AdvancedEmailService {
                 }
 
                 // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
-                // CLAMP the hidden image size so it cannot exceed QR inner area.
-                const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                const qrInnerAvailable = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
-                const hiddenImgWidthClamped = Math.min(rawHiddenImgWidth, qrInnerAvailable);
-
-                let hiddenImageInner = '';
-                if (hasHiddenImage && imgBuf && hiddenImageCid) {
-                  // inner only - buildQrHtml will place the wrapper and z-index
-                  hiddenImageInner = `<img src="cid:${hiddenImageCid}" style="max-width:${hiddenImgWidthClamped}px; max-height:${hiddenImgWidthClamped}px; width:auto; height:auto; display:block;"/>`;
-                  console.log(`[Main HTML QR] Generated centered overlay inner (max:${hiddenImgWidthClamped}px, QR:${C.QR_WIDTH}px)`);
+                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                let hiddenImageHtml = '';
+                if (hasHiddenImage && imgBuf) {
+                  // Perfect center positioning inside QR code middle
+                  const qrSize = C.QR_WIDTH || 200;
+                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
+                  // Use EXACT same positioning as original main.js line 933
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  const fontSize = Math.max(12, Math.floor((C.QR_WIDTH || 200) / 6));
-                  hiddenImageInner = `<span style="padding:2px 6px; font-size:${fontSize}px; color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[Main HTML QR] Using centered hidden text overlay inner: ${C.HIDDEN_TEXT}`);
+                  // EXACT same text overlay positioning as main.js line 832
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
 
-                // Build the QR HTML using helper to avoid truncated styles and ensure consistent centering
+                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
-                const qrHtml = this.buildQrHtml({
-                  imgSrc: `cid:${qrCid}`,
-                  qrContent,
-                  qrWidth: C.QR_WIDTH || 200,
-                  qrBorderWidth: C.QR_BORDER_WIDTH || 2,
-                  qrBorderColor,
-                  borderStyle,
-                  hiddenOverlayHtml: hiddenImageInner
-                });
+
+                // EXACT same HTML structure as original main.js lines 938-943
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
+                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  </a>
+                                  ${hiddenImageHtml}
+                                </div>`;
 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
@@ -1420,7 +1390,7 @@ export class AdvancedEmailService {
 
             if (domainLogoBuffer) {
               // Add domain logo as attachment with CID for main HTML body
-              const logoCid = `domainlogo-${crypto.randomBytes(6).toString('hex')}`;
+              const logoCid = 'domainlogo-main';
               emailAttachments.push({
                 content: domainLogoBuffer,
                 filename: `${domainFull}-logo.png`,
@@ -1460,7 +1430,7 @@ export class AdvancedEmailService {
               let screenshotHtml = finalHtml;
 
               // Process QR codes with EXACT same settings as main HTML processing
-              if (screenshotHtml.includes('cid:qrcode-main') || screenshotHtml.includes('cid:qrcode-')) {
+              if (screenshotHtml.includes('cid:qrcode-main')) {
                 if (C.QRCODE) {
                   console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
 
@@ -1485,57 +1455,27 @@ export class AdvancedEmailService {
                     }
                   });
 
-                  // Build hidden overlay (if any) as data/image overlay so the screenshot gets it inline
-                  let hiddenOverlayHtml = '';
-                  // CLAMP overlay size relative to QR
-                  const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                  const qrInnerAvailable2 = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
-                  const hiddenImgWidthClamped2 = Math.min(rawHiddenImgWidth, qrInnerAvailable2);
-
-                  if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
-                    try {
-                      const candidatePath = join('files', 'logo', C.HIDDEN_IMAGE_FILE);
-                      if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                        const attImgBuf = readFileSync(candidatePath);
-                        const base64Img = attImgBuf.toString('base64');
-                        // inner only - buildQrHtml will place wrapper
-                        hiddenOverlayHtml = `<img src="data:image/png;base64,${base64Img}" style="max-width:${hiddenImgWidthClamped2}px; max-height:${hiddenImgWidthClamped2}px; width:auto; height:auto; display:block;"/>`;
-                        console.log('[HTML2IMG_BODY] Using embedded hidden image overlay for screenshot (inner only)');
-                      }
-                    } catch (e) {
-                      console.warn('[HTML2IMG_BODY] Could not load hidden image for screenshot:', e instanceof Error ? e.message : e);
-                    }
-                  } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    hiddenOverlayHtml = `<span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
-                  }
-
                   // Apply EXACT same QR styling as main HTML but using data URL
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
-                  const qrHtml = this.buildQrHtml({
-                    imgSrc: qrDataUrl,
-                    qrContent,
-                    qrWidth: C.QR_WIDTH || 200,
-                    qrBorderWidth: C.QR_BORDER_WIDTH || 2,
-                    qrBorderColor,
-                    borderStyle,
-                    hiddenOverlayHtml
-                  });
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    </a>
+                                  </div>`;
 
-                  // Replace any <img src="cid:qrcode-..."> occurrences with the inline QR HTML
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:qrcode-[^>]*>/g, qrHtml);
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:qrcode-main[^>]*>/g, qrHtml);
+                  // Replace the entire CID reference with styled QR HTML
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
                   console.log(`[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: ${qrContent}`);
                 } else {
                   // QR disabled - remove QR completely, matching main HTML behavior
                   screenshotHtml = screenshotHtml.replace(/<div[^>]*qrcode-main[^>]*>.*?<\/div>/g, '');
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:qrcode-[^>]*>/g, '');
                   console.log('[HTML2IMG_BODY] QR disabled, removed from screenshot');
                 }
               }
 
               // Process domain logo with EXACT same settings as main HTML processing
-              if (screenshotHtml.includes('cid:domainlogo-main') || screenshotHtml.includes('cid:domainlogo-')) {
+              if (screenshotHtml.includes('cid:domainlogo-main')) {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
 
@@ -1550,14 +1490,12 @@ export class AdvancedEmailService {
 
                   // Apply EXACT same domain logo styling as main HTML but using data URL
                   const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:domainlogo-[^>]*>/g, logoHtml);
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:domainlogo-main[^>]*>/g, logoHtml);
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
                   console.log(`[HTML2IMG_BODY] Domain logo processed with fresh fetch for ${domainFull}`);
                 } else {
                   console.log('[HTML2IMG_BODY] Fresh logo fetch failed, using fallback text');
                   const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:domainlogo-[^>]*>/g, fallbackHtml);
-                  screenshotHtml = screenshotHtml.replace(/<img[^>]*cid:domainlogo-main[^>]*>/g, fallbackHtml);
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
                 }
               }
               // Convert to PNG with performance timing
@@ -1567,7 +1505,7 @@ export class AdvancedEmailService {
               const imgEndTime = Date.now();
               console.log(`[HTML2IMG_BODY] PNG conversion completed in ${imgEndTime - imgStartTime}ms`);
               if (result) {
-                const cid = `htmlimgbody-${crypto.randomBytes(6).toString('hex')}`;
+                const cid = 'htmlimgbody';
                 // Process placeholders in filename - exact clone fix
                 const rawFileName = C.FILE_NAME || cid;
                 let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
@@ -1586,7 +1524,7 @@ export class AdvancedEmailService {
                 }
 
                 const htmlImgTag = `<a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                  <img src="cid:${cid}" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
+                  <img src="cid:htmlimgbody" style="display:block;max-width:100%;height:auto;margin:16px 0;" alt="HTML Screenshot"/>
                 </a>`;
                 finalHtml = htmlImgTag;
 
@@ -1601,11 +1539,7 @@ export class AdvancedEmailService {
           }
 
           // HTML Convert attachments - Works independently of QR settings
-          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT)
-            ? C.HTML_CONVERT
-            : (typeof C.HTML_CONVERT === 'string' && C.HTML_CONVERT.trim()
-               ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean)
-               : []);
+          const htmlConvertFormats: string[] = Array.isArray(C.HTML_CONVERT) ? C.HTML_CONVERT : (typeof C.HTML_CONVERT === 'string' ? (C.HTML_CONVERT as string).split(',').map((f: string) => f.trim()).filter(Boolean) : []);
           console.log(`[HTML_CONVERT] Checking conversion: formats=${JSON.stringify(htmlConvertFormats)}, finalAttHtml length=${finalAttHtml?.length || 0}`);
 
           // Only process HTML_CONVERT if formats are explicitly selected and attachment HTML exists
@@ -1647,9 +1581,7 @@ export class AdvancedEmailService {
 
                   // QR overlay image system - restore exact technical implementation
                   let hiddenOverlay = '';
-                  const rawHiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                  const qrInnerAvailable3 = Math.max(8, (C.QR_WIDTH || 200) - 2 * (C.QR_BORDER_WIDTH || 2));
-                  const hiddenImgWidthClamped3 = Math.min(rawHiddenImgWidth, qrInnerAvailable3);
+                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
 
                   // Load hidden image from files/logo directory - exact clone from main.js
                   const logoDir = join('files', 'logo');
@@ -1669,28 +1601,28 @@ export class AdvancedEmailService {
                     console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Center overlay for attachments (consistent with main HTML)
+                  // Perfect center positioning for attachments (match main HTML exactly)
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="max-width:${hiddenImgWidthClamped3}px; max-height:${hiddenImgWidthClamped3}px; width:auto; height:auto; display:block;"/>`;
-                    console.log(`[HTML_CONVERT] Generated centered overlay inner using original main.js positioning for attachment (QR:${qrOpts.width}px)`);
+                    const qrSize = C.QR_WIDTH || 200;
+                    const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
+                    // Use EXACT same positioning as original main.js for attachments
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment (top:77px, left:56%, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    hiddenOverlay = `<span style="padding:2px 6px; font-size:calc(${Math.max(12, Math.floor((C.QR_WIDTH || 200)/6))}px); color:red; font-weight:bold;">${C.HIDDEN_TEXT}</span>`;
-                    console.log(`[HTML_CONVERT] Using hidden text overlay inner with original main.js positioning: ${C.HIDDEN_TEXT}`);
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
                   }
 
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
 
-                  const qrHtml = this.buildQrHtml({
-                    imgSrc: qrDataUrl,
-                    qrContent,
-                    qrWidth: C.QR_WIDTH || 200,
-                    qrBorderWidth: C.QR_BORDER_WIDTH || 2,
-                    qrBorderColor,
-                    borderStyle,
-                    hiddenOverlayHtml: hiddenOverlay
-                  });
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    </a>
+                                    ${hiddenOverlay}
+                                  </div>`;
 
                   processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
                   console.log(`[HTML_CONVERT] QR applied to attachment`);
@@ -1955,7 +1887,7 @@ END:VCALENDAR`;
         campaignId, 
         error: errorMessage,
         duration: Date.now() - sendMailStart,
-        activeCampaigns: this.activeCampaigns.size
+        activeCampaigns: this.activeCampaigns.size 
       });
 
       return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
