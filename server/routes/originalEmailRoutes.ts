@@ -218,19 +218,72 @@ export function setupOriginalEmailRoutes(app: Express) {
     }
   });
 
-  // SMTP rotation endpoint
-  app.post('/api/smtp/rotation', async (req: Request, res: Response) => {
+  // SMTP list endpoint
+  app.get('/api/smtp/list', async (req: Request, res: Response) => {
     try {
-      const { enabled } = req.body;
-      configService.setSmtpRotation(enabled);
+      const smtpConfigs = configService.getAllSmtpConfigs();
+      const currentSmtp = configService.getCurrentSmtpConfig();
+      const rotationEnabled = configService.isSmtpRotationEnabled();
 
       res.json({
         success: true,
-        enabled,
+        smtpConfigs,
+        currentSmtp,
+        rotationEnabled
+      });
+    } catch (error: any) {
+      console.error('Get SMTP list error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Add SMTP endpoint
+  app.post('/api/smtp/add', async (req: Request, res: Response) => {
+    try {
+      const smtpId = configService.addSmtpConfig(req.body);
+      const smtpConfigs = configService.getAllSmtpConfigs();
+
+      res.json({
+        success: true,
+        smtpId,
+        smtpConfigs
+      });
+    } catch (error: any) {
+      console.error('Add SMTP config error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Toggle SMTP rotation endpoint
+  app.post('/api/smtp/toggle-rotation', async (req: Request, res: Response) => {
+    try {
+      const { enabled } = req.body;
+      configService.setSmtpRotation(enabled);
+      const currentSmtp = configService.getCurrentSmtpConfig();
+
+      res.json({
+        success: true,
+        rotationEnabled: enabled,
+        currentSmtp,
         message: `SMTP rotation ${enabled ? 'enabled' : 'disabled'}`
       });
     } catch (error: any) {
-      console.error('SMTP rotation error:', error);
+      console.error('SMTP rotation toggle error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Manual SMTP rotation endpoint
+  app.post('/api/smtp/rotate', async (req: Request, res: Response) => {
+    try {
+      const currentSmtp = configService.rotateToNextSmtp();
+      res.json({
+        success: true,
+        currentSmtp,
+        message: currentSmtp ? `Rotated to ${currentSmtp.fromEmail}` : 'No SMTP configs available'
+      });
+    } catch (error: any) {
+      console.error('SMTP rotate error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });

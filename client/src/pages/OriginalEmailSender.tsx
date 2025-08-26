@@ -152,6 +152,15 @@ export default function OriginalEmailSender() {
     currentSmtp: null,
     rotationEnabled: false
   });
+
+  const [newSmtp, setNewSmtp] = useState({
+    host: "",
+    port: "587",
+    user: "",
+    pass: "",
+    fromEmail: "",
+    fromName: ""
+  });
   const [newSmtp, setNewSmtp] = useState({
     host: "",
     port: "587",
@@ -264,6 +273,62 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
+      setStatusText('Failed to load SMTP configurations');
+    }
+  };
+
+  const addSmtp = async () => {
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+      setStatusText('All SMTP fields are required');
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/smtp/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSmtp)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          smtpConfigs: data.smtpConfigs
+        }));
+        setNewSmtp({
+          host: "",
+          port: "587",
+          user: "",
+          pass: "",
+          fromEmail: "",
+          fromName: ""
+        });
+        setStatusText(`SMTP ${data.smtpId} added successfully`);
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      setStatusText('Failed to add SMTP configuration');
+    }
+  };
+
+  const deleteSmtp = async (smtpId: string) => {
+    if (smtpData.smtpConfigs?.length <= 1) {
+      setStatusText('Cannot delete the last SMTP configuration');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/smtp/${smtpId}`, {
+        method: "DELETE"
+      });
+      const data = await response.json();
+      if (data.success) {
+        await fetchSmtpData(); // Reload SMTP data
+        setStatusText(`SMTP ${smtpId} deleted successfully`);
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      setStatusText('Failed to delete SMTP configuration');
     }
   };
 
@@ -338,6 +403,28 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       setStatusText('Failed to delete SMTP configuration');
+    }
+  };
+
+  const toggleSmtpRotation = async () => {
+    try {
+      const response = await fetch("/api/smtp/toggle-rotation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          rotationEnabled: data.rotationEnabled,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      setStatusText('Failed to toggle SMTP rotation');
     }
   };
 
