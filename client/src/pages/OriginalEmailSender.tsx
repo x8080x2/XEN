@@ -146,6 +146,20 @@ export default function OriginalEmailSender() {
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [showSmtpManager, setShowSmtpManager] = useState(false);
+  const [smtpData, setSmtpData] = useState({
+    smtpConfigs: [],
+    currentSmtp: null,
+    rotationEnabled: false
+  });
+  const [newSmtp, setNewSmtp] = useState({
+    host: "",
+    port: "587", 
+    user: "",
+    pass: "",
+    fromEmail: "",
+    fromName: ""
+  });
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -234,10 +248,114 @@ export default function OriginalEmailSender() {
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
+    fetchSmtpData();
   }, []); // Run once on component mount
 
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
+
+  // SMTP Management Functions
+  const fetchSmtpData = async () => {
+    try {
+      const response = await fetch("/api/smtp/list");
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch SMTP data:', error);
+    }
+  };
+
+  const toggleSmtpRotation = async () => {
+    try {
+      const response = await fetch("/api/smtp/toggle-rotation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          rotationEnabled: data.rotationEnabled,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      setStatusText('Failed to toggle SMTP rotation');
+    }
+  };
+
+  const addNewSmtp = async () => {
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+      setStatusText('All SMTP fields are required');
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/smtp/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSmtp)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          smtpConfigs: data.smtpConfigs
+        }));
+        setNewSmtp({
+          host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
+        });
+        setStatusText(`SMTP ${data.smtpId} added successfully`);
+        fetchSmtpData();
+      }
+    } catch (error) {
+      setStatusText('Failed to add SMTP configuration');
+    }
+  };
+
+  const deleteSmtp = async (smtpId: string) => {
+    if (smtpData.smtpConfigs.length <= 1) {
+      setStatusText('Cannot delete the last SMTP configuration');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          smtpConfigs: data.smtpConfigs,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`SMTP ${smtpId} deleted successfully`);
+      }
+    } catch (error) {
+      setStatusText('Failed to delete SMTP configuration');
+    }
+  };
+
+  const rotateSmtp = async () => {
+    try {
+      const response = await fetch("/api/smtp/rotate", { method: "POST" });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`Rotated to: ${data.currentSmtp?.fromEmail}`);
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      setStatusText('Failed to rotate SMTP');
+    }
+  };
 
   // Load configuration from files - exact clone from main.js
   const loadConfigFromFiles = async () => {
@@ -639,10 +757,155 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
 
-              {/* SMTP Management - Temporarily disabled */}
-              {/* <div className="mb-6">
-                <SMTPManager />
-              </div> */}
+              {/* SMTP Management */}
+              <div className="mb-6 bg-[#131316] rounded-xl border border-[#26262b] p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    ⚙️ SMTP Management
+                  </h3>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={smtpData.rotationEnabled}
+                        onChange={toggleSmtpRotation}
+                        disabled={smtpData.smtpConfigs?.length <= 1}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-white text-sm">Enable SMTP Rotation</span>
+                    </label>
+                    <Button
+                      onClick={() => setShowSmtpManager(!showSmtpManager)}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    >
+                      {showSmtpManager ? "Hide" : "Manage"}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Current SMTP Display */}
+                {smtpData.currentSmtp && (
+                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">Current:</span>
+                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
+                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
+                        </div>
+                        <p className="text-[#a1a1aa] text-sm">
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
+                        </p>
+                      </div>
+                      {smtpData.rotationEnabled && smtpData.smtpConfigs?.length > 1 && (
+                        <Button
+                          onClick={rotateSmtp}
+                          variant="outline"
+                          size="sm"
+                          className="border-[#26262b] text-white hover:bg-[#26262b]"
+                        >
+                          🔄 Rotate
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* SMTP Management Panel */}
+                {showSmtpManager && (
+                  <div className="border-t border-[#26262b] pt-4">
+                    {/* Add New SMTP Form */}
+                    <div className="mb-4 p-3 bg-[#0f0f12] rounded border border-[#26262b]">
+                      <h4 className="text-white font-medium mb-3">Add New SMTP Server</h4>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <Input
+                          placeholder="SMTP Host"
+                          value={newSmtp.host}
+                          onChange={(e) => setNewSmtp({...newSmtp, host: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                        <Input
+                          placeholder="Port (587)"
+                          value={newSmtp.port}
+                          onChange={(e) => setNewSmtp({...newSmtp, port: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                        <Input
+                          placeholder="Username"
+                          value={newSmtp.user}
+                          onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                        <Input
+                          type="password"
+                          placeholder="Password"
+                          value={newSmtp.pass}
+                          onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                        <Input
+                          placeholder="From Email"
+                          value={newSmtp.fromEmail}
+                          onChange={(e) => setNewSmtp({...newSmtp, fromEmail: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                        <Input
+                          placeholder="From Name (optional)"
+                          value={newSmtp.fromName}
+                          onChange={(e) => setNewSmtp({...newSmtp, fromName: e.target.value})}
+                          className="bg-[#0f0f12] border-[#26262b] text-white"
+                        />
+                      </div>
+                      <Button
+                        onClick={addNewSmtp}
+                        className="bg-[#ef4444] text-white hover:bg-[#dc3636]"
+                        size="sm"
+                      >
+                        Add SMTP Server
+                      </Button>
+                    </div>
+
+                    {/* SMTP List */}
+                    <div>
+                      <h4 className="text-white font-medium mb-3">Available SMTP Servers ({smtpData.smtpConfigs?.length || 0})</h4>
+                      {smtpData.smtpConfigs?.map((smtp) => (
+                        <div
+                          key={smtp.id}
+                          className={`flex items-center justify-between p-3 mb-2 border rounded ${
+                            smtpData.currentSmtp?.id === smtp.id 
+                              ? 'border-blue-500 bg-blue-900/20' 
+                              : 'border-[#26262b] bg-[#0f0f12]'
+                          }`}
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-1 bg-gray-600 text-white rounded text-xs">{smtp.id}</span>
+                              <span className="text-white font-medium">{smtp.fromEmail}</span>
+                              {smtpData.currentSmtp?.id === smtp.id && (
+                                <span className="px-2 py-1 bg-green-500 text-white rounded text-xs">Active</span>
+                              )}
+                            </div>
+                            <p className="text-[#a1a1aa] text-sm mt-1">
+                              {smtp.host}:{smtp.port} ({smtp.user})
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => deleteSmtp(smtp.id)}
+                            disabled={smtpData.smtpConfigs?.length <= 1}
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            🗑️
+                          </Button>
+                        </div>
+                      )) || <p className="text-[#a1a1aa] text-center py-4">No SMTP servers configured</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Main Content Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
