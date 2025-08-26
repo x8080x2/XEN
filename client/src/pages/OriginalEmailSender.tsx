@@ -764,16 +764,6 @@ export default function OriginalEmailSender() {
                     ⚙️ SMTP Management
                   </h3>
                   <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={smtpData.rotationEnabled}
-                        onChange={toggleSmtpRotation}
-                        disabled={smtpData.smtpConfigs?.length <= 1}
-                        className="w-4 h-4"
-                      />
-                      <span className="text-white text-sm">Enable SMTP Rotation</span>
-                    </label>
                     <Button
                       onClick={() => setShowSmtpManager(!showSmtpManager)}
                       variant="outline"
@@ -1239,6 +1229,28 @@ export default function OriginalEmailSender() {
                 >
                   Save
                 </Button>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#26262b]">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={smtpData.rotationEnabled}
+                    onChange={toggleSmtpRotation}
+                    disabled={smtpData.smtpConfigs?.length <= 1}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-[#a1a1aa] text-sm">Enable SMTP Rotation</span>
+                </label>
+                {smtpData.rotationEnabled && smtpData.smtpConfigs?.length > 1 && (
+                  <Button
+                    onClick={rotateSmtp}
+                    variant="outline"
+                    size="sm"
+                    className="border-[#26262b] text-white hover:bg-[#26262b] h-8 text-xs"
+                  >
+                    🔄 Rotate
+                  </Button>
+                )}
               </div>
             </div>
 
