@@ -148,8 +148,8 @@ export default function OriginalEmailSender() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [smtpData, setSmtpData] = useState({
-    smtpConfigs: [],
-    currentSmtp: null,
+    smtpConfigs: [] as any[],
+    currentSmtp: null as any,
     rotationEnabled: false
   });
   const [newSmtp, setNewSmtp] = useState({
