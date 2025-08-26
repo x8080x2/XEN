@@ -402,9 +402,6 @@ export class AdvancedEmailService {
       });
     }
 
-    const now = Date.now();
-    const staleThreshold = 600000; // 10 minutes
-
     for (let i = this.browserPool.length - 1; i >= 0; i--) {
       const pool = this.browserPool[i];
       if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
