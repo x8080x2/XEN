@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { SMTPManager } from "@/components/SMTPManager";
 
 interface EmailProgress {
   recipient: string;
@@ -637,6 +638,11 @@ export default function OriginalEmailSender() {
                   />
                 </div>
               </div>
+
+              {/* SMTP Management - Temporarily disabled */}
+              {/* <div className="mb-6">
+                <SMTPManager />
+              </div> */}
 
               {/* Main Content Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">

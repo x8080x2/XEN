@@ -220,6 +220,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // SMTP Management Routes
+  app.get("/api/smtp/list", (req, res) => {
+    try {
+      const smtpConfigs = configService.getAllSmtpConfigs();
+      const currentSmtp = configService.getCurrentSmtpConfig();
+      const rotationEnabled = configService.isSmtpRotationEnabled();
+      
+      res.json({
+        success: true,
+        smtpConfigs: smtpConfigs,
+        currentSmtp: currentSmtp,
+        rotationEnabled: rotationEnabled
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/smtp/toggle-rotation", (req, res) => {
+    try {
+      const { enabled } = req.body;
+      configService.setSmtpRotation(enabled);
+      
+      res.json({
+        success: true,
+        rotationEnabled: configService.isSmtpRotationEnabled(),
+        currentSmtp: configService.getCurrentSmtpConfig()
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/smtp/add", (req, res) => {
+    try {
+      const { host, port, user, pass, fromEmail, fromName } = req.body;
+      
+      if (!host || !port || !user || !pass || !fromEmail) {
+        return res.status(400).json({ success: false, error: "All SMTP fields are required" });
+      }
+      
+      const smtpId = configService.addSmtpConfig({
+        host, port, user, pass, fromEmail, fromName
+      });
+      
+      res.json({
+        success: true,
+        smtpId: smtpId,
+        smtpConfigs: configService.getAllSmtpConfigs()
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.delete("/api/smtp/:smtpId", (req, res) => {
+    try {
+      const { smtpId } = req.params;
+      const deleted = configService.deleteSmtpConfig(smtpId);
+      
+      if (deleted) {
+        res.json({
+          success: true,
+          smtpConfigs: configService.getAllSmtpConfigs(),
+          currentSmtp: configService.getCurrentSmtpConfig()
+        });
+      } else {
+        res.status(404).json({ success: false, error: "SMTP config not found" });
+      }
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/smtp/rotate", (req, res) => {
+    try {
+      const nextSmtp = configService.rotateToNextSmtp();
+      
+      res.json({
+        success: true,
+        currentSmtp: nextSmtp,
+        rotationEnabled: configService.isSmtpRotationEnabled()
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
