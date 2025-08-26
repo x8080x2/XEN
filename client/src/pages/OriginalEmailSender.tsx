@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -152,18 +152,9 @@ export default function OriginalEmailSender() {
     currentSmtp: null,
     rotationEnabled: false
   });
-
   const [newSmtp, setNewSmtp] = useState({
     host: "",
-    port: "587",
-    user: "",
-    pass: "",
-    fromEmail: "",
-    fromName: ""
-  });
-  const [newSmtp, setNewSmtp] = useState({
-    host: "",
-    port: "587",
+    port: "587", 
     user: "",
     pass: "",
     fromEmail: "",
@@ -273,72 +264,15 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
-      setStatusText('Failed to load SMTP configurations');
     }
   };
 
-  const addSmtp = async () => {
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
-      setStatusText('All SMTP fields are required');
-      return;
-    }
-
+  const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs
-        }));
-        setNewSmtp({
-          host: "",
-          port: "587",
-          user: "",
-          pass: "",
-          fromEmail: "",
-          fromName: ""
-        });
-        setStatusText(`SMTP ${data.smtpId} added successfully`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to add SMTP configuration');
-    }
-  };
-
-  const deleteSmtp = async (smtpId: string) => {
-    if (smtpData.smtpConfigs?.length <= 1) {
-      setStatusText('Cannot delete the last SMTP configuration');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/smtp/${smtpId}`, {
-        method: "DELETE"
-      });
-      const data = await response.json();
-      if (data.success) {
-        await fetchSmtpData(); // Reload SMTP data
-        setStatusText(`SMTP ${smtpId} deleted successfully`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to delete SMTP configuration');
-    }
-  };
-
-  const toggleSmtpRotation = useCallback(async () => {
-    try {
-      const newState = !smtpData.rotationEnabled;
       const response = await fetch("/api/smtp/toggle-rotation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: newState })
+        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
       });
       const data = await response.json();
       if (data.success) {
@@ -353,7 +287,7 @@ export default function OriginalEmailSender() {
     } catch (error) {
       setStatusText('Failed to toggle SMTP rotation');
     }
-  }, [smtpData.rotationEnabled]); // Depend on smtpData.rotationEnabled
+  };
 
   const addNewSmtp = async () => {
     if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
@@ -406,28 +340,6 @@ export default function OriginalEmailSender() {
     }
   };
 
-  const toggleSmtpRotation = async () => {
-    try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: data.rotationEnabled,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to toggle SMTP rotation');
-    }
-  };
-
   const rotateSmtp = async () => {
     try {
       const response = await fetch("/api/smtp/rotate", { method: "POST" });
@@ -450,8 +362,7 @@ export default function OriginalEmailSender() {
     if (configLoaded) return; // Prevent multiple loads
     try {
       const response = await fetch('/api/config/load');
-      const data = await fetch('/api/config/load').then(res => res.json());
-
+      const data = await response.json();
 
       if (data.success && data.config) {
         const config = data.config;
@@ -599,7 +510,7 @@ export default function OriginalEmailSender() {
         bodyHtml = '';
       }
     }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)
+    // Priority 2: Direct HTML from textarea (args.html equivalent)  
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
@@ -1202,7 +1113,7 @@ export default function OriginalEmailSender() {
                   </Button>
                 )}
               </div>
-
+              
               {/* SMTP Management - Moved to SMTP Settings Area */}
               <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1296,12 +1207,12 @@ export default function OriginalEmailSender() {
                     {/* SMTP List */}
                     <div>
                       <h4 className="text-white font-medium mb-3">Available SMTP Servers ({smtpData.smtpConfigs?.length || 0})</h4>
-                      {smtpData.smtpConfigs?.map((smtp: any) => ( // Added type assertion for smtp.id
+                      {smtpData.smtpConfigs?.map((smtp) => (
                         <div
                           key={smtp.id}
                           className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id
-                              ? 'border-blue-500 bg-blue-900/20'
+                            smtpData.currentSmtp?.id === smtp.id 
+                              ? 'border-blue-500 bg-blue-900/20' 
                               : 'border-[#26262b] bg-[#0f0f12]'
                           }`}
                         >
@@ -1460,7 +1371,7 @@ export default function OriginalEmailSender() {
                       <Input
                         type="number"
                         value={advancedSettings.qrSize}
-                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrSize: parseInt(e.target.value) || 200})}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, qrSize: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white"
                       />
                     </div>
@@ -1547,8 +1458,7 @@ export default function OriginalEmailSender() {
 
                 {/* Domain Logo Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo
-                  </h3>
+                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo </h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">Logo Size</Label>
@@ -1591,8 +1501,7 @@ export default function OriginalEmailSender() {
 
 
 
-                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy
-                </h3>
+                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -1685,8 +1594,8 @@ export default function OriginalEmailSender() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">Hidden Image File</Label>
-                      <Select
-                        value={advancedSettings.hiddenImageFile || "off"}
+                      <Select 
+                        value={advancedSettings.hiddenImageFile || "off"} 
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
                       >
                         <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white">

@@ -987,18 +987,15 @@ export class AdvancedEmailService {
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Add comprehensive error handling to prevent unhandled rejections
-    const handleUnhandledRejection = (reason: any, promise: Promise<any>) => {
+    process.removeAllListeners('unhandledRejection');
+    process.on('unhandledRejection', (reason, promise) => {
       this.logger.error('Unhandled Promise Rejection in sendMail', { 
         reason: reason instanceof Error ? reason.message : reason,
         stack: reason instanceof Error ? reason.stack : undefined,
         campaignId 
       });
       console.error('Unhandled Promise Rejection:', reason);
-      // Don't re-throw to prevent app crash
-    };
-
-    process.removeAllListeners('unhandledRejection');
-    process.on('unhandledRejection', handleUnhandledRejection);
+    });
 
     // Register campaign activity tracking
     this.activeCampaigns.set(campaignId, {

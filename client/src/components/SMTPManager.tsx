@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, RotateCcw, Settings, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch"; // Import Switch component
-import { Badge } from "@/components/ui/badge"; // Import Badge component
 
 interface SMTPConfig {
   id: string;
@@ -72,7 +71,7 @@ export function SMTPManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
       });
-
+      
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -112,7 +111,7 @@ export function SMTPManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSmtp)
       });
-
+      
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -158,7 +157,7 @@ export function SMTPManager() {
       const response = await fetch(`/api/smtp/${smtpId}`, {
         method: "DELETE"
       });
-
+      
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -187,7 +186,7 @@ export function SMTPManager() {
       const response = await fetch("/api/smtp/rotate", {
         method: "POST"
       });
-
+      
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -364,7 +363,7 @@ export function SMTPManager() {
               </DialogContent>
             </Dialog>
           </div>
-
+          
           <div className="grid gap-2">
             {smtpData.smtpConfigs.map((smtp) => (
               <div
@@ -401,7 +400,7 @@ export function SMTPManager() {
               </div>
             ))}
           </div>
-
+          
           {smtpData.smtpConfigs.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <Mail className="w-8 h-8 mx-auto mb-2 opacity-50" />
