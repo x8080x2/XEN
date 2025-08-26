@@ -1,6 +1,7 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { advancedEmailService } from "../services/advancedEmailService";
 import multer from "multer";
+import { configService } from "../services/configService"; // Assuming configService is available
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -197,6 +198,51 @@ export function setupOriginalEmailRoutes(app: Express) {
     } catch (error) {
       console.error('Error clearing caches:', error);
       res.status(500).json({ success: false, error: 'Failed to clear caches' });
+    }
+  });
+
+  // Delete SMTP config
+  app.delete('/api/smtp/:id', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const success = configService.deleteSmtpConfig(id);
+
+      if (success) {
+        res.json({ success: true, message: 'SMTP configuration deleted' });
+      } else {
+        res.status(404).json({ success: false, error: 'SMTP configuration not found' });
+      }
+    } catch (error: any) {
+      console.error('Delete SMTP config error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // SMTP rotation endpoint
+  app.post('/api/smtp/rotation', async (req: Request, res: Response) => {
+    try {
+      const { enabled } = req.body;
+      configService.setSmtpRotation(enabled);
+
+      res.json({
+        success: true,
+        enabled,
+        message: `SMTP rotation ${enabled ? 'enabled' : 'disabled'}`
+      });
+    } catch (error: any) {
+      console.error('SMTP rotation error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get SMTP rotation status
+  app.get('/api/smtp/rotation', async (req: Request, res: Response) => {
+    try {
+      const enabled = configService.isSmtpRotationEnabled();
+      res.json({ success: true, enabled });
+    } catch (error: any) {
+      console.error('Get SMTP rotation status error:', error);
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 
