@@ -390,12 +390,16 @@ export class AdvancedEmailService {
   }
 
   private async cleanupBrowserPool() {
-    // Conditional cleanup - skip if active operations detected
-    if (this.activeOperations.size > 0) {
-      this.logger.info('Skipping browser cleanup - active operations detected', { 
+    // More aggressive cleanup for better memory management
+    const now = Date.now();
+    const staleThreshold = 300000; // Reduced to 5 minutes
+    let cleaned = 0;
+
+    // Clean up stale browsers even with some active operations
+    if (this.activeOperations.size > 3) {
+      this.logger.info('High activity detected, performing partial cleanup', { 
         activeCount: this.activeOperations.size 
       });
-      return;
     }
 
     const now = Date.now();
@@ -534,7 +538,7 @@ export class AdvancedEmailService {
   private qrCache = new Map<string, Buffer>();
   private qrCacheLocks = new Set<string>(); // Cache locking mechanism
 
-  // Clear QR cache only - with conditional safety check
+  // Clear all caches with safety check
   public clearCaches() {
     // Conditional cleanup - don't clear if operations in progress
     if (this.qrCacheLocks.size > 0 || this.activeOperations.size > 0) {
@@ -544,14 +548,37 @@ export class AdvancedEmailService {
     }
 
     const qrCount = this.qrCache.size;
+    const logoCount = this.logoCache.size;
+    
     this.qrCache.clear();
-    console.log(`[Cache] Safely cleared ${qrCount} QR entries from cache (logo caching disabled)`);
+    this.logoCache.clear();
+    
+    console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
+    
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      console.log('[Cache] Forced garbage collection');
+    }
   }
+
+  // Add proper logo cache with cross-domain support
+  private logoCache = new Map<string, { buffer: Buffer | null; timestamp: number; domain: string }>();
+  private logoCacheTTL = 300000; // 5 minutes cache
 
   private async fetchDomainLogo(domain: string, skipCache: boolean = false): Promise<Buffer | null> {
     if (!domain || typeof domain !== 'string') return null;
 
-    console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain} (caching disabled)`);
+    // Check cache first unless explicitly skipping
+    if (!skipCache) {
+      const cached = this.logoCache.get(domain);
+      if (cached && (Date.now() - cached.timestamp) < this.logoCacheTTL) {
+        console.log(`[fetchDomainLogo] Using cached logo for ${domain}`);
+        return cached.buffer;
+      }
+    }
+
+    console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain}`);
 
     // Optimized logo sources - fastest first for better performance
     const logoSources = [
@@ -595,6 +622,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
+            
+            // Cache the successful result
+            this.logoCache.set(domain, {
+              buffer,
+              timestamp: Date.now(),
+              domain
+            });
+            
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -606,7 +641,15 @@ export class AdvancedEmailService {
       }
     }
 
-    console.log(`[fetchDomainLogo] All logo sources failed for ${domain} (caching disabled)`);
+    console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
+    
+    // Cache null result to prevent repeated attempts
+    this.logoCache.set(domain, {
+      buffer: null,
+      timestamp: Date.now(),
+      domain
+    });
+    
     return null;
   }
 
@@ -945,6 +988,17 @@ export class AdvancedEmailService {
     console.log('Advanced sendMail invoked with args:', args);
     const sendMailStart = Date.now();
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    // Add comprehensive error handling to prevent unhandled rejections
+    process.removeAllListeners('unhandledRejection');
+    process.on('unhandledRejection', (reason, promise) => {
+      this.logger.error('Unhandled Promise Rejection in sendMail', { 
+        reason: reason instanceof Error ? reason.message : reason,
+        stack: reason instanceof Error ? reason.stack : undefined,
+        campaignId 
+      });
+      console.error('Unhandled Promise Rejection:', reason);
+    });
 
     // Register campaign activity tracking
     this.activeCampaigns.set(campaignId, {

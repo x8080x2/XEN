@@ -39,7 +39,10 @@ export class PerformanceOptimizer {
     if (logoTimes && logoTimes.length > 0) {
       const avgTime = logoTimes.reduce((a, b) => a + b, 0) / logoTimes.length;
       if (avgTime > 100) {
-        recommendations.push(`Domain logo fetch averaging ${Math.round(avgTime)}ms - consider caching optimization`);
+        recommendations.push(`Domain logo fetch averaging ${Math.round(avgTime)}ms - caching has been enabled to improve performance`);
+      }
+      if (avgTime > 2000) {
+        recommendations.push(`CRITICAL: Logo fetch time over 2000ms - check network connectivity or disable logo fetching`);
       }
     }
 

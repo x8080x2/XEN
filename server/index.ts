@@ -4,15 +4,27 @@ import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
 
-// Handle unhandled promise rejections to prevent crashes
+// Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
+  // Log detailed error information
+  if (reason instanceof Error) {
+    console.error('Error stack:', reason.stack);
+  }
   // Log the error but don't exit the process
 });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  console.error('Error stack:', error.stack);
   // Log the error but don't exit the process in development
+});
+
+// Add warning for deprecation notices
+process.on('warning', (warning) => {
+  if (warning.name === 'DeprecationWarning') {
+    console.warn('Deprecation Warning:', warning.message);
+  }
 });
 
 // Automatic cleanup function (non-blocking)
