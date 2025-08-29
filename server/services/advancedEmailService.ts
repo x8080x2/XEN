@@ -745,6 +745,24 @@ export class AdvancedEmailService {
       ]
     };
 
+    // Configure cache directory for Render production environment
+    if (process.env.NODE_ENV === 'production' && !process.env.REPL_ID) {
+      // Set cache directory for Render
+      process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
+      
+      // Check if Chrome exists in the expected location
+      const chromePath = '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome';
+      try {
+        const fs = await import('fs');
+        if (fs.existsSync(chromePath)) {
+          launchOptions.executablePath = chromePath;
+          this.logger.info('Using Chrome from cache directory', { path: chromePath });
+        }
+      } catch (e) {
+        this.logger.warn('Could not check Chrome path', { path: chromePath });
+      }
+    }
+
     // Add proxy support
     if (C.PROXY && C.PROXY.PROXY_USE === 1) {
       const proxyHost = C.PROXY.HOST || '';
