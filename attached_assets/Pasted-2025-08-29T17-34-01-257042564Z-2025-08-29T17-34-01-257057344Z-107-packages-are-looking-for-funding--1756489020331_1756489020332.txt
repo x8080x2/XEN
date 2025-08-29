@@ -1,0 +1,437 @@
+2025-08-29T17:34:01.257042564Z 
+2025-08-29T17:34:01.257057344Z 107 packages are looking for funding
+2025-08-29T17:34:01.257063385Z   run `npm fund` for details
+2025-08-29T17:34:01.281501803Z 
+2025-08-29T17:34:01.281525623Z 14 vulnerabilities (3 low, 9 moderate, 2 high)
+2025-08-29T17:34:01.281530063Z 
+2025-08-29T17:34:01.281535163Z To address issues that do not require attention, run:
+2025-08-29T17:34:01.281539423Z   npm audit fix
+2025-08-29T17:34:01.281543373Z 
+2025-08-29T17:34:01.281547593Z To address all issues (including breaking changes), run:
+2025-08-29T17:34:01.281552063Z   npm audit fix --force
+2025-08-29T17:34:01.281556103Z 
+2025-08-29T17:34:01.281560983Z Run `npm audit` for details.
+2025-08-29T17:34:02.07023591Z chrome@139.0.7258.154 /opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome
+2025-08-29T17:34:02.189208286Z 
+2025-08-29T17:34:02.189237766Z > rest-express@1.0.0 build
+2025-08-29T17:34:02.189246666Z > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-08-29T17:34:02.189252176Z 
+2025-08-29T17:34:02.424284778Z vite v5.4.19 building for production...
+2025-08-29T17:34:02.92923315Z transforming...
+2025-08-29T17:34:03.030159794Z Browserslist: browsers data (caniuse-lite) is 10 months old. Please run:
+2025-08-29T17:34:03.030187944Z   npx update-browserslist-db@latest
+2025-08-29T17:34:03.030194054Z   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-08-29T17:34:05.755074107Z ✓ 1712 modules transformed.
+2025-08-29T17:34:06.088334516Z rendering chunks...
+2025-08-29T17:34:06.097974595Z computing gzip size...
+2025-08-29T17:34:06.112905925Z ../dist/public/index.html                   2.20 kB │ gzip:   0.86 kB
+2025-08-29T17:34:06.113017117Z ../dist/public/assets/index-7qvojwsy.css   37.94 kB │ gzip:   7.30 kB
+2025-08-29T17:34:06.113037977Z ../dist/public/assets/index-D5kzQlYl.js   345.57 kB │ gzip: 107.74 kB
+2025-08-29T17:34:06.113430263Z ✓ built in 3.67s
+2025-08-29T17:34:06.176902044Z 
+2025-08-29T17:34:06.176935534Z   dist/index.js  111.5kb
+2025-08-29T17:34:06.176939164Z 
+2025-08-29T17:34:06.176942334Z ⚡ Done in 10ms
+2025-08-29T17:34:14.516408871Z ==> Uploading build...
+2025-08-29T17:34:24.408078441Z ==> Uploaded in 5.8s. Compression took 4.1s
+2025-08-29T17:34:24.508785931Z ==> Build successful 🎉
+2025-08-29T17:34:40.598101973Z ==> Deploying...
+2025-08-29T17:35:03.985003457Z ==> Running 'npm run start'
+2025-08-29T17:35:05.085074999Z 
+2025-08-29T17:35:05.085099119Z > rest-express@1.0.0 start
+2025-08-29T17:35:05.085104109Z > NODE_ENV=production node dist/index.js
+2025-08-29T17:35:05.085106249Z 
+2025-08-29T17:35:11.479871874Z {"timestamp":"2025-08-29T17:35:11.479Z","level":"info","message":"AdvancedEmailService initialized","data":{},"memory":{"rss":99921920,"heapTotal":30416896,"heapUsed":27261168,"external":3748706,"arrayBuffers":101812},"pid":80}
+2025-08-29T17:35:11.489898281Z 🔧 Periodic process cleanup started (every 10 minutes)
+2025-08-29T17:35:11.680840946Z 5:35:11 PM [express] serving on port 10000
+2025-08-29T17:35:11.681042231Z 5:35:11 PM [express] 🔧 Automatic process cleanup enabled
+2025-08-29T17:35:13.4869359Z 5:35:13 PM [express] 🔧 Performing background cleanup...
+2025-08-29T17:35:13.503403091Z 5:35:13 PM [express] Current process count: 2
+2025-08-29T17:35:13.503668287Z 5:35:13 PM [express] ✅ Background cleanup check completed
+2025-08-29T17:35:21.438147373Z ==> Your service is live 🎉
+2025-08-29T17:35:21.46627624Z ==> 
+2025-08-29T17:35:21.491476506Z ==> ///////////////////////////////////////////////////////////
+2025-08-29T17:35:22.047381652Z ==> 
+2025-08-29T17:35:22.073914728Z ==> Available at your primary URL https://xen-xo6p.onrender.com
+2025-08-29T17:35:22.100552695Z ==> 
+2025-08-29T17:35:22.126300641Z ==> ///////////////////////////////////////////////////////////
+2025-08-29T17:35:41.481444144Z {"timestamp":"2025-08-29T17:35:41.481Z","level":"info","message":"Memory status","data":{"memUsage":{"rss":104034304,"heapTotal":29630464,"heapUsed":26455232,"external":3832734,"arrayBuffers":101820},"browserPoolSize":0},"memory":{"rss":104034304,"heapTotal":29630464,"heapUsed":26463872,"external":3832734,"arrayBuffers":101820},"pid":80}
+2025-08-29T17:36:16.857719834Z 5:36:16 PM [express] GET /api/smtp/list 304 in 3ms :: {"success":true,"smtpConfigs":[],"currentSmtp"…
+2025-08-29T17:36:16.862504908Z 5:36:16 PM [express] GET /api/original/listLogoFiles 304 in 1ms :: {"files":["Screenshot 2025-08-22 …
+2025-08-29T17:36:16.864250419Z [ConfigService] Configuration loaded: [
+2025-08-29T17:36:16.864264029Z   'EMAILPERSECOND',      'FILE_NAME',
+2025-08-29T17:36:16.864268839Z   'HTML_CONVERT',        'HTML2IMG_BODY',
+2025-08-29T17:36:16.864273159Z   'LINK_PLACEHOLDER',    'MINIFY_HTML',
+2025-08-29T17:36:16.86427725Z   'PRIORITY',            'QRCODE',
+2025-08-29T17:36:16.86428126Z   'QR_WIDTH',            'QR_BORDER_WIDTH',
+2025-08-29T17:36:16.86428538Z   'QR_LINK',             'QR_BORDER_COLOR',
+2025-08-29T17:36:16.86429007Z   'QR_FOREGROUND_COLOR', 'QR_BACKGROUND_COLOR',
+2025-08-29T17:36:16.86429329Z   'RANDOM_METADATA',     'RETRY',
+2025-08-29T17:36:16.86429607Z   'SLEEP',               'ZIP_PASSWORD',
+2025-08-29T17:36:16.86429875Z   'ZIP_USE',             'DOMAIN_LOGO_SIZE',
+2025-08-29T17:36:16.86430147Z   'BORDER_STYLE',        'BORDER_COLOR',
+2025-08-29T17:36:16.86430414Z   'HIDDEN_IMAGE_FILE',   'HIDDEN_IMAGE_SIZE',
+2025-08-29T17:36:16.86430681Z   'HIDDEN_TEXT',         'PROXY_USE',
+2025-08-29T17:36:16.86431012Z   'TYPE',                'HOST',
+2025-08-29T17:36:16.86431282Z   'PORT',                'USER',
+2025-08-29T17:36:16.864315731Z   'PASS',                'SMTP'
+2025-08-29T17:36:16.864318491Z ]
+2025-08-29T17:36:16.865033077Z 5:36:16 PM [express] GET /api/config/load 304 in 2ms :: {"success":true,"config":{"EMAILPERSECOND":5…
+2025-08-29T17:36:16.869040643Z 5:36:16 PM [express] GET /api/original/listFiles 304 in 1ms :: {"files":["ok.html","sample-template.…
+2025-08-29T17:36:17.207526904Z [ConfigService] Loaded 2 leads from leads.txt
+2025-08-29T17:36:17.208383245Z 5:36:17 PM [express] GET /api/config/loadLeads 304 in 2ms :: {"success":true,"leads":"jaco@smei.co.z…
+2025-08-29T17:36:26.0868007Z 5:36:26 PM [express] POST /api/original/readFile 200 in 1ms :: {"success":true,"content":"<div style…
+2025-08-29T17:36:27.287145507Z 5:36:27 PM [express] POST /api/original/readFile 200 in 0ms :: {"success":true,"content":"<div style…
+2025-08-29T17:36:27.684942734Z Original sendMail endpoint called with: [Object: null prototype] {
+2025-08-29T17:36:27.684981575Z   senderEmail: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.684985415Z   senderName: '',
+2025-08-29T17:36:27.684987645Z   subject: '',
+2025-08-29T17:36:27.684990295Z   html: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 2px solid #f4f4f4;  max-width: 500px; margin: 4px auto; padding: 30px 30px 50px 30px;">\r\n` +
+2025-08-29T17:36:27.684992945Z     '  \r\n' +
+2025-08-29T17:36:27.684995035Z     '  <div style="margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.684997495Z     '    <div style="width: 60px; height: 40px; background: #ffffff; border: 2px solid #d1d1d1; border-radius: 4px; position: relative; display: inline-block;">\r\n' +
+2025-08-29T17:36:27.685000446Z     '      <div style="position: absolute; top: 6px; left: 7px; width: 40px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.685002875Z     '      <div style="position: absolute; top: 12px; left: 8px; width: 32px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.685005555Z     '      <div style="position: absolute; top: 18px; left: 8px; width: 36px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.685008036Z     '      <div style="position: absolute; top: 24px; left: 8px; width: 28px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.685010156Z     '    </div>\r\n' +
+2025-08-29T17:36:27.685012246Z     '  </div>\r\n' +
+2025-08-29T17:36:27.685014616Z     '\r\n' +
+2025-08-29T17:36:27.685017736Z     '  <div style="font-size: 16px; color: #323130; line-height: 1.6; margin-bottom: 30px;">\r\n' +
+2025-08-29T17:36:27.685020116Z     '    A message has been shared with you on your SharePoint Portal. Click the "View Message" button below or visit your portal to see it.\r\n' +
+2025-08-29T17:36:27.685022426Z     '  </div>\r\n' +
+2025-08-29T17:36:27.685024666Z     ' <div class="container">\r\n' +
+2025-08-29T17:36:27.685027146Z     '        <div class="header" style="text-align: center; margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.685029396Z     '            {domainlogo}\r\n' +
+2025-08-29T17:36:27.685031816Z     '        </div>\r\n' +
+2025-08-29T17:36:27.685034116Z     '        \r\n' +
+2025-08-29T17:36:27.685036416Z     '        <div class="content">\r\n' +
+2025-08-29T17:36:27.685038586Z     '         \r\n' +
+2025-08-29T17:36:27.685040867Z     '            <ul>\r\n' +
+2025-08-29T17:36:27.685043316Z     '                <li><strong>Email:</strong> {email}</li>\r\n' +
+2025-08-29T17:36:27.685045547Z     '                <li><strong>Domain:</strong> {domain}</li>\r\n' +
+2025-08-29T17:36:27.685047696Z     '                <li><strong>Registration Date:</strong> {date}</li>\r\n' +
+2025-08-29T17:36:27.685049827Z     '                <li><strong>User ID:</strong> {userid}</li>\r\n' +
+2025-08-29T17:36:27.685051927Z     '            </ul>\r\n' +
+2025-08-29T17:36:27.685054987Z     '            \r\n' +
+2025-08-29T17:36:27.685057207Z     '            <div class="qr-section">\r\n' +
+2025-08-29T17:36:27.685059547Z     '                {qrcode}\r\n' +
+2025-08-29T17:36:27.685061707Z     '            </div>\r\n' +
+2025-08-29T17:36:27.685063787Z     '\r\n' +
+2025-08-29T17:36:27.685066017Z     '\r\n' +
+2025-08-29T17:36:27.685068357Z     '  <div style="font-size: 13px; color: #605e5c; line-height: 1.5; margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.685070817Z     '    <div style="margin-bottom: 8px;">For security purposes this link will expire after 72 hours of receiving this electronically communicated message.</div>\r\n' +
+2025-08-29T17:36:27.685073497Z     '    <div style="margin-bottom: 8px;">Do not Reply to this Email. This message was sent from an Unmonitored mailbox</div>\r\n' +
+2025-08-29T17:36:27.685080657Z     '    <div>You are receiving this email because you are either a member of the group that owns this SharePoint or its creator.</div>\r\n' +
+2025-08-29T17:36:27.685083568Z     '  </div>\r\n' +
+2025-08-29T17:36:27.685086337Z     ' <div style="display: flex; align-items: center; font-family: Arial, sans-serif;">\r\n' +
+2025-08-29T17:36:27.685088957Z     '    <div style="display: flex; flex-direction: column;">\r\n' +
+2025-08-29T17:36:27.685091288Z     '      <!-- First row -->\r\n' +
+2025-08-29T17:36:27.685093678Z     '      <div style="display: flex;">\r\n' +
+2025-08-29T17:36:27.685096208Z     '        <div style="width: 20px; height: 20px; background-color: #F25022; margin-right: 2px;"></div>\r\n' +
+2025-08-29T17:36:27.685098428Z     '        <div style="width: 20px; height: 20px; background-color: #7FBA00;"></div>\r\n' +
+2025-08-29T17:36:27.685100588Z     '      </div>\r\n' +
+2025-08-29T17:36:27.685103348Z     '      <!-- Second row -->\r\n' +
+2025-08-29T17:36:27.685106588Z     '      <div style="display: flex; margin-top: 2px;">\r\n' +
+2025-08-29T17:36:27.685109138Z     '        <div style="width: 20px; height: 20px; background-color: #00A4EF; margin-right: 2px;"></div>\r\n' +
+2025-08-29T17:36:27.685111388Z     '        <div style="width: 20px; height: 20px; background-color: #FFB900;"></div>\r\n' +
+2025-08-29T17:36:27.685113468Z     '      </div>\r\n' +
+2025-08-29T17:36:27.685115728Z     '    </div>\r\n' +
+2025-08-29T17:36:27.685118008Z     '    <div style="font-size: 30px; font-weight: normal; color: #5E5E5E; margin-left: 7px;">\r\n' +
+2025-08-29T17:36:27.685120288Z     '      Microsoft\r\n' +
+2025-08-29T17:36:27.685122668Z     '    </div>\r\n' +
+2025-08-29T17:36:27.685124998Z     '  </div> \r\n' +
+2025-08-29T17:36:27.685127318Z     '  </div>\r\n',
+2025-08-29T17:36:27.685129549Z   attachmentHtml: '',
+2025-08-29T17:36:27.685131758Z   recipients: '["jaco@smei.co.za","dassola8080@gmail.com"]',
+2025-08-29T17:36:27.685133899Z   smtpHost: 'smtp.mail.me.com',
+2025-08-29T17:36:27.685136209Z   smtpPort: '587',
+2025-08-29T17:36:27.685138359Z   smtpUser: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.685140589Z   smtpPass: 'ckkn-sdxp-kkmi-gcuz',
+2025-08-29T17:36:27.685143069Z   qrcode: 'true',
+2025-08-29T17:36:27.685145579Z   randomMetadata: 'false',
+2025-08-29T17:36:27.685147919Z   minifyHtml: 'true',
+2025-08-29T17:36:27.685150779Z   htmlImgBody: 'true',
+2025-08-29T17:36:27.68516805Z   zipUse: 'false',
+2025-08-29T17:36:27.685170819Z   zipPassword: '',
+2025-08-29T17:36:27.685173399Z   emailPerSecond: '5',
+2025-08-29T17:36:27.68517578Z   sleep: '1',
+2025-08-29T17:36:27.68517837Z   fileName: '{hash3}',
+2025-08-29T17:36:27.68518088Z   htmlConvert: 'pdf',
+2025-08-29T17:36:27.68518326Z   qrSize: '150',
+2025-08-29T17:36:27.6851857Z   qrBorder: '2',
+2025-08-29T17:36:27.6851882Z   qrBorderColor: '#000000',
+2025-08-29T17:36:27.6851905Z   qrLink: 'https://example.com',
+2025-08-29T17:36:27.685193Z   linkPlaceholder: 'https://fb.com',
+2025-08-29T17:36:27.68519777Z   domainLogoSize: '150px',
+2025-08-29T17:36:27.68520039Z   borderStyle: 'dotted',
+2025-08-29T17:36:27.6852029Z   borderColor: 'blue',
+2025-08-29T17:36:27.68520531Z   retry: '0',
+2025-08-29T17:36:27.68520785Z   priority: '3',
+2025-08-29T17:36:27.685210331Z   proxyUse: 'true',
+2025-08-29T17:36:27.685212711Z   proxyType: 'socks5',
+2025-08-29T17:36:27.68521516Z   proxyHost: '',
+2025-08-29T17:36:27.685217311Z   proxyPort: '',
+2025-08-29T17:36:27.685219621Z   proxyUser: '',
+2025-08-29T17:36:27.685221761Z   proxyPass: '',
+2025-08-29T17:36:27.685223951Z   qrForegroundColor: '#000000',
+2025-08-29T17:36:27.685231201Z   qrBackgroundColor: '#FFFFFF',
+2025-08-29T17:36:27.685233811Z   calendarMode: 'false',
+2025-08-29T17:36:27.685236111Z   hiddenImageFile: '',
+2025-08-29T17:36:27.685238331Z   hiddenImageSize: '50',
+2025-08-29T17:36:27.685240581Z   hiddenText: ''
+2025-08-29T17:36:27.685243111Z }
+2025-08-29T17:36:27.687045424Z Advanced sendMail invoked with args: {
+2025-08-29T17:36:27.687059904Z   senderEmail: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.687063454Z   senderName: '',
+2025-08-29T17:36:27.687066044Z   subject: '',
+2025-08-29T17:36:27.687068954Z   html: `<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 2px solid #f4f4f4;  max-width: 500px; margin: 4px auto; padding: 30px 30px 50px 30px;">\r\n` +
+2025-08-29T17:36:27.687071535Z     '  \r\n' +
+2025-08-29T17:36:27.687074815Z     '  <div style="margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.687077655Z     '    <div style="width: 60px; height: 40px; background: #ffffff; border: 2px solid #d1d1d1; border-radius: 4px; position: relative; display: inline-block;">\r\n' +
+2025-08-29T17:36:27.687080505Z     '      <div style="position: absolute; top: 6px; left: 7px; width: 40px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.687083345Z     '      <div style="position: absolute; top: 12px; left: 8px; width: 32px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.687088625Z     '      <div style="position: absolute; top: 18px; left: 8px; width: 36px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.687091515Z     '      <div style="position: absolute; top: 24px; left: 8px; width: 28px; height: 2px; background: #d1d1d1;"></div>\r\n' +
+2025-08-29T17:36:27.687094585Z     '    </div>\r\n' +
+2025-08-29T17:36:27.687096875Z     '  </div>\r\n' +
+2025-08-29T17:36:27.687098595Z     '\r\n' +
+2025-08-29T17:36:27.687100515Z     '  <div style="font-size: 16px; color: #323130; line-height: 1.6; margin-bottom: 30px;">\r\n' +
+2025-08-29T17:36:27.687102395Z     '    A message has been shared with you on your SharePoint Portal. Click the "View Message" button below or visit your portal to see it.\r\n' +
+2025-08-29T17:36:27.687104105Z     '  </div>\r\n' +
+2025-08-29T17:36:27.687106045Z     ' <div class="container">\r\n' +
+2025-08-29T17:36:27.687107885Z     '        <div class="header" style="text-align: center; margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.687109705Z     '            {domainlogo}\r\n' +
+2025-08-29T17:36:27.687113436Z     '        </div>\r\n' +
+2025-08-29T17:36:27.687115145Z     '        \r\n' +
+2025-08-29T17:36:27.687116845Z     '        <div class="content">\r\n' +
+2025-08-29T17:36:27.687118556Z     '         \r\n' +
+2025-08-29T17:36:27.687120256Z     '            <ul>\r\n' +
+2025-08-29T17:36:27.687122146Z     '                <li><strong>Email:</strong> {email}</li>\r\n' +
+2025-08-29T17:36:27.687123866Z     '                <li><strong>Domain:</strong> {domain}</li>\r\n' +
+2025-08-29T17:36:27.687125546Z     '                <li><strong>Registration Date:</strong> {date}</li>\r\n' +
+2025-08-29T17:36:27.687127176Z     '                <li><strong>User ID:</strong> {userid}</li>\r\n' +
+2025-08-29T17:36:27.687128826Z     '            </ul>\r\n' +
+2025-08-29T17:36:27.687130836Z     '            \r\n' +
+2025-08-29T17:36:27.687133626Z     '            <div class="qr-section">\r\n' +
+2025-08-29T17:36:27.687136656Z     '                {qrcode}\r\n' +
+2025-08-29T17:36:27.687139476Z     '            </div>\r\n' +
+2025-08-29T17:36:27.687141996Z     '\r\n' +
+2025-08-29T17:36:27.687144356Z     '\r\n' +
+2025-08-29T17:36:27.687148926Z     '  <div style="font-size: 13px; color: #605e5c; line-height: 1.5; margin-bottom: 20px;">\r\n' +
+2025-08-29T17:36:27.687162947Z     '    <div style="margin-bottom: 8px;">For security purposes this link will expire after 72 hours of receiving this electronically communicated message.</div>\r\n' +
+2025-08-29T17:36:27.687166077Z     '    <div style="margin-bottom: 8px;">Do not Reply to this Email. This message was sent from an Unmonitored mailbox</div>\r\n' +
+2025-08-29T17:36:27.687168177Z     '    <div>You are receiving this email because you are either a member of the group that owns this SharePoint or its creator.</div>\r\n' +
+2025-08-29T17:36:27.687170327Z     '  </div>\r\n' +
+2025-08-29T17:36:27.687172767Z     ' <div style="display: flex; align-items: center; font-family: Arial, sans-serif;">\r\n' +
+2025-08-29T17:36:27.687174877Z     '    <div style="display: flex; flex-direction: column;">\r\n' +
+2025-08-29T17:36:27.687177117Z     '      <!-- First row -->\r\n' +
+2025-08-29T17:36:27.687179257Z     '      <div style="display: flex;">\r\n' +
+2025-08-29T17:36:27.687181397Z     '        <div style="width: 20px; height: 20px; background-color: #F25022; margin-right: 2px;"></div>\r\n' +
+2025-08-29T17:36:27.687183577Z     '        <div style="width: 20px; height: 20px; background-color: #7FBA00;"></div>\r\n' +
+2025-08-29T17:36:27.687185757Z     '      </div>\r\n' +
+2025-08-29T17:36:27.687187817Z     '      <!-- Second row -->\r\n' +
+2025-08-29T17:36:27.687190257Z     '      <div style="display: flex; margin-top: 2px;">\r\n' +
+2025-08-29T17:36:27.687192507Z     '        <div style="width: 20px; height: 20px; background-color: #00A4EF; margin-right: 2px;"></div>\r\n' +
+2025-08-29T17:36:27.687194807Z     '        <div style="width: 20px; height: 20px; background-color: #FFB900;"></div>\r\n' +
+2025-08-29T17:36:27.687196918Z     '      </div>\r\n' +
+2025-08-29T17:36:27.687198967Z     '    </div>\r\n' +
+2025-08-29T17:36:27.687201307Z     '    <div style="font-size: 30px; font-weight: normal; color: #5E5E5E; margin-left: 7px;">\r\n' +
+2025-08-29T17:36:27.687203467Z     '      Microsoft\r\n' +
+2025-08-29T17:36:27.687205588Z     '    </div>\r\n' +
+2025-08-29T17:36:27.687207778Z     '  </div> \r\n' +
+2025-08-29T17:36:27.687210038Z     '  </div>\r\n',
+2025-08-29T17:36:27.687212238Z   attachmentHtml: '',
+2025-08-29T17:36:27.687214628Z   recipients: [ 'jaco@smei.co.za', 'dassola8080@gmail.com' ],
+2025-08-29T17:36:27.687216868Z   smtpHost: 'smtp.mail.me.com',
+2025-08-29T17:36:27.687219258Z   smtpPort: '587',
+2025-08-29T17:36:27.687221928Z   smtpUser: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.687224398Z   smtpPass: 'ckkn-sdxp-kkmi-gcuz',
+2025-08-29T17:36:27.687226808Z   qrcode: true,
+2025-08-29T17:36:27.687229358Z   randomMetadata: false,
+2025-08-29T17:36:27.687231858Z   minifyHtml: true,
+2025-08-29T17:36:27.687234418Z   htmlImgBody: true,
+2025-08-29T17:36:27.687237068Z   zipUse: false,
+2025-08-29T17:36:27.687239488Z   zipPassword: '',
+2025-08-29T17:36:27.687255179Z   emailPerSecond: 5,
+2025-08-29T17:36:27.687258439Z   sleep: '1',
+2025-08-29T17:36:27.687261299Z   fileName: '{hash3}',
+2025-08-29T17:36:27.687264059Z   htmlConvert: 'pdf',
+2025-08-29T17:36:27.687266389Z   qrSize: 150,
+2025-08-29T17:36:27.687269019Z   qrBorder: 2,
+2025-08-29T17:36:27.687271859Z   qrBorderColor: '#000000',
+2025-08-29T17:36:27.687274499Z   qrLink: 'https://example.com',
+2025-08-29T17:36:27.687276739Z   linkPlaceholder: 'https://fb.com',
+2025-08-29T17:36:27.687278519Z   domainLogoSize: '150px',
+2025-08-29T17:36:27.687280219Z   borderStyle: 'dotted',
+2025-08-29T17:36:27.687281989Z   borderColor: 'blue',
+2025-08-29T17:36:27.687283669Z   retry: 0,
+2025-08-29T17:36:27.687285309Z   priority: '3',
+2025-08-29T17:36:27.68729143Z   proxyUse: true,
+2025-08-29T17:36:27.68729326Z   proxyType: 'socks5',
+2025-08-29T17:36:27.68729492Z   proxyHost: '',
+2025-08-29T17:36:27.68729655Z   proxyPort: '',
+2025-08-29T17:36:27.68729815Z   proxyUser: '',
+2025-08-29T17:36:27.68729986Z   proxyPass: '',
+2025-08-29T17:36:27.68730147Z   qrForegroundColor: '#000000',
+2025-08-29T17:36:27.68730318Z   qrBackgroundColor: '#FFFFFF',
+2025-08-29T17:36:27.68730482Z   calendarMode: 'false',
+2025-08-29T17:36:27.68730643Z   hiddenImageFile: '',
+2025-08-29T17:36:27.68730808Z   hiddenImageSize: 50,
+2025-08-29T17:36:27.68730977Z   hiddenText: '',
+2025-08-29T17:36:27.68731243Z   attachments: []
+2025-08-29T17:36:27.68731529Z }
+2025-08-29T17:36:27.68732269Z {"timestamp":"2025-08-29T17:36:27.687Z","level":"info","message":"Campaign started with activity tracking","data":{"campaignId":"campaign_1756488987686_0nl59j45f","emailCount":2,"activeOperations":0,"activeCampaigns":1},"memory":{"rss":106917888,"heapTotal":30416896,"heapUsed":28275104,"external":3840210,"arrayBuffers":109296},"pid":80}
+2025-08-29T17:36:27.68771174Z [ConfigService] Configuration loaded: [
+2025-08-29T17:36:27.68771726Z   'EMAILPERSECOND',      'FILE_NAME',
+2025-08-29T17:36:27.6877199Z   'HTML_CONVERT',        'HTML2IMG_BODY',
+2025-08-29T17:36:27.68772246Z   'LINK_PLACEHOLDER',    'MINIFY_HTML',
+2025-08-29T17:36:27.68772512Z   'PRIORITY',            'QRCODE',
+2025-08-29T17:36:27.68772823Z   'QR_WIDTH',            'QR_BORDER_WIDTH',
+2025-08-29T17:36:27.68773085Z   'QR_LINK',             'QR_BORDER_COLOR',
+2025-08-29T17:36:27.68773251Z   'QR_FOREGROUND_COLOR', 'QR_BACKGROUND_COLOR',
+2025-08-29T17:36:27.68773417Z   'RANDOM_METADATA',     'RETRY',
+2025-08-29T17:36:27.687761761Z   'SLEEP',               'ZIP_PASSWORD',
+2025-08-29T17:36:27.687770741Z   'ZIP_USE',             'DOMAIN_LOGO_SIZE',
+2025-08-29T17:36:27.687773421Z   'BORDER_STYLE',        'BORDER_COLOR',
+2025-08-29T17:36:27.687776111Z   'HIDDEN_IMAGE_FILE',   'HIDDEN_IMAGE_SIZE',
+2025-08-29T17:36:27.687778481Z   'HIDDEN_TEXT',         'PROXY_USE',
+2025-08-29T17:36:27.687781411Z   'TYPE',                'HOST',
+2025-08-29T17:36:27.687783111Z   'PORT',                'USER',
+2025-08-29T17:36:27.687784811Z   'PASS',                'SMTP'
+2025-08-29T17:36:27.687786501Z ]
+2025-08-29T17:36:27.687821482Z [AdvancedEmailService] Auto-applied sender name from config: 
+2025-08-29T17:36:27.688276093Z Loaded Config with Border Settings: {
+2025-08-29T17:36:27.688283013Z   BORDER_STYLE: 'dotted',
+2025-08-29T17:36:27.688285373Z   BORDER_COLOR: 'blue',
+2025-08-29T17:36:27.688287883Z   QR_BORDER_COLOR: '#000000',
+2025-08-29T17:36:27.688290993Z   QR_FOREGROUND_COLOR: '#000000',
+2025-08-29T17:36:27.688293744Z   QR_BACKGROUND_COLOR: '#FFFFFF',
+2025-08-29T17:36:27.688296453Z   RANDOM_METADATA: 0
+2025-08-29T17:36:27.688299213Z }
+2025-08-29T17:36:27.688454887Z SMTP Config Loaded: {
+2025-08-29T17:36:27.688461697Z   host: 'smtp.mail.me.com',
+2025-08-29T17:36:27.688464888Z   port: 587,
+2025-08-29T17:36:27.688468117Z   user: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.688470778Z   fromEmail: 'juliastina1203842@icloud.com',
+2025-08-29T17:36:27.688475628Z   fromName: 'Sender',
+2025-08-29T17:36:27.688478538Z   secure: false
+2025-08-29T17:36:27.688481248Z }
+2025-08-29T17:36:27.692547274Z [sendMail] Startup time (ms): 6
+2025-08-29T17:36:27.692558214Z [sendMail] Using EMAIL_PER_SECOND: 5, SLEEP: 1s, PRIORITY: 3, RETRY: 0
+2025-08-29T17:36:27.692569805Z [Batch 1/1] Processing 2 recipients
+2025-08-29T17:36:27.775671864Z [Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY
+2025-08-29T17:36:27.775942141Z [Main HTML QR] QR Options: { width: 150, margin: 4, errorCorrectionLevel: 'H' }
+2025-08-29T17:36:27.776038143Z [Main HTML QR] QR Configuration: { QR_WIDTH: 150, QR_BORDER_WIDTH: 2 }
+2025-08-29T17:36:27.980710763Z [Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY
+2025-08-29T17:36:27.980812216Z [Main HTML QR] QR Options: { width: 150, margin: 4, errorCorrectionLevel: 'H' }
+2025-08-29T17:36:27.980891847Z [Main HTML QR] QR Configuration: { QR_WIDTH: 150, QR_BORDER_WIDTH: 2 }
+2025-08-29T17:36:28.275886809Z [Main HTML QR] Generated QR buffer and added as CID attachment: qrcode-main
+2025-08-29T17:36:28.275912919Z [Main HTML QR] No hidden image file specified (hiddenImageFile: '')
+2025-08-29T17:36:28.275924479Z [Main HTML QR] No hidden overlay applied (no image file or text specified)
+2025-08-29T17:36:28.275928459Z [Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for jaco@smei.co.za
+2025-08-29T17:36:28.27593179Z [Main HTML QR] QR content: https://example.com
+2025-08-29T17:36:28.275990871Z [Main HTML QR] Generated QR HTML snippet: <div style="position:relative; display:inline-block; text-align:center; width:150px; height:150px; margin:10px auto;">
+2025-08-29T17:36:28.275996691Z                                   <a href="https://example.com" target="_blank" r...
+2025-08-29T17:36:28.275999881Z [Main HTML Domain Logo] Processing domain logo with optimized color logo fetching
+2025-08-29T17:36:28.276134684Z [Main HTML Domain Logo] Cross-domain detected (sender: icloud.com, recipient: smei.co.za), skipping cache
+2025-08-29T17:36:28.27635222Z [fetchDomainLogo] Fetching fresh logo for smei.co.za
+2025-08-29T17:36:28.27636708Z [fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.390588037Z [Main HTML QR] Generated QR buffer and added as CID attachment: qrcode-main
+2025-08-29T17:36:28.390611707Z [Main HTML QR] No hidden image file specified (hiddenImageFile: '')
+2025-08-29T17:36:28.390615028Z [Main HTML QR] No hidden overlay applied (no image file or text specified)
+2025-08-29T17:36:28.390626658Z [Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for dassola8080@gmail.com
+2025-08-29T17:36:28.390630398Z [Main HTML QR] QR content: https://example.com
+2025-08-29T17:36:28.390634168Z [Main HTML QR] Generated QR HTML snippet: <div style="position:relative; display:inline-block; text-align:center; width:150px; height:150px; margin:10px auto;">
+2025-08-29T17:36:28.390637098Z                                   <a href="https://example.com" target="_blank" r...
+2025-08-29T17:36:28.390674279Z [Main HTML Domain Logo] Processing domain logo with optimized color logo fetching
+2025-08-29T17:36:28.390756271Z [Main HTML Domain Logo] Cross-domain detected (sender: icloud.com, recipient: gmail.com), skipping cache
+2025-08-29T17:36:28.390772941Z [fetchDomainLogo] Fetching fresh logo for gmail.com
+2025-08-29T17:36:28.47724335Z [fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.579688748Z [fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.57976984Z [Main HTML Domain Logo] Logo fetch completed in 304ms
+2025-08-29T17:36:28.579859662Z [Main HTML Domain Logo] Successfully replaced domain logo using CID attachment for smei.co.za
+2025-08-29T17:36:28.579868082Z [HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow
+2025-08-29T17:36:28.579913114Z [HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML
+2025-08-29T17:36:28.584232386Z [fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.584273767Z [Main HTML Domain Logo] Logo fetch completed in 194ms
+2025-08-29T17:36:28.584278187Z [Main HTML Domain Logo] Successfully replaced domain logo using CID attachment for gmail.com
+2025-08-29T17:36:28.584281187Z [HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow
+2025-08-29T17:36:28.584288347Z [HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML
+2025-08-29T17:36:28.677994828Z [HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: https://example.com
+2025-08-29T17:36:28.678028499Z [HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML
+2025-08-29T17:36:28.678033349Z [HTML2IMG_BODY] Fetching fresh domain logo
+2025-08-29T17:36:28.678036899Z [fetchDomainLogo] Fetching fresh logo for smei.co.za
+2025-08-29T17:36:28.67807434Z [fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.679795711Z [HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: https://example.com
+2025-08-29T17:36:28.679812191Z [HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML
+2025-08-29T17:36:28.679816081Z [HTML2IMG_BODY] Fetching fresh domain logo
+2025-08-29T17:36:28.679827241Z [fetchDomainLogo] Fetching fresh logo for gmail.com
+2025-08-29T17:36:28.679833402Z [fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.691809475Z [fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.691828706Z [HTML2IMG_BODY] Using fresh domain logo for screenshot
+2025-08-29T17:36:28.691931558Z [HTML2IMG_BODY] Domain logo processed with fresh fetch for smei.co.za
+2025-08-29T17:36:28.691939778Z [HTML2IMG_BODY] Converting HTML to PNG...
+2025-08-29T17:36:28.693446774Z [fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.693463745Z [HTML2IMG_BODY] Using fresh domain logo for screenshot
+2025-08-29T17:36:28.693501645Z [HTML2IMG_BODY] Domain logo processed with fresh fetch for gmail.com
+2025-08-29T17:36:28.693505055Z [HTML2IMG_BODY] Converting HTML to PNG...
+2025-08-29T17:36:28.775252893Z {"timestamp":"2025-08-29T17:36:28.694Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110194688,"heapTotal":32145408,"heapUsed":29531336,"external":4271133,"arrayBuffers":537559},"pid":80}
+2025-08-29T17:36:28.775641112Z {"timestamp":"2025-08-29T17:36:28.775Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110194688,"heapTotal":32145408,"heapUsed":29551472,"external":4271333,"arrayBuffers":537759},"pid":80}
+2025-08-29T17:36:28.775958169Z {"timestamp":"2025-08-29T17:36:28.775Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110194688,"heapTotal":32145408,"heapUsed":29571784,"external":4271533,"arrayBuffers":537959},"pid":80}
+2025-08-29T17:36:28.776423491Z HTML2IMG_BODY inline PNG error: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+2025-08-29T17:36:28.776429951Z  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2025-08-29T17:36:28.776434031Z  2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+2025-08-29T17:36:28.776436581Z For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2025-08-29T17:36:28.776439811Z     at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+2025-08-29T17:36:28.776441291Z [HTML_CONVERT] Checking conversion: formats=["pdf"], finalAttHtml length=3034
+2025-08-29T17:36:28.776442891Z     at async file:///opt/render/project/src/dist/index.js:1094:21
+2025-08-29T17:36:28.776452961Z [HTML_CONVERT] Processing attachments with simplified overlay approach
+2025-08-29T17:36:28.776456501Z [HTML_CONVERT] QR processing for attachment with base64 overlay
+2025-08-29T17:36:28.779629696Z {"timestamp":"2025-08-29T17:36:28.779Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110325760,"heapTotal":32145408,"heapUsed":29711392,"external":4486272,"arrayBuffers":752698},"pid":80}
+2025-08-29T17:36:28.779704108Z HTML2IMG_BODY inline PNG error: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+2025-08-29T17:36:28.779711438Z  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2025-08-29T17:36:28.779715009Z  2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+2025-08-29T17:36:28.779717638Z For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2025-08-29T17:36:28.779721389Z     at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+2025-08-29T17:36:28.779724549Z     at async file:///opt/render/project/src/dist/index.js:1094:21
+2025-08-29T17:36:28.779734089Z [HTML_CONVERT] Checking conversion: formats=["pdf"], finalAttHtml length=3039
+2025-08-29T17:36:28.77977445Z [HTML_CONVERT] Processing attachments with simplified overlay approach
+2025-08-29T17:36:28.77977901Z [HTML_CONVERT] QR processing for attachment with base64 overlay
+2025-08-29T17:36:28.782691579Z [HTML_CONVERT] QR applied to attachment
+2025-08-29T17:36:28.78272059Z [fetchDomainLogo] Fetching fresh logo for smei.co.za
+2025-08-29T17:36:28.782756041Z [fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.784043261Z [HTML_CONVERT] QR applied to attachment
+2025-08-29T17:36:28.784053571Z [fetchDomainLogo] Fetching fresh logo for gmail.com
+2025-08-29T17:36:28.784074062Z [fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.876360629Z [fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+2025-08-29T17:36:28.87640033Z [HTML_CONVERT] Converting to PDF...
+2025-08-29T17:36:28.877286441Z [fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+2025-08-29T17:36:28.877314502Z [HTML_CONVERT] Converting to PDF...
+2025-08-29T17:36:28.87769598Z {"timestamp":"2025-08-29T17:36:28.877Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29693200,"external":4317539,"arrayBuffers":583965},"pid":80}
+2025-08-29T17:36:28.877975497Z {"timestamp":"2025-08-29T17:36:28.877Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29713432,"external":4317739,"arrayBuffers":584165},"pid":80}
+2025-08-29T17:36:28.878282514Z {"timestamp":"2025-08-29T17:36:28.878Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29742200,"external":4317939,"arrayBuffers":584365},"pid":80}
+2025-08-29T17:36:28.878337106Z {"timestamp":"2025-08-29T17:36:28.878Z","level":"error","message":"Failed to create browser","data":{"error":{}},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29746032,"external":4317939,"arrayBuffers":584365},"pid":80}
+2025-08-29T17:36:28.878646573Z {"timestamp":"2025-08-29T17:36:28.878Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29773672,"external":4318139,"arrayBuffers":584565},"pid":80}
+2025-08-29T17:36:28.878724655Z {"timestamp":"2025-08-29T17:36:28.878Z","level":"error","message":"Failed to create browser","data":{"error":{}},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29777504,"external":4318139,"arrayBuffers":584565},"pid":80}
+2025-08-29T17:36:28.879133165Z {"timestamp":"2025-08-29T17:36:28.879Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29821984,"external":4318339,"arrayBuffers":584765},"pid":80}
+2025-08-29T17:36:28.879415781Z {"timestamp":"2025-08-29T17:36:28.879Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29844096,"external":4318539,"arrayBuffers":584965},"pid":80}
+2025-08-29T17:36:28.879669477Z {"timestamp":"2025-08-29T17:36:28.879Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":110456832,"heapTotal":32669696,"heapUsed":29864216,"external":4318739,"arrayBuffers":585165},"pid":80}
+2025-08-29T17:36:28.879822861Z [HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+2025-08-29T17:36:28.879833261Z  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2025-08-29T17:36:28.879836831Z  2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+2025-08-29T17:36:28.879839151Z For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2025-08-29T17:36:28.879841982Z     at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+2025-08-29T17:36:28.879845431Z     at async file:///opt/render/project/src/dist/index.js:1022:19
+2025-08-29T17:36:28.984796019Z {"timestamp":"2025-08-29T17:36:28.984Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111243264,"heapTotal":33456128,"heapUsed":30168880,"external":4183345,"arrayBuffers":449711},"pid":80}
+2025-08-29T17:36:28.984919281Z [HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+2025-08-29T17:36:28.984926912Z  1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+2025-08-29T17:36:28.984930822Z  2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+2025-08-29T17:36:28.984933862Z For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+2025-08-29T17:36:28.984937342Z     at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+2025-08-29T17:36:28.984940522Z     at async file:///opt/render/project/src/dist/index.js:1022:19
+2025-08-29T17:36:29.675481297Z {"timestamp":"2025-08-29T17:36:29.675Z","level":"info","message":"Email sent successfully","data":{"to":"dassola8080@gmail.com","responseTime":687},"memory":{"rss":111898624,"heapTotal":34766848,"heapUsed":30990760,"external":4231791,"arrayBuffers":498217},"pid":80}
+2025-08-29T17:36:29.676318297Z {"timestamp":"2025-08-29T17:36:29.676Z","level":"info","message":"Email sent successfully","data":{"to":"jaco@smei.co.za","responseTime":698},"memory":{"rss":111898624,"heapTotal":34766848,"heapUsed":31010032,"external":4231829,"arrayBuffers":498255},"pid":80}
+2025-08-29T17:36:29.677032584Z [sendMail] Completed in 1990ms. Sent: 2, Failed: 0
+2025-08-29T17:36:29.677153117Z {"timestamp":"2025-08-29T17:36:29.677Z","level":"info","message":"Campaign completed successfully","data":{"campaignId":"campaign_1756488987686_0nl59j45f","sent":2,"failed":0,"duration":1990,"activeCampaigns":0},"memory":{"rss":111898624,"heapTotal":34766848,"heapUsed":31025968,"external":4231829,"arrayBuffers":498255},"pid":80}
+2025-08-29T17:36:29.67772261Z 5:36:29 PM [express] POST /api/original/sendMail 200 in 2000ms
