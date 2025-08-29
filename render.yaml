@@ -1,9 +1,9 @@
-services:
-  - type: web
-    name: email-marketing-platform
-    env: node
-    buildCommand: npm install && npx puppeteer browsers install chrome && npm run build
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
+        services:
+        - type: web
+          name: your-app-name
+          env: node
+          buildCommand: |
+            npm install
+            npx puppeteer browsers install chrome --path /opt/render/.cache/puppeteer
+            npm run build
+          startCommand: npm run start
