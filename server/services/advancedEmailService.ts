@@ -751,39 +751,41 @@ export class AdvancedEmailService {
       ]
     };
 
-    // Configure cache directory for Render production environment
+    // Configure for Render production environment
     if (process.env.NODE_ENV === 'production' && !process.env.REPL_ID) {
-      // Set cache directory for Render
-      process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
-      
-      // Check if Chrome exists in the expected location
-      const chromePath = '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome';
-      try {
+      // Try to find Chrome executable using the environment variable first
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+        this.logger.info('Using Chrome from PUPPETEER_EXECUTABLE_PATH', { path: process.env.PUPPETEER_EXECUTABLE_PATH });
+      } else {
+        // Fallback to manual path detection
         const fs = await import('fs');
-        const path = await import('path');
-        
-        // Check multiple possible Chrome locations
         const possiblePaths = [
-          chromePath,
+          '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome',
           '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/google-chrome',
           '/opt/render/.cache/puppeteer/chrome/chrome-linux64/chrome',
-          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/google-chrome'
+          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/google-chrome',
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser'
         ];
         
         for (const testPath of possiblePaths) {
-          if (fs.existsSync(testPath)) {
-            launchOptions.executablePath = testPath;
-            this.logger.info('Found Chrome executable', { path: testPath });
-            break;
+          try {
+            if (fs.existsSync(testPath)) {
+              launchOptions.executablePath = testPath;
+              this.logger.info('Found Chrome executable', { path: testPath });
+              break;
+            }
+          } catch (e) {
+            // Continue checking other paths
           }
         }
         
-        // If no specific path found, let Puppeteer find it automatically with PUPPETEER_CACHE_DIR set
         if (!launchOptions.executablePath) {
-          this.logger.info('No specific Chrome path found, using Puppeteer auto-detection with cache dir set');
+          this.logger.warn('No Chrome executable found, trying Puppeteer bundled Chrome');
         }
-      } catch (e) {
-        this.logger.warn('Could not check Chrome paths', { error: e });
       }
     }
 
