@@ -758,16 +758,28 @@ export class AdvancedEmailService {
 
     let browser;
     try {
-      // Try system chromium first
-      launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
-      browser = await puppeteer.launch(launchOptions);
-      this.logger.info('Browser launched with system chromium');
+      // Check if we're in a Replit environment (with Nix)
+      if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
+        // Try system chromium for Replit/Nix environment
+        launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
+        browser = await puppeteer.launch(launchOptions);
+        this.logger.info('Browser launched with system chromium (Replit)');
+      } else {
+        // For production environments (Render, Vercel, etc.), use bundled Chrome
+        browser = await puppeteer.launch(launchOptions);
+        this.logger.info('Browser launched with bundled chrome (Production)');
+      }
     } catch (error) {
-      this.logger.warn('System chromium failed, trying bundled chrome');
-      // Fallback to bundled chrome
+      this.logger.warn('Primary browser launch failed, trying fallback', { error: error instanceof Error ? error.message : String(error) });
+      // Fallback: remove any executablePath and try bundled chrome
       delete launchOptions.executablePath;
-      browser = await puppeteer.launch(launchOptions);
-      this.logger.info('Browser launched with bundled chrome');
+      try {
+        browser = await puppeteer.launch(launchOptions);
+        this.logger.info('Browser launched with bundled chrome (Fallback)');
+      } catch (fallbackError) {
+        this.logger.error('All browser launch attempts failed', { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
+        throw new Error(`Failed to launch browser: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+      }
     }
 
     // Setup proxy authentication if needed
