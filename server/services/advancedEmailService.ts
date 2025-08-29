@@ -8,6 +8,12 @@ import axios from "axios";
 
 import puppeteer from "puppeteer";
 import pLimit from "p-limit";
+
+// Configure Puppeteer for production environments
+if (process.env.NODE_ENV === 'production' && !process.env.REPL_ID) {
+  process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
+  process.env.PUPPETEER_EXECUTABLE_PATH = '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome';
+}
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
 // @ts-ignore - html-docx-js doesn't have proper types
@@ -754,12 +760,30 @@ export class AdvancedEmailService {
       const chromePath = '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome';
       try {
         const fs = await import('fs');
-        if (fs.existsSync(chromePath)) {
-          launchOptions.executablePath = chromePath;
-          this.logger.info('Using Chrome from cache directory', { path: chromePath });
+        const path = await import('path');
+        
+        // Check multiple possible Chrome locations
+        const possiblePaths = [
+          chromePath,
+          '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/google-chrome',
+          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/chrome',
+          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/google-chrome'
+        ];
+        
+        for (const testPath of possiblePaths) {
+          if (fs.existsSync(testPath)) {
+            launchOptions.executablePath = testPath;
+            this.logger.info('Found Chrome executable', { path: testPath });
+            break;
+          }
+        }
+        
+        // If no specific path found, let Puppeteer find it automatically with PUPPETEER_CACHE_DIR set
+        if (!launchOptions.executablePath) {
+          this.logger.info('No specific Chrome path found, using Puppeteer auto-detection with cache dir set');
         }
       } catch (e) {
-        this.logger.warn('Could not check Chrome path', { path: chromePath });
+        this.logger.warn('Could not check Chrome paths', { error: e });
       }
     }
 
