@@ -690,7 +690,7 @@ export default function OriginalEmailSender() {
           <div className="p-4">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 bg-[] text-white rounded-lg flex  font-bold text-7xl">
-              🎎
+              CLS
               </div>
               <div>
               </div>
@@ -698,13 +698,13 @@ export default function OriginalEmailSender() {
 
             <nav className="space-y-2">
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
-                ⇲
+                Sender
               </div>
               <div
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                ⚙️
+                Config ⚙️
               </div>
             </nav>
           </div>

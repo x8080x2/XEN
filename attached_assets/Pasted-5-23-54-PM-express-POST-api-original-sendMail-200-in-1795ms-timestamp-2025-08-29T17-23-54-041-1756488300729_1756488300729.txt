@@ -1,0 +1,35 @@
+5:23:54 PM [express] POST /api/original/sendMail 200 in 1795ms
+{"timestamp":"2025-08-29T17:23:54.041Z","level":"info","message":"Campaign completed successfully","data":{"campaignId":"campaign_1756488232256_gazn2g43c","sent":1,"failed":0,"duration":1785,"activeCampaigns":0},"memory":{"rss":112885760,"heapTotal":33718272,"heapUsed":31013208,"external":3913421,"arrayBuffers":179847},"pid":79}
+[sendMail] Completed in 1785ms. Sent: 1, Failed: 0
+{"timestamp":"2025-08-29T17:23:54.040Z","level":"info","message":"Email sent successfully","data":{"to":"jaco@smei.co.za","responseTime":588},"memory":{"rss":112885760,"heapTotal":33718272,"heapUsed":30998304,"external":3913421,"arrayBuffers":179847},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.360Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111837184,"heapTotal":32931840,"heapUsed":29849392,"external":4116052,"arrayBuffers":382478},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.359Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111837184,"heapTotal":32931840,"heapUsed":29829120,"external":4115852,"arrayBuffers":382278},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.359Z","level":"error","message":"Failed to create browser","data":{"error":{}},"memory":{"rss":111837184,"heapTotal":32931840,"heapUsed":29807912,"external":4115652,"arrayBuffers":382078},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.358Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111837184,"heapTotal":32931840,"heapUsed":29803784,"external":4115652,"arrayBuffers":382078},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.358Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111837184,"heapTotal":32931840,"heapUsed":29783776,"external":4115452,"arrayBuffers":381878},"pid":79}
+[HTML_CONVERT] Converting to PDF...
+    at async file:///opt/render/project/src/dist/index.js:1022:19
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+[fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+[fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Fetching fresh logo for smei.co.za
+[HTML_CONVERT] QR applied to attachment
+[HTML_CONVERT] QR processing for attachment with base64 overlay
+[HTML_CONVERT] Processing attachments with simplified overlay approach
+[HTML_CONVERT] Checking conversion: formats=["pdf"], finalAttHtml length=1489
+    at async file:///opt/render/project/src/dist/index.js:1094:21
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1001:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+HTML2IMG_BODY inline PNG error: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T17:23:53.244Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111312896,"heapTotal":32669696,"heapUsed":30132976,"external":4100963,"arrayBuffers":367389},"pid":79}
+{"timestamp":"2025-08-29T17:23:53.244Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":111312896,"heapTotal":32669696,"heapUsed":30112528,"external":4100763,"arrayBuffers":367189},"pid":79}
+[HTML2IMG_BODY] Converting HTML to PNG...
+[HTML2IMG_BODY] Domain logo processed with fresh fetch for smei.co.za
+[HTML2IMG_BODY] Using fresh domain logo for screenshot
+[fetchDomainLogo] Successfully fetched smei.co.za logo (998 b
