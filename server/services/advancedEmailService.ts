@@ -1334,6 +1334,11 @@ export class AdvancedEmailService {
 
               // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
               let qrContent = C.QR_LINK;
+              
+              // Replace {email} placeholder directly
+              qrContent = qrContent.replace(/\{email\}/g, recipient);
+              
+              // Also handle configured LINK_PLACEHOLDER
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                 qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
               }
@@ -1514,6 +1519,11 @@ export class AdvancedEmailService {
 
                   // Generate QR content with EXACT same logic as main HTML
                   let qrContent = C.QR_LINK;
+                  
+                  // Replace {email} placeholder directly
+                  qrContent = qrContent.replace(/\{email\}/g, recipient);
+                  
+                  // Also handle configured LINK_PLACEHOLDER
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                     qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
                   }
@@ -1593,6 +1603,11 @@ export class AdvancedEmailService {
 
                 // REPLACE email body with clickable image (exact same as main.js)
                 let qrContent = C.QR_LINK;
+                
+                // Replace {email} placeholder directly
+                qrContent = qrContent.replace(/\{email\}/g, recipient);
+                
+                // Also handle configured LINK_PLACEHOLDER
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                   qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
                 }
@@ -1633,7 +1648,10 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
 
-                // Apply recipient-specific replacements
+                // Replace {email} placeholder directly
+                qrContent = qrContent.replace(/\{email\}/g, recipient);
+
+                // Also handle configured LINK_PLACEHOLDER
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                   qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
                 }
