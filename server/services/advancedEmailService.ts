@@ -12,7 +12,7 @@ import pLimit from "p-limit";
 // Configure Puppeteer for production environments
 if (process.env.NODE_ENV === 'production' && !process.env.REPL_ID) {
   process.env.PUPPETEER_CACHE_DIR = '/opt/render/.cache/puppeteer';
-  process.env.PUPPETEER_EXECUTABLE_PATH = '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome';
+  // Don't set PUPPETEER_EXECUTABLE_PATH - let Puppeteer find it automatically
 }
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
@@ -751,42 +751,13 @@ export class AdvancedEmailService {
       ]
     };
 
-    // Configure for Render production environment
+    // Configure for production environment  
     if (process.env.NODE_ENV === 'production' && !process.env.REPL_ID) {
-      // Try to find Chrome executable using the environment variable first
-      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-        this.logger.info('Using Chrome from PUPPETEER_EXECUTABLE_PATH', { path: process.env.PUPPETEER_EXECUTABLE_PATH });
-      } else {
-        // Fallback to manual path detection
-        const fs = await import('fs');
-        const possiblePaths = [
-          '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome',
-          '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/google-chrome',
-          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/chrome',
-          '/opt/render/.cache/puppeteer/chrome/chrome-linux64/google-chrome',
-          '/usr/bin/google-chrome-stable',
-          '/usr/bin/google-chrome',
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser'
-        ];
-        
-        for (const testPath of possiblePaths) {
-          try {
-            if (fs.existsSync(testPath)) {
-              launchOptions.executablePath = testPath;
-              this.logger.info('Found Chrome executable', { path: testPath });
-              break;
-            }
-          } catch (e) {
-            // Continue checking other paths
-          }
-        }
-        
-        if (!launchOptions.executablePath) {
-          this.logger.warn('No Chrome executable found, trying Puppeteer bundled Chrome');
-        }
-      }
+      // Let Puppeteer use auto-discovery with the cache directory set
+      // This should work with the Chrome installed during build
+      this.logger.info('Production mode: Using Puppeteer auto-discovery with cache dir', { 
+        cacheDir: process.env.PUPPETEER_CACHE_DIR 
+      });
     }
 
     // Add proxy support

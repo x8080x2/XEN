@@ -1,0 +1,153 @@
+6:00:45 PM [express] POST /api/original/sendMail 200 in 2159ms
+{"timestamp":"2025-08-29T18:00:45.293Z","level":"info","message":"Campaign completed successfully","data":{"campaignId":"campaign_1756490443142_ahcuciwrb","sent":2,"failed":0,"duration":2151,"activeCampaigns":0},"memory":{"rss":121495552,"heapTotal":34766848,"heapUsed":30881800,"external":4341030,"arrayBuffers":607456},"pid":79}
+[sendMail] Completed in 2151ms. Sent: 2, Failed: 0
+{"timestamp":"2025-08-29T18:00:45.292Z","level":"info","message":"Email sent successfully","data":{"to":"dassola8080@gmail.com","responseTime":688},"memory":{"rss":121495552,"heapTotal":34766848,"heapUsed":30865832,"external":4341030,"arrayBuffers":607456},"pid":79}
+{"timestamp":"2025-08-29T18:00:45.246Z","level":"info","message":"Email sent successfully","data":{"to":"jaco@smei.co.za","responseTime":736},"memory":{"rss":121364480,"heapTotal":34766848,"heapUsed":30846728,"external":4340992,"arrayBuffers":607418},"pid":79}
+    at async file:///opt/render/project/src/dist/index.js:1129:21
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+[HTML_CONVERT] PNG conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T18:00:44.599Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120709120,"heapTotal":34242560,"heapUsed":30791024,"external":4309116,"arrayBuffers":575542},"pid":79}
+    at async file:///opt/render/project/src/dist/index.js:1129:21
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+[HTML_CONVERT] PNG conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T18:00:44.421Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29790712,"external":4311052,"arrayBuffers":577478},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.421Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29770640,"external":4310852,"arrayBuffers":577278},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.421Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29756184,"external":4310652,"arrayBuffers":577078},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.420Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29741936,"external":4310452,"arrayBuffers":576878},"pid":79}
+[HTML_CONVERT] Converting to PNG...
+{"timestamp":"2025-08-29T18:00:44.420Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29727640,"external":4310452,"arrayBuffers":576878},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.420Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29706120,"external":4310252,"arrayBuffers":576678},"pid":79}
+[HTML_CONVERT] Converting to PNG...
+    at async file:///opt/render/project/src/dist/index.js:1057:19
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+[HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+    at async file:///opt/render/project/src/dist/index.js:1057:19
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+[HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T18:00:44.420Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29691416,"external":4310252,"arrayBuffers":576678},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.419Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29670224,"external":4310052,"arrayBuffers":576478},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.419Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29654048,"external":4309852,"arrayBuffers":576278},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29622336,"external":4309652,"arrayBuffers":576078},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"error","message":"Failed to create browser","data":{"error":{}},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29619648,"external":4309652,"arrayBuffers":576078},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29615816,"external":4309652,"arrayBuffers":576078},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29588080,"external":4309452,"arrayBuffers":575878},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"error","message":"Failed to create browser","data":{"error":{}},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29585392,"external":4309452,"arrayBuffers":575878},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.418Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29581560,"external":4309452,"arrayBuffers":575878},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.417Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29554160,"external":4752274,"arrayBuffers":575678},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.417Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29539120,"external":4752074,"arrayBuffers":1018500},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.416Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":120053760,"heapTotal":33718272,"heapUsed":29525136,"external":4751874,"arrayBuffers":1018300},"pid":79}
+[HTML_CONVERT] Converting to PDF...
+[fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+{"timestamp":"2025-08-29T18:00:44.415Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":119922688,"heapTotal":33456128,"heapUsed":29963688,"external":4746244,"arrayBuffers":1012670},"pid":79}
+[HTML_CONVERT] Converting to PDF...
+[fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Fetching fresh logo for smei.co.za
+[HTML_CONVERT] QR applied to attachment
+[fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+[fetchDomainLogo] Fetching fresh logo for gmail.com
+[HTML_CONVERT] QR applied to attachment
+[HTML_CONVERT] QR processing for attachment with base64 overlay
+[HTML_CONVERT] Processing attachments with simplified overlay approach
+[HTML_CONVERT] Checking conversion: formats=["pdf","png"], finalAttHtml length=1487
+    at async file:///opt/render/project/src/dist/index.js:1129:21
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+HTML2IMG_BODY inline PNG error: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T18:00:44.296Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":119791616,"heapTotal":33456128,"heapUsed":29483656,"external":4477785,"arrayBuffers":744211},"pid":79}
+[HTML_CONVERT] QR processing for attachment with base64 overlay
+[HTML_CONVERT] Processing attachments with simplified overlay approach
+[HTML_CONVERT] Checking conversion: formats=["pdf","png"], finalAttHtml length=1504
+    at async file:///opt/render/project/src/dist/index.js:1129:21
+    at _AdvancedEmailService.launchBrowser (file:///opt/render/project/src/dist/index.js:1036:15)
+For (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration.
+ 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).
+ 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or
+HTML2IMG_BODY inline PNG error: Error: Failed to launch browser: Could not find Chrome (ver. 139.0.7258.154). This can occur if either
+{"timestamp":"2025-08-29T18:00:44.213Z","level":"error","message":"All browser launch attempts failed","data":{"error":"Could not find Chrome (ver. 139.0.7258.154). This can occur if either\n 1. you did not perform an installation before running the script (e.g. `npx puppeteer browsers install chrome`) or\n 2. your cache path is incorrectly configured (which is: /opt/render/.cache/puppeteer).\nFor (2), check out our guide on configuring puppeteer at https://pptr.dev/guides/configuration."},"memory":{"rss":119791616,"heapTotal":33193984,"heapUsed":29346344,"external":4263046,"arrayBuffers":529472},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.212Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":119791616,"heapTotal":33193984,"heapUsed":29314416,"external":4262846,"arrayBuffers":529272},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.211Z","level":"warn","message":"Primary browser launch failed, trying fallback","data":{"error":"Browser was not found at the configured executablePath (/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome)"},"memory":{"rss":119791616,"heapTotal":33193984,"heapUsed":29299240,"external":4262646,"arrayBuffers":529072},"pid":79}
+{"timestamp":"2025-08-29T18:00:44.211Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":119791616,"heapTotal":33193984,"heapUsed":29283976,"external":4262446,"arrayBuffers":528872},"pid":79}
+[HTML2IMG_BODY] Converting HTML to PNG...
+[HTML2IMG_BODY] Domain logo processed with fresh fetch for smei.co.za
+[HTML2IMG_BODY] Using fresh domain logo for screenshot
+[fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+{"timestamp":"2025-08-29T18:00:44.209Z","level":"info","message":"Using Chrome from PUPPETEER_EXECUTABLE_PATH","data":{"path":"/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome"},"memory":{"rss":119791616,"heapTotal":33193984,"heapUsed":29205752,"external":4262246,"arrayBuffers":528672},"pid":79}
+[HTML2IMG_BODY] Converting HTML to PNG...
+[HTML2IMG_BODY] Domain logo processed with fresh fetch for gmail.com
+[HTML2IMG_BODY] Using fresh domain logo for screenshot
+[fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+[fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+[fetchDomainLogo] Fetching fresh logo for gmail.com
+[HTML2IMG_BODY] Fetching fresh domain logo
+[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML
+[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: https://example.com
+[fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Fetching fresh logo for smei.co.za
+[HTML2IMG_BODY] Fetching fresh domain logo
+[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML
+[HTML2IMG_BODY] QR processed with EXACT main HTML settings - Link: https://example.com
+[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML
+[HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow
+[Main HTML Domain Logo] Successfully replaced domain logo using CID attachment for gmail.com
+[Main HTML Domain Logo] Logo fetch completed in 201ms
+[fetchDomainLogo] Successfully fetched gmail.com logo (5430 bytes) from source: https://icons.duckduckgo.com/ip3/gmail.com.ico
+[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML
+[HTML2IMG_BODY] Converting HTML body to image using EXACT same QR and domain logo settings flow
+[Main HTML Domain Logo] Successfully replaced domain logo using CID attachment for smei.co.za
+[Main HTML Domain Logo] Logo fetch completed in 413ms
+[fetchDomainLogo] Successfully fetched smei.co.za logo (998 bytes) from source: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Trying gmail.com logo from: https://icons.duckduckgo.com/ip3/gmail.com.ico
+[fetchDomainLogo] Fetching fresh logo for gmail.com
+[Main HTML Domain Logo] Cross-domain detected (sender: icloud.com, recipient: gmail.com), skipping cache
+[Main HTML Domain Logo] Processing domain logo with optimized color logo fetching
+                                  <a href="https://example.com" target="_blank" r...
+[Main HTML QR] Generated QR HTML snippet: <div style="position:relative; display:inline-block; text-align:center; width:150px; height:150px; margin:10px auto;">
+[Main HTML QR] QR content: https://example.com
+[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for dassola8080@gmail.com
+[Main HTML QR] No hidden overlay applied (no image file or text specified)
+[Main HTML QR] No hidden image file specified (hiddenImageFile: '')
+[Main HTML QR] Generated QR buffer and added as CID attachment: qrcode-main
+[fetchDomainLogo] Trying smei.co.za logo from: https://icons.duckduckgo.com/ip3/smei.co.za.ico
+[fetchDomainLogo] Fetching fresh logo for smei.co.za
+[Main HTML Domain Logo] Cross-domain detected (sender: icloud.com, recipient: smei.co.za), skipping cache
+[Main HTML Domain Logo] Processing domain logo with optimized color logo fetching
+                                  <a href="https://example.com" target="_blank" r...
+[Main HTML QR] Generated QR HTML snippet: <div style="position:relative; display:inline-block; text-align:center; width:150px; height:150px; margin:10px auto;">
+[Main HTML QR] QR content: https://example.com
+[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for jaco@smei.co.za
+[Main HTML QR] No hidden overlay applied (no image file or text specified)
+[Main HTML QR] No hidden image file specified (hiddenImageFile: '')
+[Main HTML QR] Generated QR buffer and added as CID attachment: qrcode-main
+[Main HTML QR] QR Configuration: { QR_WIDTH: 150, QR_BORDER_WIDTH: 2 }
+[Main HTML QR] QR Options: { width: 150, margin: 4, errorCorrectionLevel: 'H' }
+[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY
+[Main HTML QR] QR Configuration: { QR_WIDTH: 150, QR_BORDER_WIDTH: 2 }
+[Main HTML QR] QR Options: { width: 150, margin: 4, errorCorrectionLevel: 'H' }
+[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY
+[Batch 1/1] Processing 2 recipients
+[sendMail] Using EMAIL_PER_SECOND: 5, SLEEP: 1s, PRIORITY: 3, RETRY: 0
+[sendMail] Startup time (ms): 49
+}
+  secure: false
+  fromName: 'Sender',
+  fromEmail: 'juliastina1203842@icloud.com',
+  user: 'juliastina1203842@icloud.com',
+  port: 587,
+  host: 'smtp.mail.me.com',
+SMTP Config Loaded: {
+}
