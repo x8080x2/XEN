@@ -1403,35 +1403,62 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
+                // Generate overlay HTML using EMAIL-SAFE positioning for email clients
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
+                
+                // Email client-safe positioning - NO absolute positioning, z-index, or transform
                 if (hasHiddenImage && imgBuf) {
-                  // Perfect center positioning inside QR code middle
+                  // Use table-based centering for maximum email client compatibility
                   const qrSize = C.QR_WIDTH || 200;
-                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use EXACT same positioning as original main.js line 933
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  const overlayOffset = Math.floor((qrSize - hiddenImgWidth) / 2);
+                  
+                  hiddenImageHtml = `
+                    <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
+                      <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                      <div style="width:100%; text-align:center; margin-top:-${Math.floor(qrSize/2 + hiddenImgWidth/2)}px;">
+                        <img src="cid:hiddenImage" style="display:inline-block; width:${hiddenImgWidth}px; height:auto; vertical-align:middle;"/>
+                      </div>
+                    </div>`;
+                  
+                  console.log(`[Main HTML QR] Generated EMAIL-SAFE overlay (no absolute positioning, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  // EXACT same text overlay positioning as main.js line 832
-                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
+                  // Email-safe text overlay using table-based centering
+                  const qrSize = C.QR_WIDTH || 200;
+                  
+                  hiddenImageHtml = `
+                    <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
+                      <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                      <div style="width:100%; text-align:center; margin-top:-${Math.floor(qrSize/2 + 16)}px;">
+                        <span style="display:inline-block; padding:2px 4px; font-size:16px; color:red; background:rgba(255,255,255,0.8); border-radius:3px;">${C.HIDDEN_TEXT}</span>
+                      </div>
+                    </div>`;
+                  
+                  console.log(`[Main HTML QR] Using EMAIL-SAFE text overlay: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
 
-                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
+                // Email-safe QR HTML structure with proper fallback
                 const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                 const borderStyle = C.BORDER_STYLE || 'solid';
 
-                // EXACT same HTML structure as original main.js lines 938-943
-                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
-                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                                  </a>
-                                  ${hiddenImageHtml}
-                                </div>`;
+                let qrHtml;
+                if (hiddenImageHtml) {
+                  // Use the overlay structure we just created
+                  qrHtml = `<div style="display:block; text-align:center; margin:10px auto;">
+                              <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                ${hiddenImageHtml}
+                              </a>
+                            </div>`;
+                } else {
+                  // Standard QR without overlay
+                  qrHtml = `<div style="display:block; text-align:center; margin:10px auto;">
+                              <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0 auto;"/>
+                              </a>
+                            </div>`;
+                }
 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
