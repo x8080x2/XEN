@@ -244,7 +244,14 @@ export class AdvancedEmailService {
   private static instance: AdvancedEmailService | null = null;
   private browserPool: BrowserPool[] = [];
   private isPaused = false;
-  private limit = pLimit(3); // Concurrency control
+  
+  // Global browser concurrency control for Replit stability
+  private static globalBrowserLimit = 1; // Only 1 browser at a time
+  private static activeBrowserCount = 0;
+  private static browserQueue: Array<{ resolve: Function; reject: Function }> = [];
+  
+  private limit = pLimit(1); // Reduced concurrency for Replit
+  private conversionLimit = pLimit(1); // Sequential conversions only
   private logger = new Logger();
 
   // Activity Tracking - prevents cleanup during active operations
@@ -824,73 +831,183 @@ export class AdvancedEmailService {
     return browser;
   }
 
-  // HTML to PDF conversion - FIXED for Replit execution context issues
+  // Global browser acquisition with queue management
+  private static async acquireBrowser(): Promise<void> {
+    if (AdvancedEmailService.activeBrowserCount < AdvancedEmailService.globalBrowserLimit) {
+      AdvancedEmailService.activeBrowserCount++;
+      return Promise.resolve();
+    }
+    
+    // Queue the request
+    return new Promise((resolve, reject) => {
+      AdvancedEmailService.browserQueue.push({ resolve, reject });
+      
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        const index = AdvancedEmailService.browserQueue.findIndex(item => item.resolve === resolve);
+        if (index >= 0) {
+          AdvancedEmailService.browserQueue.splice(index, 1);
+          reject(new Error('Browser acquisition timeout'));
+        }
+      }, 30000);
+    });
+  }
+
+  private static releaseBrowser(): void {
+    AdvancedEmailService.activeBrowserCount--;
+    
+    // Process queue
+    if (AdvancedEmailService.browserQueue.length > 0) {
+      const next = AdvancedEmailService.browserQueue.shift();
+      if (next) {
+        AdvancedEmailService.activeBrowserCount++;
+        next.resolve();
+      }
+    }
+  }
+
+  // HTML to PDF conversion - COMPLETELY FIXED for Replit
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
 
-    // Use direct browser launch without pooling to avoid execution context issues
-    let browser = null;
-    let page = null;
-    let attempts = 0;
-    const maxAttempts = 3;
+    // Use conversion limit to ensure sequential processing
+    return this.conversionLimit(async () => {
+      // Acquire global browser slot
+      await AdvancedEmailService.acquireBrowser();
+      
+      let browser = null;
+      let page = null;
+      let attempts = 0;
+      const maxAttempts = 2; // Reduced attempts
 
-    while (attempts < maxAttempts) {
       try {
-        attempts++;
-        this.logger.debug(`PDF conversion attempt ${attempts}/${maxAttempts}`);
+        while (attempts < maxAttempts) {
+          try {
+            attempts++;
+            this.logger.debug(`PDF conversion attempt ${attempts}/${maxAttempts}`);
+            
+            // Launch browser with extended timeout for Replit
+            browser = await this.launchBrowser({});
+            page = await browser.newPage();
+            
+            // Minimal request interception to avoid conflicts
+            await page.setRequestInterception(false); // Disable interception
+            
+            // Set content with longer timeout for Replit
+            await page.setContent(html, { 
+              waitUntil: 'networkidle2', // Wait for network to be idle
+              timeout: 25000 // Increased timeout
+            });
+            
+            // Wait for any dynamic content to render
+            await page.waitForTimeout(2000);
+            
+            // Generate PDF with generous timeout
+            const pdfBuffer = await page.pdf({
+              format: 'A4',
+              printBackground: true,
+              margin: {
+                top: '20px',
+                bottom: '40px', 
+                left: '20px',
+                right: '40px'
+              },
+              timeout: 25000 // Generous timeout
+            });
+
+            // Clean up immediately
+            await page.close();
+            await browser.close();
+            
+            this.logger.debug('PDF conversion completed', { 
+              sizeKB: Math.round(pdfBuffer.length / 1024),
+              attempt: attempts 
+            });
+            return pdfBuffer;
+            
+          } catch (error) {
+            this.logger.warn(`PDF conversion attempt ${attempts} failed`, { 
+              error: error instanceof Error ? error.message : String(error) 
+            });
+            
+            // Clean up on error
+            if (page) {
+              try { await page.close(); } catch {}
+            }
+            if (browser) {
+              try { await browser.close(); } catch {}
+            }
+            
+            // If this was the last attempt, throw the error
+            if (attempts >= maxAttempts) {
+              throw error;
+            }
+            
+            // Wait longer between retries for Replit
+            await new Promise(resolve => setTimeout(resolve, 3000 * attempts));
+          }
+        }
+      } finally {
+        // Always release browser slot
+        AdvancedEmailService.releaseBrowser();
+      }
+    });
+  }
+
+  // HTML to Image conversion - FIXED for Replit stability
+  private async convertHtmlToImage(html: string) {
+    if (typeof html !== 'string' || !html.trim()) {
+      throw new Error('Invalid HTML input for Image conversion');
+    }
+    
+    // Use conversion limit to ensure sequential processing
+    return this.conversionLimit(async () => {
+      // Acquire global browser slot
+      await AdvancedEmailService.acquireBrowser();
+      
+      let browser = null;
+      let page = null;
+
+      try {
+        this.logger.debug('Image conversion starting');
         
-        // Launch a fresh browser for each PDF generation
+        // Launch browser 
         browser = await this.launchBrowser({});
         page = await browser.newPage();
         
-        // Disable images and external resources for faster rendering
-        await page.setRequestInterception(true);
-        page.on('request', (req: any) => {
-          const resourceType = req.resourceType();
-          if (resourceType === 'image' || resourceType === 'stylesheet' || resourceType === 'font') {
-            req.abort();
-          } else if (req.url().startsWith('data:') || req.url().startsWith('about:')) {
-            req.continue();
-          } else {
-            req.abort();
-          }
-        });
+        await page.setViewport({ width: 1123, height: 1587 });
         
-        // Set content with simplified options to avoid execution context issues
+        // Disable request interception for stability
+        await page.setRequestInterception(false);
+        
+        // Set content with longer timeout for Replit
         await page.setContent(html, { 
-          waitUntil: 'domcontentloaded',
-          timeout: 15000 
+          waitUntil: 'networkidle2', 
+          timeout: 20000 
         });
         
-        // Generate PDF with reduced timeout
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '20px',
-            bottom: '40px', 
-            left: '20px',
-            right: '40px'
-          },
-          timeout: 15000
+        // Wait for content to render
+        await page.waitForTimeout(1500);
+        
+        // Take screenshot with optimized settings
+        const pngBuffer = await page.screenshot({ 
+          fullPage: true,
+          captureBeyondViewport: false
         });
 
         // Clean up immediately
         await page.close();
         await browser.close();
-        
-        this.logger.debug('PDF conversion completed', { 
-          sizeKB: Math.round(pdfBuffer.length / 1024),
-          attempt: attempts 
+
+        this.logger.debug('Image conversion completed', { 
+          sizeKB: Math.round(pngBuffer.length / 1024)
         });
-        return pdfBuffer;
+        return pngBuffer;
         
       } catch (error) {
-        this.logger.warn(`PDF conversion attempt ${attempts} failed`, { 
-          error: error instanceof Error ? error.message : String(error) 
-        });
+        this.logger.error('Image generation failed', { error });
         
         // Clean up on error
         if (page) {
@@ -900,75 +1017,10 @@ export class AdvancedEmailService {
           try { await browser.close(); } catch {}
         }
         
-        // If this was the last attempt, throw the error
-        if (attempts >= maxAttempts) {
-          this.logger.error('PDF conversion failed after all attempts', { error });
-          throw new Error(`PDF conversion failed after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`);
-        }
-        
-        // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
-      }
-    }
-  }
-
-  // HTML to Image conversion - OPTIMIZED for speed
-  private async convertHtmlToImage(html: string) {
-    if (typeof html !== 'string' || !html.trim()) {
-      throw new Error('Invalid HTML input for Image conversion');
-    }
-    return this.limit(async () => {
-      const conversionStart = Date.now();
-      this.logger.debug('Image conversion starting', { 
-        queuePending: (this.limit as any).pendingCount, 
-        active: (this.limit as any).activeCount,
-        timestamp: conversionStart
-      });
-
-      // Direct browser launch for maximum HTML2IMG_BODY speed
-      let browser = await this.launchBrowser({});
-      let page: any = null;
-      let usingPool = false;
-
-      try {
-        page = await browser.newPage();
-        await page.setViewport({ width: 1123, height: 1587 });
-        await page.setCacheEnabled(true);
-        // Optimized page loading - skip unnecessary network wait
-        await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
-        // Fast screenshot with optimized settings
-        const pngBuffer = await page.screenshot({ 
-          fullPage: true,
-          optimizeForSpeed: true,
-          captureBeyondViewport: false
-        });
-
-        if (page) await page.close();
-        if (usingPool) {
-          this.releaseBrowserFromPool(browser);
-        } else {
-          await browser.close();
-        }
-
-        const conversionEnd = Date.now();
-        this.logger.debug('Image conversion completed', { 
-          sizeKB: Math.round(pngBuffer.length / 1024),
-          queuePending: (this.limit as any).pendingCount, 
-          active: (this.limit as any).activeCount,
-          duration: conversionEnd - conversionStart
-        });
-        return pngBuffer;
-      } catch (e) {
-        if (page) {
-          try { await page.close(); } catch {}
-        }
-        if (usingPool) {
-          this.releaseBrowserFromPool(browser);
-        } else {
-          try { await browser.close(); } catch {}
-        }
-        this.logger.error('Image generation failed', { error: e });
-        throw e;
+        throw error;
+      } finally {
+        // Always release browser slot
+        AdvancedEmailService.releaseBrowser();
       }
     });
   }
