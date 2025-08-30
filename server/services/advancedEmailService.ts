@@ -552,12 +552,12 @@ export class AdvancedEmailService {
 
     const qrCount = this.qrCache.size;
     const logoCount = this.logoCache.size;
-    
+
     this.qrCache.clear();
     this.logoCache.clear();
-    
+
     console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
@@ -625,14 +625,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            
+
             // Cache the successful result
             this.logoCache.set(domain, {
               buffer,
               timestamp: Date.now(),
               domain
             });
-            
+
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -645,14 +645,14 @@ export class AdvancedEmailService {
     }
 
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    
+
     // Cache null result to prevent repeated attempts
     this.logoCache.set(domain, {
       buffer: null,
       timestamp: Date.now(),
       domain
     });
-    
+
     return null;
   }
 
@@ -1334,10 +1334,10 @@ export class AdvancedEmailService {
 
               // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
               let qrContent = C.QR_LINK;
-              
+
               // Replace {email} placeholder directly
               qrContent = qrContent.replace(/\{email\}/g, recipient);
-              
+
               // Also handle configured LINK_PLACEHOLDER
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                 qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1407,12 +1407,9 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  // Perfect center positioning inside QR code middle
-                  const qrSize = C.QR_WIDTH || 200;
-                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use EXACT same positioning as original main.js line 933
+                  // Use EXACT same positioning as original main.js and other implementations
                   hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH || 200}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1519,10 +1516,10 @@ export class AdvancedEmailService {
 
                   // Generate QR content with EXACT same logic as main HTML
                   let qrContent = C.QR_LINK;
-                  
+
                   // Replace {email} placeholder directly
                   qrContent = qrContent.replace(/\{email\}/g, recipient);
-                  
+
                   // Also handle configured LINK_PLACEHOLDER
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                     qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1603,10 +1600,10 @@ export class AdvancedEmailService {
 
                 // REPLACE email body with clickable image (exact same as main.js)
                 let qrContent = C.QR_LINK;
-                
+
                 // Replace {email} placeholder directly
                 qrContent = qrContent.replace(/\{email\}/g, recipient);
-                
+
                 // Also handle configured LINK_PLACEHOLDER
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                   qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
