@@ -1518,7 +1518,7 @@ export class AdvancedEmailService {
                     }
                   });
 
-                  // Load hidden image for HTML2IMG overlay using SAME approach as PDF
+                  // Load hidden image for HTML2IMG overlay using EXACT same approach as PDF
                   let hiddenOverlay = '';
                   const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
 
@@ -1539,11 +1539,11 @@ export class AdvancedEmailService {
                     console.warn('[HTML2IMG_BODY] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Generate hidden overlay using base64 data URL - SAME as PDF
+                  // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
                     hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (SAME as PDF)`);
+                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML2IMG_BODY] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
