@@ -791,46 +791,21 @@ export class AdvancedEmailService {
     try {
       // Check if we're in a Replit environment (with Nix)
       if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        // Use system chrome/chromium for Replit environment with dynamic discovery
-        const chromePaths = [
-          '/usr/bin/google-chrome',
-          '/usr/bin/chromium',
-          '/usr/bin/chromium-browser',
-          '/nix/store/*/bin/chromium'
-        ];
-        
-        // Try to find working Chrome/Chromium
-        let foundPath = null;
-        const { execSync } = require('child_process');
-        
+        // Use system chromium for Replit environment - direct path approach
         try {
-          // Use which command to find chrome/chromium
-          try {
-            foundPath = execSync('which google-chrome', { encoding: 'utf8' }).trim();
-          } catch {
-            try {
-              foundPath = execSync('which chromium', { encoding: 'utf8' }).trim();
-            } catch {
-              try {
-                foundPath = execSync('which chromium-browser', { encoding: 'utf8' }).trim();
-              } catch {
-                // Last resort: check nix store
-                try {
-                  foundPath = execSync('find /nix/store -name chromium -type f -executable 2>/dev/null | head -1', { encoding: 'utf8' }).trim();
-                } catch {}
-              }
-            }
-          }
-        } catch {}
-        
-        if (foundPath) {
-          launchOptions.executablePath = foundPath;
-          this.logger.info('Browser launched with system chromium (Replit)', { path: foundPath });
-        } else {
+          // Try to use system chromium installed via Nix
+          launchOptions.executablePath = 'chromium';
+          browser = await puppeteer.launch(launchOptions);
+          this.logger.info('Browser launched with system chromium (Replit)');
+        } catch (systemError) {
+          this.logger.warn('System chromium failed, trying bundled chrome', { 
+            error: systemError instanceof Error ? systemError.message : String(systemError) 
+          });
+          // Fallback to bundled chrome
+          delete launchOptions.executablePath;
+          browser = await puppeteer.launch(launchOptions);
           this.logger.info('Browser launched with bundled chrome (Replit fallback)');
         }
-        
-        browser = await puppeteer.launch(launchOptions);
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
