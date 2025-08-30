@@ -1411,34 +1411,29 @@ export class AdvancedEmailService {
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 
-                // Email client-safe positioning - NO absolute positioning, z-index, or transform
+                // Use EXACT same positioning as PDF processing for consistency
                 if (hasHiddenImage && imgBuf) {
-                  // Use table-based centering for maximum email client compatibility
+                  // Use EXACT same positioning as original main.js for PDF attachments
                   const qrSize = C.QR_WIDTH || 200;
-                  const overlayOffset = Math.floor((qrSize - hiddenImgWidth) / 2);
                   
                   hiddenImageHtml = `
                     <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
                       <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                      <div style="width:100%; text-align:center; margin-top:-${Math.floor(qrSize/2 + hiddenImgWidth/2)}px;">
-                        <img src="cid:hiddenImage" style="display:inline-block; width:${hiddenImgWidth}px; height:auto; vertical-align:middle;"/>
-                      </div>
+                      <img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>
                     </div>`;
                   
-                  console.log(`[Main HTML QR] Generated EMAIL-SAFE overlay (no absolute positioning, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  console.log(`[Main HTML QR] Generated overlay using EXACT same positioning as PDF processing (top:77px, left:56%, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  // Email-safe text overlay using table-based centering
+                  // Use EXACT same text overlay positioning as PDF processing
                   const qrSize = C.QR_WIDTH || 200;
                   
                   hiddenImageHtml = `
                     <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
                       <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                      <div style="width:100%; text-align:center; margin-top:-${Math.floor(qrSize/2 + 16)}px;">
-                        <span style="display:inline-block; padding:2px 4px; font-size:16px; color:red; background:rgba(255,255,255,0.8); border-radius:3px;">${C.HIDDEN_TEXT}</span>
-                      </div>
+                      <span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>
                     </div>`;
                   
-                  console.log(`[Main HTML QR] Using EMAIL-SAFE text overlay: ${C.HIDDEN_TEXT}`);
+                  console.log(`[Main HTML QR] Using EXACT same text overlay positioning as PDF processing: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
