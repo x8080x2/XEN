@@ -824,84 +824,92 @@ export class AdvancedEmailService {
     return browser;
   }
 
-  // HTML to PDF conversion - IMPROVED with fallback handling
+  // HTML to PDF conversion - FIXED for Replit execution context issues
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
 
-    return this.limit(async () => {
-      let browserInfo = await this.getBrowserFromPool();
-      let browser, page: any = null;
-      let usingPool = true;
+    // Use direct browser launch without pooling to avoid execution context issues
+    let browser = null;
+    let page = null;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-      // Handle new browser activity tracking format
-      if (!browserInfo) {
-        browser = await this.launchBrowser({});
-        usingPool = false;
-      } else if (typeof browserInfo === 'object' && browserInfo.browser) {
-        browser = browserInfo.browser;
-      } else {
-        browser = browserInfo;
-        usingPool = false;
-      }
-
+    while (attempts < maxAttempts) {
       try {
+        attempts++;
+        this.logger.debug(`PDF conversion attempt ${attempts}/${maxAttempts}`);
+        
+        // Launch a fresh browser for each PDF generation
+        browser = await this.launchBrowser({});
         page = await browser.newPage();
-        // Ultra-fast request interception - block ALL external resources
+        
+        // Disable images and external resources for faster rendering
         await page.setRequestInterception(true);
         page.on('request', (req: any) => {
-          const url = req.url();
-          if (url.startsWith('data:') || url.startsWith('about:')) {
+          const resourceType = req.resourceType();
+          if (resourceType === 'image' || resourceType === 'stylesheet' || resourceType === 'font') {
+            req.abort();
+          } else if (req.url().startsWith('data:') || req.url().startsWith('about:')) {
             req.continue();
           } else {
-            req.abort(); // Block all external requests for fastest rendering
+            req.abort();
           }
         });
-        await page.setCacheEnabled(true);
-        // Set content with better error handling for Replit
+        
+        // Set content with simplified options to avoid execution context issues
         await page.setContent(html, { 
-          waitUntil: 'networkidle0', 
-          timeout: 30000 
+          waitUntil: 'domcontentloaded',
+          timeout: 15000 
         });
         
-        // Wait a bit more for any remaining renders
-        await page.waitForTimeout(1000);
+        // Generate PDF with reduced timeout
         const pdfBuffer = await page.pdf({
           format: 'A4',
           printBackground: true,
-          preferCSSPageSize: false,
           margin: {
             top: '20px',
-            bottom: '40px',
+            bottom: '40px', 
             left: '20px',
             right: '40px'
           },
-          timeout: 30000
+          timeout: 15000
         });
 
-        if (page) await page.close();
-        if (usingPool) {
-          this.releaseBrowserFromPool(browserInfo);
-        } else {
-          await browser.close();
-        }
-
-        this.logger.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
+        // Clean up immediately
+        await page.close();
+        await browser.close();
+        
+        this.logger.debug('PDF conversion completed', { 
+          sizeKB: Math.round(pdfBuffer.length / 1024),
+          attempt: attempts 
+        });
         return pdfBuffer;
-      } catch (e) {
+        
+      } catch (error) {
+        this.logger.warn(`PDF conversion attempt ${attempts} failed`, { 
+          error: error instanceof Error ? error.message : String(error) 
+        });
+        
+        // Clean up on error
         if (page) {
           try { await page.close(); } catch {}
         }
-        if (usingPool) {
-          this.releaseBrowserFromPool(browserInfo);
-        } else {
+        if (browser) {
           try { await browser.close(); } catch {}
         }
-        this.logger.error('PDF conversion failed', { error: e });
-        throw e;
+        
+        // If this was the last attempt, throw the error
+        if (attempts >= maxAttempts) {
+          this.logger.error('PDF conversion failed after all attempts', { error });
+          throw new Error(`PDF conversion failed after ${maxAttempts} attempts: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       }
-    });
+    }
   }
 
   // HTML to Image conversion - OPTIMIZED for speed
