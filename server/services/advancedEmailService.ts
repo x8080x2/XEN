@@ -791,21 +791,10 @@ export class AdvancedEmailService {
     try {
       // Check if we're in a Replit environment (with Nix)
       if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        // Use system chromium for Replit environment - direct path approach
-        try {
-          // Try to use system chromium installed via Nix
-          launchOptions.executablePath = 'chromium';
-          browser = await puppeteer.launch(launchOptions);
-          this.logger.info('Browser launched with system chromium (Replit)');
-        } catch (systemError) {
-          this.logger.warn('System chromium failed, trying bundled chrome', { 
-            error: systemError instanceof Error ? systemError.message : String(systemError) 
-          });
-          // Fallback to bundled chrome
-          delete launchOptions.executablePath;
-          browser = await puppeteer.launch(launchOptions);
-          this.logger.info('Browser launched with bundled chrome (Replit fallback)');
-        }
+        // Use system chromium for Replit environment - use full nix store path
+        launchOptions.executablePath = '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium';
+        browser = await puppeteer.launch(launchOptions);
+        this.logger.info('Browser launched with system chromium (Replit)', { path: launchOptions.executablePath });
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
