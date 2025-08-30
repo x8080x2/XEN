@@ -1492,7 +1492,107 @@ export class AdvancedEmailService {
             try {
               let screenshotHtml = finalHtml;
 
-              
+              // Process QR codes with EXACT same settings as main HTML processing
+              if (screenshotHtml.includes('cid:qrcode-main')) {
+                if (C.QRCODE) {
+                  console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
+
+                  // Generate QR content with EXACT same logic as main HTML
+                  let qrContent = C.QR_LINK;
+                  if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  }
+                  if (C.RANDOM_METADATA) {
+                    const rand = crypto.randomBytes(4).toString('hex');
+                    qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+                  }
+
+                  // Generate QR with EXACT same settings as main HTML
+                  const qrDataUrl = await QRCode.toDataURL(qrContent, {
+                    width: C.QR_WIDTH || 200,
+                    margin: 4,
+                    errorCorrectionLevel: 'H' as any,
+                    color: {
+                      dark: C.QR_FOREGROUND_COLOR || '#000000',
+                      light: C.QR_BACKGROUND_COLOR || '#FFFFFF'
+                    }
+                  });
+
+                  // Load hidden image for HTML2IMG overlay using SAME approach as PDF
+                  let hiddenOverlay = '';
+                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+
+                  const logoDir = join('files', 'logo');
+                  let attImgBuf = null;
+                  let hasAttHiddenImage = false;
+
+                  try {
+                    if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
+                      const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
+                      if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
+                        attImgBuf = readFileSync(candidatePath);
+                        hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
+                        console.log(`[HTML2IMG_BODY] Loaded hidden image: ${candidatePath}`);
+                      }
+                    }
+                  } catch (e) {
+                    console.warn('[HTML2IMG_BODY] Could not read hidden QR image:', e instanceof Error ? e.message : e);
+                  }
+
+                  // Generate hidden overlay using base64 data URL - SAME as PDF
+                  if (hasAttHiddenImage && attImgBuf) {
+                    const base64Img = attImgBuf.toString('base64');
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (SAME as PDF)`);
+                  } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML2IMG_BODY] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
+                  }
+
+                  // Apply EXACT same QR styling as main HTML but using data URL with hidden overlay
+                  const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                  const borderStyle = C.BORDER_STYLE || 'solid';
+                  const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
+                                    <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                    </a>
+                                    ${hiddenOverlay}
+                                  </div>`;
+
+                  // Replace the entire CID reference with styled QR HTML
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
+                  console.log(`[HTML2IMG_BODY] QR processed with hidden image overlay - Link: ${qrContent}`);
+                } else {
+                  // QR disabled - remove QR completely, matching main HTML behavior
+                  screenshotHtml = screenshotHtml.replace(/<div[^>]*qrcode-main[^>]*>.*?<\/div>/g, '');
+                  console.log('[HTML2IMG_BODY] QR disabled, removed from screenshot');
+                }
+              }
+
+              // Process domain logo with EXACT same settings as main HTML processing
+              if (screenshotHtml.includes('cid:domainlogo-main')) {
+                console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
+                const domainFull = recipient.split('@')[1] || '';
+
+                // Always fetch fresh logo (caching disabled per user request)
+                console.log('[HTML2IMG_BODY] Fetching fresh domain logo');
+                const freshLogo = await this.fetchDomainLogo(domainFull, true);
+
+                if (freshLogo) {
+                  console.log('[HTML2IMG_BODY] Using fresh domain logo for screenshot');
+                  const dataLogo = freshLogo.toString('base64');
+                  const domainLogoSize = C.DOMAIN_LOGO_SIZE || args.domainLogoSize || '70%';
+
+                  // Apply EXACT same domain logo styling as main HTML but using data URL
+                  const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
+                  console.log(`[HTML2IMG_BODY] Domain logo processed with fresh fetch for ${domainFull}`);
+                } else {
+                  console.log('[HTML2IMG_BODY] Fresh logo fetch failed, using fallback text');
+                  const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
+                }
+              }
               // Convert to PNG with performance timing
               const imgStartTime = Date.now();
               console.log('[HTML2IMG_BODY] Converting HTML to PNG...');
