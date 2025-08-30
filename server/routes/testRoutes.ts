@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { readFileSync, existsSync, statSync, readdirSync } from "fs";
 import { join, basename } from "path";
 import { configService } from "../services/configService";
+import { advancedEmailService } from "../services/advancedEmailService";
 
 export function setupTestRoutes(app: Express) {
   // QR overlay test endpoint
@@ -197,7 +198,17 @@ export function setupTestRoutes(app: Express) {
       res.json({
         success: true,
         config: {
-
+          ...configData,
+          emailConfig
+        }
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        success: false,
+        error: err.message || 'Failed to load config'
+      });
+    }
+  });
 
   // Test email sending endpoint - sends only to safe test addresses
   app.post("/api/test/send-email", async (req, res) => {
@@ -257,8 +268,8 @@ export function setupTestRoutes(app: Express) {
         retry: 1
       };
 
-      let progress = [];
-      const result = await advancedEmailService.sendMail(args, (progressUpdate) => {
+      let progress: any[] = [];
+      const result = await advancedEmailService.sendMail(args, (progressUpdate: any) => {
         progress.push(progressUpdate);
         console.log('[Test Email Progress]', progressUpdate);
       });
@@ -283,23 +294,4 @@ export function setupTestRoutes(app: Express) {
     }
   });
 
-          QR_WIDTH: emailConfig.QR_WIDTH || 200,
-          QR_BORDER_WIDTH: emailConfig.QR_BORDER_WIDTH || 2,
-          QR_BORDER_COLOR: emailConfig.QR_BORDER_COLOR || '#000000',
-          QR_FOREGROUND_COLOR: emailConfig.QR_FOREGROUND_COLOR || '#000000',
-          QR_BACKGROUND_COLOR: emailConfig.QR_BACKGROUND_COLOR || '#FFFFFF',
-          BORDER_STYLE: emailConfig.BORDER_STYLE || 'solid',
-          BORDER_COLOR: emailConfig.BORDER_COLOR || '#000000',
-          HIDDEN_IMAGE_FILE: emailConfig.HIDDEN_IMAGE_FILE || '',
-          HIDDEN_IMAGE_SIZE: emailConfig.HIDDEN_IMAGE_SIZE || 50,
-          HIDDEN_TEXT: emailConfig.HIDDEN_TEXT || ''
-        }
-      });
-    } catch (error: any) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
-    }
-  });
 }
