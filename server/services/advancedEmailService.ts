@@ -887,8 +887,8 @@ export class AdvancedEmailService {
         page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        // Use PDF approach - domcontentloaded instead of load for faster CID processing
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        // Optimized page loading - skip unnecessary network wait
+        await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
         // Fast screenshot with optimized settings
         const pngBuffer = await page.screenshot({ 
           fullPage: true,
@@ -1518,50 +1518,35 @@ export class AdvancedEmailService {
                     }
                   });
 
-                  // Load hidden image for HTML2IMG using PDF approach - CID attachments
+                  // Load hidden image for HTML2IMG overlay using SAME approach as PDF
                   let hiddenOverlay = '';
                   const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
 
                   const logoDir = join('files', 'logo');
-                  let imgBuf = null;
-                  let hasHiddenImage = false;
+                  let attImgBuf = null;
+                  let hasAttHiddenImage = false;
 
                   try {
                     if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
                       const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                        imgBuf = readFileSync(candidatePath);
-                        hasHiddenImage = Boolean(imgBuf && imgBuf.length);
-
-                        // Add hidden image as CID attachment for HTML2IMG_BODY (PDF approach)
-                        const hiddenImageCid = 'hiddenImage-html2img';
-                        emailAttachments.push({
-                          filename: basename(candidatePath),
-                          content: imgBuf,
-                          cid: hiddenImageCid,
-                          contentType: 'image/png'
-                        });
-                        console.log(`[HTML2IMG_BODY] Added hidden image as CID: ${hiddenImageCid}`);
-                      } else {
-                        console.log(`[HTML2IMG_BODY] Hidden image file not found: ${candidatePath}`);
+                        attImgBuf = readFileSync(candidatePath);
+                        hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
+                        console.log(`[HTML2IMG_BODY] Loaded hidden image: ${candidatePath}`);
                       }
-                    } else {
-                      console.log(`[HTML2IMG_BODY] No hidden image file specified (hiddenImageFile: '${C.HIDDEN_IMAGE_FILE}')`);
                     }
                   } catch (e) {
                     console.warn('[HTML2IMG_BODY] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Generate hidden overlay using CID attachment (PDF approach)
-                  if (hasHiddenImage && imgBuf) {
-                    // Use CID reference instead of base64 data URL
-                    hiddenOverlay = `<img src="cid:hiddenImage-html2img" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML2IMG_BODY] Generated overlay using PDF approach with CID attachment (top:77px, left:56%, size:${hiddenImgWidth}px)`);
+                  // Generate hidden overlay using base64 data URL - SAME as PDF
+                  if (hasAttHiddenImage && attImgBuf) {
+                    const base64Img = attImgBuf.toString('base64');
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (SAME as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                    console.log(`[HTML2IMG_BODY] Using hidden text overlay with PDF approach: ${C.HIDDEN_TEXT}`);
-                  } else {
-                    console.log(`[HTML2IMG_BODY] No hidden overlay applied (no image file or text specified)`);
+                    console.log(`[HTML2IMG_BODY] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                   }
 
                   // Apply EXACT same QR styling as main HTML but using data URL with hidden overlay
