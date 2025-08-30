@@ -39,7 +39,7 @@ export default function QROverlayTest() {
     qrBackgroundColor: '#FFFFFF',
     qrBorderColor: '#000000',
     borderStyle: 'solid',
-    hiddenImageFile: '',
+    hiddenImageFile: 'none',
     hiddenImageSize: 50,
     hiddenText: '',
     showOverlay: true
@@ -78,7 +78,7 @@ export default function QROverlayTest() {
           qrForegroundColor: data.config.QR_FOREGROUND_COLOR || '#000000',
           qrBackgroundColor: data.config.QR_BACKGROUND_COLOR || '#FFFFFF',
           borderStyle: data.config.BORDER_STYLE || 'solid',
-          hiddenImageFile: data.config.HIDDEN_IMAGE_FILE || '',
+          hiddenImageFile: data.config.HIDDEN_IMAGE_FILE || 'none',
           hiddenImageSize: data.config.HIDDEN_IMAGE_SIZE || 50,
           hiddenText: data.config.HIDDEN_TEXT || ''
         }));
@@ -244,7 +244,7 @@ export default function QROverlayTest() {
                           <SelectValue placeholder="Select image file" />
                         </SelectTrigger>
                         <SelectContent className="bg-[#0f0f17] border-[#26262b] text-white">
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           {logoFiles.map(file => (
                             <SelectItem key={file} value={file}>{file}</SelectItem>
                           ))}

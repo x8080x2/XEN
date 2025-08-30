@@ -47,7 +47,7 @@ export function setupTestRoutes(app: Express) {
         let imgBase64 = null;
         let hasHiddenImage = false;
 
-        if (hiddenImageFile && typeof hiddenImageFile === 'string' && hiddenImageFile.trim() !== '') {
+        if (hiddenImageFile && typeof hiddenImageFile === 'string' && hiddenImageFile.trim() !== '' && hiddenImageFile !== 'none') {
           try {
             const candidatePath = join(logoDir, hiddenImageFile);
             if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
