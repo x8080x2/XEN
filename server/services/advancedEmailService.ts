@@ -1384,7 +1384,15 @@ export class AdvancedEmailService {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
-                      console.log(`[Main HTML QR] Hidden image loaded for base64 embedding: ${candidatePath}`);
+                      // Add hidden image as CID attachment for main HTML
+                      const hiddenImageCid = 'hiddenImage';
+                      emailAttachments.push({
+                        filename: basename(candidatePath),
+                        content: imgBuf,
+                        cid: hiddenImageCid,
+                        contentType: 'image/png'
+                      });
+                      console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
                     } else {
                       console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
                     }
@@ -1395,14 +1403,13 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Generate overlay HTML using base64 data URL like PDF version (not CID reference)
+                // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
                 if (hasHiddenImage && imgBuf) {
-                  // Use base64 data URL like PDF version for better email client compatibility
-                  const base64Img = imgBuf.toString('base64');
-                  hiddenImageHtml = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using base64 data URL like PDF version (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH || 200}px)`);
+                  // Use EXACT same positioning as original main.js and other implementations
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${C.QR_WIDTH || 200}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
