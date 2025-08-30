@@ -732,8 +732,8 @@ export class AdvancedEmailService {
   // Launch browser with proxy support - IMPROVED VERSION with pooling
   private async launchBrowser(C: any = {}): Promise<any> {
     const launchOptions: any = { 
-      // Use 'new' headless mode to prevent VNC from opening
-      headless: 'new', 
+      // Use true headless mode to prevent VNC from opening in Replit
+      headless: true, 
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -760,7 +760,8 @@ export class AdvancedEmailService {
         '--disable-renderer-backgrounding',
         '--disable-features=TranslateUI',
         '--disable-web-security',
-        '--no-display' // Explicitly prevent display creation
+        '--no-display', // Explicitly prevent display creation
+        '--disable-xvfb' // Disable X virtual framebuffer to prevent VNC
       ],
       defaultViewport: { width: 1200, height: 800 },
       timeout: 30000,
