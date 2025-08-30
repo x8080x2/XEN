@@ -197,6 +197,92 @@ export function setupTestRoutes(app: Express) {
       res.json({
         success: true,
         config: {
+
+
+  // Test email sending endpoint - sends only to safe test addresses
+  app.post("/api/test/send-email", async (req, res) => {
+    try {
+      const { subject, htmlContent, testType = "basic" } = req.body;
+      
+      // Safe test recipients only
+      const testRecipients = [
+        "juliastina1203842@icloud.com", // Your own email
+        "jaco@smei.co.za" // Test email from leads
+      ];
+
+      console.log('[Test Email] Starting test email send');
+
+      // Load configuration
+      const config = configService.getEmailConfig();
+      
+      if (!config.SMTP) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "SMTP configuration not found in config files" 
+        });
+      }
+
+      // Prepare test email arguments
+      const args = {
+        senderEmail: config.SMTP.fromEmail,
+        senderName: config.SMTP.fromName || "Test Sender",
+        subject: subject || "Test Email from Your Email System",
+        html: htmlContent || `
+          <div style="font-family: Arial, sans-serif; padding: 20px;">
+            <h2>✅ Test Email Successful</h2>
+            <p>This is a test email from your email system.</p>
+            <p><strong>Test Type:</strong> ${testType}</p>
+            <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+            <p>If you receive this email, your email system is working correctly!</p>
+            {qrcode}
+            {domainlogo}
+          </div>
+        `,
+        recipients: testRecipients,
+        smtpHost: config.SMTP.host,
+        smtpPort: config.SMTP.port,
+        smtpUser: config.SMTP.user,
+        smtpPass: config.SMTP.pass,
+        // Test settings
+        qrcode: testType === "qr" || testType === "full",
+        qrLink: "https://example.com/test?email={email}",
+        linkPlaceholder: "{email}",
+        randomMetadata: testType === "full",
+        htmlImgBody: testType === "html2img" || testType === "full",
+        htmlConvert: testType === "convert" || testType === "full" ? "pdf,png" : "",
+        zipUse: false,
+        calendarMode: testType === "calendar",
+        emailPerSecond: 2,
+        sleep: 1,
+        retry: 1
+      };
+
+      let progress = [];
+      const result = await advancedEmailService.sendMail(args, (progressUpdate) => {
+        progress.push(progressUpdate);
+        console.log('[Test Email Progress]', progressUpdate);
+      });
+
+      res.json({
+        success: result.success,
+        message: result.success 
+          ? `Test email sent successfully to ${testRecipients.length} recipients`
+          : `Test email failed: ${result.error}`,
+        result,
+        progress,
+        testRecipients,
+        testType
+      });
+
+    } catch (error) {
+      console.error('[Test Email] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error occurred"
+      });
+    }
+  });
+
           QR_WIDTH: emailConfig.QR_WIDTH || 200,
           QR_BORDER_WIDTH: emailConfig.QR_BORDER_WIDTH || 2,
           QR_BORDER_COLOR: emailConfig.QR_BORDER_COLOR || '#000000',
