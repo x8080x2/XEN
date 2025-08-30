@@ -245,13 +245,10 @@ export class AdvancedEmailService {
   private browserPool: BrowserPool[] = [];
   private isPaused = false;
   
-  // Global browser concurrency control for Replit stability
-  private static globalBrowserLimit = 1; // Only 1 browser at a time
-  private static activeBrowserCount = 0;
-  private static browserQueue: Array<{ resolve: Function; reject: Function }> = [];
+  // Shared browser instance like in working Electron version
+  private browserInstance: any = null;
   
-  private limit = pLimit(1); // Reduced concurrency for Replit
-  private conversionLimit = pLimit(1); // Sequential conversions only
+  private limit = pLimit(5); // Use same concurrency as working version
   private logger = new Logger();
 
   // Activity Tracking - prevents cleanup during active operations
@@ -289,6 +286,12 @@ export class AdvancedEmailService {
     this.logger.info('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
+    
+    // Cleanup shared browser on process exit
+    process.on('exit', () => this.closeSharedBrowser());
+    process.on('SIGINT', () => this.closeSharedBrowser());
+    process.on('SIGTERM', () => this.closeSharedBrowser());
+    
     AdvancedEmailService.instance = this;
   }
 
@@ -831,196 +834,132 @@ export class AdvancedEmailService {
     return browser;
   }
 
-  // Global browser acquisition with queue management
-  private static async acquireBrowser(): Promise<void> {
-    if (AdvancedEmailService.activeBrowserCount < AdvancedEmailService.globalBrowserLimit) {
-      AdvancedEmailService.activeBrowserCount++;
-      return Promise.resolve();
-    }
-    
-    // Queue the request
-    return new Promise((resolve, reject) => {
-      AdvancedEmailService.browserQueue.push({ resolve, reject });
-      
-      // Timeout after 30 seconds
-      setTimeout(() => {
-        const index = AdvancedEmailService.browserQueue.findIndex(item => item.resolve === resolve);
-        if (index >= 0) {
-          AdvancedEmailService.browserQueue.splice(index, 1);
-          reject(new Error('Browser acquisition timeout'));
-        }
-      }, 30000);
-    });
-  }
+  // Shared browser instance management - EXACT copy from working Electron version
+  private async getSharedBrowser(): Promise<any> {
+    if (!this.browserInstance) {
+      const launchOptions: any = { 
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu',
+          '--disable-extensions',
+          '--disable-default-apps',
+          '--disable-sync',
+          '--disable-translate',
+          '--hide-scrollbars',
+          '--disable-plugins',
+          '--virtual-time-budget=5000',
+          '--disable-gpu-sandbox',
+          '--disable-software-rasterizer',
+          '--disable-background-timer-throttling',
+          '--disable-backgrounding-occluded-windows',
+          '--disable-renderer-backgrounding',
+          '--disable-features=TranslateUI',
+          '--disable-web-security',
+          '--no-display',
+          '--disable-xvfb'
+        ],
+        defaultViewport: { width: 1200, height: 800 },
+        timeout: 30000
+      };
 
-  private static releaseBrowser(): void {
-    AdvancedEmailService.activeBrowserCount--;
-    
-    // Process queue
-    if (AdvancedEmailService.browserQueue.length > 0) {
-      const next = AdvancedEmailService.browserQueue.shift();
-      if (next) {
-        AdvancedEmailService.activeBrowserCount++;
-        next.resolve();
+      // Use system chromium for Replit
+      if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
+        launchOptions.executablePath = '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium';
       }
+
+      this.browserInstance = await puppeteer.launch(launchOptions);
+      this.logger.info('Shared browser launched for PDF/Image conversion');
+    }
+    return this.browserInstance;
+  }
+
+  private async closeSharedBrowser(): Promise<void> {
+    if (this.browserInstance) {
+      try {
+        await this.browserInstance.close();
+        this.logger.info('Shared browser closed.');
+      } catch (e) {
+        this.logger.error('Error closing shared browser:', e);
+      }
+      this.browserInstance = null;
     }
   }
 
-  // HTML to PDF conversion - COMPLETELY FIXED for Replit
+  // HTML to PDF conversion - EXACT copy from working Electron version
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
+    
+    const browser = await this.getSharedBrowser();
 
-    // Use conversion limit to ensure sequential processing
-    return this.conversionLimit(async () => {
-      // Acquire global browser slot
-      await AdvancedEmailService.acquireBrowser();
-      
-      let browser = null;
-      let page = null;
-      let attempts = 0;
-      const maxAttempts = 2; // Reduced attempts
-
+    return this.limit(async () => {
+      const page = await browser.newPage();
       try {
-        while (attempts < maxAttempts) {
-          try {
-            attempts++;
-            this.logger.debug(`PDF conversion attempt ${attempts}/${maxAttempts}`);
-            
-            // Launch browser with extended timeout for Replit
-            browser = await this.launchBrowser({});
-            page = await browser.newPage();
-            
-            // Minimal request interception to avoid conflicts
-            await page.setRequestInterception(false); // Disable interception
-            
-            // Set content with longer timeout for Replit
-            await page.setContent(html, { 
-              waitUntil: 'networkidle2', // Wait for network to be idle
-              timeout: 25000 // Increased timeout
-            });
-            
-            // Wait for any dynamic content to render
-            await page.waitForTimeout(2000);
-            
-            // Generate PDF with generous timeout
-            const pdfBuffer = await page.pdf({
-              format: 'A4',
-              printBackground: true,
-              margin: {
-                top: '20px',
-                bottom: '40px', 
-                left: '20px',
-                right: '40px'
-              },
-              timeout: 25000 // Generous timeout
-            });
-
-            // Clean up immediately
-            await page.close();
-            await browser.close();
-            
-            this.logger.debug('PDF conversion completed', { 
-              sizeKB: Math.round(pdfBuffer.length / 1024),
-              attempt: attempts 
-            });
-            return pdfBuffer;
-            
-          } catch (error) {
-            this.logger.warn(`PDF conversion attempt ${attempts} failed`, { 
-              error: error instanceof Error ? error.message : String(error) 
-            });
-            
-            // Clean up on error
-            if (page) {
-              try { await page.close(); } catch {}
-            }
-            if (browser) {
-              try { await browser.close(); } catch {}
-            }
-            
-            // If this was the last attempt, throw the error
-            if (attempts >= maxAttempts) {
-              throw error;
-            }
-            
-            // Wait longer between retries for Replit
-            await new Promise(resolve => setTimeout(resolve, 3000 * attempts));
+        await page.setRequestInterception(true);
+        page.on('request', (req: any) => {
+          const url = req.url();
+          if (
+            req.resourceType() === 'stylesheet' ||
+            (req.resourceType() === 'image' && !url.startsWith('data:')) ||
+            req.resourceType() === 'font'
+          ) {
+            req.abort();
+          } else {
+            req.continue();
           }
-        }
-      } finally {
-        // Always release browser slot
-        AdvancedEmailService.releaseBrowser();
+        });
+        await page.setCacheEnabled(true);
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          margin: {
+            top: '20px',
+            bottom: '40px',
+            left: '20px',
+            right: '40px'
+          },
+          timeout: 30000
+        });
+        await page.close();
+        return pdfBuffer;
+      } catch (e) {
+        await page.close();
+        throw e;
       }
     });
   }
 
-  // HTML to Image conversion - FIXED for Replit stability
+  // HTML to Image conversion - EXACT copy from working Electron version
   private async convertHtmlToImage(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
     
-    // Use conversion limit to ensure sequential processing
-    return this.conversionLimit(async () => {
-      // Acquire global browser slot
-      await AdvancedEmailService.acquireBrowser();
-      
-      let browser = null;
-      let page = null;
-
+    return this.limit(async () => {
+      this.logger.debug(`Image conversion queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
+      const browser = await this.getSharedBrowser();
+      const page = await browser.newPage();
       try {
-        this.logger.debug('Image conversion starting');
-        
-        // Launch browser 
-        browser = await this.launchBrowser({});
-        page = await browser.newPage();
-        
         await page.setViewport({ width: 1123, height: 1587 });
-        
-        // Disable request interception for stability
-        await page.setRequestInterception(false);
-        
-        // Set content with longer timeout for Replit
-        await page.setContent(html, { 
-          waitUntil: 'networkidle2', 
-          timeout: 20000 
-        });
-        
-        // Wait for content to render
-        await page.waitForTimeout(1500);
-        
-        // Take screenshot with optimized settings
-        const pngBuffer = await page.screenshot({ 
-          fullPage: true,
-          captureBeyondViewport: false
-        });
-
-        // Clean up immediately
+        await page.setCacheEnabled(true);
+        await page.setContent(html, { waitUntil: 'networkidle2' });
+        const pngBuffer = await page.screenshot({ fullPage: true });
         await page.close();
-        await browser.close();
-
-        this.logger.debug('Image conversion completed', { 
-          sizeKB: Math.round(pngBuffer.length / 1024)
-        });
+        this.logger.debug(`Image conversion finished, queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
         return pngBuffer;
-        
-      } catch (error) {
-        this.logger.error('Image generation failed', { error });
-        
-        // Clean up on error
-        if (page) {
-          try { await page.close(); } catch {}
-        }
-        if (browser) {
-          try { await browser.close(); } catch {}
-        }
-        
-        throw error;
-      } finally {
-        // Always release browser slot
-        AdvancedEmailService.releaseBrowser();
+      } catch (e) {
+        await page.close();
+        this.logger.error('Image generation failed:', e);
+        throw e;
       }
     });
   }
