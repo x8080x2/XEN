@@ -4,27 +4,13 @@ import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
 
-// Enhanced error handling to prevent crashes
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
-  // Log detailed error information
-  if (reason instanceof Error) {
-    console.error('Error stack:', reason.stack);
-  }
-  // Log the error but don't exit the process
+// Simplified error handling
+process.on('unhandledRejection', (reason) => {
+  // Silent handling to prevent webview popup issues
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  console.error('Error stack:', error.stack);
-  // Log the error but don't exit the process in development
-});
-
-// Add warning for deprecation notices
-process.on('warning', (warning) => {
-  if (warning.name === 'DeprecationWarning') {
-    console.warn('Deprecation Warning:', warning.message);
-  }
+  // Silent handling to prevent webview popup issues
 });
 
 // Automatic cleanup function (non-blocking)
@@ -57,6 +43,13 @@ performStartupCleanup();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Prevent webview auto-opening
+app.use((req, res, next) => {
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
