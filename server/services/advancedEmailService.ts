@@ -750,7 +750,6 @@ export class AdvancedEmailService {
         '--hide-scrollbars',
         '--disable-plugins',
         '--disable-images',
-        '--disable-javascript',
         '--virtual-time-budget=5000',
         // Additional arguments to ensure headless operation and prevent display creation
         '--disable-gpu-sandbox',
@@ -792,10 +791,46 @@ export class AdvancedEmailService {
     try {
       // Check if we're in a Replit environment (with Nix)
       if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        // Try system chromium for Replit/Nix environment
-        launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
+        // Use system chrome/chromium for Replit environment with dynamic discovery
+        const chromePaths = [
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium',
+          '/usr/bin/chromium-browser',
+          '/nix/store/*/bin/chromium'
+        ];
+        
+        // Try to find working Chrome/Chromium
+        let foundPath = null;
+        const { execSync } = require('child_process');
+        
+        try {
+          // Use which command to find chrome/chromium
+          try {
+            foundPath = execSync('which google-chrome', { encoding: 'utf8' }).trim();
+          } catch {
+            try {
+              foundPath = execSync('which chromium', { encoding: 'utf8' }).trim();
+            } catch {
+              try {
+                foundPath = execSync('which chromium-browser', { encoding: 'utf8' }).trim();
+              } catch {
+                // Last resort: check nix store
+                try {
+                  foundPath = execSync('find /nix/store -name chromium -type f -executable 2>/dev/null | head -1', { encoding: 'utf8' }).trim();
+                } catch {}
+              }
+            }
+          }
+        } catch {}
+        
+        if (foundPath) {
+          launchOptions.executablePath = foundPath;
+          this.logger.info('Browser launched with system chromium (Replit)', { path: foundPath });
+        } else {
+          this.logger.info('Browser launched with bundled chrome (Replit fallback)');
+        }
+        
         browser = await puppeteer.launch(launchOptions);
-        this.logger.info('Browser launched with system chromium (Replit)');
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
@@ -860,17 +895,25 @@ export class AdvancedEmailService {
           }
         });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        // Set content with better error handling for Replit
+        await page.setContent(html, { 
+          waitUntil: 'networkidle0', 
+          timeout: 30000 
+        });
+        
+        // Wait a bit more for any remaining renders
+        await page.waitForTimeout(1000);
         const pdfBuffer = await page.pdf({
           format: 'A4',
           printBackground: true,
+          preferCSSPageSize: false,
           margin: {
             top: '20px',
             bottom: '40px',
             left: '20px',
             right: '40px'
           },
-          timeout: 15000
+          timeout: 30000
         });
 
         if (page) await page.close();
