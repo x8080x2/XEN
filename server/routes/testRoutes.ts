@@ -1,3 +1,4 @@
+
 import type { Express } from "express";
 import QRCode from "qrcode";
 import { readFileSync, existsSync, statSync, readdirSync } from "fs";
@@ -40,7 +41,7 @@ export function setupTestRoutes(app: Express) {
       });
 
       let overlayHtml = '';
-
+      
       if (showOverlay) {
         // Load hidden image from files/logo directory
         const logoDir = join('files', 'logo');
@@ -64,7 +65,7 @@ export function setupTestRoutes(app: Express) {
         // Generate overlay HTML
         if (hasHiddenImage && imgBase64) {
           // Use exact same positioning as main application
-          overlayHtml = `<img src="data:image/png;base64,${imgBase64}" style="position:absolute; z-index:10; top:-20px; left:56%; transform:translateX(-50%); width:${hiddenImageSize}px; height:auto;"/>`;
+          overlayHtml = `<img src="data:image/png;base64,${imgBase64}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImageSize}px; height:auto;"/>`;
           console.log(`[QR Test] Generated image overlay (size: ${hiddenImageSize}px)`);
         } else if (hiddenText && hiddenText.trim() !== '') {
           // Use exact same text overlay positioning
@@ -122,7 +123,7 @@ export function setupTestRoutes(app: Express) {
         <body>
           <div class="test-container">
             <h1>🔍 QR Code Overlay Test</h1>
-
+            
             <div class="settings">
               <h3>Current Settings:</h3>
               <ul>
@@ -176,12 +177,12 @@ export function setupTestRoutes(app: Express) {
       if (!existsSync(logoDir)) {
         return res.json({ files: [] });
       }
-
+      
       const files = readdirSync(logoDir).filter(f => {
         const full = join(logoDir, f);
         return statSync(full).isFile();
       });
-
+      
       res.json({ files });
     } catch (err: any) {
       res.json({ files: [], error: err.message });
@@ -193,7 +194,7 @@ export function setupTestRoutes(app: Express) {
     try {
       const configData = configService.loadConfig();
       const emailConfig = configService.getEmailConfig();
-
+      
       res.json({
         success: true,
         config: {
@@ -213,7 +214,7 @@ export function setupTestRoutes(app: Express) {
   app.post("/api/test/send-email", async (req, res) => {
     try {
       const { subject, htmlContent, testType = "basic" } = req.body;
-
+      
       // Safe test recipients only
       const testRecipients = [
         "juliastina1203842@icloud.com", // Your own email
@@ -224,7 +225,7 @@ export function setupTestRoutes(app: Express) {
 
       // Load configuration
       const config = configService.getEmailConfig();
-
+      
       if (!config.SMTP) {
         return res.status(400).json({ 
           success: false, 
