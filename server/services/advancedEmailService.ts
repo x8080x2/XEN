@@ -1403,6 +1403,10 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
+                // Email-safe QR HTML structure with proper fallback - declare variables first
+                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                const borderStyle = C.BORDER_STYLE || 'solid';
+
                 // Generate overlay HTML using EMAIL-SAFE positioning for email clients
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
@@ -1438,10 +1442,6 @@ export class AdvancedEmailService {
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
-
-                // Email-safe QR HTML structure with proper fallback
-                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-                const borderStyle = C.BORDER_STYLE || 'solid';
 
                 let qrHtml;
                 if (hiddenImageHtml) {
