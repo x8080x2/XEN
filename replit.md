@@ -1,84 +1,81 @@
 # Overview
-
-This is a sophisticated web-based email marketing platform that replicates and enhances the functionality of an Electron email sender application. Built with modern web technologies, it serves as a comprehensive email campaign management tool with advanced features like dynamic content generation, QR code integration, HTML-to-image conversion, and multi-format attachment generation. The platform provides a dark-themed interface optimized for professional email marketing workflows.
+This project is a sophisticated web-based email marketing platform that replicates and enhances the functionality of an Electron email sender application. Built with modern web technologies, it serves as a comprehensive email campaign management tool with advanced personalization, content conversion, and delivery optimization capabilities. The platform enables users to execute sophisticated email marketing campaigns, offering features such as bulk email sending with rate limiting, dynamic content personalization, multi-format content conversion (HTML to PDF, PNG, DOCX), QR code integration, automatic domain logo fetching, real-time progress tracking, template-based file management, and INI-based configuration with UI overrides. The business vision is to provide an enterprise-grade email marketing solution with advanced personalization, content generation, and delivery optimization features.
 
 # User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
 ## Frontend Architecture
-- **Framework**: React with TypeScript, using Vite for building and development
-- **UI/UX**: Radix UI components integrated with Tailwind CSS, following a shadcn/ui design system with a custom dark theme and professional color palette
-- **State Management**: React Query (TanStack Query) for server state management and caching
-- **Routing**: Wouter for lightweight client-side routing
-- **Build System**: Vite with custom configuration for monorepo structure and alias resolution
+- **Framework**: React with TypeScript, using Vite for building.
+- **UI/UX**: Radix UI components integrated with Tailwind CSS, following a shadcn/ui design system with a dark theme and a custom professional color palette.
+- **State Management**: React Query for server state management.
+- **Routing**: Wouter for lightweight client-side routing.
 
 ## Backend Architecture
-- **Framework**: Express.js with TypeScript running on Node.js
-- **Email Service**: Nodemailer for SMTP email sending with advanced configuration management
-- **File Handling**: Multer for processing file uploads and attachment management
-- **Storage**: Abstract storage interface (IStorage) with in-memory implementation as default
-- **Performance**: Browser pool management for HTML conversions using Puppeteer with resource optimization
+- **Framework**: Express.js with TypeScript.
+- **Database**: PostgreSQL, accessed via Drizzle ORM for type-safe operations.
+- **Email Service**: Nodemailer for SMTP email sending.
+- **File Handling**: Multer for processing file uploads.
+- **Storage**: An abstract storage interface (IStorage) with an in-memory default.
 
 ## Data Architecture
-- **Database**: Uses Drizzle ORM for type-safe database operations (designed for PostgreSQL but currently using in-memory storage)
-- **Type Safety**: Shared TypeScript schemas validated with Zod across frontend and backend
-- **Configuration**: INI-based configuration system loading from setup.ini and smtp.ini files
+- **Database Schema**: Structured with tables for users, email configurations, jobs, logs, and application settings.
+- **Type Safety**: Shared TypeScript schemas, validated with Drizzle and Zod.
 
 ## Email Processing System
-- **Job-based Architecture**: Email campaigns managed as trackable jobs with progress monitoring
-- **Advanced Placeholder System**: Dynamic content replacement supporting user-specific, random, and computed placeholders
-- **Multi-format Conversion**: HTML content conversion to PDF, PNG, and DOCX formats with embedded QR codes and domain logos
-- **QR Code Generation**: Comprehensive QR code system with multiple rendering modes and visual customization
-- **Domain Logo Integration**: Automatic logo fetching from multiple prioritized sources with caching and fallback mechanisms
-- **HTML2IMG Processing**: Full email body conversion to clickable PNG images using Puppeteer
-- **Browser Resource Management**: Optimized browser pooling (max 2 browsers, 3 pages each) with memory monitoring
+- **Job-based**: Email campaigns are managed as trackable jobs.
+- **Placeholder System**: Supports dynamic content replacement using user-specific, random, and computed placeholders.
+- **Attachments**: Robust file upload and attachment processing.
+- **Progress Tracking**: Provides real-time updates and logging for email sending operations.
+- **Conversion**: Supports HTML content conversion to HTML, PDF, PNG, and DOCX formats.
+- **Image Overlays**: Integrates a hidden image overlay system for precise positioning.
+- **QR Code Generation**: Advanced QR code system with multiple rendering modes and comprehensive customization options (Main HTML Body, HTML2IMG_BODY, HTML_CONVERT Attachment). QR codes integrate with the comprehensive placeholder system for recipient personalization and dynamic content.
+- **Configuration**: Loads settings from `setup.ini` and `smtp.ini`, with automatic application on startup, merging with environment variables and UI settings (UI settings having the highest priority).
 
-## Performance Optimization
-- **Caching System**: Domain logo caching with cross-domain detection and performance monitoring
-- **Memory Management**: Threshold monitoring and periodic cleanup to prevent resource exhaustion
-- **Process Management**: Automatic cleanup of zombie processes with periodic maintenance
-- **Performance Analytics**: Timing tracking and recommendation system for optimization insights
+## Core Functionality Decisions
+- **`sendMail()`**: Executes complete email campaigns with advanced processing, including configuration loading, recipient processing, template loading, batch processing, content processing (placeholders, QR codes, domain logos), optional HTML2IMG conversion, attachment generation, SMTP sending, and real-time progress reporting.
+- **`processPlaceholders()`**: Replaces placeholder variables with dynamic content (e.g., recipient info, random data, generated values, date/time, sender info).
+- **`generateQRCode()`**: Creates dynamic QR codes supporting link personalization, random metadata, visual customization, multiple formats (PNG buffers, data URLs), and high error correction.
+- **`fetchDomainLogo()`**: Automatically fetches and integrates domain logos from prioritized sources (Icons.duckduckgo.com, Logo.dev, Brandfetch, Clearbit API) with cross-domain detection and performance caching.
+- **`convertHtmlToAttachment()`**: Converts HTML templates to PDF, PNG, and DOCX formats, embedding QR codes and domain logos while preserving styling.
+- **HTML2IMG_BODY Processing**: Converts the entire email body to a clickable PNG image using Puppeteer, replacing the email body with the image and linking it to a specified URL.
+- **Browser Pool Management**: Optimizes browser resource usage for conversions (max 2 browsers, 3 pages each) with lifecycle management and memory optimization.
+- **Memory Monitoring**: Prevents system resource exhaustion with threshold monitoring and periodic checks.
+- **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # External Dependencies
 
 ## Core Framework Dependencies
-- **Express.js**: Backend API framework for server-side operations
-- **React**: Frontend UI library with TypeScript support
-- **Vite**: Build tool and development server with hot module replacement
+- **Express.js**: Backend API framework.
+- **React**: Frontend UI library.
+- **Vite**: Frontend build tool.
 
-## Email and Communication
-- **Nodemailer**: SMTP email sending with advanced configuration support
-- **@neondatabase/serverless**: Database connectivity (prepared for PostgreSQL integration)
-- **HTML Processing**: html-to-text, html-minifier-terser for content optimization
+## Database and ORM
+- **@neondatabase/serverless**: Serverless PostgreSQL client.
+- **Drizzle ORM**: Type-safe ORM for PostgreSQL.
+- **drizzle-kit**: Database schema management.
 
-## File Processing and Conversion
-- **Puppeteer**: Headless browser automation for HTML-to-image conversion and PDF generation
-- **QRCode**: QR code generation with customization options
-- **Archiver**: File compression and ZIP creation for attachments
-- **AdmZip**: ZIP file handling and extraction
-- **html-docx-js**: HTML to Microsoft Word document conversion
+## Email Services
+- **Nodemailer**: SMTP email sending.
 
-## Cloud Storage and External APIs
-- **@google-cloud/storage**: Google Cloud Storage integration for file management
-- **Axios**: HTTP client for external API requests (logo fetching, domain verification)
-- **Multiple Logo APIs**: Icons.duckduckgo.com, Logo.dev, Brandfetch, Clearbit API for domain logo fetching
+## UI and Styling
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Radix UI**: Headless UI components.
+- **shadcn/ui**: Design system.
+- **Lucide React**: Icon library.
 
-## UI and User Experience
-- **Radix UI**: Comprehensive component library (@radix-ui/react-*)
-- **Tailwind CSS**: Utility-first CSS framework with custom dark theme
-- **Lucide React**: Icon library for user interface elements
-- **React Hook Form**: Form handling with validation (@hookform/resolvers)
+## File Processing
+- **Multer**: Multipart/form-data handler.
 
-## Development and Build Tools
-- **TypeScript**: Static type checking across the entire stack
-- **ESBuild**: Fast JavaScript bundler for production builds
-- **Drizzle Kit**: Database schema management and migrations
-- **TanStack Query**: Server state management and caching for React
+## State Management and HTTP
+- **@tanstack/react-query**: Server state management.
+- **React Hook Form**: Form handling.
+- **Wouter**: Lightweight routing for React.
 
-## Performance and Monitoring
-- **p-limit**: Concurrency control for resource-intensive operations
-- **memoizee**: Function memoization for performance optimization
-- **Performance tracking**: Custom timing and recommendation systems for optimization insights
+## Validation and Utilities
+- **Zod**: TypeScript-first schema validation.
+- **drizzle-zod**: Drizzle ORM and Zod integration.
+- **qrcode**: QR code generation library.
+- **Puppeteer**: Headless Chrome for HTML to PDF/PNG conversions.
+- **html-docx-js**: HTML to DOCX conversion.
