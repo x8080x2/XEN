@@ -552,12 +552,12 @@ export class AdvancedEmailService {
 
     const qrCount = this.qrCache.size;
     const logoCount = this.logoCache.size;
-    
+
     this.qrCache.clear();
     this.logoCache.clear();
-    
+
     console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
@@ -625,14 +625,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            
+
             // Cache the successful result
             this.logoCache.set(domain, {
               buffer,
               timestamp: Date.now(),
               domain
             });
-            
+
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -645,14 +645,14 @@ export class AdvancedEmailService {
     }
 
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    
+
     // Cache null result to prevent repeated attempts
     this.logoCache.set(domain, {
       buffer: null,
       timestamp: Date.now(),
       domain
     });
-    
+
     return null;
   }
 
@@ -732,23 +732,39 @@ export class AdvancedEmailService {
   // Launch browser with proxy support - IMPROVED VERSION with pooling
   private async launchBrowser(C: any = {}): Promise<any> {
     const launchOptions: any = { 
-      headless: true,
+      // Use 'new' headless mode to prevent VNC from opening
+      headless: 'new', 
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
         '--disable-extensions',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
         '--disable-plugins',
         '--disable-images',
         '--disable-javascript',
-        '--disable-gpu',
-        '--no-first-run',
+        '--virtual-time-budget=5000',
+        // Additional arguments to ensure headless operation and prevent display creation
+        '--disable-gpu-sandbox',
+        '--disable-software-rasterizer',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+        '--disable-features=TranslateUI',
         '--disable-web-security',
-        '--memory-pressure-off',
-        '--disable-background-networking',
-        '--disable-default-apps',
-        '--disable-sync'
-      ]
+        '--no-display' // Explicitly prevent display creation
+      ],
+      defaultViewport: { width: 1200, height: 800 },
+      timeout: 30000,
+      ...C // Merge options passed in
     };
 
     // Configure for production environment  
@@ -1334,10 +1350,10 @@ export class AdvancedEmailService {
 
               // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
               let qrContent = C.QR_LINK;
-              
+
               // Replace {email} placeholder directly
               qrContent = qrContent.replace(/\{email\}/g, recipient);
-              
+
               // Also handle configured LINK_PLACEHOLDER
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                 qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1410,29 +1426,29 @@ export class AdvancedEmailService {
                 // Generate overlay HTML using EMAIL-SAFE positioning for email clients
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
-                
+
                 // Use EXACT same positioning as PDF processing for consistency
                 if (hasHiddenImage && imgBuf) {
                   // Use EXACT same positioning as original main.js for PDF attachments
                   const qrSize = C.QR_WIDTH || 200;
-                  
+
                   hiddenImageHtml = `
                     <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
                       <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                       <img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>
                     </div>`;
-                  
+
                   console.log(`[Main HTML QR] Generated overlay using EXACT same positioning as PDF processing (top:77px, left:56%, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // Use EXACT same text overlay positioning as PDF processing
                   const qrSize = C.QR_WIDTH || 200;
-                  
+
                   hiddenImageHtml = `
                     <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
                       <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                       <span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>
                     </div>`;
-                  
+
                   console.log(`[Main HTML QR] Using EXACT same text overlay positioning as PDF processing: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
@@ -1541,10 +1557,10 @@ export class AdvancedEmailService {
 
                   // Generate QR content with EXACT same logic as main HTML
                   let qrContent = C.QR_LINK;
-                  
+
                   // Replace {email} placeholder directly
                   qrContent = qrContent.replace(/\{email\}/g, recipient);
-                  
+
                   // Also handle configured LINK_PLACEHOLDER
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                     qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
@@ -1570,7 +1586,7 @@ export class AdvancedEmailService {
                   const borderStyle = C.BORDER_STYLE || 'solid';
                   const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                     </a>
                                   </div>`;
 
@@ -1625,10 +1641,10 @@ export class AdvancedEmailService {
 
                 // REPLACE email body with clickable image (exact same as main.js)
                 let qrContent = C.QR_LINK;
-                
+
                 // Replace {email} placeholder directly
                 qrContent = qrContent.replace(/\{email\}/g, recipient);
-                
+
                 // Also handle configured LINK_PLACEHOLDER
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
                   qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
