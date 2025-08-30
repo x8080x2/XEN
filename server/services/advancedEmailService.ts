@@ -1493,7 +1493,7 @@ export class AdvancedEmailService {
               let screenshotHtml = finalHtml;
 
               // Process QR codes with EXACT same settings as main HTML processing
-              if (screenshotHtml.includes('{qrcode}')) {
+              if (screenshotHtml.includes('cid:qrcode-main')) {
                 if (C.QRCODE) {
                   console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
 
@@ -1559,8 +1559,8 @@ export class AdvancedEmailService {
                                     ${hiddenOverlay}
                                   </div>`;
 
-                  // Replace the QR placeholder with styled QR HTML
-                  screenshotHtml = screenshotHtml.replace(/\{qrcode\}/g, qrHtml);
+                  // Replace the entire CID reference with styled QR HTML
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
                   console.log(`[HTML2IMG_BODY] QR processed with hidden image overlay - Link: ${qrContent}`);
                 } else {
                   // QR disabled - remove QR completely, matching main HTML behavior
@@ -1570,7 +1570,7 @@ export class AdvancedEmailService {
               }
 
               // Process domain logo with EXACT same settings as main HTML processing
-              if (screenshotHtml.includes('{domainlogo}')) {
+              if (screenshotHtml.includes('cid:domainlogo-main')) {
                 console.log('[HTML2IMG_BODY] Processing domain logo using EXACT same settings as main HTML');
                 const domainFull = recipient.split('@')[1] || '';
 
@@ -1585,12 +1585,12 @@ export class AdvancedEmailService {
 
                   // Apply EXACT same domain logo styling as main HTML but using data URL
                   const logoHtml = `<img src="data:image/png;base64,${dataLogo}" alt="${domainFull} logo" style="max-height:${domainLogoSize}; width:auto;"/>`;
-                  screenshotHtml = screenshotHtml.replace(/\{domainlogo\}/g, logoHtml);
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, logoHtml);
                   console.log(`[HTML2IMG_BODY] Domain logo processed with fresh fetch for ${domainFull}`);
                 } else {
                   console.log('[HTML2IMG_BODY] Fresh logo fetch failed, using fallback text');
                   const fallbackHtml = `<span style="color:#888;font-size:14px;">[Logo unavailable]</span>`;
-                  screenshotHtml = screenshotHtml.replace(/\{domainlogo\}/g, fallbackHtml);
+                  screenshotHtml = screenshotHtml.replace(/<img src="cid:domainlogo-main"[^>]*>/g, fallbackHtml);
                 }
               }
               // Convert to PNG with performance timing
