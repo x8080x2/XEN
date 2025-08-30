@@ -5,6 +5,7 @@ import { emailSendRequestSchema } from "@shared/schema";
 import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { setupTestRoutes } from "./routes/testRoutes";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -19,6 +20,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+  setupTestRoutes(app);
 
   // Config loading routes - exact clone from main.js
   app.get('/api/config/load', (req, res) => {
@@ -226,7 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const smtpConfigs = configService.getAllSmtpConfigs();
       const currentSmtp = configService.getCurrentSmtpConfig();
       const rotationEnabled = configService.isSmtpRotationEnabled();
-      
+
       res.json({
         success: true,
         smtpConfigs: smtpConfigs,
@@ -242,7 +244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { enabled } = req.body;
       configService.setSmtpRotation(enabled);
-      
+
       res.json({
         success: true,
         rotationEnabled: configService.isSmtpRotationEnabled(),
@@ -256,15 +258,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/smtp/add", (req, res) => {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;
-      
+
       if (!host || !port || !user || !pass || !fromEmail) {
         return res.status(400).json({ success: false, error: "All SMTP fields are required" });
       }
-      
+
       const smtpId = configService.addSmtpConfig({
         host, port, user, pass, fromEmail, fromName
       });
-      
+
       res.json({
         success: true,
         smtpId: smtpId,
@@ -279,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { smtpId } = req.params;
       const deleted = configService.deleteSmtpConfig(smtpId);
-      
+
       if (deleted) {
         res.json({
           success: true,
@@ -297,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/smtp/rotate", (req, res) => {
     try {
       const nextSmtp = configService.rotateToNextSmtp();
-      
+
       res.json({
         success: true,
         currentSmtp: nextSmtp,
