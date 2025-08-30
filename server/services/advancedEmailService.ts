@@ -244,11 +244,7 @@ export class AdvancedEmailService {
   private static instance: AdvancedEmailService | null = null;
   private browserPool: BrowserPool[] = [];
   private isPaused = false;
-  
-  // Shared browser instance like in working Electron version
-  private browserInstance: any = null;
-  
-  private limit = pLimit(5); // Use same concurrency as working version
+  private limit = pLimit(3); // Concurrency control
   private logger = new Logger();
 
   // Activity Tracking - prevents cleanup during active operations
@@ -286,12 +282,6 @@ export class AdvancedEmailService {
     this.logger.info('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
-    
-    // Cleanup shared browser on process exit
-    process.on('exit', () => this.closeSharedBrowser());
-    process.on('SIGINT', () => this.closeSharedBrowser());
-    process.on('SIGTERM', () => this.closeSharedBrowser());
-    
     AdvancedEmailService.instance = this;
   }
 
@@ -742,39 +732,23 @@ export class AdvancedEmailService {
   // Launch browser with proxy support - IMPROVED VERSION with pooling
   private async launchBrowser(C: any = {}): Promise<any> {
     const launchOptions: any = { 
-      // Use true headless mode to prevent VNC from opening in Replit
-      headless: true, 
+      headless: true,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-gpu',
         '--disable-extensions',
-        '--disable-default-apps',
-        '--disable-sync',
-        '--disable-translate',
-        '--hide-scrollbars',
         '--disable-plugins',
         '--disable-images',
-        '--virtual-time-budget=5000',
-        // Additional arguments to ensure headless operation and prevent display creation
-        '--disable-gpu-sandbox',
-        '--disable-software-rasterizer',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-features=TranslateUI',
+        '--disable-javascript',
+        '--disable-gpu',
+        '--no-first-run',
         '--disable-web-security',
-        '--no-display', // Explicitly prevent display creation
-        '--disable-xvfb' // Disable X virtual framebuffer to prevent VNC
-      ],
-      defaultViewport: { width: 1200, height: 800 },
-      timeout: 30000,
-      ...C // Merge options passed in
+        '--memory-pressure-off',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync'
+      ]
     };
 
     // Configure for production environment  
@@ -801,10 +775,10 @@ export class AdvancedEmailService {
     try {
       // Check if we're in a Replit environment (with Nix)
       if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        // Use system chromium for Replit environment - use full nix store path
-        launchOptions.executablePath = '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium';
+        // Try system chromium for Replit/Nix environment
+        launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
         browser = await puppeteer.launch(launchOptions);
-        this.logger.info('Browser launched with system chromium (Replit)', { path: launchOptions.executablePath });
+        this.logger.info('Browser launched with system chromium (Replit)');
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
@@ -834,90 +808,42 @@ export class AdvancedEmailService {
     return browser;
   }
 
-  // Shared browser instance management - EXACT copy from working Electron version
-  private async getSharedBrowser(): Promise<any> {
-    if (!this.browserInstance) {
-      const launchOptions: any = { 
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu',
-          '--disable-extensions',
-          '--disable-default-apps',
-          '--disable-sync',
-          '--disable-translate',
-          '--hide-scrollbars',
-          '--disable-plugins',
-          '--virtual-time-budget=5000',
-          '--disable-gpu-sandbox',
-          '--disable-software-rasterizer',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding',
-          '--disable-features=TranslateUI',
-          '--disable-web-security',
-          '--no-display',
-          '--disable-xvfb'
-        ],
-        defaultViewport: { width: 1200, height: 800 },
-        timeout: 30000
-      };
-
-      // Use system chromium for Replit
-      if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        launchOptions.executablePath = '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium';
-      }
-
-      this.browserInstance = await puppeteer.launch(launchOptions);
-      this.logger.info('Shared browser launched for PDF/Image conversion');
-    }
-    return this.browserInstance;
-  }
-
-  private async closeSharedBrowser(): Promise<void> {
-    if (this.browserInstance) {
-      try {
-        await this.browserInstance.close();
-        this.logger.info('Shared browser closed.');
-      } catch (e) {
-        this.logger.error('Error closing shared browser:', e);
-      }
-      this.browserInstance = null;
-    }
-  }
-
-  // HTML to PDF conversion - EXACT copy from working Electron version
+  // HTML to PDF conversion - IMPROVED with fallback handling
   private async convertHtmlToPdf(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for PDF conversion');
     }
-    
-    const browser = await this.getSharedBrowser();
 
     return this.limit(async () => {
-      const page = await browser.newPage();
+      let browserInfo = await this.getBrowserFromPool();
+      let browser, page: any = null;
+      let usingPool = true;
+
+      // Handle new browser activity tracking format
+      if (!browserInfo) {
+        browser = await this.launchBrowser({});
+        usingPool = false;
+      } else if (typeof browserInfo === 'object' && browserInfo.browser) {
+        browser = browserInfo.browser;
+      } else {
+        browser = browserInfo;
+        usingPool = false;
+      }
+
       try {
+        page = await browser.newPage();
+        // Ultra-fast request interception - block ALL external resources
         await page.setRequestInterception(true);
         page.on('request', (req: any) => {
           const url = req.url();
-          if (
-            req.resourceType() === 'stylesheet' ||
-            (req.resourceType() === 'image' && !url.startsWith('data:')) ||
-            req.resourceType() === 'font'
-          ) {
-            req.abort();
-          } else {
+          if (url.startsWith('data:') || url.startsWith('about:')) {
             req.continue();
+          } else {
+            req.abort(); // Block all external requests for fastest rendering
           }
         });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
         const pdfBuffer = await page.pdf({
           format: 'A4',
           printBackground: true,
@@ -927,38 +853,89 @@ export class AdvancedEmailService {
             left: '20px',
             right: '40px'
           },
-          timeout: 30000
+          timeout: 15000
         });
-        await page.close();
+
+        if (page) await page.close();
+        if (usingPool) {
+          this.releaseBrowserFromPool(browserInfo);
+        } else {
+          await browser.close();
+        }
+
+        this.logger.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
         return pdfBuffer;
       } catch (e) {
-        await page.close();
+        if (page) {
+          try { await page.close(); } catch {}
+        }
+        if (usingPool) {
+          this.releaseBrowserFromPool(browserInfo);
+        } else {
+          try { await browser.close(); } catch {}
+        }
+        this.logger.error('PDF conversion failed', { error: e });
         throw e;
       }
     });
   }
 
-  // HTML to Image conversion - EXACT copy from working Electron version
+  // HTML to Image conversion - OPTIMIZED for speed
   private async convertHtmlToImage(html: string) {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
-    
     return this.limit(async () => {
-      this.logger.debug(`Image conversion queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
-      const browser = await this.getSharedBrowser();
-      const page = await browser.newPage();
+      const conversionStart = Date.now();
+      this.logger.debug('Image conversion starting', { 
+        queuePending: (this.limit as any).pendingCount, 
+        active: (this.limit as any).activeCount,
+        timestamp: conversionStart
+      });
+
+      // Direct browser launch for maximum HTML2IMG_BODY speed
+      let browser = await this.launchBrowser({});
+      let page: any = null;
+      let usingPool = false;
+
       try {
+        page = await browser.newPage();
         await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'networkidle2' });
-        const pngBuffer = await page.screenshot({ fullPage: true });
-        await page.close();
-        this.logger.debug(`Image conversion finished, queue pending: ${(this.limit as any).pendingCount}, active: ${(this.limit as any).activeCount}`);
+        // Optimized page loading - skip unnecessary network wait
+        await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
+        // Fast screenshot with optimized settings
+        const pngBuffer = await page.screenshot({ 
+          fullPage: true,
+          optimizeForSpeed: true,
+          captureBeyondViewport: false
+        });
+
+        if (page) await page.close();
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          await browser.close();
+        }
+
+        const conversionEnd = Date.now();
+        this.logger.debug('Image conversion completed', { 
+          sizeKB: Math.round(pngBuffer.length / 1024),
+          queuePending: (this.limit as any).pendingCount, 
+          active: (this.limit as any).activeCount,
+          duration: conversionEnd - conversionStart
+        });
         return pngBuffer;
       } catch (e) {
-        await page.close();
-        this.logger.error('Image generation failed:', e);
+        if (page) {
+          try { await page.close(); } catch {}
+        }
+        if (usingPool) {
+          this.releaseBrowserFromPool(browser);
+        } else {
+          try { await browser.close(); } catch {}
+        }
+        this.logger.error('Image generation failed', { error: e });
         throw e;
       }
     });
@@ -1426,57 +1403,35 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Email-safe QR HTML structure with proper fallback - declare variables first
-                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-                const borderStyle = C.BORDER_STYLE || 'solid';
-
-                // Generate overlay HTML using EMAIL-SAFE positioning for email clients
+                // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
                 const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
                 let hiddenImageHtml = '';
-
-                // Use EXACT same positioning as PDF processing for consistency
                 if (hasHiddenImage && imgBuf) {
-                  // Use EXACT same positioning as original main.js for PDF attachments
+                  // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
-
-                  hiddenImageHtml = `
-                    <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
-                      <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                      <img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>
-                    </div>`;
-
-                  console.log(`[Main HTML QR] Generated overlay using EXACT same positioning as PDF processing (top:77px, left:56%, QR:${qrSize}px)`);
+                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
+                  // Use EXACT same positioning as original main.js line 933
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  // Use EXACT same text overlay positioning as PDF processing
-                  const qrSize = C.QR_WIDTH || 200;
-
-                  hiddenImageHtml = `
-                    <div style="position:relative; width:${qrSize}px; height:${qrSize}px; margin:0 auto;">
-                      <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${qrSize}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
-                      <span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>
-                    </div>`;
-
-                  console.log(`[Main HTML QR] Using EXACT same text overlay positioning as PDF processing: ${C.HIDDEN_TEXT}`);
+                  // EXACT same text overlay positioning as main.js line 832
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
 
-                let qrHtml;
-                if (hiddenImageHtml) {
-                  // Use the overlay structure we just created
-                  qrHtml = `<div style="display:block; text-align:center; margin:10px auto;">
-                              <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                ${hiddenImageHtml}
-                              </a>
-                            </div>`;
-                } else {
-                  // Standard QR without overlay
-                  qrHtml = `<div style="display:block; text-align:center; margin:10px auto;">
-                              <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0 auto;"/>
-                              </a>
-                            </div>`;
-                }
+                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
+                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
+                const borderStyle = C.BORDER_STYLE || 'solid';
+
+                // EXACT same HTML structure as original main.js lines 938-943
+                const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
+                                  <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
+                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                  </a>
+                                  ${hiddenImageHtml}
+                                </div>`;
 
                 html = html.replace(/\{qrcode\}/g, qrHtml);
                 console.log(`[Main HTML QR] QR replacement completed using PDF/HTML2IMG_BODY logic for ${recipient}`);
@@ -1593,7 +1548,7 @@ export class AdvancedEmailService {
                   const borderStyle = C.BORDER_STYLE || 'solid';
                   const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin: 10px auto;">
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                      <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px; margin:0;"/>
                                     </a>
                                   </div>`;
 
