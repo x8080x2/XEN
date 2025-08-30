@@ -1674,41 +1674,6 @@ export class AdvancedEmailService {
                     }
                   });
 
-                  // QR overlay image system - restore exact technical implementation
-                  let hiddenOverlay = '';
-                  const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-
-                  // Load hidden image from files/logo directory - exact clone from main.js
-                  const logoDir = join('files', 'logo');
-                  let attImgBuf = null;
-                  let hasAttHiddenImage = false;
-
-                  try {
-                    if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
-                      const candidatePath = join(logoDir, C.HIDDEN_IMAGE_FILE);
-                      if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
-                        attImgBuf = readFileSync(candidatePath);
-                        hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
-                        console.log(`[HTML_CONVERT] Loaded hidden image: ${candidatePath}`);
-                      }
-                    }
-                  } catch (e) {
-                    console.warn('[HTML_CONVERT] Could not read hidden QR image:', e instanceof Error ? e.message : e);
-                  }
-
-                  // Perfect center positioning for attachments (match main HTML exactly)
-                  if (hasAttHiddenImage && attImgBuf) {
-                    const base64Img = attImgBuf.toString('base64');
-                    const qrSize = C.QR_WIDTH || 200;
-                    const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
-                    // Use EXACT same positioning as original main.js for attachments
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment (top:77px, left:56%, QR:${qrSize}px)`);
-                  } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                    console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
-                  }
-
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
                   const borderStyle = C.BORDER_STYLE || 'solid';
 
@@ -1716,7 +1681,6 @@ export class AdvancedEmailService {
                                     <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                       <img src="${qrDataUrl}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                     </a>
-                                    ${hiddenOverlay}
                                   </div>`;
 
                   processedAttHtml = processedAttHtml.replace(/\{qrcode\}/g, qrHtml);
