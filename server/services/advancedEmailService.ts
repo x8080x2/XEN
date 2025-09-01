@@ -1559,8 +1559,9 @@ export class AdvancedEmailService {
                                     ${hiddenOverlay}
                                   </div>`;
 
-                  // Replace the entire CID reference with styled QR HTML
-                  screenshotHtml = screenshotHtml.replace(/<img src="cid:qrcode-main"[^>]*>/g, qrHtml);
+                  // Replace the entire QR container div to avoid duplicate overlays
+                  // This matches the complete QR structure created in main HTML processing
+                  screenshotHtml = screenshotHtml.replace(/<div[^>]*position:relative[^>]*>[\s\S]*?<img src="cid:qrcode-main"[^>]*>[\s\S]*?<\/div>/g, qrHtml);
                   console.log(`[HTML2IMG_BODY] QR processed with hidden image overlay - Link: ${qrContent}`);
                 } else {
                   // QR disabled - remove QR completely, matching main HTML behavior
