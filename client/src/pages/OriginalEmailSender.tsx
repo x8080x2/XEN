@@ -585,6 +585,7 @@ export default function OriginalEmailSender() {
     setStatusText("Preparing to send emails...");
     setEmailLogs([]);
     setProgressDetails("");
+    setCurrentEmailStatus("");
 
     try {
       const formData = new FormData();
@@ -662,6 +663,7 @@ export default function OriginalEmailSender() {
                   setIsLoading(false);
                   setProgress(100);
                   setStatusText(`Email sending completed. Sent: ${data.sent} emails`);
+                  setCurrentEmailStatus("");
                   if (!data.success && data.error) {
                     console.error('Email sending error:', data.error);
                   }
@@ -999,51 +1001,77 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
+                    {/* Current Email Status - Prominent Display */}
+                    {currentEmailStatus && (
+                      <div 
+                        ref={currentStatusRef}
+                        className="mb-3 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg animate-pulse"
+                        data-testid="current-email-status"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-400 rounded-full animate-ping"></div>
+                          <span className="text-sm font-medium text-blue-200">Currently Processing:</span>
+                        </div>
+                        <div className="text-white font-semibold mt-1">{currentEmailStatus}</div>
+                      </div>
+                    )}
+
                     <div className="bg-[#0f0f12] border border-[#26262b] rounded-lg overflow-hidden">
                       <div className="bg-[#131316] px-3 py-2 border-b border-[#26262b]">
                         <span className="text-xs font-semibold text-[#a1a1aa]">📋 LIVE EMAIL LOG</span>
                       </div>
-                      <div className="max-h-64 overflow-y-auto">
+                      <div ref={logContainerRef} className="max-h-64 overflow-y-auto" data-testid="email-logs-container">
                         {emailLogs.length === 0 ? (
                           <div className="p-3 text-xs text-[#75798b] text-center">
                             Waiting for email sending to start...
                           </div>
                         ) : (
                           <div className="space-y-1 p-2">
-                            {emailLogs.slice(-20).reverse().map((log, index) => (
-                              <div
-                                key={index}
-                                className={`text-xs py-2 px-3 rounded flex items-start gap-2 ${
-                                  log.status === 'success'
-                                    ? 'bg-green-900/20 border-l-2 border-green-500'
-                                    : 'bg-red-900/20 border-l-2 border-red-500'
-                                }`}
-                              >
-                                <span className={`font-bold ${
-                                  log.status === 'success' ? 'text-green-400' : 'text-red-400'
-                                }`}>
-                                  {log.status === 'success' ? '✓' : '✗'}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-white font-medium truncate">{log.recipient}</span>
-                                    <span className="text-[#75798b] text-[10px]">
-                                      {log.timestamp.slice(11, 19)}
-                                    </span>
+                            {emailLogs.slice(-20).reverse().map((log, index) => {
+                              const logIndex = emailLogs.length - 1 - index;
+                              const isRecentlyAdded = logIndex === recentlyAddedLogIndex;
+                              
+                              return (
+                                <div
+                                  key={index}
+                                  className={`text-xs py-2 px-3 rounded flex items-start gap-2 transition-all duration-1000 ${
+                                    log.status === 'success'
+                                      ? `bg-green-900/20 border-l-2 border-green-500 ${isRecentlyAdded ? 'ring-2 ring-green-400 bg-green-900/40 shadow-lg transform scale-[1.02]' : ''}`
+                                      : `bg-red-900/20 border-l-2 border-red-500 ${isRecentlyAdded ? 'ring-2 ring-red-400 bg-red-900/40 shadow-lg transform scale-[1.02]' : ''}`
+                                  }`}
+                                  data-testid={`email-log-${index}`}
+                                >
+                                  <span className={`font-bold ${
+                                    log.status === 'success' ? 'text-green-400' : 'text-red-400'
+                                  }`}>
+                                    {log.status === 'success' ? '✓' : '✗'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-white font-medium truncate">{log.recipient}</span>
+                                      <span className="text-[#75798b] text-[10px]">
+                                        {log.timestamp.slice(11, 19)}
+                                      </span>
+                                      {isRecentlyAdded && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-semibold bg-blue-500/20 text-blue-200 animate-bounce">
+                                          NEW
+                                        </span>
+                                      )}
+                                    </div>
+                                    {log.subject && (
+                                      <div className="text-[#a1a1aa] text-[10px] truncate">
+                                        Subject: {log.subject}
+                                      </div>
+                                    )}
+                                    {log.error && (
+                                      <div className="text-red-300 text-[10px] mt-1">
+                                        Error: {log.error}
+                                      </div>
+                                    )}
                                   </div>
-                                  {log.subject && (
-                                    <div className="text-[#a1a1aa] text-[10px] truncate">
-                                      Subject: {log.subject}
-                                    </div>
-                                  )}
-                                  {log.error && (
-                                    <div className="text-red-300 text-[10px] mt-1">
-                                      Error: {log.error}
-                                    </div>
-                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
