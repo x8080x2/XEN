@@ -147,6 +147,12 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
+  const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
+  const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
+  
+  // Refs for auto-scrolling
+  const logContainerRef = useRef<HTMLDivElement>(null);
+  const currentStatusRef = useRef<HTMLDivElement>(null);
   const [smtpData, setSmtpData] = useState({
     smtpConfigs: [] as any[],
     currentSmtp: null as any,
@@ -177,6 +183,30 @@ export default function OriginalEmailSender() {
     loadTemplates();
     loadLogoFiles();
   }, []);
+
+  // Auto-scroll to bottom when new logs are added
+  useEffect(() => {
+    if (logContainerRef.current && emailLogs.length > 0) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+      
+      // Mark the latest log as recently added for highlighting
+      setRecentlyAddedLogIndex(emailLogs.length - 1);
+      
+      // Clear the highlight after 3 seconds
+      const timer = setTimeout(() => {
+        setRecentlyAddedLogIndex(-1);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [emailLogs.length]);
+
+  // Auto-scroll current status into view
+  useEffect(() => {
+    if (currentStatusRef.current && currentEmailStatus) {
+      currentStatusRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [currentEmailStatus]);
 
   const loadTemplates = async () => {
     try {
@@ -623,8 +653,10 @@ export default function OriginalEmailSender() {
 
                   if (data.status === 'success') {
                     setStatusText(`✓ Successfully sent to ${data.recipient}`);
+                    setCurrentEmailStatus(`✓ Successfully sent to ${data.recipient}`);
                   } else {
                     setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
+                    setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
                   }
                 } else if (data.type === 'complete') {
                   setIsLoading(false);
