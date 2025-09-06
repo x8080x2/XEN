@@ -1269,8 +1269,8 @@ export class AdvancedEmailService {
 
       // Batch processing with performance optimizations
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
-      const batchSize = C.EMAIL_PER_SECOND || 15; // Increased default batch size
-      console.log(`[sendMail] Using EMAIL_PER_SECOND: ${batchSize}, SLEEP: ${C.SLEEP}s, PRIORITY: ${C.PRIORITY}, RETRY: ${C.RETRY}`);
+      const batchSize = Math.min(C.EMAIL_PER_SECOND || 5, 10); // Limit batch size to prevent overwhelming
+      console.log(`[sendMail] Using EMAIL_PER_SECOND: ${C.EMAIL_PER_SECOND}, BATCH_SIZE: ${batchSize}, SLEEP: ${C.SLEEP}s, PRIORITY: ${C.PRIORITY}, RETRY: ${C.RETRY}`);
       const batches = [];
       for (let i = 0; i < recipients.length; i += batchSize) {
         batches.push(recipients.slice(i, i + batchSize));
@@ -1960,7 +1960,8 @@ END:VCALENDAR`;
 
           // Rate limiting: wait between emails within batch (except for last email)
           if (i < batch.length - 1) {
-            const delayMs = 1000 / (C.EMAIL_PER_SECOND || 5);
+            const delayMs = Math.max(200, 1000 / (C.EMAIL_PER_SECOND || 5)); // Minimum 200ms delay
+            console.log(`[Rate Limiting] Waiting ${delayMs}ms before next email (${C.EMAIL_PER_SECOND} emails/sec)`);
             await new Promise(resolve => setTimeout(resolve, delayMs));
           }
         }
