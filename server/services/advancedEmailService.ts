@@ -1316,7 +1316,7 @@ export class AdvancedEmailService {
                 emailFromName = currentSmtpConfig.fromName || 'Sender';
                 
                 // Create individual transporter for this email
-                emailTransporter = nodemailer.createTransporter({
+                emailTransporter = nodemailer.createTransport({
                   host: currentSmtpConfig.host,
                   port: parseInt(currentSmtpConfig.port),
                   secure: parseInt(currentSmtpConfig.port) === 465,
