@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { flushSync } from "react-dom";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -628,37 +629,55 @@ export default function OriginalEmailSender() {
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          // Add new data to buffer
+          buffer += decoder.decode(value);
+          
+          // Process complete lines
+          const lines = buffer.split('\n');
+          // Keep the last potentially incomplete line in buffer
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
 
+                // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
                   const progressData: EmailProgress = data;
-                  setEmailLogs(prev => [...prev, progressData]);
+                  
+                  console.log('📧 SSE Progress Event Received:', {
+                    recipient: data.recipient,
+                    status: data.status,
+                    timestamp: new Date().toISOString()
+                  });
+                  
+                  // Use flushSync to force immediate rendering of each email confirmation
+                  flushSync(() => {
+                    setEmailLogs(prev => [...prev, progressData]);
 
-                  if (progressData.totalRecipients) {
-                    const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
-                    setProgress(currentProgress);
-                    setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
-                  }
+                    if (progressData.totalRecipients) {
+                      const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
+                      setProgress(currentProgress);
+                      setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+                    }
 
-                  if (data.status === 'success') {
-                    setStatusText(`✓ Successfully sent to ${data.recipient}`);
-                    setCurrentEmailStatus(`✓ Successfully sent to ${data.recipient}`);
-                  } else {
-                    setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
-                    setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
-                  }
+                    if (data.status === 'success') {
+                      setStatusText(`✓ Successfully sent to ${data.recipient}`);
+                      setCurrentEmailStatus(`✓ Successfully sent to ${data.recipient}`);
+                    } else {
+                      setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
+                      setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
+                    }
+                  });
+                  
                 } else if (data.type === 'complete') {
                   setIsLoading(false);
                   setProgress(100);
@@ -703,6 +722,13 @@ export default function OriginalEmailSender() {
       await fetch('/api/original/pause', { method: 'POST' });
       setIsLoading(false);
       setStatusText("Email sending cancelled");
+      setCurrentEmailStatus("");
+      
+      // Close any active event source
+      if ((window as any).currentEventSource) {
+        (window as any).currentEventSource.close();
+        (window as any).currentEventSource = null;
+      }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
     }
