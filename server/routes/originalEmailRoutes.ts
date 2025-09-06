@@ -92,10 +92,13 @@ export function setupOriginalEmailRoutes(app: Express) {
       // Send progress updates via Server-Sent Events
       res.writeHead(200, {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Cache-Control'
+        'Access-Control-Allow-Headers': 'Cache-Control',
+        'X-Accel-Buffering': 'no'  // Disable nginx buffering
       });
 
       let totalSent = 0;
@@ -121,6 +124,9 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalFailed,
             totalRecipients: recipients.length
           })}\n\n`);
+          
+          // Force flush to prevent buffering - use Node.js HTTP response method
+          (res as any).flush?.();
         });
 
         // Send completion
@@ -131,12 +137,14 @@ export function setupOriginalEmailRoutes(app: Express) {
           error: result.error,
           details: result.details
         })}\n\n`);
+        (res as any).flush?.();
 
       } catch (error: any) {
         res.write(`data: ${JSON.stringify({
           type: 'error',
           error: error.message || 'Unknown error occurred'
         })}\n\n`);
+        (res as any).flush?.();
       }
 
       res.end();
