@@ -49,4 +49,3 @@ task = "shell.exec"
 args = "npm run dev"
 
 [agent]
-expertMode = true

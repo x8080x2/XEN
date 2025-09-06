@@ -1292,7 +1292,6 @@ export class AdvancedEmailService {
         for (let i = 0; i < batch.length; i++) {
           const recipient = batch[i];
           try {
-          try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
               const error = 'Invalid email format';
