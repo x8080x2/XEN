@@ -1287,8 +1287,11 @@ export class AdvancedEmailService {
         const batch = batches[batchIndex];
         console.log(`[Batch ${batchIndex + 1}/${batches.length}] Processing ${batch.length} recipients`);
 
-        // Process emails in parallel within batches for maximum speed
-        const batchPromises = batch.map(async (recipient: string) => {
+        // Process emails sequentially within batches to respect rate limiting
+        const batchResults = [];
+        for (let i = 0; i < batch.length; i++) {
+          const recipient = batch[i];
+          try {
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -1943,7 +1946,7 @@ END:VCALENDAR`;
               error: result.success ? null : result.error || 'Unknown error',
               timestamp: new Date().toISOString()
             });
-            return result;
+            batchResults.push(result);
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
             progressCallback?.({
@@ -1953,12 +1956,15 @@ END:VCALENDAR`;
               error: err && err.message ? err.message : String(err),
               timestamp: new Date().toISOString()
             });
-            return { success: false, error: err && err.message ? err.message : String(err), recipient };
+            batchResults.push({ success: false, error: err && err.message ? err.message : String(err), recipient });
           }
-        });
 
-        // Wait for all batch promises to complete
-        const batchResults = await Promise.all(batchPromises);
+          // Rate limiting: wait between emails within batch (except for last email)
+          if (i < batch.length - 1) {
+            const delayMs = 1000 / (C.EMAIL_PER_SECOND || 5);
+            await new Promise(resolve => setTimeout(resolve, delayMs));
+          }
+        }
 
         // Count results - exact clone
         batchResults.forEach((result: any) => {
