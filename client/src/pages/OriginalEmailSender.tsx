@@ -653,12 +653,6 @@ export default function OriginalEmailSender() {
                 if (data.type === 'progress') {
                   const progressData: EmailProgress = data;
                   
-                  console.log('📧 SSE Progress Event Received:', {
-                    recipient: data.recipient,
-                    status: data.status,
-                    timestamp: new Date().toISOString()
-                  });
-                  
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
                     setEmailLogs(prev => [...prev, progressData]);
