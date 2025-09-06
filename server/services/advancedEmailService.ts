@@ -1302,6 +1302,39 @@ export class AdvancedEmailService {
               });
               return { success: false, error, recipient };
             }
+
+            // Get current SMTP config for this email (enables per-email rotation)
+            const currentSmtpConfig = configService.getCurrentSmtpConfig();
+            let emailFromEmail = fromEmail;
+            let emailFromName = fromName;
+            let emailTransporter = transporter;
+
+            // If rotation is enabled and we have multiple SMTP configs, create individual transporter
+            if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
+              if (currentSmtpConfig) {
+                emailFromEmail = currentSmtpConfig.fromEmail;
+                emailFromName = currentSmtpConfig.fromName || 'Sender';
+                
+                // Create individual transporter for this email
+                emailTransporter = nodemailer.createTransporter({
+                  host: currentSmtpConfig.host,
+                  port: parseInt(currentSmtpConfig.port),
+                  secure: parseInt(currentSmtpConfig.port) === 465,
+                  auth: { 
+                    user: currentSmtpConfig.user, 
+                    pass: currentSmtpConfig.pass 
+                  },
+                  pool: true,
+                  maxConnections: 1,
+                  maxMessages: 1
+                });
+
+                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) for ${recipient}`);
+                
+                // Rotate to next SMTP for the next email
+                configService.rotateToNextSmtp();
+              }
+            }
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
@@ -1892,11 +1925,16 @@ END:VCALENDAR`;
             html: finalHtml,
             text,
             attachments: emailAttachments,
-            from: fromEmail,
-            fromName,
-            transporter,
+            from: emailFromEmail,
+            fromName: emailFromName,
+            transporter: emailTransporter,
             C
           });
+
+          // Close individual transporter if we created one for rotation
+          if (emailTransporter !== transporter && configService.isSmtpRotationEnabled()) {
+            emailTransporter.close();
+          }
 
             progressCallback?.({
               recipient,
