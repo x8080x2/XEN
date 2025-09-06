@@ -1,0 +1,59 @@
+~/workspace$ git add .
+git commit -m "feat: Add real-time individual email confirmations
+
+- Fixed SSE buffering with response flushing and flushSync
+- Added auto-scroll and animations for email progress
+- Enhanced visual feedback with current email status indicator
+- Cleaned up debugging code"
+git push
+On branch main
+Your branch is ahead of 'origin/main' by 14 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+Enumerating objects: 71, done.
+Counting objects: 100% (71/71), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (58/58), done.
+Writing objects: 100% (58/58), 11.00 KiB | 3.67 MiB/s, done.
+Total 58 (delta 31), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (31/31), completed with 8 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Sendinblue SMTP Key ———————————————————————————————
+remote:        locations:
+remote:          - commit: dd9cf306e30c8e5966a90779646ebeeea3f2ed73
+remote:            path: config/smtp.ini:11
+remote:          - commit: dd9cf306e30c8e5966a90779646ebeeea3f2ed73
+remote:            path: config/smtp.ini:17
+remote:          - commit: dd9cf306e30c8e5966a90779646ebeeea3f2ed73
+remote:            path: config/smtp.ini:23
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/x8080x2/XEN/security/secret-scanning/unblock-secret/32KrTJn2J8v7iXofyZFUgckwfYu
+remote:     
+remote: 
+remote: 
+To https://github.com/x8080x2/XEN
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/x8080x2/XEN'
+~/workspace$ 
+
+
+
+
+
+
+
+

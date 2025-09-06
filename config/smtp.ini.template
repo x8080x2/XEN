@@ -1,0 +1,21 @@
+[smtp0]
+host=smtp.example.com
+port=587
+user=your-email@example.com
+pass=your-app-password
+fromEmail=your-email@example.com
+
+[smtp1]
+host=smtp-relay.brevo.com
+port=587
+user=your-brevo-username
+pass=your-brevo-api-key
+fromEmail=your-sender@yourdomain.com
+
+[smtp2]
+host=smtp-relay.brevo.com
+port=587
+user=your-brevo-username
+pass=your-brevo-api-key
+fromEmail=your-sender@yourdomain.com
+fromName=Your Name
