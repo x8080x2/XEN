@@ -742,11 +742,41 @@ export default function OriginalEmailSender() {
         {/* Sidebar */}
         <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-10 h-10 bg-[] text-white rounded-lg flex  font-bold text-7xl">
-              CLS
+            <div className="flex flex-col items-center mb-8">
+              {/* Large ASCII Art Logo */}
+              <div className="text-[#ef4444] font-mono text-xs leading-none mb-4 text-center whitespace-pre">
+{`
+ ██████╗██╗     ███████╗
+██╔════╝██║     ██╔════╝
+██║     ██║     ███████╗
+██║     ██║     ╚════██║
+╚██████╗███████╗███████║
+ ╚═════╝╚══════╝╚══════╝
+                        
+███████╗███╗   ███╗ █████╗ ██╗██╗     
+██╔════╝████╗ ████║██╔══██╗██║██║     
+█████╗  ██╔████╔██║███████║██║██║     
+██╔══╝  ██║╚██╔╝██║██╔══██║██║██║     
+███████╗██║ ╚═╝ ██║██║  ██║██║███████╗
+╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
+                                      
+███████╗███████╗███╗   ██╗██████╗ ███████╗██████╗ 
+██╔════╝██╔════╝████╗  ██║██╔══██╗██╔════╝██╔══██╗
+███████╗█████╗  ██╔██╗ ██║██║  ██║█████╗  ██████╔╝
+╚════██║██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ██╔══██╗
+███████║███████╗██║ ╚████║██████╔╝███████╗██║  ██║
+╚══════╝╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝
+`}
               </div>
-              <div>
+              
+              {/* Decorative Elements */}
+              <div className="text-[#ef4444] font-mono text-xs mb-4 opacity-60">
+                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
+              </div>
+              
+              <div className="text-center text-[#a1a1aa] text-xs">
+                <div className="mb-2">⚡ ADVANCED EMAIL DELIVERY ⚡</div>
+                <div className="text-[#ef4444] font-bold">SYSTEM READY</div>
               </div>
             </div>
 
@@ -763,10 +793,21 @@ export default function OriginalEmailSender() {
             </nav>
           </div>
 
-          {/* User Profile - Compact */}
-          <div className="absolute bottom-4 left-4">
-            <div className="flex items-center gap-1 px-1 py-2">
-              <div className="text-xs text-[#ef4444]">📡</div>
+          {/* ASCII Art Status Display */}
+          <div className="absolute bottom-4 left-4 right-4">
+            <div className="text-[#ef4444] font-mono text-xs text-center whitespace-pre opacity-70 mb-3">
+{`
+┌─────────────────────┐
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+│  ▓ SYSTEM STATUS ▓  │
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+└─────────────────────┘
+   ◢◤◢◤◢◤◢◤◢◤◢◤◢
+`}
+            </div>
+            <div className="flex items-center justify-center gap-2 px-1 py-2">
+              <div className="text-xs text-[#ef4444] animate-pulse">📡</div>
+              <div className="text-xs text-green-400">ONLINE</div>
             </div>
           </div>
         </div>
@@ -774,6 +815,32 @@ export default function OriginalEmailSender() {
         {/* Main Content */}
         <div className="flex-1 p-6 overflow-y-auto max-h-screen">
           <div className="max-w-7xl mx-auto">
+            {/* Large ASCII Banner */}
+            <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
+{`
+   ██████╗ ██████╗ ███╗   ███╗ ██████╗  █████╗ ███╗   ██╗██╗   ██╗    ███████╗███╗   ███╗ █████╗ ██╗██╗     
+  ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔══██╗████╗  ██║╚██╗ ██╔╝    ██╔════╝████╗ ████║██╔══██╗██║██║     
+  ██║     ██║   ██║██╔████╔██║██████╔╝███████║██╔██╗ ██║ ╚████╔╝     █████╗  ██╔████╔██║███████║██║██║     
+  ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██╔══██║██║╚██╗██║  ╚██╔╝      ██╔══╝  ██║╚██╔╝██║██╔══██║██║██║     
+  ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ██║  ██║██║ ╚████║   ██║       ███████╗██║ ╚═╝ ██║██║  ██║██║███████╗
+   ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝       ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
+                                                                                                              
+██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
+██╔══██╗██╔════╝██║     ██║██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
+██║  ██║█████╗  ██║     ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝     ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║
+██║  ██║██╔══╝  ██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗  ╚██╔╝      ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║
+██████╔╝███████╗███████╗██║ ╚████╔╝ ███████╗██║  ██║   ██║       ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║
+╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝
+`}
+              </div>
+              <div className="text-center mt-4">
+                <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
+                <div className="text-[#ef4444] text-sm font-bold">⚡ PROFESSIONAL EMAIL AUTOMATION PLATFORM ⚡</div>
+                <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
+              </div>
+            </div>
+            
             <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1100,30 +1167,51 @@ export default function OriginalEmailSender() {
                 </div>
               )}
 
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-4 mt-6">
-                <Button
-                  onClick={handleSendEmails}
-                  disabled={isLoading}
-                  className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white"
-                >
-                  {isLoading ? 'SENDING...' : 'SEND'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={cancelSending}
-                  disabled={!isLoading}
-                  className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
-                >
-                  CANCEL
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
-                >
-                  SETTINGS
-                </Button>
+              {/* Action Buttons with ASCII Frame */}
+              <div className="mt-6">
+                <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
+                  ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
+                </div>
+                <div className="flex justify-center gap-4">
+                  <Button
+                    onClick={handleSendEmails}
+                    disabled={isLoading}
+                    className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        SENDING...
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        🚀 SEND
+                      </span>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={cancelSending}
+                    disabled={!isLoading}
+                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                  >
+                    ⛔ CANCEL
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                  >
+                    ⚙️ SETTINGS
+                  </Button>
+                </div>
+                <div className="text-[#ef4444] font-mono text-xs text-center mt-3 opacity-60 whitespace-pre">
+{`
+┌────────────────────────────────────────────────────────┐
+│              ▓▓▓ READY FOR DEPLOYMENT ▓▓▓              │
+└────────────────────────────────────────────────────────┘
+`}
+                </div>
               </div>
             </div>
 
