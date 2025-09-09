@@ -744,7 +744,7 @@ export default function OriginalEmailSender() {
           <div className="p-4">
             <div className="flex flex-col items-center mb-8">
               {/* Large ASCII Art Logo */}
-              <div className="text-[#ef4444] font-mono text-xs leading-none mb-4 text-center whitespace-pre">
+              <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
 {`
  ██████╗██╗     ███████╗
 ██╔════╝██║     ██╔════╝
@@ -762,8 +762,8 @@ export default function OriginalEmailSender() {
               </div>
               
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="mb-1">⚡ADVANCED EMAIL DELIVERY SYSTEM⚡</div>
-                <div className="text-[#ef4444] font-bold"> READY</div>
+                <div className="mb-1">EMAIL DELIVERY SYSTEM⚡</div>
+                <div className="text-[#ef4444] font-bold"> SHOOTER</div>
               </div>
             </div>
 
@@ -819,7 +819,7 @@ export default function OriginalEmailSender() {
               </div>
               <div className="text-center mt-4">
                 <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
-                <div className="text-[#ef4444] text-sm font-bold">⚡ PROFESSIONAL EMAIL AUTOMATION PLATFORM ⚡</div>
+                <div className="text-[#ef4444] text-sm font-bold">⚡ PROFESSIONAL ADVANCED EMAIL SMART SENDER ⚡</div>
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
             </div>
