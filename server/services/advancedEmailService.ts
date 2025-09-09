@@ -7,7 +7,6 @@ import crypto from "crypto";
 import axios from "axios";
 
 import puppeteer from "puppeteer";
-import pLimit from "p-limit";
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
 // @ts-ignore - html-docx-js doesn't have proper types
@@ -193,53 +192,14 @@ const defaultConfig = {
 };
 
 // Improvement 1: Browser Pool Management
-interface BrowserPool {
-  instance: any;
-  activePages: number;
-  lastUsed: number;
-  maxPages: number;
-}
 
 // Improvement 8: Structured Logging System
-class Logger {
-  private logLevel: string = process.env.LOG_LEVEL || 'info';
-  private logFile: string = 'logs/email-service.log';
-
-  log(level: string, message: string, data?: any) {
-    if (this.shouldLog(level)) {
-      const timestamp = new Date().toISOString();
-      const logEntry = {
-        timestamp,
-        level,
-        message,
-        data: data || {},
-        memory: process.memoryUsage(),
-        pid: process.pid
-      };
-      console.log(JSON.stringify(logEntry));
-      // Could write to file in production
-    }
-  }
-
-  private shouldLog(level: string): boolean {
-    const levels = ['error', 'warn', 'info', 'debug'];
-    const currentLevelIndex = levels.indexOf(this.logLevel);
-    const messageLevelIndex = levels.indexOf(level);
-    return messageLevelIndex <= currentLevelIndex;
-  }
-
-  error(message: string, data?: any) { this.log('error', message, data); }
-  warn(message: string, data?: any) { this.log('warn', message, data); }
-  info(message: string, data?: any) { this.log('info', message, data); }
-  debug(message: string, data?: any) { this.log('debug', message, data); }
-}
 
 export class AdvancedEmailService {
   private static instance: AdvancedEmailService | null = null;
-  private browserPool: BrowserPool[] = [];
+  private browserPool: any[] = [];
   private isPaused = false;
-  private limit = pLimit(3); // Concurrency control
-  private logger = new Logger();
+  private concurrencyLimit = 3;
 
   // Activity Tracking - prevents cleanup during active operations
   private activeOperations = new Set<string>();
@@ -269,11 +229,11 @@ export class AdvancedEmailService {
 
   constructor() {
     if (AdvancedEmailService.instance) {
-      this.logger.warn('Multiple AdvancedEmailService instances detected! Using existing instance.');
+      console.warn('Multiple AdvancedEmailService instances detected! Using existing instance.');
       return AdvancedEmailService.instance;
     }
 
-    this.logger.info('AdvancedEmailService initialized');
+    console.info('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
     AdvancedEmailService.instance = this;
@@ -315,9 +275,9 @@ export class AdvancedEmailService {
             maxPages: 3 // Reduced max pages per browser
           };
           this.browserPool.push(availableBrowser);
-          this.logger.info('Created new browser in pool', { poolSize: this.browserPool.length });
+          console.info('Created new browser in pool', { poolSize: this.browserPool.length });
         } catch (error) {
-          this.logger.error('Failed to create browser', { error });
+          console.error('Failed to create browser', { error });
           // Return null to fall back to direct browser launch
           return null;
         }
@@ -334,7 +294,7 @@ export class AdvancedEmailService {
         const browser = await this.launchBrowser({});
         return { browser, operationId };
       } catch (error) {
-        this.logger.error('Failed to launch fallback browser', { error });
+        console.error('Failed to launch fallback browser', { error });
         throw error;
       }
     } catch (error) {
@@ -365,10 +325,7 @@ export class AdvancedEmailService {
     // Remove operation tracking
     if (operationId) {
       this.activeOperations.delete(operationId);
-      this.logger.debug('Released browser operation', { 
-        operationId, 
-        activeOperations: this.activeOperations.size 
-      });
+      console.debug('Released browser operation', { operationId, activeOperations: this.activeOperations.size });
     }
   }
 
@@ -377,13 +334,13 @@ export class AdvancedEmailService {
     setInterval(() => {
       const memUsage = process.memoryUsage();
       if (memUsage.heapUsed > this.memoryThreshold) {
-        this.logger.warn('High memory usage detected', { memUsage });
+        console.warn('High memory usage detected', memUsage);
         this.cleanupBrowserPool();
       }
 
       // Log memory stats every 5 minutes
       if (Date.now() - this.lastMemoryCheck > 300000) {
-        this.logger.info('Memory status', { memUsage, browserPoolSize: this.browserPool.length });
+        console.log(JSON.stringify({ timestamp: new Date().toISOString(), level: 'info', message: 'Memory status', data: { memUsage, browserPoolSize: this.browserPool.length }, memory: memUsage, pid: process.pid }));
         this.lastMemoryCheck = Date.now();
       }
     }, this.memoryCheckInterval);
@@ -397,9 +354,7 @@ export class AdvancedEmailService {
 
     // Clean up stale browsers even with some active operations
     if (this.activeOperations.size > 3) {
-      this.logger.info('High activity detected, performing partial cleanup', { 
-        activeCount: this.activeOperations.size 
-      });
+      console.log('High activity detected, performing partial cleanup', { activeCount: this.activeOperations.size });
     }
 
     for (let i = this.browserPool.length - 1; i >= 0; i--) {
@@ -408,9 +363,9 @@ export class AdvancedEmailService {
         try {
           await pool.instance.close();
           this.browserPool.splice(i, 1);
-          this.logger.info('Cleaned up stale browser', { remaining: this.browserPool.length });
+          console.log('Cleaned up stale browser', { remaining: this.browserPool.length });
         } catch (error) {
-          this.logger.error('Error closing browser', { error });
+          console.error('Error closing browser', error);
         }
       }
     }
@@ -437,7 +392,7 @@ export class AdvancedEmailService {
 
     // Only log when rate actually changes significantly
     if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
-      this.logger.debug('Rate limit updated gradually', { 
+      console.debug('Rate limit updated gradually', { 
         oldRate,
         newRate: this.currentRateLimit, 
         avgResponseTime,
@@ -487,7 +442,7 @@ export class AdvancedEmailService {
 
         if (attempt < maxRetries) {
           const delay = initialDelay * Math.pow(2, attempt);
-          this.logger.warn(`Retry attempt ${attempt + 1}/${maxRetries + 1}`, { 
+          console.warn(`Retry attempt ${attempt + 1}/${maxRetries + 1}`, { 
             delay, 
             error: lastError.message 
           });
@@ -692,14 +647,14 @@ export class AdvancedEmailService {
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
 
-      this.logger.debug('Generated QR code with custom colors', { 
+      console.debug('Generated QR code with custom colors', { 
         link: link.substring(0, 50),
         foregroundColor,
         backgroundColor
       });
       return buffer;
     } catch (error) {
-      this.logger.error('Error generating QR code', { error, link });
+      console.error('Error generating QR code', { error, link });
       return null;
     } finally {
       // Always unlock cache key
@@ -752,7 +707,7 @@ export class AdvancedEmailService {
       if (proxyHost && proxyPort) {
         const scheme = (C.PROXY.TYPE || 'socks5').toLowerCase();
         launchOptions.args.push(`--proxy-server=${scheme}://${proxyHost}:${proxyPort}`);
-        this.logger.info('Using proxy', { scheme, host: proxyHost, port: proxyPort });
+        console.info('Using proxy', { scheme, host: proxyHost, port: proxyPort });
       }
     }
 
@@ -763,21 +718,21 @@ export class AdvancedEmailService {
         // Try system chromium for Replit/Nix environment
         launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
         browser = await puppeteer.launch(launchOptions);
-        this.logger.info('Browser launched with system chromium (Replit)');
+        console.info('Browser launched with system chromium (Replit)');
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
-        this.logger.info('Browser launched with bundled chrome (Production)');
+        console.info('Browser launched with bundled chrome (Production)');
       }
     } catch (error) {
-      this.logger.warn('Primary browser launch failed, trying fallback', { error: error instanceof Error ? error.message : String(error) });
+      console.warn('Primary browser launch failed, trying fallback', { error: error instanceof Error ? error.message : String(error) });
       // Fallback: remove any executablePath and try bundled chrome
       delete launchOptions.executablePath;
       try {
         browser = await puppeteer.launch(launchOptions);
-        this.logger.info('Browser launched with bundled chrome (Fallback)');
+        console.info('Browser launched with bundled chrome (Fallback)');
       } catch (fallbackError) {
-        this.logger.error('All browser launch attempts failed', { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
+        console.error('All browser launch attempts failed', { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
         throw new Error(`Failed to launch browser: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
       }
     }
@@ -787,7 +742,7 @@ export class AdvancedEmailService {
       const pages = await browser.pages();
       const page = pages.length ? pages[0] : await browser.newPage();
       await page.authenticate({ username: C.PROXY.USER, password: C.PROXY.PASS });
-      this.logger.info('Proxy authentication configured');
+      console.info('Proxy authentication configured');
     }
 
     return browser;
@@ -799,7 +754,7 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for PDF conversion');
     }
 
-    return this.limit(async () => {
+    return this.concurrencyLimit(async () => {
       let browserInfo = await this.getBrowserFromPool();
       let browser, page: any = null;
       let usingPool = true;
@@ -848,7 +803,7 @@ export class AdvancedEmailService {
           await browser.close();
         }
 
-        this.logger.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
+        console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
         return pdfBuffer;
       } catch (e) {
         if (page) {
@@ -859,7 +814,7 @@ export class AdvancedEmailService {
         } else {
           try { await browser.close(); } catch {}
         }
-        this.logger.error('PDF conversion failed', { error: e });
+        console.error('PDF conversion failed', { error: e });
         throw e;
       }
     });
@@ -870,11 +825,11 @@ export class AdvancedEmailService {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
-    return this.limit(async () => {
+    return this.concurrencyLimit(async () => {
       const conversionStart = Date.now();
-      this.logger.debug('Image conversion starting', { 
-        queuePending: (this.limit as any).pendingCount, 
-        active: (this.limit as any).activeCount,
+      console.debug('Image conversion starting', { 
+        queuePending: (this.concurrencyLimit as any).pendingCount, 
+        active: (this.concurrencyLimit as any).activeCount,
         timestamp: conversionStart
       });
 
@@ -904,10 +859,10 @@ export class AdvancedEmailService {
         }
 
         const conversionEnd = Date.now();
-        this.logger.debug('Image conversion completed', { 
+        console.debug('Image conversion completed', { 
           sizeKB: Math.round(pngBuffer.length / 1024),
-          queuePending: (this.limit as any).pendingCount, 
-          active: (this.limit as any).activeCount,
+          queuePending: (this.concurrencyLimit as any).pendingCount, 
+          active: (this.concurrencyLimit as any).activeCount,
           duration: conversionEnd - conversionStart
         });
         return pngBuffer;
@@ -920,7 +875,7 @@ export class AdvancedEmailService {
         } else {
           try { await browser.close(); } catch {}
         }
-        this.logger.error('Image generation failed', { error: e });
+        console.error('Image generation failed', { error: e });
         throw e;
       }
     });
@@ -1001,7 +956,7 @@ export class AdvancedEmailService {
     // Add comprehensive error handling to prevent unhandled rejections
     process.removeAllListeners('unhandledRejection');
     process.on('unhandledRejection', (reason, promise) => {
-      this.logger.error('Unhandled Promise Rejection in sendMail', { 
+      console.error('Unhandled Promise Rejection in sendMail', { 
         reason: reason instanceof Error ? reason.message : reason,
         stack: reason instanceof Error ? reason.stack : undefined,
         campaignId 
@@ -1015,7 +970,7 @@ export class AdvancedEmailService {
       emailCount: args.recipients?.length || 0
     });
 
-    this.logger.info('Campaign started with activity tracking', { 
+    console.info('Campaign started with activity tracking', { 
       campaignId, 
       emailCount: args.recipients?.length || 0,
       activeOperations: this.activeOperations.size,
@@ -1256,7 +1211,7 @@ export class AdvancedEmailService {
       processedBodyHtml = replacePlaceholders(processedBodyHtml);
 
       // Recreate render concurrency limiter with higher performance defaults
-      this.limit = pLimit(C.EMAIL_PER_SECOND || 15); // Increased default from 5 to 15
+      this.concurrencyLimit = C.EMAIL_PER_SECOND || 15; // Increased default from 5 to 15
 
       // Use processedBodyHtml as the email html body from now on
       const templateHtmlBase = processedBodyHtml;
@@ -1997,7 +1952,7 @@ END:VCALENDAR`;
 
       // Clean up campaign tracking on success
       this.activeCampaigns.delete(campaignId);
-      this.logger.info('Campaign completed successfully', { 
+      console.info('Campaign completed successfully', { 
         campaignId, 
         sent, 
         failed, 
@@ -2018,11 +1973,11 @@ END:VCALENDAR`;
       };
 
       console.error('Error during sendMail:', errorDetails);
-      this.logger.error('SendMail operation failed', errorDetails);
+      console.error('SendMail operation failed', errorDetails);
 
       // Clean up campaign tracking on error
       this.activeCampaigns.delete(campaignId);
-      this.logger.info('Campaign failed and cleaned up', { 
+      console.info('Campaign failed and cleaned up', { 
         campaignId, 
         error: errorMessage,
         duration: Date.now() - sendMailStart,
@@ -2104,7 +2059,7 @@ END:VCALENDAR`;
       trackResponse(true);
       this.progressMetrics.emailsSent++;
 
-      this.logger.info('Email sent successfully', { 
+      console.info('Email sent successfully', { 
         to: emailData.to, 
         responseTime: Date.now() - startTime 
       });
@@ -2124,7 +2079,7 @@ END:VCALENDAR`;
         responseTime: Date.now() - startTime
       };
 
-      this.logger.error('Email failed to send', errorDetails);
+      console.error('Email failed to send', errorDetails);
       console.error('Email sending error:', errorDetails);
 
       return { success: false, error: errorMessage, recipient: emailData.to };
@@ -2210,28 +2165,28 @@ END:VCALENDAR`;
     // Check cache
     const cached = this.templateCache.get(templateName);
     if (cached && cached.lastModified === lastModified) {
-      this.logger.debug('Template served from cache', { templateName });
+      console.debug('Template served from cache', { templateName });
       return cached.content;
     }
 
     // Load from disk and cache
     const content = readFileSync(templatePath, 'utf-8');
     this.templateCache.set(templateName, { content, lastModified });
-    this.logger.debug('Template loaded and cached', { templateName, sizeKB: Math.round(content.length / 1024) });
+    console.debug('Template loaded and cached', { templateName, sizeKB: Math.round(content.length / 1024) });
 
     return content;
   }
 
   // Cleanup method to be called on service shutdown
   async cleanup() {
-    this.logger.info('Starting cleanup');
+    console.info('Starting cleanup');
 
     // Close all browser instances
     for (const pool of this.browserPool) {
       try {
         await pool.instance.close();
       } catch (error) {
-        this.logger.warn('Error closing browser during cleanup', { error });
+        console.warn('Error closing browser during cleanup', { error });
       }
     }
     this.browserPool = [];
@@ -2239,7 +2194,7 @@ END:VCALENDAR`;
     // Clear template cache
     this.templateCache.clear();
 
-    this.logger.info('Cleanup completed');
+    console.info('Cleanup completed');
   }
   async writeFile(filepath: string, content: string) {
     try {
