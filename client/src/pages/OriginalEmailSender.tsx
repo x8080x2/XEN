@@ -1761,9 +1761,9 @@ export default function OriginalEmailSender() {
                       </Select>
                       <div className="text-xs text-[#a1a1aa] mt-1">
                         {advancedSettings.hiddenImageFile ? (
-                          <span>🖼️ Using logo: <strong className="text-white">{advancedSettings.hiddenImageFile}</strong></span>
+                          <span>🖼️ Using Logo: <strong className="text-white">{advancedSettings.hiddenImageFile}</strong></span>
                         ) : (
-                          <span>Select image from /files/logo</span>
+                          <span>image from logo folder</span>
                         )}
                       </div>
                     </div>
@@ -1781,23 +1781,13 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label className="text-sm text-[#a1a1aa]">Hidden Text (fallback if no image)</Label>
+                    <Label className="text-sm text-[#a1a1aa]">Hidden Text</Label>
                     <Input
                       value={advancedSettings.hiddenText}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
                       placeholder="Optional text overlay"
                     />
-                  </div>
-                  <div className="text-xs text-[#75798b] mt-2 p-3 bg-[#0a0a0f] rounded border border-[#26262b]">
-                    <div className="text-yellow-400 font-semibold mb-2">💡 Hidden Image Overlay Info:</div>
-                    <div className="space-y-1">
-                      <div>• Images are loaded from <code className="text-green-400">/files/logo/</code> directory</div>
-                      <div>• Overlay appears centered on top of QR codes with z-index: 10</div>
-                      <div>• Position: <code className="text-cyan-400">top:77px; left:56%</code></div>
-                      <div>• If no image is selected, falls back to Hidden Text overlay</div>
-                      <div>• Works in both email body and PDF/PNG attachments</div>
-                    </div>
                   </div>
                 </div>
 
