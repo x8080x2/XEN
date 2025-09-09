@@ -1150,16 +1150,20 @@ export default function OriginalEmailSender() {
                 </div>
               )}
 
-              {/* Action Buttons with ASCII Frame */}
+              {/* Action Buttons with Enhanced ASCII Frame */}
               <div className="mt-6">
-                <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
-                  ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
+                <div className="text-[#ef4444] font-mono text-xs text-center mb-4 opacity-70 whitespace-pre">
+{`
+╔═══════════════════════════════════════════════════════════════════════╗
+║                          🚀 MISSION CONTROL 🚀                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+`}
                 </div>
                 <div className="flex justify-center gap-4">
                   <Button
                     onClick={handleSendEmails}
                     disabled={isLoading}
-                    className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative"
+                    className="min-w-[120px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative font-bold"
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
@@ -1168,7 +1172,7 @@ export default function OriginalEmailSender() {
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
-                        🚀 SEND
+                        🚀 LAUNCH
                       </span>
                     )}
                   </Button>
@@ -1176,23 +1180,82 @@ export default function OriginalEmailSender() {
                     variant="outline"
                     onClick={cancelSending}
                     disabled={!isLoading}
-                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    className="min-w-[120px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white font-bold"
                   >
-                    ⛔ CANCEL
+                    ⛔ ABORT
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    className="min-w-[120px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white font-bold"
                   >
-                    ⚙️ SETTINGS
+                    ⚙️ CONFIG
                   </Button>
                 </div>
-                <div className="text-[#ef4444] font-mono text-xs text-center mt-3 opacity-60 whitespace-pre">
+                
+                {/* Enhanced ASCII Status Display */}
+                <div className="text-[#ef4444] font-mono text-xs text-center mt-6 opacity-70 whitespace-pre">
 {`
-┌────────────────────────────────────────────────────────┐
-│              ▓▓▓ READY FOR DEPLOYMENT ▓▓▓              │
-└────────────────────────────────────────────────────────┘
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗              ║
+║  ╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║              ║
+║     ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║              ║
+║     ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║              ║
+║     ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗         ║
+║     ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝         ║
+║                                                                              ║
+║     ██████╗ ███████╗ █████╗ ██████╗ ██╗   ██╗    ███████╗ ██████╗ ██████╗  ║
+║     ██╔══██╗██╔════╝██╔══██╗██╔══██╗╚██╗ ██╔╝    ██╔════╝██╔═══██╗██╔══██╗ ║
+║     ██████╔╝█████╗  ███████║██║  ██║ ╚████╔╝     █████╗  ██║   ██║██████╔╝ ║
+║     ██╔══██╗██╔══╝  ██╔══██║██║  ██║  ╚██╔╝      ██╔══╝  ██║   ██║██╔══██╗ ║
+║     ██║  ██║███████╗██║  ██║██████╔╝   ██║       ██║     ╚██████╔╝██║  ██║ ║
+║     ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝       ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ║
+║                                                                              ║
+║            ▓▓▓▓▓▓▓ DEPLOYMENT SEQUENCE INITIATED ▓▓▓▓▓▓▓                    ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+`}
+                </div>
+
+                {/* ASCII Status Indicators */}
+                <div className="mt-4 flex justify-center gap-8">
+                  <div className="text-center">
+                    <div className="text-[#ef4444] font-mono text-xs whitespace-pre">
+{`
+┌─────────┐
+│  ◉ PWR  │
+│ ONLINE  │
+└─────────┘
+`}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-green-400 font-mono text-xs whitespace-pre">
+{`
+┌─────────┐
+│  ◉ SYS  │
+│ ACTIVE  │
+└─────────┘
+`}
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-blue-400 font-mono text-xs whitespace-pre">
+{`
+┌─────────┐
+│  ◉ NET  │
+│  CONN   │
+└─────────┘
+`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Final ASCII Footer */}
+                <div className="text-[#ef4444] font-mono text-xs text-center mt-6 opacity-60 whitespace-pre">
+{`
+════════════════════════════════════════════════════════════════════════════════
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ CLS EMAIL DELIVERY SYSTEM ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+════════════════════════════════════════════════════════════════════════════════
 `}
                 </div>
               </div>
