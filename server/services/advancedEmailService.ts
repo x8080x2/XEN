@@ -229,11 +229,11 @@ export class AdvancedEmailService {
 
   constructor() {
     if (AdvancedEmailService.instance) {
-      console.warn('Multiple AdvancedEmailService instances detected! Using existing instance.');
+      console.log('Multiple AdvancedEmailService instances detected! Using existing instance.');
       return AdvancedEmailService.instance;
     }
 
-    console.info('AdvancedEmailService initialized');
+    console.log('AdvancedEmailService initialized');
     // Start memory monitoring
     this.startMemoryMonitoring();
     AdvancedEmailService.instance = this;
@@ -334,7 +334,7 @@ export class AdvancedEmailService {
     setInterval(() => {
       const memUsage = process.memoryUsage();
       if (memUsage.heapUsed > this.memoryThreshold) {
-        console.warn('High memory usage detected', memUsage);
+        console.log('High memory usage detected:', memUsage);
         this.cleanupBrowserPool();
       }
 
@@ -718,11 +718,11 @@ export class AdvancedEmailService {
         // Try system chromium for Replit/Nix environment
         launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
         browser = await puppeteer.launch(launchOptions);
-        console.info('Browser launched with system chromium (Replit)');
+        console.log('Browser launched with system chromium (Replit)');
       } else {
         // For production environments (Render, Vercel, etc.), use bundled Chrome
         browser = await puppeteer.launch(launchOptions);
-        console.info('Browser launched with bundled chrome (Production)');
+        console.log('Browser launched with bundled chrome (Production)');
       }
     } catch (error) {
       console.warn('Primary browser launch failed, trying fallback', { error: error instanceof Error ? error.message : String(error) });
@@ -730,7 +730,7 @@ export class AdvancedEmailService {
       delete launchOptions.executablePath;
       try {
         browser = await puppeteer.launch(launchOptions);
-        console.info('Browser launched with bundled chrome (Fallback)');
+        console.log('Browser launched with bundled chrome (Fallback)');
       } catch (fallbackError) {
         console.error('All browser launch attempts failed', { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
         throw new Error(`Failed to launch browser: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
@@ -742,7 +742,7 @@ export class AdvancedEmailService {
       const pages = await browser.pages();
       const page = pages.length ? pages[0] : await browser.newPage();
       await page.authenticate({ username: C.PROXY.USER, password: C.PROXY.PASS });
-      console.info('Proxy authentication configured');
+      console.log('Proxy authentication configured');
     }
 
     return browser;
