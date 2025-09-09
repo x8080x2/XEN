@@ -708,7 +708,6 @@ export default function OriginalEmailSender() {
     } finally {
       // Always ensure sending state is reset
       setIsLoading(false);
-      // Cleanup: Ensure any remaining response streams are properly closed
     }
   };
 
@@ -719,9 +718,11 @@ export default function OriginalEmailSender() {
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("");
       
-      // Close any active event source - properly managed
-      // Note: The EventSource is managed through the fetch response reader, 
-      // which gets automatically closed when the response completes
+      // Close any active event source
+      if ((window as any).currentEventSource) {
+        (window as any).currentEventSource.close();
+        (window as any).currentEventSource = null;
+      }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
     }
@@ -780,8 +781,8 @@ export default function OriginalEmailSender() {
           </div>
 
           {/* ASCII Art Status Display */}
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="text-[#ef4444] font-mono text-xs text-center whitespace-pre opacity-70 mb-3">
+          <div className="absolute bottom-4  right-4">
+            <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
 {`
 ▓ SYSTEM STATUS ▓  
 `}
