@@ -150,7 +150,7 @@ export default function OriginalEmailSender() {
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
-
+  
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
   const currentStatusRef = useRef<HTMLDivElement>(null);
@@ -161,7 +161,7 @@ export default function OriginalEmailSender() {
   });
   const [newSmtp, setNewSmtp] = useState({
     host: "",
-    port: "587",
+    port: "587", 
     user: "",
     pass: "",
     fromEmail: "",
@@ -189,15 +189,15 @@ export default function OriginalEmailSender() {
   useEffect(() => {
     if (logContainerRef.current && emailLogs.length > 0) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-
+      
       // Mark the latest log as recently added for highlighting
       setRecentlyAddedLogIndex(emailLogs.length - 1);
-
+      
       // Clear the highlight after 3 seconds
       const timer = setTimeout(() => {
         setRecentlyAddedLogIndex(-1);
       }, 3000);
-
+      
       return () => clearTimeout(timer);
     }
   }, [emailLogs.length]);
@@ -541,7 +541,7 @@ export default function OriginalEmailSender() {
         bodyHtml = '';
       }
     }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)
+    // Priority 2: Direct HTML from textarea (args.html equivalent)  
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
@@ -638,7 +638,7 @@ export default function OriginalEmailSender() {
 
           // Add new data to buffer
           buffer += decoder.decode(value);
-
+          
           // Process complete lines
           const lines = buffer.split('\n');
           // Keep the last potentially incomplete line in buffer
@@ -652,7 +652,7 @@ export default function OriginalEmailSender() {
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
                   const progressData: EmailProgress = data;
-
+                  
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
                     setEmailLogs(prev => [...prev, progressData]);
@@ -671,7 +671,7 @@ export default function OriginalEmailSender() {
                       setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
                     }
                   });
-
+                  
                 } else if (data.type === 'complete') {
                   setIsLoading(false);
                   setProgress(100);
@@ -717,7 +717,7 @@ export default function OriginalEmailSender() {
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("");
-
+      
       // Close any active event source
       if ((window as any).currentEventSource) {
         (window as any).currentEventSource.close();
@@ -740,11 +740,11 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-72 bg-[#131316] border-r border-[#26262b] min-h-screen">
-          <div className="p-3">
+        <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
+          <div className="p-4">
             <div className="flex flex-col items-center mb-8">
-              {/* Compact ASCII Art Logo */}
-              <div className="text-[#ef4444] font-mono text-[10px] leading-tight mb-4 text-center whitespace-pre overflow-hidden">
+              {/* Large ASCII Art Logo */}
+              <div className="text-[#ef4444] font-mono text-xs leading-none mb-4 text-center whitespace-pre">
 {`
  ██████╗██╗     ███████╗
 ██╔════╝██║     ██╔════╝
@@ -752,64 +752,57 @@ export default function OriginalEmailSender() {
 ██║     ██║     ╚════██║
 ╚██████╗███████╗███████║
  ╚═════╝╚══════╝╚══════╝
-
+                        
 ███████╗███╗   ███╗ █████╗ ██╗██╗     
 ██╔════╝████╗ ████║██╔══██╗██║██║     
 █████╗  ██╔████╔██║███████║██║██║     
 ██╔══╝  ██║╚██╔╝██║██╔══██║██║██║     
 ███████╗██║ ╚═╝ ██║██║  ██║██║███████╗
 ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
-
-███████╗███████╗███╗   ██╗██████╗ 
-██╔════╝██╔════╝████╗  ██║██╔══██╗
-█████╗  █████╗  ██╔██╗ ██║██║  ██║
-██╔══╝  ██╔══╝  ██║╚██╗██║██║  ██║
-███████╗███████╗██║ ╚████║██████╔╝
-╚══════╝╚══════╝╚═╝  ╚═══╝╚═════╝ 
-
-███████╗██████╗ 
-██╔════╝██╔══██╗
-█████╗  ██████╔╝
-██╔══╝  ██╔══██╗
-███████╗██║  ██║
-╚══════╝╚═╝  ╚═╝
+                                      
+███████╗███████╗███╗   ██╗██████╗ ███████╗██████╗ 
+██╔════╝██╔════╝████╗  ██║██╔══██╗██╔════╝██╔══██╗
+███████╗█████╗  ██╔██╗ ██║██║  ██║█████╗  ██████╔╝
+╚════██║██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ██╔══██╗
+███████║███████╗██║ ╚████║██████╔╝███████╗██║  ██║
+╚══════╝╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝
 `}
               </div>
-
+              
               {/* Decorative Elements */}
-              <div className="text-[#ef4444] font-mono text-xs mb-3 opacity-60">
-                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
+              <div className="text-[#ef4444] font-mono text-xs mb-4 opacity-60">
+                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
               </div>
-
+              
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="mb-2">⚡ EMAIL DELIVERY ⚡</div>
+                <div className="mb-2">⚡ ADVANCED EMAIL DELIVERY ⚡</div>
                 <div className="text-[#ef4444] font-bold">SYSTEM READY</div>
               </div>
             </div>
 
             <nav className="space-y-2">
-              <div className="bg-[#ef4444] text-white px-3 py-2 rounded cursor-pointer text-center">
-                📧 Sender
+              <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
+                Sender
               </div>
               <div
-                className="text-[#a1a1aa] px-3 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer text-center"
+                className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                ⚙️ Config
+                Config ⚙️
               </div>
             </nav>
           </div>
 
           {/* ASCII Art Status Display */}
-          <div className="absolute bottom-4 left-3 right-3">
-            <div className="text-[#ef4444] font-mono text-[10px] text-center whitespace-pre opacity-70 mb-3">
+          <div className="absolute bottom-4 left-4 right-4">
+            <div className="text-[#ef4444] font-mono text-xs text-center whitespace-pre opacity-70 mb-3">
 {`
-┌───────────────────┐
-│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
-│ ▓ SYSTEM STATUS ▓ │
-│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
-└───────────────────┘
-  ◢◤◢◤◢◤◢◤◢◤◢◤
+┌─────────────────────┐
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+│  ▓ SYSTEM STATUS ▓  │
+│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
+└─────────────────────┘
+   ◢◤◢◤◢◤◢◤◢◤◢◤◢
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
@@ -826,13 +819,13 @@ export default function OriginalEmailSender() {
             <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
 {`
-   ██████╗ ██████╗ ███╗   ███╗██████╗  █████╗ ███╗   ██╗██╗   ██╗    ███████╗███╗   ███╗ █████╗ ██╗██╗     
+   ██████╗ ██████╗ ███╗   ███╗ ██████╗  █████╗ ███╗   ██╗██╗   ██╗    ███████╗███╗   ███╗ █████╗ ██╗██╗     
   ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔══██╗████╗  ██║╚██╗ ██╔╝    ██╔════╝████╗ ████║██╔══██╗██║██║     
   ██║     ██║   ██║██╔████╔██║██████╔╝███████║██╔██╗ ██║ ╚████╔╝     █████╗  ██╔████╔██║███████║██║██║     
   ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██╔══██║██║╚██╗██║  ╚██╔╝      ██╔══╝  ██║╚██╔╝██║██╔══██║██║██║     
   ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ██║  ██║██║ ╚████║   ██║       ███████╗██║ ╚═╝ ██║██║  ██║██║███████╗
    ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝       ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
-
+                                                                                                              
 ██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
 ██╔══██╗██╔════╝██║     ██║██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
 ██║  ██║█████╗  ██║     ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝     ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║
@@ -843,11 +836,11 @@ export default function OriginalEmailSender() {
               </div>
               <div className="text-center mt-4">
                 <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
-                <div className="text-[#ef4444] text-sm font-bold">🏢 COMPANY EMAIL DELIVERY SYSTEM (CLS) 🏢</div>
+                <div className="text-[#ef4444] text-sm font-bold">⚡ PROFESSIONAL EMAIL AUTOMATION PLATFORM ⚡</div>
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
             </div>
-
+            
             <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1097,7 +1090,7 @@ export default function OriginalEmailSender() {
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
-                      <div
+                      <div 
                         ref={currentStatusRef}
                         className="mb-3 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg animate-pulse"
                         data-testid="current-email-status"
@@ -1124,7 +1117,7 @@ export default function OriginalEmailSender() {
                             {emailLogs.slice(-20).reverse().map((log, index) => {
                               const logIndex = emailLogs.length - 1 - index;
                               const isRecentlyAdded = logIndex === recentlyAddedLogIndex;
-
+                              
                               return (
                                 <div
                                   key={index}
@@ -1223,7 +1216,7 @@ export default function OriginalEmailSender() {
             </div>
 
             {/* SMTP Settings */}
-            <div className="mt-6 bg-[#131316] rounded-xl border border-[#26262b] p-4">
+            <div className="mt-6 bg-black rounded-xl p-4 border border-[#26262b]">
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-sm text-[#a1a1aa]">SMTP:</span>
                 <Input
@@ -1288,7 +1281,7 @@ export default function OriginalEmailSender() {
                   </Button>
                 )}
               </div>
-
+              
               {/* SMTP Management - Moved to SMTP Settings Area */}
               <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1318,7 +1311,7 @@ export default function OriginalEmailSender() {
                           <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
                         </div>
                         <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
                         </p>
                       </div>
                     </div>
@@ -1386,8 +1379,8 @@ export default function OriginalEmailSender() {
                         <div
                           key={smtp.id}
                           className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id
-                              ? 'border-blue-500 bg-blue-900/20'
+                            smtpData.currentSmtp?.id === smtp.id 
+                              ? 'border-blue-500 bg-blue-900/20' 
                               : 'border-[#26262b] bg-[#0f0f12]'
                           }`}
                         >
@@ -1769,8 +1762,8 @@ export default function OriginalEmailSender() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[#a1a1aa]">Hidden Image File</Label>
-                      <Select
-                        value={advancedSettings.hiddenImageFile || "off"}
+                      <Select 
+                        value={advancedSettings.hiddenImageFile || "off"} 
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
                       >
                         <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white">
