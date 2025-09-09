@@ -740,11 +740,11 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
-          <div className="p-4">
+        <div className="w-72 bg-[#131316] border-r border-[#26262b] min-h-screen">
+          <div className="p-3">
             <div className="flex flex-col items-center mb-8">
-              {/* Large ASCII Art Logo */}
-              <div className="text-[#ef4444] font-mono text-xs leading-none mb-4 text-center whitespace-pre">
+              {/* Compact ASCII Art Logo */}
+              <div className="text-[#ef4444] font-mono text-[10px] leading-tight mb-4 text-center whitespace-pre overflow-hidden">
 {`
  ██████╗██╗     ███████╗
 ██╔════╝██║     ██╔════╝
@@ -752,57 +752,64 @@ export default function OriginalEmailSender() {
 ██║     ██║     ╚════██║
 ╚██████╗███████╗███████║
  ╚═════╝╚══════╝╚══════╝
-                        
+
 ███████╗███╗   ███╗ █████╗ ██╗██╗     
 ██╔════╝████╗ ████║██╔══██╗██║██║     
 █████╗  ██╔████╔██║███████║██║██║     
 ██╔══╝  ██║╚██╔╝██║██╔══██║██║██║     
 ███████╗██║ ╚═╝ ██║██║  ██║██║███████╗
 ╚══════╝╚═╝     ╚═╝╚═╝  ╚═╝╚═╝╚══════╝
-                                      
-███████╗███████╗███╗   ██╗██████╗ ███████╗██████╗ 
-██╔════╝██╔════╝████╗  ██║██╔══██╗██╔════╝██╔══██╗
-███████╗█████╗  ██╔██╗ ██║██║  ██║█████╗  ██████╔╝
-╚════██║██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  ██╔══██╗
-███████║███████╗██║ ╚████║██████╔╝███████╗██║  ██║
-╚══════╝╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝╚═╝  ╚═╝
+
+███████╗███████╗███╗   ██╗██████╗ 
+██╔════╝██╔════╝████╗  ██║██╔══██╗
+███████╗█████╗  ██╔██╗ ██║██║  ██║
+╚════██║██╔══╝  ██║╚██╗██║██║  ██║
+███████║███████╗██║ ╚████║██████╔╝
+╚══════╝╚══════╝╚═╝  ╚═══╝╚═════╝ 
+
+███████╗██████╗ 
+██╔════╝██╔══██╗
+█████╗  ██████╔╝
+██╔══╝  ██╔══██╗
+███████╗██║  ██║
+╚══════╝╚═╝  ╚═╝
 `}
               </div>
               
               {/* Decorative Elements */}
-              <div className="text-[#ef4444] font-mono text-xs mb-4 opacity-60">
-                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
+              <div className="text-[#ef4444] font-mono text-xs mb-3 opacity-60">
+                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
               </div>
               
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="mb-2">⚡ ADVANCED EMAIL DELIVERY ⚡</div>
+                <div className="mb-2">⚡ EMAIL DELIVERY ⚡</div>
                 <div className="text-[#ef4444] font-bold">SYSTEM READY</div>
               </div>
             </div>
 
             <nav className="space-y-2">
-              <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
-                Sender
+              <div className="bg-[#ef4444] text-white px-3 py-2 rounded cursor-pointer text-center">
+                📧 Sender
               </div>
               <div
-                className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
+                className="text-[#a1a1aa] px-3 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer text-center"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                Config ⚙️
+                ⚙️ Config
               </div>
             </nav>
           </div>
 
           {/* ASCII Art Status Display */}
-          <div className="absolute bottom-4 left-4 right-4">
-            <div className="text-[#ef4444] font-mono text-xs text-center whitespace-pre opacity-70 mb-3">
+          <div className="absolute bottom-4 left-3 right-3">
+            <div className="text-[#ef4444] font-mono text-[10px] text-center whitespace-pre opacity-70 mb-3">
 {`
-┌─────────────────────┐
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
-│  ▓ SYSTEM STATUS ▓  │
-│  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  │
-└─────────────────────┘
-   ◢◤◢◤◢◤◢◤◢◤◢◤◢
+┌───────────────────┐
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
+│ ▓ SYSTEM STATUS ▓ │
+│ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ │
+└───────────────────┘
+  ◢◤◢◤◢◤◢◤◢◤◢◤
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
