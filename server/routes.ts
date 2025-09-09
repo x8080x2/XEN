@@ -204,8 +204,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "HTML content and recipient required" });
       }
 
-      // Use emailService for placeholder processing (removed duplicate placeholderService)
-      const processedHtml = htmlContent; // Placeholders handled by AdvancedEmailService
+      // Process placeholders using AdvancedEmailService logic
+      const advancedEmailService = (await import('./services/advancedEmailService')).advancedEmailService;
+      
+      // Use the same placeholder processing as the email service
+      const dateStr = new Date().toLocaleDateString();
+      const timeStr = new Date().toLocaleTimeString();
+      const senderEmail = settings?.senderEmail || 'sender@example.com';
+      
+      // Import the placeholder processing functions
+      const { injectDynamicPlaceholders, replacePlaceholders } = await import('./services/advancedEmailService');
+      
+      let processedHtml = htmlContent;
+      processedHtml = injectDynamicPlaceholders(processedHtml, recipient, senderEmail, dateStr, timeStr);
+      processedHtml = replacePlaceholders(processedHtml);
 
       res.json({ processedHtml });
     } catch (error) {

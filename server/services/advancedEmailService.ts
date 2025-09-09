@@ -34,7 +34,7 @@ function pickRand(arr: any[]): any {
 }
 
 // Complete placeholder replacement - exact clone from main.js
-function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
+export function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
   if (!text) return '';
 
   // Recipient logic
@@ -93,7 +93,7 @@ function injectDynamicPlaceholders(text: string, user: string, email: string, da
 
 
 // Replace placeholders like {randnumN}, {hashN}, and {randcharN} in strings - exact clone from main.js
-function replacePlaceholders(str: string): string {
+export function replacePlaceholders(str: string): string {
   // Replace {randnumN} with random N-digit numbers
   str = str.replace(/\{randnum(\d+)\}/gi, (_, n) => {
     n = parseInt(n, 10);
