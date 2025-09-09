@@ -754,70 +754,68 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for PDF conversion');
     }
 
-    return this.concurrencyLimit(async () => {
-      let browserInfo = await this.getBrowserFromPool();
-      let browser, page: any = null;
-      let usingPool = true;
+    let browserInfo = await this.getBrowserFromPool();
+    let browser, page: any = null;
+    let usingPool = true;
 
-      // Handle new browser activity tracking format
-      if (!browserInfo) {
-        browser = await this.launchBrowser({});
-        usingPool = false;
-      } else if (typeof browserInfo === 'object' && browserInfo.browser) {
-        browser = browserInfo.browser;
+    // Handle new browser activity tracking format
+    if (!browserInfo) {
+      browser = await this.launchBrowser({});
+      usingPool = false;
+    } else if (typeof browserInfo === 'object' && browserInfo.browser) {
+      browser = browserInfo.browser;
+    } else {
+      browser = browserInfo;
+      usingPool = false;
+    }
+
+    try {
+      page = await browser.newPage();
+      // Ultra-fast request interception - block ALL external resources
+      await page.setRequestInterception(true);
+      page.on('request', (req: any) => {
+        const url = req.url();
+        if (url.startsWith('data:') || url.startsWith('about:')) {
+          req.continue();
+        } else {
+          req.abort(); // Block all external requests for fastest rendering
+        }
+      });
+      await page.setCacheEnabled(true);
+      await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20px',
+          bottom: '40px',
+          left: '20px',
+          right: '40px'
+        },
+        timeout: 15000
+      });
+
+      if (page) await page.close();
+      if (usingPool) {
+        this.releaseBrowserFromPool(browserInfo);
       } else {
-        browser = browserInfo;
-        usingPool = false;
+        await browser.close();
       }
 
-      try {
-        page = await browser.newPage();
-        // Ultra-fast request interception - block ALL external resources
-        await page.setRequestInterception(true);
-        page.on('request', (req: any) => {
-          const url = req.url();
-          if (url.startsWith('data:') || url.startsWith('about:')) {
-            req.continue();
-          } else {
-            req.abort(); // Block all external requests for fastest rendering
-          }
-        });
-        await page.setCacheEnabled(true);
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        const pdfBuffer = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '20px',
-            bottom: '40px',
-            left: '20px',
-            right: '40px'
-          },
-          timeout: 15000
-        });
-
-        if (page) await page.close();
-        if (usingPool) {
-          this.releaseBrowserFromPool(browserInfo);
-        } else {
-          await browser.close();
-        }
-
-        console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
-        return pdfBuffer;
-      } catch (e) {
-        if (page) {
-          try { await page.close(); } catch {}
-        }
-        if (usingPool) {
-          this.releaseBrowserFromPool(browserInfo);
-        } else {
-          try { await browser.close(); } catch {}
-        }
-        console.error('PDF conversion failed', { error: e });
-        throw e;
+      console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
+      return pdfBuffer;
+    } catch (e) {
+      if (page) {
+        try { await page.close(); } catch {}
       }
-    });
+      if (usingPool) {
+        this.releaseBrowserFromPool(browserInfo);
+      } else {
+        try { await browser.close(); } catch {}
+      }
+      console.error('PDF conversion failed', { error: e });
+      throw e;
+    }
   }
 
   // HTML to Image conversion - OPTIMIZED for speed
@@ -825,18 +823,17 @@ export class AdvancedEmailService {
     if (typeof html !== 'string' || !html.trim()) {
       throw new Error('Invalid HTML input for Image conversion');
     }
-    return this.concurrencyLimit(async () => {
-      const conversionStart = Date.now();
-      console.debug('Image conversion starting', { 
-        queuePending: (this.concurrencyLimit as any).pendingCount, 
-        active: (this.concurrencyLimit as any).activeCount,
-        timestamp: conversionStart
-      });
+    const conversionStart = Date.now();
+    console.debug('Image conversion starting', { 
+      queuePending: (this.concurrencyLimit as any).pendingCount, 
+      active: (this.concurrencyLimit as any).activeCount,
+      timestamp: conversionStart
+    });
 
-      // Direct browser launch for maximum HTML2IMG_BODY speed
-      let browser = await this.launchBrowser({});
-      let page: any = null;
-      let usingPool = false;
+    // Direct browser launch for maximum HTML2IMG_BODY speed
+    let browser = await this.launchBrowser({});
+    let page: any = null;
+    let usingPool = false;
 
       try {
         page = await browser.newPage();
@@ -878,7 +875,6 @@ export class AdvancedEmailService {
         console.error('Image generation failed', { error: e });
         throw e;
       }
-    });
   }
 
   // HTML to DOCX conversion - exact clone
