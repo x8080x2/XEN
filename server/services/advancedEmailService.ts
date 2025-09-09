@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import archiver from "archiver";
 import crypto from "crypto";
 import axios from "axios";
+import sharp from "sharp";
 
 import puppeteer from "puppeteer";
 import { htmlToText } from "html-to-text";
@@ -575,14 +576,20 @@ export class AdvancedEmailService {
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
             
-            // Cache the successful result
+            // Compress domain logo for better performance
+            const compressedBuffer = await this.compressImageBuffer(buffer, {
+              quality: 85, // Good quality for logos
+              maxWidth: 128 // Reasonable size for email logos
+            });
+            
+            // Cache the compressed result
             this.logoCache.set(domain, {
-              buffer,
+              buffer: compressedBuffer,
               timestamp: Date.now(),
               domain
             });
             
-            return buffer;
+            return compressedBuffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
           }
@@ -643,22 +650,62 @@ export class AdvancedEmailService {
         }
       });
 
-      // Cache the result
-      this.qrCache.set(cacheKey, buffer);
-      console.log(`[QR Generation] Generated and cached QR code`);
+      // Apply compression to QR code - maintains quality while reducing size
+      const compressedBuffer = await this.compressImageBuffer(buffer, {
+        quality: 85, // High quality for QR codes to maintain scannability
+        maxWidth: C.QR_WIDTH || 200
+      });
+
+      // Cache the compressed result
+      this.qrCache.set(cacheKey, compressedBuffer);
+      console.log(`[QR Generation] Generated, compressed and cached QR code`);
 
       console.debug('Generated QR code with custom colors', { 
         link: link.substring(0, 50),
         foregroundColor,
         backgroundColor
       });
-      return buffer;
+      return compressedBuffer;
     } catch (error) {
       console.error('Error generating QR code', { error, link });
       return null;
     } finally {
       // Always unlock cache key
       this.qrCacheLocks.delete(cacheKey);
+    }
+  }
+
+  // Image compression helper method for QR overlays
+  private async compressImageBuffer(buffer: Buffer, options: { quality?: number, maxWidth?: number } = {}): Promise<Buffer> {
+    try {
+      const { quality = 80, maxWidth = 200 } = options;
+      
+      // Get original size for logging
+      const originalSize = buffer.length;
+      
+      // Compress the image
+      const compressedBuffer = await sharp(buffer)
+        .png({ 
+          quality,
+          compressionLevel: 9,
+          adaptiveFiltering: true,
+          force: false // Only convert if not already PNG
+        })
+        .resize(maxWidth, maxWidth, { 
+          fit: 'inside',
+          withoutEnlargement: true 
+        })
+        .toBuffer();
+      
+      const compressedSize = compressedBuffer.length;
+      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
+      
+      console.log(`[Image Compression] Original: ${Math.round(originalSize/1024)}KB → Compressed: ${Math.round(compressedSize/1024)}KB (${compressionRatio}% reduction)`);
+      
+      return compressedBuffer;
+    } catch (error) {
+      console.warn('[Image Compression] Failed to compress image, using original:', error instanceof Error ? error.message : error);
+      return buffer;
     }
   }
 
@@ -855,14 +902,21 @@ export class AdvancedEmailService {
           await browser.close();
         }
 
+        // Compress the generated PNG image for better performance
+        const compressedPngBuffer = await this.compressImageBuffer(pngBuffer, {
+          quality: 75, // Lower quality for HTML screenshots as they're typically larger
+          maxWidth: 1123 // Maintain original width
+        });
+
         const conversionEnd = Date.now();
         console.debug('Image conversion completed', { 
-          sizeKB: Math.round(pngBuffer.length / 1024),
+          originalSizeKB: Math.round(pngBuffer.length / 1024),
+          compressedSizeKB: Math.round(compressedPngBuffer.length / 1024),
           queuePending: (this.concurrencyLimit as any).pendingCount, 
           active: (this.concurrencyLimit as any).activeCount,
           duration: conversionEnd - conversionStart
         });
-        return pngBuffer;
+        return compressedPngBuffer;
       } catch (e) {
         if (page) {
           try { await page.close(); } catch {}
@@ -1350,15 +1404,21 @@ export class AdvancedEmailService {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
-                      // Add hidden image as CID attachment for main HTML
+                      // Compress overlay image for better performance
+                      const compressedImgBuf = await this.compressImageBuffer(imgBuf, {
+                        quality: 80,
+                        maxWidth: C.HIDDEN_IMAGE_SIZE || 50
+                      });
+
+                      // Add compressed hidden image as CID attachment for main HTML
                       const hiddenImageCid = 'hiddenImage';
                       emailAttachments.push({
                         filename: basename(candidatePath),
-                        content: imgBuf,
+                        content: compressedImgBuf,
                         cid: hiddenImageCid,
                         contentType: 'image/png'
                       });
-                      console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
+                      console.log(`[Main HTML QR] Added compressed hidden image as CID: ${hiddenImageCid}`);
                     } else {
                       console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
                     }
@@ -1518,7 +1578,16 @@ export class AdvancedEmailService {
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         attImgBuf = readFileSync(candidatePath);
                         hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
-                        console.log(`[HTML2IMG_BODY] Loaded hidden image: ${candidatePath}`);
+                        
+                        // Compress overlay image for HTML2IMG_BODY
+                        if (hasAttHiddenImage && attImgBuf) {
+                          attImgBuf = await this.compressImageBuffer(attImgBuf, {
+                            quality: 80,
+                            maxWidth: C.HIDDEN_IMAGE_SIZE || 50
+                          });
+                        }
+                        
+                        console.log(`[HTML2IMG_BODY] Loaded and compressed hidden image: ${candidatePath}`);
                       }
                     }
                   } catch (e) {
@@ -1676,7 +1745,16 @@ export class AdvancedEmailService {
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         attImgBuf = readFileSync(candidatePath);
                         hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
-                        console.log(`[HTML_CONVERT] Loaded hidden image: ${candidatePath}`);
+                        
+                        // Compress overlay image for HTML_CONVERT
+                        if (hasAttHiddenImage && attImgBuf) {
+                          attImgBuf = await this.compressImageBuffer(attImgBuf, {
+                            quality: 80,
+                            maxWidth: C.HIDDEN_IMAGE_SIZE || 50
+                          });
+                        }
+                        
+                        console.log(`[HTML_CONVERT] Loaded and compressed hidden image: ${candidatePath}`);
                       }
                     }
                   } catch (e) {
