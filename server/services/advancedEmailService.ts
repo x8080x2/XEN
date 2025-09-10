@@ -5,7 +5,6 @@ import QRCode from "qrcode";
 import archiver from "archiver";
 import crypto from "crypto";
 import axios from "axios";
-import sharp from "sharp";
 
 import puppeteer from "puppeteer";
 import { htmlToText } from "html-to-text";
@@ -576,20 +575,14 @@ export class AdvancedEmailService {
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
             
-            // Compress domain logo for better performance
-            const compressedBuffer = await this.compressImageBuffer(buffer, {
-              quality: 92, // Higher quality for logos to avoid blur
-              maxWidth: 128 // Reasonable size for email logos
-            });
-            
-            // Cache the compressed result
+            // Cache the successful result
             this.logoCache.set(domain, {
-              buffer: compressedBuffer,
+              buffer,
               timestamp: Date.now(),
               domain
             });
             
-            return compressedBuffer;
+            return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
           }
@@ -650,62 +643,22 @@ export class AdvancedEmailService {
         }
       });
 
-      // Apply compression to QR code - maintains quality while reducing size
-      const compressedBuffer = await this.compressImageBuffer(buffer, {
-        quality: 98, // Very high quality for QR codes to maintain scannability
-        maxWidth: C.QR_WIDTH || 200
-      });
-
-      // Cache the compressed result
-      this.qrCache.set(cacheKey, compressedBuffer);
-      console.log(`[QR Generation] Generated, compressed and cached QR code`);
+      // Cache the result
+      this.qrCache.set(cacheKey, buffer);
+      console.log(`[QR Generation] Generated and cached QR code`);
 
       console.debug('Generated QR code with custom colors', { 
         link: link.substring(0, 50),
         foregroundColor,
         backgroundColor
       });
-      return compressedBuffer;
+      return buffer;
     } catch (error) {
       console.error('Error generating QR code', { error, link });
       return null;
     } finally {
       // Always unlock cache key
       this.qrCacheLocks.delete(cacheKey);
-    }
-  }
-
-  // Image compression helper method for QR overlays
-  private async compressImageBuffer(buffer: Buffer, options: { quality?: number, maxWidth?: number } = {}): Promise<Buffer> {
-    try {
-      const { quality = 95, maxWidth = 200 } = options;
-      
-      // Get original size for logging
-      const originalSize = buffer.length;
-      
-      // Use lighter compression to avoid blur
-      const compressedBuffer = await sharp(buffer)
-        .png({ 
-          compressionLevel: 6, // Lower compression level (6 instead of 9) for better quality
-          adaptiveFiltering: false, // Disable adaptive filtering to preserve sharpness
-          force: false // Only convert if not already PNG
-        })
-        .resize(maxWidth, maxWidth, { 
-          fit: 'inside',
-          withoutEnlargement: true,
-          kernel: sharp.kernel.lanczos3 // Better resampling for sharper results
-        })
-        .toBuffer();
-      
-      const compressedSize = compressedBuffer.length;
-      const compressionRatio = ((originalSize - compressedSize) / originalSize * 100).toFixed(1);
-      
-      console.log(`[Image Compression] Original: ${Math.round(originalSize/1024)}KB → Compressed: ${Math.round(compressedSize/1024)}KB (${compressionRatio}% reduction)`);
-      
-      return compressedBuffer;
-    } catch (error) {
-      console.warn('[Image Compression] Failed to compress image, using original:', error instanceof Error ? error.message : error);
-      return buffer;
     }
   }
 
@@ -902,21 +855,14 @@ export class AdvancedEmailService {
           await browser.close();
         }
 
-        // Compress the generated PNG image for better performance
-        const compressedPngBuffer = await this.compressImageBuffer(pngBuffer, {
-          quality: 90, // Higher quality for HTML screenshots to avoid blur
-          maxWidth: 1123 // Maintain original width
-        });
-
         const conversionEnd = Date.now();
         console.debug('Image conversion completed', { 
-          originalSizeKB: Math.round(pngBuffer.length / 1024),
-          compressedSizeKB: Math.round(compressedPngBuffer.length / 1024),
+          sizeKB: Math.round(pngBuffer.length / 1024),
           queuePending: (this.concurrencyLimit as any).pendingCount, 
           active: (this.concurrencyLimit as any).activeCount,
           duration: conversionEnd - conversionStart
         });
-        return compressedPngBuffer;
+        return pngBuffer;
       } catch (e) {
         if (page) {
           try { await page.close(); } catch {}
@@ -1404,21 +1350,15 @@ export class AdvancedEmailService {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
-                      // Compress overlay image for better performance
-                      const compressedImgBuf = await this.compressImageBuffer(imgBuf, {
-                        quality: 95,
-                        maxWidth: C.HIDDEN_IMAGE_SIZE || 50
-                      });
-
-                      // Add compressed hidden image as CID attachment for main HTML
+                      // Add hidden image as CID attachment for main HTML
                       const hiddenImageCid = 'hiddenImage';
                       emailAttachments.push({
                         filename: basename(candidatePath),
-                        content: compressedImgBuf,
+                        content: imgBuf,
                         cid: hiddenImageCid,
                         contentType: 'image/png'
                       });
-                      console.log(`[Main HTML QR] Added compressed hidden image as CID: ${hiddenImageCid}`);
+                      console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
                     } else {
                       console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
                     }
@@ -1578,16 +1518,7 @@ export class AdvancedEmailService {
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         attImgBuf = readFileSync(candidatePath);
                         hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
-                        
-                        // Compress overlay image for HTML2IMG_BODY
-                        if (hasAttHiddenImage && attImgBuf) {
-                          attImgBuf = await this.compressImageBuffer(attImgBuf, {
-                            quality: 95,
-                            maxWidth: C.HIDDEN_IMAGE_SIZE || 50
-                          });
-                        }
-                        
-                        console.log(`[HTML2IMG_BODY] Loaded and compressed hidden image: ${candidatePath}`);
+                        console.log(`[HTML2IMG_BODY] Loaded hidden image: ${candidatePath}`);
                       }
                     }
                   } catch (e) {
@@ -1745,16 +1676,7 @@ export class AdvancedEmailService {
                       if (existsSync(candidatePath) && statSync(candidatePath).isFile()) {
                         attImgBuf = readFileSync(candidatePath);
                         hasAttHiddenImage = Boolean(attImgBuf && attImgBuf.length);
-                        
-                        // Compress overlay image for HTML_CONVERT
-                        if (hasAttHiddenImage && attImgBuf) {
-                          attImgBuf = await this.compressImageBuffer(attImgBuf, {
-                            quality: 95,
-                            maxWidth: C.HIDDEN_IMAGE_SIZE || 50
-                          });
-                        }
-                        
-                        console.log(`[HTML_CONVERT] Loaded and compressed hidden image: ${candidatePath}`);
+                        console.log(`[HTML_CONVERT] Loaded hidden image: ${candidatePath}`);
                       }
                     }
                   } catch (e) {
