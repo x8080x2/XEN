@@ -1376,9 +1376,9 @@ export class AdvancedEmailService {
                   // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use EXACT same positioning as original main.js line 933
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.8;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  // Use EXACT same positioning as original main.js line 933 with transparent white background
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; filter:brightness(0) contrast(10);"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning with transparent white background (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1528,7 +1528,7 @@ export class AdvancedEmailService {
                   // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:1;"/>`;
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                     console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1689,8 +1689,8 @@ export class AdvancedEmailService {
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
                     // Use EXACT same positioning as original main.js for attachments
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.8;"/>`;
-                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment (top:77px, left:56%, QR:${qrSize}px)`);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; filter:contrast(0.1) brightness(1);"/>`;
+                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment with transparent white background (top:77px, left:56%, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
