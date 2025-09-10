@@ -1689,8 +1689,8 @@ export class AdvancedEmailService {
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
                     // Use EXACT same positioning as original main.js for attachments
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment (top:77px, left:56%, QR:${qrSize}px)`);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; filter:contrast(1.2) brightness(0.9);"/>`;
+                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment with transparent white background (top:77px, left:56%, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                     console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
