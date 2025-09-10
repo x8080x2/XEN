@@ -107,3 +107,114 @@ export const emailSendRequestSchema = z.object({
 });
 
 export type EmailSendRequest = z.infer<typeof emailSendRequestSchema>;
+
+// License Schema
+export const licenseSchema = z.object({
+  id: z.string(),
+  licenseKey: z.string().min(32).max(64), // Unique license key
+  userId: z.string(),
+  userEmail: z.string().email(),
+  userName: z.string(),
+  planType: z.enum(['basic', 'professional', 'enterprise']),
+  status: z.enum(['active', 'suspended', 'expired', 'revoked']),
+  features: z.object({
+    maxEmailsPerMonth: z.number(),
+    maxRecipientsPerEmail: z.number(),
+    allowQRCodes: z.boolean(),
+    allowAttachments: z.boolean(),
+    allowDomainLogos: z.boolean(),
+    allowHTMLConvert: z.boolean(),
+    smtpRotation: z.boolean(),
+    apiAccess: z.boolean(),
+  }),
+  emailsUsedThisMonth: z.number().default(0),
+  issuedAt: z.date().default(() => new Date()),
+  expiresAt: z.date(),
+  lastValidated: z.date().optional(),
+  machineFingerprint: z.string().optional(), // Hardware/machine identification
+  activationCount: z.number().default(0), // Track activations
+  maxActivations: z.number().default(1), // License transfer limit
+});
+
+export const insertLicenseSchema = licenseSchema.omit({ 
+  id: true, 
+  issuedAt: true,
+  emailsUsedThisMonth: true,
+  activationCount: true,
+  lastValidated: true
+});
+
+export type License = z.infer<typeof licenseSchema>;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+
+// License Token Schema (JWT payload)
+export const licenseTokenSchema = z.object({
+  licenseId: z.string(),
+  licenseKey: z.string(),
+  userId: z.string(),
+  userEmail: z.string(),
+  planType: z.enum(['basic', 'professional', 'enterprise']),
+  features: z.object({
+    maxEmailsPerMonth: z.number(),
+    maxRecipientsPerEmail: z.number(),
+    allowQRCodes: z.boolean(),
+    allowAttachments: z.boolean(),
+    allowDomainLogos: z.boolean(),
+    allowHTMLConvert: z.boolean(),
+    smtpRotation: z.boolean(),
+    apiAccess: z.boolean(),
+  }),
+  emailsUsedThisMonth: z.number(),
+  expiresAt: z.number(), // Unix timestamp
+  iat: z.number().optional(), // Issued at
+  exp: z.number().optional(), // Expires at (JWT)
+});
+
+export type LicenseToken = z.infer<typeof licenseTokenSchema>;
+
+// License Validation Request Schema
+export const licenseValidationSchema = z.object({
+  licenseKey: z.string(),
+  machineFingerprint: z.string().optional(),
+  clientVersion: z.string().optional(),
+});
+
+export type LicenseValidation = z.infer<typeof licenseValidationSchema>;
+
+// License Usage Schema
+export const licenseUsageSchema = z.object({
+  id: z.string(),
+  licenseId: z.string(),
+  action: z.string(), // 'email_sent', 'api_call', etc.
+  count: z.number().default(1),
+  metadata: z.record(z.any()).optional(),
+  timestamp: z.date().default(() => new Date()),
+});
+
+export const insertLicenseUsageSchema = licenseUsageSchema.omit({ 
+  id: true, 
+  timestamp: true 
+});
+
+export type LicenseUsage = z.infer<typeof licenseUsageSchema>;
+export type InsertLicenseUsage = z.infer<typeof insertLicenseUsageSchema>;
+
+// Main Backend API Key Schema
+export const apiKeySchema = z.object({
+  id: z.string(),
+  keyName: z.string(),
+  hashedKey: z.string(),
+  permissions: z.array(z.string()),
+  isActive: z.boolean().default(true),
+  createdAt: z.date().default(() => new Date()),
+  lastUsed: z.date().optional(),
+});
+
+export const insertApiKeySchema = apiKeySchema.omit({ 
+  id: true, 
+  createdAt: true,
+  lastUsed: true
+});
+
+export type ApiKey = z.infer<typeof apiKeySchema>;
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;

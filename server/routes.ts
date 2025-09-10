@@ -5,6 +5,14 @@ import { emailSendRequestSchema } from "@shared/schema";
 import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { 
+  requireValidLicense, 
+  requireFeature, 
+  validateEmailLimits, 
+  recordEmailUsage, 
+  attachLicenseInfo 
+} from "./middleware/licenseMiddleware";
+import licenseRoutes from "./routes/licenseRoutes";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -19,6 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+
+  // License management routes
+  app.use('/api/license', licenseRoutes);
 
   // Config loading routes - exact clone from main.js
   app.get('/api/config/load', (req, res) => {

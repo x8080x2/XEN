@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
+import { initializeMainLicenseService } from "./services/mainLicenseService";
 
 // Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
@@ -53,6 +54,21 @@ function performStartupCleanup() {
 
 // Perform cleanup on startup (non-blocking)
 performStartupCleanup();
+
+// Initialize license service
+try {
+  const licenseConfig = {
+    jwtSecret: process.env.JWT_SECRET || 'default-jwt-secret-key',
+    mainBackendUrl: process.env.MAIN_BACKEND_URL || 'https://email-sender-main.onrender.com',
+    apiKey: process.env.MAIN_BACKEND_API_KEY || 'default-api-key',
+    clientVersion: process.env.CLIENT_VERSION || '1.0.0',
+  };
+  
+  initializeMainLicenseService(licenseConfig);
+  log("🔐 License service initialized");
+} catch (error: any) {
+  log(`⚠️  License service initialization failed: ${error.message}`);
+}
 
 const app = express();
 app.use(express.json());
