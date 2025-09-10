@@ -32,12 +32,12 @@ async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buf
     // Resize by width only to preserve aspect ratio (matches CSS height: auto behavior)
     hiddenImage.resize({ w: finalWidth });
     
-    // Center the hidden image on the QR code with 0.3 opacity
+    // Center the hidden image on the QR code (fully visible, transparent background only)
     const xPos = Math.floor((qrImage.bitmap.width - hiddenImage.bitmap.width) / 2);
     const yPos = Math.floor((qrImage.bitmap.height - hiddenImage.bitmap.height) / 2);
     
     qrImage.composite(hiddenImage, xPos, yPos, {
-      opacitySource: 0.3,
+      opacitySource: 1.0,
       opacityDest: 1.0
     });
     
