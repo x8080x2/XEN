@@ -1377,7 +1377,7 @@ export class AdvancedEmailService {
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
                   // Use EXACT same positioning as original main.js line 933 with transparent white background
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.7;"/>`;
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.3;"/>`;
                   console.log(`[Main HTML QR] Generated overlay using original main.js positioning with transparent white background (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
