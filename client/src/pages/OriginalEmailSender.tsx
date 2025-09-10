@@ -769,13 +769,13 @@ export default function OriginalEmailSender() {
 
             <nav className="space-y-2">
               <div className="bg-[#ef4444] text-white px-4 py-2 rounded cursor-pointer">
-                Sender
+                SENDER
               </div>
               <div
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                Config ⚙️
+                COMFIG ⚙️
               </div>
             </nav>
           </div>
@@ -801,25 +801,13 @@ export default function OriginalEmailSender() {
             <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
 {`
-     ██████╗ ██╗     ███████╗
-     ██╔════╝██║     ██╔════╝
-     ██║     ██║     ███████╗
-     ██║     ██║     ╚════██║
-     ╚██████╗███████╗███████║
-      ╚═════╝╚══════╝╚══════╝
-    
-     ██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗
-     ██╔══██╗██╔════╝██║     ██║██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║
-     ██║  ██║█████╗  ██║     ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝     ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║
-     ██║  ██║██╔══╝  ██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗  ╚██╔╝      ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║
-     ██████╔╝███████╗███████╗██║ ╚████╔╝ ███████╗██║  ██║   ██║       ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║
-     ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝
-
-`}
+░█▀▀░█░░░█▀▀░░░█▀▀░█▄█░█▀█░█▀▄░▀█▀░░░█▀▄░█▀▀░█░░░▀█▀░█░█░█▀▀░█▀▄░█░█░░░█▀▀░█░█░█▀▀░▀█▀░█▀▀░█▄█
+░█░░░█░░░▀▀█░░░▀▀█░█░█░█▀█░█▀▄░░█░░░░█░█░█▀▀░█░░░░█░░▀▄▀░█▀▀░█▀▄░░█░░░░▀▀█░░█░░▀▀█░░█░░█▀▀░█░█
+░▀▀▀░▀▀▀░▀▀▀░░░▀▀▀░▀░▀░▀░▀░▀░▀░░▀░░░░▀▀░░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░▀░▀░░▀░░░░▀▀▀░░▀░░▀▀▀░░▀░░▀▀▀░▀░▀`}
               </div>
               <div className="text-center mt-4">
                 <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
-                <div className="text-[#ef4444] text-sm font-bold">⚡ PROFESSIONAL ADVANCED EMAIL SMART SENDER ⚡</div>
+                <div className="text-[#ef4444] text-sm font-bold">⚡ ADVANCED SMART EMAIL SENDER ⚡</div>
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
             </div>
@@ -828,7 +816,7 @@ export default function OriginalEmailSender() {
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Sender Email</Label>
+                  <Label className="text-sm text-[red] mb-2">SENDER EMAIL</Label>
                   <Input
                     type="email"
                     value={senderEmail}
@@ -842,7 +830,7 @@ export default function OriginalEmailSender() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Sender Name</Label>
+                  <Label className="text-sm text-[red] mb-2">SENDER NAME</Label>
                   <Input
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
@@ -851,7 +839,7 @@ export default function OriginalEmailSender() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Subject</Label>
+                  <Label className="text-sm text-[red] mb-2">SUBJECT</Label>
                   <Input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
@@ -866,7 +854,7 @@ export default function OriginalEmailSender() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Letter */}
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Letter</Label>
+                  <Label className="text-sm text-[green] mb-2">LETTER</Label>
                   <Textarea
                     value={emailContent}
                     onChange={(e) => setEmailContent(e.target.value)}
@@ -874,7 +862,7 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white min-h-[200px]"
                   />
                   <div className="mt-2">
-                    <Label className="text-xs text-[#a1a1aa]">Main Letter</Label>
+                    <Label className="text-xs text-[red]">MAIN LETTER</Label>
                     <Select value={selectedTemplate || "off"} onValueChange={handleTemplateChange}>
                       <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                         <SelectValue placeholder="-- Off --" />
@@ -899,7 +887,7 @@ export default function OriginalEmailSender() {
 
                 {/* Maillist */}
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2">Maillist</Label>
+                  <Label className="text-sm text-[green] mb-2">MAILLIST</Label>
                   <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
@@ -910,7 +898,7 @@ export default function OriginalEmailSender() {
                     {recipientCount} recipients
                   </div>
                   <details className="mt-2">
-                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 Sender Tags (Click to expand)</summary>
+                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 SENDER TAGS (Click to Expand)</summary>
                     <div className="text-xs text-[#a1a1aa] mt-3 space-y-3 bg-[#0a0a0f] p-3 rounded border border-[#26262b]">
                       <div className="space-y-2">
                         <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
@@ -1027,7 +1015,7 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML Template */}
                 <div>
-                  <Label className="text-xs text-[#a1a1aa]">Attachment HTML Letter</Label>
+                  <Label className="text-xs text-[red]"> HTML CONVERT LETTER</Label>
                   <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
                     <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                       <SelectValue placeholder="-- Off --" />
@@ -1190,9 +1178,9 @@ export default function OriginalEmailSender() {
                 </div>
                 <div className="text-[#ef4444] font-mono text-xs text-center mt-3 opacity-60 whitespace-pre">
 {`
-┌────────────────────────────────────────────────────────┐
-│              ▓▓▓ READY FOR DEPLOYMENT ▓▓▓              │
-└────────────────────────────────────────────────────────┘
+┌───────────────────────┐
+│ ▓▓▓ READY SHOOTER ▓▓▓
+└───────────────────────┘
 `}
                 </div>
               </div>
@@ -1251,7 +1239,7 @@ export default function OriginalEmailSender() {
                     disabled={smtpData.smtpConfigs?.length <= 1}
                     className="w-4 h-4"
                   />
-                  <span className="text-[#a1a1aa] text-sm">Enable SMTP Rotation</span>
+                  <span className="text-[#a1a1aa] text-sm">ENABLE SMTP ROTATION</span>
                 </label>
                 {smtpData.rotationEnabled && smtpData.smtpConfigs?.length > 1 && (
                   <Button
@@ -1260,7 +1248,7 @@ export default function OriginalEmailSender() {
                     size="sm"
                     className="border-[#26262b] text-white hover:bg-[#26262b] h-8 text-xs"
                   >
-                    🔄 Rotate
+                    🔄 ROTATE
                   </Button>
                 )}
               </div>
@@ -1269,7 +1257,7 @@ export default function OriginalEmailSender() {
               <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    ⚙️ SMTP Management
+                    ⚙️ SMTP MANAGMENT
                   </h3>
                   <div className="flex items-center gap-4">
                     <Button
@@ -1398,10 +1386,15 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <h3 className="text-lg font-medium text-white mb-4">📄 Convert HTML</h3>
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
+ {`
+╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
+║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║  
+╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
+              </div>              
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-3 block">Convert Formats</Label>
+                  <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
                   <div className="flex flex-wrap gap-3">
                     {[
                       { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
@@ -1430,12 +1423,12 @@ export default function OriginalEmailSender() {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-[#a1a1aa] mt-2">
-                    Click to toggle conversion formats. Selected formats will be generated as attachments.
+                  <p className="text-xs text-[red] mt-2">
+                    Click to generate as attachments.
                   </p>
                 </div>
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-2 block">ZIP Password (for attachments)</Label>
+                  <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
                   <Input
                     type="password"
                     value={advancedSettings.zipPassword}
@@ -1450,7 +1443,7 @@ export default function OriginalEmailSender() {
                     onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
                     className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                   >
-                    📦 ZIP Attachments
+                    📦 ZIP ATTACHMENT
                     {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
                   </Button>
                   <Button
@@ -1490,7 +1483,7 @@ export default function OriginalEmailSender() {
                   onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
                   className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                 >
-                  📅 Calendar Mode
+                  📅 CALENDAR MODE
                   {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
                 </Button>
               </div>
@@ -1500,25 +1493,56 @@ export default function OriginalEmailSender() {
 
         {/* Settings Overlay */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
-            <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[980px] max-h-[80vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-semibold text-white"> Settings</h2>
-                <button
-                  onClick={() => setShowSettings(false)}
-                  className="text-[#a1a1aa] hover:text-white text-xl"
-                >
-                  ×
-                </button>
+          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">            
+            <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[1280px] max-h-[80vh] overflow-y-auto">
+              <button
+                onClick={() => setShowSettings(false)}
+                className="text-[red] hover:text-white text-xl"
+              >
+                GO BACK ↩️
+              </button>
+              <div className=" items-center mb-6">
+                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
+                  {`   
+                    .d8888b.                     .d888 d8b          
+                   d88P  Y88b                   d88P"  Y8P          
+                   888    888                   888                 
+                   888         .d88b.  88888b.  888888 888  .d88b.  
+                   888        d88""88b 888 "88b 888    888 d88P"88b 
+                   888    888 888  888 888  888 888    888 888  888 
+                   Y88b  d88P Y88..88P 888  888 888    888 Y88b 888 
+                    "Y8888P"   "Y88P"  888  888 888    888  "Y88888 
+                                                                888 
+                                                           Y8b d88P 
+                                                            "Y88P"  `}
               </div>
-
+               
+              </div>
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
+              {`
+                  | _______________ |
+                   | |XXXXXXXXXXXXX| |
+                   | |XXXXXXXXXXXXX| |
+                   | |XXXXXXXXXXXXX| |
+                   | |XXXXXXXXXXXXX| |
+                   | |XXXXXXXXXXXXX| |
+                   |_________________|
+                       _[_______]_
+                   ___[___________]___
+                  |         [_____] []|__
+                  |         [_____] []|  \__
+                  L___________________J     \ \___\/
+                   ___________________      /\ 
+                  /###GET#CONNECTED###
+              `}
+              </div>
               <div className="space-y-6">
                 {/* QR Code Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🔲 QR Settings</h3>
+                  <h3 className="text-lg font-medium text-red mb-3">QR SETTINGS 🔲</h3>
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Size (px)</Label>
+                      <Label className="text-sm text-[red]">QR SIZE (px)</Label>
                       <Input
                         type="number"
                         value={advancedSettings.qrSize}
@@ -1527,7 +1551,7 @@ export default function OriginalEmailSender() {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Border (px)</Label>
+                      <Label className="text-sm text-[red]">QR BORDER (px)</Label>
                       <Input
                         type="number"
                         min="0"
@@ -1538,28 +1562,28 @@ export default function OriginalEmailSender() {
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Border Color</Label>
+                      <Label className="text-sm text-[red]">QR BORDER COLOR</Label>
                       <Input
                         type="color"
                         value={advancedSettings.qrBorderColor}
                         onChange={(e) => setAdvancedSettings({...advancedSettings, qrBorderColor: e.target.value})}
-                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                        className="bg-[#0f0f12] border-[#26262b] text-red h-10"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Color</Label>
+                      <Label className="text-sm text-[red]">QR COLOR</Label>
                       <Input
                         type="color"
                         value={advancedSettings.qrForegroundColor || '#000000'}
                         onChange={(e) => setAdvancedSettings({...advancedSettings, qrForegroundColor: e.target.value})}
-                        className="bg-[#0f0f12] border-[#26262b] text-white h-10"
+                        className="bg-[#0f0f12] border-[#26262b] text-red h-10"
                       />
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">QR Background </Label>
+                      <Label className="text-sm text-[red]">QR BACKGROUND </Label>
                       <Input
                         type="color"
                         value={advancedSettings.qrBackgroundColor || '#FFFFFF'}
@@ -1569,182 +1593,12 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                 </div>
-
-                <div>
-                  <Label className="text-sm text-[#a1a1aa]">QR Link (use {"{email}"} placeholder)</Label>
-                  <Input
-                    value={advancedSettings.qrLink}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="https://example.com?user={email}"
-                  />
-                </div>
-
-                <div>
-                  <Label className="text-sm text-[#a1a1aa]">Link </Label>
-                  <Input
-                    value={advancedSettings.linkPlaceholder}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="{email}"
-                  />
-                </div>
-
-
-
-                <div className="grid grid-cols-2 gap-4">
-
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Attachment File Name</Label>
-                    <Input
-                      value={advancedSettings.fileName}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                      placeholder="attachment"
-                    />
-                  </div>
-                </div>
-
-
-
-                {/* Domain Logo Settings Section */}
-                <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🏢 Domain Logo </h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <Label className="text-sm text-[#a1a1aa]">Logo Size</Label>
-                      <Input
-                        value={advancedSettings.domainLogoSize}
-                        onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
-                        className="bg-[#0f0f12] border-[#26262b] text-white"
-                        placeholder="50%"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Retry Attempts</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="10"
-                      value={advancedSettings.retry}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, retry: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Priority</Label>
-                    <select
-                      value={advancedSettings.priority}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, priority: e.target.value})}
-                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
-                    >
-                      <option value="1">Low</option>
-                      <option value="2">Normal</option>
-                      <option value="3">High</option>
-                    </select>
-                  </div>
-
-                </div>
-
-
-
-                <h3 className="text-lg font-medium text-white mt-6 mb-4">Proxy </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={advancedSettings.proxyUse}
-                      onCheckedChange={(checked: boolean) => setAdvancedSettings({...advancedSettings, proxyUse: !!checked})}
-                    />
-                    <Label className="text-sm text-[#a1a1aa]">Use Proxy</Label>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Proxy Type</Label>
-                    <select
-                      value={advancedSettings.proxyType}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyType: e.target.value})}
-                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
-                    >
-                      <option value="socks5">SOCKS5</option>
-                      <option value="socks4">SOCKS4</option>
-                      <option value="http">HTTP</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Proxy Host</Label>
-                    <Input
-                      value={advancedSettings.proxyHost}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyHost: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Proxy Port</Label>
-                    <Input
-                      type="number"
-                      value={advancedSettings.proxyPort}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPort: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Proxy User</Label>
-                    <Input
-                      value={advancedSettings.proxyUser}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyUser: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Proxy Password</Label>
-                    <Input
-                      type="password"
-                      value={advancedSettings.proxyPass}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPass: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Emails per Second</Label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={advancedSettings.emailPerSecond}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, emailPerSecond: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-sm text-[#a1a1aa]">Sleep Between Batches (seconds)</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={advancedSettings.sleep}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, sleep: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white"
-                    />
-                  </div>
-                </div>
-
                 {/* Hidden Image Overlay Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-white mb-3">🎭 Hidden Image Overlay</h3>
+                  <h3 className="text-lg font-medium text-red mb-3">QR MIDDLE IMG </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">Hidden Image File</Label>
+                      <Label className="text-sm text-[red]">QR MIDDLE IMG</Label>
                       <Select 
                         value={advancedSettings.hiddenImageFile || "off"} 
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
@@ -1768,7 +1622,7 @@ export default function OriginalEmailSender() {
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm text-[#a1a1aa]">Hidden Image Size (px)</Label>
+                      <Label className="text-sm text-[red]">QR MIDDLE IMG SIZE (px)</Label>
                       <Input
                         type="number"
                         min="10"
@@ -1781,7 +1635,7 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label className="text-sm text-[#a1a1aa]">Hidden Text</Label>
+                    <Label className="text-sm text-[red]">MIDDLE TEXT </Label>
                     <Input
                       value={advancedSettings.hiddenText}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
@@ -1790,6 +1644,178 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
+                
+
+                <div>
+                  <Label className="text-sm text-[red]">QR LINK: USE {"{email}"} placeholder</Label>
+                  <Input
+                    value={advancedSettings.qrLink}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="https://example.com?user={email}"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-sm text-[red]">LINK </Label>
+                  <Input
+                    value={advancedSettings.linkPlaceholder}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="{email}"
+                  />
+                </div>
+
+
+
+                <div className="grid grid-cols-2 gap-4">
+
+                  <div>
+                    <Label className="text-sm text-[red]">ATTACH FILE NAME</Label>
+                    <Input
+                      value={advancedSettings.fileName}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                      placeholder="attachment"
+                    />
+                  </div>
+                </div>
+
+
+
+                {/* Domain Logo Settings Section */}
+                <div>
+                  <h3 className="text-lg font-medium text-red mb-3">🏢 DOMAIN LOGO </h3>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label className="text-sm text-[red]">LOGO SIZE</Label>
+                      <Input
+                        value={advancedSettings.domainLogoSize}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, domainLogoSize: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white"
+                        placeholder="50%"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-sm text-[red]">RETRY ATTEMPT</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={advancedSettings.retry}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, retry: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[red]">PRIORITY</Label>
+                    <select
+                      value={advancedSettings.priority}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, priority: e.target.value})}
+                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                    >
+                      <option value="1">Low</option>
+                      <option value="2">Normal</option>
+                      <option value="3">High</option>
+                    </select>
+                  </div>
+
+                </div>
+
+
+
+                <h3 className="text-lg font-medium text-red mt-6 mb-4">PROXY </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={advancedSettings.proxyUse}
+                      onCheckedChange={(checked: boolean) => setAdvancedSettings({...advancedSettings, proxyUse: !!checked})}
+                    />
+                    <Label className="text-sm text-[red]">USE PROXY</Label>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[red]">PROXY TYPE</Label>
+                    <select
+                      value={advancedSettings.proxyType}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyType: e.target.value})}
+                      className="w-full p-2 bg-[#0f0f12] border border-[#26262b] text-white rounded text-sm"
+                    >
+                      <option value="socks5">SOCKS5</option>
+                      <option value="socks4">SOCKS4</option>
+                      <option value="http">HTTP</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[red]">PROXY HOST</Label>
+                    <Input
+                      value={advancedSettings.proxyHost}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyHost: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[red]">PROXY PORT</Label>
+                    <Input
+                      type="number"
+                      value={advancedSettings.proxyPort}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPort: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[red]">PROXY USER</Label>
+                    <Input
+                      value={advancedSettings.proxyUser}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyUser: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[red]">PROXY PASSWORD</Label>
+                    <Input
+                      type="password"
+                      value={advancedSettings.proxyPass}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPass: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-[red]">EMAIL PER SECS</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={advancedSettings.emailPerSecond}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, emailPerSecond: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-sm text-[red]">SLEEP (seconds)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={advancedSettings.sleep}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, sleep: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white"
+                    />
+                  </div>
+                </div>
+
+              
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
