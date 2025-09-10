@@ -15,13 +15,22 @@ import { Jimp } from "jimp";
 import { configService } from "./configService";
 
 // Helper function to composite hidden image into QR code for email-safe rendering
-async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number): Promise<Buffer> {
+async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number, qrDisplayWidth?: number): Promise<Buffer> {
   try {
     const qrImage = await Jimp.read(qrBuffer);
     const hiddenImage = await Jimp.read(hiddenImageBuffer);
     
-    // Resize hidden image to specified size maintaining aspect ratio
-    hiddenImage.resize({ w: hiddenImageSize, h: hiddenImageSize });
+    // Calculate target width preserving aspect ratio like original CSS (width: Xpx, height: auto)
+    const displayWidth = qrDisplayWidth || qrImage.bitmap.width;
+    const scale = qrImage.bitmap.width / displayWidth;
+    const targetWidth = Math.round(hiddenImageSize * scale);
+    
+    // Clamp to max 35% of QR width for scannability
+    const maxWidth = Math.round(qrImage.bitmap.width * 0.35);
+    const finalWidth = Math.min(targetWidth, maxWidth);
+    
+    // Resize by width only to preserve aspect ratio (matches CSS height: auto behavior)
+    hiddenImage.resize({ w: finalWidth });
     
     // Center the hidden image on the QR code with 0.3 opacity
     const xPos = Math.floor((qrImage.bitmap.width - hiddenImage.bitmap.width) / 2);
@@ -32,6 +41,7 @@ async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buf
       opacityDest: 1.0
     });
     
+    console.log(`[QR Compose] Resized hidden image: ${hiddenImageSize}px -> ${finalWidth}px (scale: ${scale.toFixed(2)}, QR: ${qrImage.bitmap.width}px, display: ${displayWidth}px)`);
     return await qrImage.getBuffer('image/png');
   } catch (error) {
     console.error('[QR Compose] Failed to composite hidden image:', error);
@@ -1370,8 +1380,9 @@ export class AdvancedEmailService {
                       if (hasHiddenImage && imgBuf) {
                         // Composite hidden image directly into QR code for email-safe rendering
                         const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
-                        finalQrBuffer = await composeQrWithHiddenImage(qrBuffer, imgBuf, hiddenImgWidth);
-                        console.log(`[Main HTML QR] Composited hidden image into QR buffer for email-safe rendering (size: ${hiddenImgWidth}px)`);
+                        const qrDisplayWidth = C.QR_WIDTH || 200;
+                        finalQrBuffer = await composeQrWithHiddenImage(qrBuffer, imgBuf, hiddenImgWidth, qrDisplayWidth);
+                        console.log(`[Main HTML QR] Composited hidden image into QR buffer for email-safe rendering (size: ${hiddenImgWidth}px, display: ${qrDisplayWidth}px)`);
                       }
                     } else {
                       console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
