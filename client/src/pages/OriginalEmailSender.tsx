@@ -647,21 +647,6 @@ export default function OriginalEmailSender() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
-
-<div>
-  <h3 className="text-lg font-medium text-white mb-3">ASCII Art Settings</h3>
-  <div className="text-[#ef4444] font-mono text-xs leading-none text-center mb-4 whitespace-pre overflow-hidden">
-  {`
-     █████╗ ███████╗███████╗██╗██╗██╗
-    ██╔══██╗╚══███╔╝██╔════╝██║██║██║
-    ███████║  ███╔╝ █████╗  ██║██║██║
-    ██╔══██║ ███╔╝  ██╔══╝  ██║██║██║
-    ██║  ██║███████╗███████╗██║██║██║
-    ╚═╝  ╚═╝╚══════╝╚══════╝╚═╝╚═╝╚═╝
-  `}
-  </div>
-</div>
-
                 const data = JSON.parse(line.slice(6));
 
                 // Process each message individually with immediate rendering
