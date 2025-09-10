@@ -260,7 +260,7 @@ export class AdvancedEmailService {
       });
 
       // Find available browser or create new one
-      let availableBrowser = this.browserPool.find(pool => 
+      let availableBrowser = this.browserPool.find(pool =>
         pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
       );
 
@@ -392,9 +392,9 @@ export class AdvancedEmailService {
 
     // Only log when rate actually changes significantly
     if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
-      console.debug('Rate limit updated gradually', { 
+      console.debug('Rate limit updated gradually', {
         oldRate,
-        newRate: this.currentRateLimit, 
+        newRate: this.currentRateLimit,
         avgResponseTime,
         success,
         change: this.currentRateLimit - oldRate
@@ -411,8 +411,8 @@ export class AdvancedEmailService {
     if (processed > 0) {
       const avgTimePerEmail = elapsed / processed;
       this.progressMetrics.estimatedTimeRemaining = remaining * avgTimePerEmail;
-      this.progressMetrics.avgResponseTime = this.smtpResponseTimes.length > 0 
-        ? this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length 
+      this.progressMetrics.avgResponseTime = this.smtpResponseTimes.length > 0
+        ? this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length
         : 0;
     }
 
@@ -442,9 +442,9 @@ export class AdvancedEmailService {
 
         if (attempt < maxRetries) {
           const delay = initialDelay * Math.pow(2, attempt);
-          console.warn(`Retry attempt ${attempt + 1}/${maxRetries + 1}`, { 
-            delay, 
-            error: lastError.message 
+          console.warn(`Retry attempt ${attempt + 1}/${maxRetries + 1}`, {
+            delay,
+            error: lastError.message
           });
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -501,12 +501,12 @@ export class AdvancedEmailService {
 
     const qrCount = this.qrCache.size;
     const logoCount = this.logoCache.size;
-    
+
     this.qrCache.clear();
     this.logoCache.clear();
-    
+
     console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
@@ -555,7 +555,7 @@ export class AdvancedEmailService {
         const response = await axios.get(url, {
           responseType: 'arraybuffer',
           timeout: 2000, // Reduced timeout for faster fallback to next source
-          headers: { 
+          headers: {
             'User-Agent': 'Mozilla/5.0 (compatible; EmailClient/1.0)',
             'Accept': 'image/png,image/jpeg,image/webp,image/*,*/*;q=0.8'
           }
@@ -574,14 +574,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            
+
             // Cache the successful result
             this.logoCache.set(domain, {
               buffer,
               timestamp: Date.now(),
               domain
             });
-            
+
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -594,14 +594,14 @@ export class AdvancedEmailService {
     }
 
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    
+
     // Cache null result to prevent repeated attempts
     this.logoCache.set(domain, {
       buffer: null,
       timestamp: Date.now(),
       domain
     });
-    
+
     return null;
   }
 
@@ -647,7 +647,7 @@ export class AdvancedEmailService {
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
 
-      console.debug('Generated QR code with custom colors', { 
+      console.debug('Generated QR code with custom colors', {
         link: link.substring(0, 50),
         foregroundColor,
         backgroundColor
@@ -680,7 +680,7 @@ export class AdvancedEmailService {
 
   // Launch browser with proxy support - IMPROVED VERSION with pooling
   private async launchBrowser(C: any = {}): Promise<any> {
-    const launchOptions: any = { 
+    const launchOptions: any = {
       headless: true,
       args: [
         '--no-sandbox',
@@ -824,8 +824,8 @@ export class AdvancedEmailService {
       throw new Error('Invalid HTML input for Image conversion');
     }
     const conversionStart = Date.now();
-    console.debug('Image conversion starting', { 
-      queuePending: (this.concurrencyLimit as any).pendingCount, 
+    console.debug('Image conversion starting', {
+      queuePending: (this.concurrencyLimit as any).pendingCount,
       active: (this.concurrencyLimit as any).activeCount,
       timestamp: conversionStart
     });
@@ -842,7 +842,7 @@ export class AdvancedEmailService {
         // Optimized page loading - skip unnecessary network wait
         await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
         // Fast screenshot with optimized settings
-        const pngBuffer = await page.screenshot({ 
+        const pngBuffer = await page.screenshot({
           fullPage: true,
           optimizeForSpeed: true,
           captureBeyondViewport: false
@@ -856,9 +856,9 @@ export class AdvancedEmailService {
         }
 
         const conversionEnd = Date.now();
-        console.debug('Image conversion completed', { 
+        console.debug('Image conversion completed', {
           sizeKB: Math.round(pngBuffer.length / 1024),
-          queuePending: (this.concurrencyLimit as any).pendingCount, 
+          queuePending: (this.concurrencyLimit as any).pendingCount,
           active: (this.concurrencyLimit as any).activeCount,
           duration: conversionEnd - conversionStart
         });
@@ -952,10 +952,10 @@ export class AdvancedEmailService {
     // Add comprehensive error handling to prevent unhandled rejections
     process.removeAllListeners('unhandledRejection');
     process.on('unhandledRejection', (reason, promise) => {
-      console.error('Unhandled Promise Rejection in sendMail', { 
+      console.error('Unhandled Promise Rejection in sendMail', {
         reason: reason instanceof Error ? reason.message : reason,
         stack: reason instanceof Error ? reason.stack : undefined,
-        campaignId 
+        campaignId
       });
       console.error('Unhandled Promise Rejection:', reason);
     });
@@ -966,8 +966,8 @@ export class AdvancedEmailService {
       emailCount: args.recipients?.length || 0
     });
 
-    console.info('Campaign started with activity tracking', { 
-      campaignId, 
+    console.info('Campaign started with activity tracking', {
+      campaignId,
       emailCount: args.recipients?.length || 0,
       activeOperations: this.activeOperations.size,
       activeCampaigns: this.activeCampaigns.size
@@ -998,7 +998,7 @@ export class AdvancedEmailService {
       }
     }
 
-    // Load and merge configuration - exact clone from main.js  
+    // Load and merge configuration - exact clone from main.js
     const C = { ...defaultConfig };
 
     // Merge config file values if available
@@ -1267,15 +1267,15 @@ export class AdvancedEmailService {
               if (currentSmtpConfig) {
                 emailFromEmail = currentSmtpConfig.fromEmail;
                 emailFromName = currentSmtpConfig.fromName || 'Sender';
-                
+
                 // Create individual transporter for this email
                 emailTransporter = nodemailer.createTransport({
                   host: currentSmtpConfig.host,
                   port: parseInt(currentSmtpConfig.port),
                   secure: parseInt(currentSmtpConfig.port) === 465,
-                  auth: { 
-                    user: currentSmtpConfig.user, 
-                    pass: currentSmtpConfig.pass 
+                  auth: {
+                    user: currentSmtpConfig.user,
+                    pass: currentSmtpConfig.pass
                   },
                   pool: true,
                   maxConnections: 1,
@@ -1283,7 +1283,7 @@ export class AdvancedEmailService {
                 });
 
                 console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) for ${recipient}`);
-                
+
                 // Rotate to next SMTP for the next email
                 configService.rotateToNextSmtp();
               }
@@ -1394,7 +1394,7 @@ export class AdvancedEmailService {
                 // EXACT same HTML structure as original main.js lines 938-943
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
-                                    <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
+                                    <img src="cid:qrcode-main" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
                                   </a>
                                   ${hiddenImageHtml}
                                 </div>`;
@@ -1528,6 +1528,7 @@ export class AdvancedEmailService {
                   // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
+                    // This is the line that needs to be changed: remove filter:contrast(1.2) brightness(0.9);
                     hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
                     console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
@@ -1719,7 +1720,7 @@ export class AdvancedEmailService {
               }
             }
 
-            // Process domain logo in attachment HTML if present  
+            // Process domain logo in attachment HTML if present
             if (processedAttHtml.includes('{domainlogo}')) {
               const domainFull = recipient.split('@')[1] || '';
               // Check for cross-domain scenario
@@ -1948,12 +1949,12 @@ END:VCALENDAR`;
 
       // Clean up campaign tracking on success
       this.activeCampaigns.delete(campaignId);
-      console.info('Campaign completed successfully', { 
-        campaignId, 
-        sent, 
-        failed, 
+      console.info('Campaign completed successfully', {
+        campaignId,
+        sent,
+        failed,
         duration: elapsed,
-        activeCampaigns: this.activeCampaigns.size 
+        activeCampaigns: this.activeCampaigns.size
       });
 
       const sentCount = sent;
@@ -1973,11 +1974,11 @@ END:VCALENDAR`;
 
       // Clean up campaign tracking on error
       this.activeCampaigns.delete(campaignId);
-      console.info('Campaign failed and cleaned up', { 
-        campaignId, 
+      console.info('Campaign failed and cleaned up', {
+        campaignId,
         error: errorMessage,
         duration: Date.now() - sendMailStart,
-        activeCampaigns: this.activeCampaigns.size 
+        activeCampaigns: this.activeCampaigns.size
       });
 
       return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
@@ -2055,9 +2056,9 @@ END:VCALENDAR`;
       trackResponse(true);
       this.progressMetrics.emailsSent++;
 
-      console.info('Email sent successfully', { 
-        to: emailData.to, 
-        responseTime: Date.now() - startTime 
+      console.info('Email sent successfully', {
+        to: emailData.to,
+        responseTime: Date.now() - startTime
       });
 
       return { success: true, recipient: emailData.to };
@@ -2068,7 +2069,7 @@ END:VCALENDAR`;
       // Enhanced error logging with more details
       const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
       const errorDetails = {
-        to: emailData.to, 
+        to: emailData.to,
         error: errorMessage,
         errorType: error?.constructor?.name || 'UnknownError',
         errorCode: error?.code,
