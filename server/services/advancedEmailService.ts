@@ -1528,7 +1528,7 @@ export class AdvancedEmailService {
                   // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:8;"/>`;
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:1;"/>`;
                     console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
