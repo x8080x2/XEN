@@ -38,23 +38,45 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
   return (
     <div className="fixed inset-0 bg-black/75 z-50 flex">
       <div className="ml-auto w-[840px] bg-[#131316] border-l border-[#26262b] overflow-y-auto p-4">
-        {/* Settings Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-white">General Settings</h2>
-          <button 
-            className="text-[#a1a1aa] hover:text-white text-2xl transition-colors"
-            onClick={onClose}
-            data-testid="close-settings"
-          >
-            ×
-          </button>
+        {/* ASCII Art Header */}
+        <div className="mb-6">
+          <div className="text-[#ef4444] font-mono text-xs whitespace-pre leading-none mb-4">
+{`
+╔══════════════════════════════════════════════════════════════════════╗
+║  ⚡ ███████ ███████ ████████ ████████ ██ ███    ██  ██████  ███████  ║
+║  ⚡ ██      ██         ██       ██    ██ ████   ██ ██       ██       ║
+║  ⚡ ███████ █████      ██       ██    ██ ██ ██  ██ ██   ███ ███████  ║
+║  ⚡      ██ ██         ██       ██    ██ ██  ██ ██ ██    ██      ██  ║
+║  ⚡ ███████ ███████    ██       ██    ██ ██   ████  ██████  ███████  ║
+╚══════════════════════════════════════════════════════════════════════╝
+    ▓▓▓ SYSTEM CONFIGURATION MATRIX ▓▓▓
+    ░░░ SPARKS & LIGHTNING MODE ░░░
+`}
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="text-white">
+              <div className="text-lg font-semibold">⚙️ General Settings</div>
+              <div className="text-[#a1a1aa] text-xs font-mono">STATUS: ACTIVE • CONFIG: LOADED • MODE: ENHANCED</div>
+            </div>
+            <button 
+              className="text-[#a1a1aa] hover:text-white text-2xl transition-colors"
+              onClick={onClose}
+              data-testid="close-settings"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="space-y-8">
           {/* Email Validation */}
           <div className="settings-section">
+            <div className="text-[#ef4444] font-mono text-xs mb-2">
+{`▓▓▓ EMAIL VALIDATION MATRIX ▓▓▓`}
+            </div>
             <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
-              Email Validation
+              ⚡ Email Validation
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
@@ -90,8 +112,11 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
 
           {/* Delivery Options */}
           <div className="settings-section">
+            <div className="text-[#ef4444] font-mono text-xs mb-2">
+{`░░░ DELIVERY SPARK SYSTEM ░░░`}
+            </div>
             <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
-              Delivery Options
+              🚀 Delivery Options
             </h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
@@ -142,8 +167,11 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
 
           {/* UI Preferences */}
           <div className="settings-section">
+            <div className="text-[#ef4444] font-mono text-xs mb-2">
+{`⚡⚡⚡ INTERFACE LIGHTNING ⚡⚡⚡`}
+            </div>
             <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
-              UI Preferences
+              🎨 UI Preferences
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
@@ -178,14 +206,23 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
           </div>
 
           {/* Save Settings Button */}
-          <div className="flex justify-end pt-4">
-            <Button 
-              onClick={handleSave}
-              className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2 font-semibold text-sm"
-              data-testid="button-save-settings"
-            >
-              Save Settings
-            </Button>
+          <div className="pt-4">
+            <div className="text-[#ef4444] font-mono text-xs text-center mb-4">
+{`
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+⚡ SAVE CONFIGURATION TO SPARK MATRIX ⚡
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+`}
+            </div>
+            <div className="flex justify-end">
+              <Button 
+                onClick={handleSave}
+                className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2 font-semibold text-sm"
+                data-testid="button-save-settings"
+              >
+                ⚡ Save Settings ⚡
+              </Button>
+            </div>
           </div>
         </div>
       </div>
