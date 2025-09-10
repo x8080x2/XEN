@@ -41,26 +41,18 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
         {/* Settings Header with ASCII Art */}
         <div className="mb-6">
           {/* ASCII Art Header */}
-          <div className="bg-gradient-to-r from-[#0f0f12] via-[#1a1a1f] to-[#0f0f12] rounded-lg border border-[#ef4444]/30 p-4 mb-4">
-            <div className="text-[#ef4444] font-mono text-sm mb-2 text-center whitespace-pre font-bold">
+          <div className="text-[#ef4444] font-mono text-xs mb-4 text-center whitespace-pre opacity-90">
 {`
-    ╔══════════════════════════════════════════════════════════════════════╗
-    ║  ████████  ██████  ███████ ████████ ██████  ██████   ██████  ███████ ║
-    ║  ██      ██ ██   ██ ██         ██    ██   ██ ██   ██ ██       ██      ║
-    ║  ███████ ██ ██████  █████      ██    ██████  ██████  ██   ███ ███████ ║
-    ║       ██ ██ ██   ██ ██         ██    ██   ██ ██   ██ ██    ██      ██ ║
-    ║  ███████ ██ ██   ██ ███████    ██    ██   ██ ██   ██  ██████  ███████ ║
-    ╚══════════════════════════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
+║  ██  ███████ ███████ ████████ ████████ ██ ███   ██  ███████ ███████   ██  ║
+║  ██  ██      ██         ██       ██    ██ ████  ██  ██      ██        ██  ║
+║  ██  ███████ █████      ██       ██    ██ ██ ██ ██  ██████  ███████   ██  ║
+║  ██       ██ ██         ██       ██    ██ ██  ████  ██  ██       ██   ██  ║
+║  ██  ███████ ███████    ██       ██    ██ ██   ███  ███████ ███████   ██  ║
+║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
 `}
-            </div>
-            <div className="text-center">
-              <div className="text-[#ef4444] font-mono text-xs animate-pulse">
-                ⚡ CONFIGURATION MATRIX ⚡
-              </div>
-              <div className="text-[#a1a1aa] font-mono text-xs mt-1">
-                [ SYSTEM PARAMETERS CONTROL PANEL ]
-              </div>
-            </div>
           </div>
           
           <div className="flex justify-between items-center">
@@ -78,13 +70,9 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
         <div className="space-y-8">
           {/* Email Validation */}
           <div className="settings-section">
-            <div className="flex items-center gap-3 mb-4 pb-2 border-b border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-              <h3 className="text-sm font-semibold text-[#ef4444]">
-                Email Validation
-              </h3>
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-            </div>
+            <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
+              Email Validation
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -119,13 +107,9 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
 
           {/* Delivery Options */}
           <div className="settings-section">
-            <div className="flex items-center gap-3 mb-4 pb-2 border-b border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-              <h3 className="text-sm font-semibold text-[#ef4444]">
-                Delivery Options
-              </h3>
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-            </div>
+            <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
+              Delivery Options
+            </h3>
             <div className="grid grid-cols-3 gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -175,13 +159,9 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
 
           {/* UI Preferences */}
           <div className="settings-section">
-            <div className="flex items-center gap-3 mb-4 pb-2 border-b border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-              <h3 className="text-sm font-semibold text-[#ef4444]">
-                UI Preferences
-              </h3>
-              <div className="text-[#ef4444] font-mono text-xs">▓▓▓</div>
-            </div>
+            <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
+              UI Preferences
+            </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -214,15 +194,6 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
             </div>
           </div>
 
-          {/* ASCII Footer */}
-          <div className="text-[#ef4444] font-mono text-xs text-center whitespace-pre opacity-80 mb-4">
-{`
-    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-    ██ CONFIGURATION UPDATED ██ PARAMETERS SAVED ██ SYSTEM READY ██
-    ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
-`}
-          </div>
-
           {/* Save Settings Button */}
           <div className="flex justify-end pt-4">
             <Button 
@@ -230,7 +201,7 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
               className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-6 py-2 font-semibold text-sm"
               data-testid="button-save-settings"
             >
-              ⚡ Save Settings ⚡
+              Save Settings
             </Button>
           </div>
         </div>
