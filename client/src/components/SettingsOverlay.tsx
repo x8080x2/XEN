@@ -38,33 +38,16 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
   return (
     <div className="fixed inset-0 bg-black/75 z-50 flex">
       <div className="ml-auto w-[840px] bg-[#131316] border-l border-[#26262b] overflow-y-auto p-4">
-        {/* Settings Header with ASCII Art */}
-        <div className="mb-6">
-          {/* ASCII Art Header */}
-          <div className="text-[#ef4444] font-mono text-xs mb-4 text-center whitespace-pre opacity-90">
-{`
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
-║  ██  ███████ ███████ ████████ ████████ ██ ███   ██  ███████ ███████   ██  ║
-║  ██  ██      ██         ██       ██    ██ ████  ██  ██      ██        ██  ║
-║  ██  ███████ █████      ██       ██    ██ ██ ██ ██  ██████  ███████   ██  ║
-║  ██       ██ ██         ██       ██    ██ ██  ████  ██  ██       ██   ██  ║
-║  ██  ███████ ███████    ██       ██    ██ ██   ███  ███████ ███████   ██  ║
-║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓  ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-`}
-          </div>
-          
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-white">General Settings</h2>
-            <button 
-              className="text-[#a1a1aa] hover:text-white text-2xl transition-colors"
-              onClick={onClose}
-              data-testid="close-settings"
-            >
-              ×
-            </button>
-          </div>
+        {/* Settings Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-lg font-semibold text-white">General Settings</h2>
+          <button 
+            className="text-[#a1a1aa] hover:text-white text-2xl transition-colors"
+            onClick={onClose}
+            data-testid="close-settings"
+          >
+            ×
+          </button>
         </div>
 
         <div className="space-y-8">
