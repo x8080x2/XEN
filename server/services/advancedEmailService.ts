@@ -1376,15 +1376,13 @@ export class AdvancedEmailService {
                   // Perfect center positioning inside QR code middle
                   const qrSize = C.QR_WIDTH || 200;
                   const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use calculated center positioning that adapts to QR code size
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.3;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using calculated center positioning (top:${topPosition}px, left:50%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
+                  // Use EXACT same positioning as original main.js line 933 with transparent white background
+                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; opacity:0.3;"/>`;
+                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning with transparent white background (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
                 } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                  // Calculate center positioning for text overlay that adapts to QR code size
-                  const qrSize = C.QR_WIDTH || 200;
-                  const topPosition = Math.floor(qrSize / 2) - 10; // Center text with slight offset
-                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                  console.log(`[Main HTML QR] Using hidden text overlay with calculated positioning: ${C.HIDDEN_TEXT}`);
+                  // EXACT same text overlay positioning as main.js line 832
+                  hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                  console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
                 } else {
                   console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
                 }
@@ -1527,18 +1525,14 @@ export class AdvancedEmailService {
                     console.warn('[HTML2IMG_BODY] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                   }
 
-                  // Generate hidden overlay using base64 data URL with calculated center positioning
+                  // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    const qrSize = C.QR_WIDTH || 200;
-                    const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2);
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
-                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using calculated center positioning (top:${topPosition}px, QR:${qrSize}px)`);
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    const qrSize = C.QR_WIDTH || 200;
-                    const topPosition = Math.floor(qrSize / 2) - 10; // Center text with slight offset
-                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                    console.log(`[HTML2IMG_BODY] Using hidden text overlay with calculated positioning: ${C.HIDDEN_TEXT}`);
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML2IMG_BODY] Using hidden text overlay: ${C.HIDDEN_TEXT}`);
                   }
 
                   // Apply EXACT same QR styling as main HTML but using data URL with hidden overlay
@@ -1694,14 +1688,12 @@ export class AdvancedEmailService {
                     const base64Img = attImgBuf.toString('base64');
                     const qrSize = C.QR_WIDTH || 200;
                     const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
-                    // Use calculated center positioning that adapts to QR code size
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; opacity:1.2;"/>`;
-                    console.log(`[HTML_CONVERT] Generated overlay using calculated center positioning (top:${topPosition}px, left:50%, QR:${qrSize}px)`);
+                    // Use EXACT same positioning as original main.js for attachments
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; opacity:1.2i;"/>`;
+                    console.log(`[HTML_CONVERT] Generated overlay using original main.js positioning for attachment with transparent white background (top:77px, left:56%, QR:${qrSize}px)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
-                    const qrSize = C.QR_WIDTH || 200;
-                    const topPosition = Math.floor(qrSize / 2) - 10; // Center text with slight offset
-                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:${topPosition}px; left:50%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
-                    console.log(`[HTML_CONVERT] Using hidden text overlay with calculated positioning: ${C.HIDDEN_TEXT}`);
+                    hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
+                    console.log(`[HTML_CONVERT] Using hidden text overlay with original main.js positioning: ${C.HIDDEN_TEXT}`);
                   }
 
                   const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
