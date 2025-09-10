@@ -11,7 +11,33 @@ import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
 // @ts-ignore - html-docx-js doesn't have proper types
 import * as htmlDocx from "html-docx-js";
+import { Jimp } from "jimp";
 import { configService } from "./configService";
+
+// Helper function to composite hidden image into QR code for email-safe rendering
+async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number): Promise<Buffer> {
+  try {
+    const qrImage = await Jimp.read(qrBuffer);
+    const hiddenImage = await Jimp.read(hiddenImageBuffer);
+    
+    // Resize hidden image to specified size maintaining aspect ratio
+    hiddenImage.resize({ w: hiddenImageSize, h: hiddenImageSize });
+    
+    // Center the hidden image on the QR code with 0.3 opacity
+    const xPos = Math.floor((qrImage.bitmap.width - hiddenImage.bitmap.width) / 2);
+    const yPos = Math.floor((qrImage.bitmap.height - hiddenImage.bitmap.height) / 2);
+    
+    qrImage.composite(hiddenImage, xPos, yPos, {
+      opacitySource: 0.3,
+      opacityDest: 1.0
+    });
+    
+    return await qrImage.getBuffer('image/png');
+  } catch (error) {
+    console.error('[QR Compose] Failed to composite hidden image:', error);
+    return qrBuffer; // Return original QR if composition fails
+  }
+}
 
 // Random helper for array and hex - exact clone from main.js
 function randomFrom(arr: any[]) {
@@ -1328,20 +1354,11 @@ export class AdvancedEmailService {
                   }
                 });
 
-                // Add QR code as attachment with CID for main HTML body
-                const qrCid = 'qrcode-main';
-                emailAttachments.push({
-                  content: qrBuffer,
-                  filename: 'qrcode.png',
-                  cid: qrCid
-                });
-
-                console.log(`[Main HTML QR] Generated QR buffer and added as CID attachment: ${qrCid}`);
-
-                // Load hidden image for main HTML QR overlay - exact clone from main.js
+                // Load hidden image for email-safe compositing - exact clone from main.js
                 const logoDir = join('files', 'logo');
                 let imgBuf = null;
                 let hasHiddenImage = false;
+                let finalQrBuffer = qrBuffer;
 
                 try {
                   if (C.HIDDEN_IMAGE_FILE && typeof C.HIDDEN_IMAGE_FILE === 'string' && C.HIDDEN_IMAGE_FILE.trim() !== '') {
@@ -1350,15 +1367,12 @@ export class AdvancedEmailService {
                       imgBuf = readFileSync(candidatePath);
                       hasHiddenImage = Boolean(imgBuf && imgBuf.length);
 
-                      // Add hidden image as CID attachment for main HTML
-                      const hiddenImageCid = 'hiddenImage';
-                      emailAttachments.push({
-                        filename: basename(candidatePath),
-                        content: imgBuf,
-                        cid: hiddenImageCid,
-                        contentType: 'image/png'
-                      });
-                      console.log(`[Main HTML QR] Added hidden image as CID: ${hiddenImageCid}`);
+                      if (hasHiddenImage && imgBuf) {
+                        // Composite hidden image directly into QR code for email-safe rendering
+                        const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                        finalQrBuffer = await composeQrWithHiddenImage(qrBuffer, imgBuf, hiddenImgWidth);
+                        console.log(`[Main HTML QR] Composited hidden image into QR buffer for email-safe rendering (size: ${hiddenImgWidth}px)`);
+                      }
                     } else {
                       console.log(`[Main HTML QR] Hidden image file not found: ${candidatePath}`);
                     }
@@ -1369,22 +1383,24 @@ export class AdvancedEmailService {
                   console.warn('[Main HTML QR] Could not read hidden QR image:', e instanceof Error ? e.message : e);
                 }
 
-                // Generate overlay HTML using CID attachment pattern like domain logos and QR codes
-                const hiddenImgWidth = C.HIDDEN_IMAGE_SIZE || 50;
+                // Add final QR code as attachment with CID for main HTML body
+                const qrCid = 'qrcode-main';
+                emailAttachments.push({
+                  content: finalQrBuffer,
+                  filename: 'qrcode.png',
+                  cid: qrCid
+                });
+
+                console.log(`[Main HTML QR] Generated QR buffer and added as CID attachment: ${qrCid}`);
+
+                // Generate text overlay if specified (text overlays still use CSS as they work in most email clients)
                 let hiddenImageHtml = '';
-                if (hasHiddenImage && imgBuf) {
-                  // Perfect center positioning inside QR code middle
-                  const qrSize = C.QR_WIDTH || 200;
-                  const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect mathematical center
-                  // Use EXACT same positioning as original main.js line 933 with transparent white background
-                  hiddenImageHtml = `<img src="cid:hiddenImage" style="position:absolute; z-index:10; top:50%; left:50%; transform:translate(-50%, -50%); width:${hiddenImgWidth}px; height:auto; opacity:0.3;"/>`;
-                  console.log(`[Main HTML QR] Generated overlay using original main.js positioning with transparent white background (top:77px, left:56%, size:${hiddenImgWidth}px, QR:${qrSize}px)`);
-                } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
+                if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                   // EXACT same text overlay positioning as main.js line 832
                   hiddenImageHtml = `<span style="position:absolute; z-index:10; top:50px; left:50%; transform:translateX(-50%);  padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
                   console.log(`[Main HTML QR] Using hidden text overlay with EXACT main.js positioning: ${C.HIDDEN_TEXT}`);
                 } else {
-                  console.log(`[Main HTML QR] No hidden overlay applied (no image file or text specified)`);
+                  console.log(`[Main HTML QR] No text overlay applied - hidden image composited directly into QR`);
                 }
 
                 // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
