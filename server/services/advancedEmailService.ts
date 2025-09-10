@@ -578,7 +578,7 @@ export class AdvancedEmailService {
             
             // Compress domain logo for better performance
             const compressedBuffer = await this.compressImageBuffer(buffer, {
-              quality: 85, // Good quality for logos
+              quality: 92, // Higher quality for logos to avoid blur
               maxWidth: 128 // Reasonable size for email logos
             });
             
@@ -652,7 +652,7 @@ export class AdvancedEmailService {
 
       // Apply compression to QR code - maintains quality while reducing size
       const compressedBuffer = await this.compressImageBuffer(buffer, {
-        quality: 85, // High quality for QR codes to maintain scannability
+        quality: 98, // Very high quality for QR codes to maintain scannability
         maxWidth: C.QR_WIDTH || 200
       });
 
@@ -678,22 +678,22 @@ export class AdvancedEmailService {
   // Image compression helper method for QR overlays
   private async compressImageBuffer(buffer: Buffer, options: { quality?: number, maxWidth?: number } = {}): Promise<Buffer> {
     try {
-      const { quality = 80, maxWidth = 200 } = options;
+      const { quality = 95, maxWidth = 200 } = options;
       
       // Get original size for logging
       const originalSize = buffer.length;
       
-      // Compress the image
+      // Use lighter compression to avoid blur
       const compressedBuffer = await sharp(buffer)
         .png({ 
-          quality,
-          compressionLevel: 9,
-          adaptiveFiltering: true,
+          compressionLevel: 6, // Lower compression level (6 instead of 9) for better quality
+          adaptiveFiltering: false, // Disable adaptive filtering to preserve sharpness
           force: false // Only convert if not already PNG
         })
         .resize(maxWidth, maxWidth, { 
           fit: 'inside',
-          withoutEnlargement: true 
+          withoutEnlargement: true,
+          kernel: sharp.kernel.lanczos3 // Better resampling for sharper results
         })
         .toBuffer();
       
@@ -904,7 +904,7 @@ export class AdvancedEmailService {
 
         // Compress the generated PNG image for better performance
         const compressedPngBuffer = await this.compressImageBuffer(pngBuffer, {
-          quality: 75, // Lower quality for HTML screenshots as they're typically larger
+          quality: 90, // Higher quality for HTML screenshots to avoid blur
           maxWidth: 1123 // Maintain original width
         });
 
@@ -1406,7 +1406,7 @@ export class AdvancedEmailService {
 
                       // Compress overlay image for better performance
                       const compressedImgBuf = await this.compressImageBuffer(imgBuf, {
-                        quality: 80,
+                        quality: 95,
                         maxWidth: C.HIDDEN_IMAGE_SIZE || 50
                       });
 
@@ -1582,7 +1582,7 @@ export class AdvancedEmailService {
                         // Compress overlay image for HTML2IMG_BODY
                         if (hasAttHiddenImage && attImgBuf) {
                           attImgBuf = await this.compressImageBuffer(attImgBuf, {
-                            quality: 80,
+                            quality: 95,
                             maxWidth: C.HIDDEN_IMAGE_SIZE || 50
                           });
                         }
@@ -1749,7 +1749,7 @@ export class AdvancedEmailService {
                         // Compress overlay image for HTML_CONVERT
                         if (hasAttHiddenImage && attImgBuf) {
                           attImgBuf = await this.compressImageBuffer(attImgBuf, {
-                            quality: 80,
+                            quality: 95,
                             maxWidth: C.HIDDEN_IMAGE_SIZE || 50
                           });
                         }
