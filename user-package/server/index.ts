@@ -9,10 +9,18 @@ import { initializeMainLicenseService } from "./services/mainLicenseService";
 async function startTelegramBot() {
   try {
     log("🤖 Starting Telegram License Bot...");
-    const { default: startBot } = await import("../telegram-bot.js");
+    const { disabled, start } = await import("../telegram-bot.js");
+    
+    if (disabled) {
+      log("⚠️  Telegram bot is disabled (missing environment variables)");
+      return;
+    }
+    
+    start();
     log("✅ Telegram bot initialized");
   } catch (error) {
-    log(`❌ Telegram bot failed to start: ${error}`);
+    log(`⚠️  Telegram bot failed to start: ${error}`);
+    log("✅ Server will continue without Telegram bot functionality");
   }
 }
 

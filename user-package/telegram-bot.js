@@ -4,42 +4,57 @@ import axios from 'axios';
 // Configuration - using secure environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+const MAIN_BACKEND_API_KEY = process.env.MAIN_BACKEND_API_KEY; // Aligned with server
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID;
 
-if (!BOT_TOKEN) {
-  console.error('❌ TELEGRAM_BOT_TOKEN is required');
-  process.exit(1);
+// Check if bot is disabled due to missing environment variables
+export const disabled = !BOT_TOKEN || !MAIN_BACKEND_URL || !MAIN_BACKEND_API_KEY || !ADMIN_TELEGRAM_ID;
+
+if (disabled) {
+  console.log('⚠️  Telegram bot disabled - missing environment variables:');
+  if (!BOT_TOKEN) console.log('  - TELEGRAM_BOT_TOKEN');
+  if (!MAIN_BACKEND_URL) console.log('  - MAIN_BACKEND_URL'); 
+  if (!MAIN_BACKEND_API_KEY) console.log('  - MAIN_BACKEND_API_KEY');
+  if (!ADMIN_TELEGRAM_ID) console.log('  - ADMIN_TELEGRAM_ID');
 }
 
-if (!MAIN_BACKEND_URL) {
-  console.error('❌ MAIN_BACKEND_URL is required');
-  process.exit(1);
-}
+// Bot instance (lazy initialization)
+let bot = null;
 
-if (!ADMIN_API_KEY) {
-  console.error('❌ ADMIN_API_KEY is required');
-  process.exit(1);
-}
-
-if (!ADMIN_TELEGRAM_ID) {
-  console.error('❌ ADMIN_TELEGRAM_ID is required');
-  process.exit(1);
-}
-
-// Create bot instance with error handling
-const bot = new TelegramBot(BOT_TOKEN, { 
-  polling: {
-    autoStart: true,
-    params: {
-      timeout: 30
-    }
+// Export start function for proper module usage
+export function start() {
+  if (disabled) {
+    console.log('⚠️  Cannot start Telegram bot - disabled due to missing environment variables');
+    return;
   }
-});
 
-console.log('🤖 Email Sender License Bot started!');
-console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
-console.log(`👤 Admin Telegram ID: ${ADMIN_TELEGRAM_ID}`);
+  if (bot) {
+    console.log('⚠️  Telegram bot already running');
+    return;
+  }
+
+  try {
+    // Create bot instance with polling
+    bot = new TelegramBot(BOT_TOKEN, { 
+      polling: {
+        autoStart: true,
+        params: {
+          timeout: 30
+        }
+      }
+    });
+
+    console.log('🤖 Email Sender License Bot started!');
+    console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
+    console.log(`👤 Admin Telegram ID: ${ADMIN_TELEGRAM_ID}`);
+    console.log('✅ Telegram bot initialized and running');
+    
+    setupBotHandlers();
+  } catch (error) {
+    console.error('❌ Failed to start Telegram bot:', error.message);
+    bot = null;
+  }
+}
 
 // User sessions storage
 const userSessions = new Map();
@@ -49,12 +64,17 @@ function isAuthorizedAdmin(telegramId) {
   return telegramId.toString() === ADMIN_TELEGRAM_ID.toString();
 }
 
-// Admin-only message
+// Admin-only message  
 function sendAdminOnlyMessage(chatId) {
+  if (!bot) return Promise.resolve();
   return bot.sendMessage(chatId, '🔒 *Access Restricted*\n\nThis bot is restricted to authorized administrators only.\n\nPlease contact the system administrator for access.', {
     parse_mode: 'Markdown'
   });
 }
+
+// Setup all bot handlers
+function setupBotHandlers() {
+  if (!bot) return;
 
 // Create main menu keyboard
 function getMainMenuKeyboard() {
@@ -86,8 +106,8 @@ function getPriceListKeyboard() {
   };
 }
 
-// Start command and main menu
-bot.onText(/\/start/, async (msg) => {
+  // Start command and main menu
+  bot.onText(/\/start/, async (msg) => {
   try {
     const chatId = msg.chat.id;
     const username = msg.from.username || `user_${chatId}`;
@@ -142,8 +162,8 @@ Choose an option from the admin menu below:
   }
 });
 
-// Handle text messages (menu selections)
-bot.on('message', async (msg) => {
+  // Handle text messages (menu selections)
+  bot.on('message', async (msg) => {
   try {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -217,8 +237,8 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Handle callback queries (inline buttons) 
-bot.on('callback_query', async (callbackQuery) => {
+  // Handle callback queries (inline buttons) 
+  bot.on('callback_query', async (callbackQuery) => {
   try {
     const msg = callbackQuery.message;
     const chatId = msg.chat.id;
@@ -695,20 +715,23 @@ Generate licenses for customers and help them activate.`;
   }
 }
 
-// Error handling
-bot.on('error', (error) => {
+  // Error handling
+  bot.on('error', (error) => {
   console.error('❌ Telegram Bot Error:', error);
 });
 
-bot.on('polling_error', (error) => {
-  console.error('❌ Polling Error:', error);
-});
+  bot.on('polling_error', (error) => {
+    console.error('❌ Polling Error:', error);
+  });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down Telegram bot...');
-  bot.stopPolling();
-  process.exit(0);
-});
+  // Graceful shutdown
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down Telegram bot...');
+    if (bot) {
+      bot.stopPolling();
+    }
+    process.exit(0);
+  });
 
-console.log('✅ Bot is ready! Send /start to begin.');
+  console.log('✅ Bot is ready! Send /start to begin.');
+}
