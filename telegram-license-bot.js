@@ -8,7 +8,6 @@ const axios = require('axios');
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL || 'https://your-main-backend.onrender.com';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'admin-api-key-2024';
-const AUTHORIZED_USERS = process.env.AUTHORIZED_USERS ? process.env.AUTHORIZED_USERS.split(',') : ['your_telegram_username'];
 
 if (!BOT_TOKEN) {
   console.error('❌ TELEGRAM_BOT_TOKEN is required');
@@ -20,15 +19,9 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 console.log('🤖 Email Sender License Bot started!');
 console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
-console.log(`👥 Authorized Users: ${AUTHORIZED_USERS.join(', ')}`);
 
 // User sessions storage
 const userSessions = new Map();
-
-// Helper function to check if user is authorized
-function isAuthorized(username) {
-  return AUTHORIZED_USERS.includes(username);
-}
 
 // Create main menu keyboard
 function getMainMenuKeyboard() {
@@ -61,13 +54,14 @@ function getPriceListKeyboard() {
 }
 
 // Helper function to generate license
-async function generateLicense(userEmail, userName, planType = 'professional', userId) {
+async function generateLicense(userEmail, userName, planType = 'professional', userId, telegramUsername) {
   try {
     const licenseData = {
-      userId: userId || `user-${Date.now()}`,
+      userId: userId || `tg-${Date.now()}`,
       userEmail: userEmail,
       userName: userName,
       planType: planType,
+      telegramUsername: telegramUsername,
       features: {
         maxEmailsPerMonth: planType === 'basic' ? 1000 : planType === 'professional' ? 10000 : 50000,
         maxRecipientsPerEmail: planType === 'basic' ? 100 : planType === 'professional' ? 500 : 2000,
@@ -101,24 +95,15 @@ async function generateLicense(userEmail, userName, planType = 'professional', u
   }
 }
 
-// Helper function to get user's IP
-async function getUserIP(chatId) {
-  try {
-    const response = await axios.get('https://api.ipify.org?format=json');
-    return response.data.ip;
-  } catch (error) {
-    return 'Unknown';
-  }
-}
-
 // Start command and main menu
 bot.onText(/\/start/, (msg) => {
   const chatId = msg.chat.id;
-  const username = msg.from.username;
+  const username = msg.from.username || `user_${chatId}`;
   const firstName = msg.from.first_name || 'User';
 
   // Initialize user session
   userSessions.set(chatId, {
+    telegramId: chatId,
     username: username,
     firstName: firstName,
     balance: 0,
@@ -130,7 +115,13 @@ bot.onText(/\/start/, (msg) => {
 
 *Email Sender License System*
 
-Choose an option from the menu below to get started:
+🚀 *Quick Start Process:*
+1. 📋 View available license plans
+2. 🛒 Purchase a license with your details
+3. 🔑 Activate license with your Windows/RDP IP
+4. ✅ Start using your licensed email sender!
+
+Choose an option from the menu below:
 
 💰 *Balance* - Check your current balance
 📋 *Price List* - View available license plans  
@@ -138,7 +129,7 @@ Choose an option from the menu below to get started:
 🔑 *Activate License* - Bind license to your computer
 📊 *My Licenses* - View your active licenses
 
-Need help? Just select Help from the menu!
+*No manual setup required - everything is automated!*
   `;
 
   bot.sendMessage(chatId, welcomeMessage, {
@@ -151,7 +142,7 @@ Need help? Just select Help from the menu!
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
-  const username = msg.from.username;
+  const username = msg.from.username || `user_${chatId}`;
 
   // Skip if it's a command
   if (text?.startsWith('/')) return;
@@ -159,6 +150,7 @@ bot.on('message', async (msg) => {
   // Get or create user session
   if (!userSessions.has(chatId)) {
     userSessions.set(chatId, {
+      telegramId: chatId,
       username: username,
       firstName: msg.from.first_name || 'User',
       balance: 0,
@@ -194,7 +186,7 @@ bot.on('message', async (msg) => {
       break;
     
     default:
-      // Handle activation states
+      // Handle different input states
       if (userSession.awaitingActivation) {
         await processActivation(chatId, text, userSession);
       } else if (userSession.awaitingPurchaseDetails) {
@@ -238,6 +230,8 @@ Current Balance: *$${userSession.balance.toFixed(2)}*
 To add money to your balance, please contact support with your payment details.
 
 📞 Support: @your_support_username
+
+*Note: Currently all purchases are processed automatically upon order completion.*
   `;
 
   bot.sendMessage(chatId, balanceMessage, { parse_mode: 'Markdown' });
@@ -268,6 +262,8 @@ async function handlePriceList(chatId) {
 • API access
 • All professional features
 
+*✨ Instant Activation - No manual processing required!*
+
 Select a plan below to purchase:
   `;
 
@@ -282,13 +278,17 @@ async function handleBuyLicense(chatId) {
   const buyMessage = `
 🛒 *Purchase License*
 
-Please select a plan to purchase:
+🚀 *Automated Process:*
+1. Select your plan
+2. Provide your details
+3. Get instant license key
+4. Activate with your Windows/RDP IP
 
 Each license includes:
 ✅ 30-day validity
 ✅ Single computer activation
-✅ Full customer support
 ✅ Instant activation
+✅ Full customer support
 
 Choose your plan:
   `;
@@ -315,18 +315,22 @@ async function initiatePurchase(chatId, planType, userSession) {
 🛒 *Purchase ${plan.name} License - $${plan.price}*
 
 Please provide the following details:
+
+**Required Information:**
 1. Your full name
-2. Your email address
+2. Your email address  
 3. Company name (optional)
-4. Windows/RDP IP address for activation
 
-*Format:*
-Full Name
-email@domain.com
-Company Name (optional)
-192.168.1.100
+*Format Example:*
+\`\`\`
+John Smith
+john@company.com
+ABC Corporation
+\`\`\`
 
-Send all details in one message:
+*Send all details in one message.*
+
+*Note: After purchase, you'll receive a license key that you can activate with your Windows/RDP IP address.*
   `;
 
   bot.sendMessage(chatId, purchaseMessage, { parse_mode: 'Markdown' });
@@ -336,26 +340,18 @@ Send all details in one message:
 async function processPurchase(chatId, text, userSession) {
   const lines = text.split('\n').map(line => line.trim()).filter(line => line);
   
-  if (lines.length < 3) {
-    bot.sendMessage(chatId, '❌ Please provide at least: Full Name, Email, and IP Address');
+  if (lines.length < 2) {
+    bot.sendMessage(chatId, '❌ Please provide at least: Full Name and Email Address');
     return;
   }
 
-  const [fullName, email, companyOrIP, ip] = lines;
-  const actualIP = ip || companyOrIP; // Handle optional company name
-  const company = ip ? companyOrIP : 'Not specified';
+  const [fullName, email, company] = lines;
+  const companyName = company || 'Not specified';
 
   // Validate email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     bot.sendMessage(chatId, '❌ Invalid email format. Please try again.');
-    return;
-  }
-
-  // Validate IP (basic check)
-  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
-  if (!ipRegex.test(actualIP)) {
-    bot.sendMessage(chatId, '❌ Invalid IP format. Please provide a valid IP address (e.g., 192.168.1.100)');
     return;
   }
 
@@ -365,41 +361,42 @@ async function processPurchase(chatId, text, userSession) {
   bot.sendMessage(chatId, `🔄 Creating ${planName} license for ${fullName}...`);
 
   try {
-    // Create license
+    // Create license automatically
     const license = await generateLicense(
       email, 
       fullName, 
       planType, 
-      `tg-${chatId}-${Date.now()}`
+      `tg-${chatId}-${Date.now()}`,
+      userSession.username
     );
 
     // Add to user's licenses
     userSession.licenses.push({
       ...license,
       purchaseDate: new Date(),
-      activationIP: actualIP,
-      company: company,
-      activated: false
+      company: companyName,
+      activated: false,
+      activationIP: null
     });
 
     const successMessage = `
 ✅ *License Created Successfully!*
 
 👤 **Customer:** ${fullName}
-🏢 **Company:** ${company}
+🏢 **Company:** ${companyName}
 📧 **Email:** ${email}
-🌐 **Activation IP:** ${actualIP}
 📦 **Plan:** ${planName} ($${price})
 
 🔑 **License Key:**
 \`${license.licenseKey}\`
 
 📋 **Next Steps:**
-1. Save this license key
-2. Use "Activate License" to bind it to your computer
-3. Your license expires on: ${new Date(license.expiresAt).toLocaleDateString()}
+1. ✅ Save this license key safely
+2. 🔑 Use "Activate License" to bind it to your computer
+3. 💻 Provide your Windows/RDP IP address during activation
+4. 📅 License expires: ${new Date(license.expiresAt).toLocaleDateString()}
 
-💡 *Tip: Use the activation menu to complete the setup process!*
+💡 *Ready to activate? Use the activation menu below!*
     `;
 
     bot.sendMessage(chatId, successMessage, { 
@@ -435,23 +432,43 @@ async function handleActivation(chatId, userSession) {
 
 You have ${inactiveLicenses.length} license(s) ready for activation.
 
-Please send your license key to activate:
-
-*Available Licenses:*
+**Available Licenses:**
 ${inactiveLicenses.map((lic, index) => 
-  `${index + 1}. ${lic.planType.toUpperCase()} - ${lic.licenseKey.substring(0, 20)}...`
+  `${index + 1}. ${lic.planType.toUpperCase()} - \`${lic.licenseKey.substring(0, 20)}...\``
 ).join('\n')}
 
-Send the complete license key:
+**To activate, send:**
+\`\`\`
+License Key
+Your Windows/RDP IP Address
+\`\`\`
+
+**Example:**
+\`\`\`
+LICENSE-ABC123-XYZ789-DEF456
+192.168.1.100
+\`\`\`
+
+*Send both the license key and your IP address in one message.*
   `;
 
   bot.sendMessage(chatId, activationMessage, { parse_mode: 'Markdown' });
 }
 
 // Process activation
-async function processActivation(chatId, licenseKey, userSession) {
+async function processActivation(chatId, text, userSession) {
   userSession.awaitingActivation = false;
 
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+  
+  if (lines.length < 2) {
+    bot.sendMessage(chatId, '❌ Please provide both license key and IP address.');
+    return;
+  }
+
+  const [licenseKey, ipAddress] = lines;
+
+  // Find license
   const license = userSession.licenses.find(lic => lic.licenseKey === licenseKey);
   
   if (!license) {
@@ -464,32 +481,45 @@ async function processActivation(chatId, licenseKey, userSession) {
     return;
   }
 
+  // Validate IP address
+  const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+  if (!ipRegex.test(ipAddress)) {
+    bot.sendMessage(chatId, '❌ Invalid IP format. Please provide a valid IP address (e.g., 192.168.1.100)');
+    return;
+  }
+
   bot.sendMessage(chatId, '🔄 Activating license...');
 
   try {
-    // Here you would normally validate with your backend
-    // For now, we'll simulate activation
+    // Activate license
     license.activated = true;
     license.activatedAt = new Date();
+    license.activationIP = ipAddress;
     
     const activationMessage = `
 ✅ *License Activated Successfully!*
 
-🔑 **License Key:** ${licenseKey}
+🔑 **License Key:** \`${licenseKey}\`
 📦 **Plan:** ${license.planType.toUpperCase()}
-🌐 **Bound to IP:** ${license.activationIP}
+🌐 **Bound to IP:** ${ipAddress}
 ⏰ **Activated:** ${license.activatedAt.toLocaleString()}
 📅 **Expires:** ${new Date(license.expiresAt).toLocaleDateString()}
 
-🚀 *Your email sender is now ready to use!*
+🚀 **Your email sender is now ready to use!**
 
-**Email Limits:**
+**License Features:**
 • Emails/Month: ${license.features.maxEmailsPerMonth.toLocaleString()}
 • Recipients/Email: ${license.features.maxRecipientsPerEmail.toLocaleString()}
 • QR Codes: ${license.features.allowQRCodes ? '✅' : '❌'}
 • Domain Logos: ${license.features.allowDomainLogos ? '✅' : '❌'}
+• SMTP Rotation: ${license.features.smtpRotation ? '✅' : '❌'}
 
-Start using your licensed email sender now!
+**Download & Setup:**
+1. Download the email sender software
+2. Enter your license key during setup
+3. The software will validate against IP: ${ipAddress}
+
+*Start using your licensed email sender now!*
     `;
 
     bot.sendMessage(chatId, activationMessage, { 
@@ -518,12 +548,12 @@ ${userSession.licenses.map((lic, index) => `
 **${index + 1}. ${lic.planType.toUpperCase()} PLAN**
 🔑 Key: \`${lic.licenseKey.substring(0, 30)}...\`
 📧 Email: ${lic.userEmail}
-🌐 IP: ${lic.activationIP}
+🌐 IP: ${lic.activationIP || 'Not activated'}
 ${lic.activated ? '✅ Activated' : '⏳ Pending Activation'}
 📅 Expires: ${new Date(lic.expiresAt).toLocaleDateString()}
 `).join('\n')}
 
-Use "Activate License" to activate pending licenses.
+Use "🔑 Personal Activations" to activate pending licenses.
   `;
 
   bot.sendMessage(chatId, licensesMessage, { parse_mode: 'Markdown' });
@@ -533,6 +563,12 @@ Use "Activate License" to activate pending licenses.
 async function handleHelp(chatId) {
   const helpMessage = `
 ❓ *Help & Support*
+
+**🚀 Quick Process:**
+1. 📋 View Price List
+2. 🛒 Select a plan and provide your details
+3. 🔑 Activate license with your Windows/RDP IP
+4. ✅ Download and use the software
 
 **Available Commands:**
 • 💰 Balance - Check your account balance
@@ -548,17 +584,20 @@ async function handleHelp(chatId) {
 
 **Activation Process:**
 1. Purchase a license with your details
-2. Provide your Windows/RDP IP address
-3. Use "Activate License" to bind to your computer
+2. Receive instant license key
+3. Use "Activate License" with your Windows/RDP IP
 4. Each license works on one computer only
+
+**Important Notes:**
+• All purchases are processed automatically
+• No manual approval required
+• Instant license generation
+• Activation is IP-based for security
 
 **Support:**
 For technical support or billing questions, contact:
 📧 support@yourdomain.com
 💬 @your_support_username
-
-**Payment:**
-Contact support for payment processing and balance top-ups.
   `;
 
   bot.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
