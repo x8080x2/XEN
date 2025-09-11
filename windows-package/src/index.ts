@@ -5,6 +5,8 @@ import fs from 'fs';
 const { machineIdSync } = require('node-machine-id');
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import FormData from 'form-data';
+import multer from 'multer';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '5000', 10);
@@ -39,7 +41,8 @@ function readConfig() {
 const { backendUrl: MAIN_BACKEND_URL } = readConfig();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 // License validation middleware
@@ -94,22 +97,62 @@ async function validateLicense(req: any, res: any, next: any) {
   }
 }
 
-// Proxy requests to main backend
-app.use('/api/email', validateLicense, async (req: any, res: any) => {
+// Setup multer for file uploads
+const upload = multer({ dest: 'temp/' });
+
+// Proxy requests to main backend with proper file upload support
+app.use('/api/email', validateLicense, upload.any(), async (req: any, res: any) => {
   try {
+    // Prepare request data and headers
+    let requestData;
+    let requestHeaders = {
+      'Authorization': `Bearer ${req.token}`,
+    };
+
+    // Handle multipart form data (file uploads)
+    if (req.files && req.files.length > 0) {
+      const formData = new FormData();
+      
+      // Add text fields
+      Object.keys(req.body).forEach(key => {
+        formData.append(key, req.body[key]);
+      });
+      
+      // Add file fields
+      req.files.forEach((file: any) => {
+        formData.append('files', require('fs').createReadStream(file.path), {
+          filename: file.originalname,
+          contentType: file.mimetype
+        });
+      });
+      
+      requestData = formData;
+      requestHeaders = {
+        ...requestHeaders,
+        ...formData.getHeaders()
+      };
+    } else {
+      // Handle JSON data
+      requestData = req.body;
+      requestHeaders['Content-Type'] = 'application/json';
+    }
+
     const response = await axios({
       method: req.method,
       url: `${MAIN_BACKEND_URL}/api/email${req.path}`,
-      data: req.body,
-      headers: {
-        'Authorization': `Bearer ${req.token}`,
-        'Content-Type': 'application/json'
-      }
+      data: requestData,
+      headers: requestHeaders,
+      maxContentLength: 100 * 1024 * 1024, // 100MB max
+      maxBodyLength: 100 * 1024 * 1024,
+      timeout: 60000 // 60 seconds for file uploads
     });
+    
     res.json(response.data);
   } catch (error: any) {
+    console.error('Proxy error:', error.message);
     res.status(error.response?.status || 500).json({
-      error: error.response?.data?.error || 'Request failed'
+      error: error.response?.data?.error || 'Request failed',
+      details: error.message
     });
   }
 });
