@@ -1,5 +1,0 @@
-john@example.com,John Doe
-jane@example.com,Jane Smith
-# Add your email leads here, one per line
-# Format: email@domain.com,Full Name
-# Lines starting with # are comments
