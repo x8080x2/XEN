@@ -1,8 +1,6 @@
-
-#!/usr/bin/env node
-
 // Load environment variables from .env.telegram
-require('dotenv').config({ path: '.env.telegram' });
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.telegram' });
 
 console.log('🚀 Starting Telegram License Bot...');
 console.log('');
@@ -37,4 +35,4 @@ console.log('');
 console.log('✅ All environment variables loaded successfully');
 
 // Start the bot
-require('./telegram-license-bot.js');
+import './telegram-license-bot.js';
