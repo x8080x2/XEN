@@ -2,7 +2,7 @@ import { Express, Request, Response } from 'express';
 import multer from 'multer';
 import jwt from 'jsonwebtoken';
 import { LicenseToken } from '@shared/schema';
-import { requirePermission } from '../middleware/apiKeyAuth';
+import { jwtAuthMiddleware, requireJwtFeature, validateJwtEmailLimits, recordJwtEmailUsage, attachJwtLicenseInfo } from '../middleware/jwtAuth';
 
 // Import existing email services (copy from current server structure)
 // Note: These would need to be moved from the main server directory
@@ -11,134 +11,18 @@ const upload = multer({ dest: 'temp/' });
 export function setupEmailRoutes(app: Express) {
   const JWT_SECRET = process.env.JWT_SECRET || 'main-backend-jwt-secret';
 
-  // Middleware to validate license token for email operations
-  const validateLicenseToken = (req: Request, res: Response, next: any) => {
-    try {
-      const licenseToken = req.headers['x-license-token'] as string;
-      
-      if (!licenseToken) {
-        return res.status(401).json({
-          success: false,
-          error: 'Missing license token',
-          code: 'MISSING_LICENSE_TOKEN'
-        });
-      }
-
-      // Verify JWT token
-      const decoded = jwt.verify(licenseToken, JWT_SECRET) as LicenseToken;
-      
-      // Check if license is still valid (not expired)
-      if (decoded.expiresAt < Date.now()) {
-        return res.status(403).json({
-          success: false,
-          error: 'License has expired',
-          code: 'LICENSE_EXPIRED'
-        });
-      }
-
-      // Attach license info to request
-      req.licenseInfo = decoded;
-      
-      next();
-    } catch (error: any) {
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid license token',
-          code: 'INVALID_LICENSE_TOKEN'
-        });
-      }
-
-      console.error('License token validation error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'License token validation error',
-        details: error.message,
-        code: 'TOKEN_ERROR'
-      });
-    }
-  };
-
-  // Check feature availability
-  const requireFeature = (feature: keyof LicenseToken['features']) => {
-    return (req: Request, res: Response, next: any) => {
-      const licenseInfo = req.licenseInfo as LicenseToken;
-      
-      if (!licenseInfo || !licenseInfo.features[feature]) {
-        return res.status(403).json({
-          success: false,
-          error: `Feature '${feature}' not available in your license plan`,
-          code: 'FEATURE_NOT_AVAILABLE'
-        });
-      }
-      
-      next();
-    };
-  };
-
-  // Check email limits
-  const checkEmailLimits = (req: Request, res: Response, next: any) => {
-    try {
-      const licenseInfo = req.licenseInfo as LicenseToken;
-      
-      // Extract recipient count from request
-      let recipientCount = 0;
-      
-      if (req.body.recipients) {
-        if (typeof req.body.recipients === 'string') {
-          try {
-            const parsed = JSON.parse(req.body.recipients);
-            recipientCount = Array.isArray(parsed) ? parsed.length : 0;
-          } catch {
-            recipientCount = req.body.recipients.split('\n').filter((r: string) => r.trim()).length;
-          }
-        } else if (Array.isArray(req.body.recipients)) {
-          recipientCount = req.body.recipients.length;
-        }
-      }
-
-      // Check recipients per email limit
-      if (recipientCount > licenseInfo.features.maxRecipientsPerEmail) {
-        return res.status(403).json({
-          success: false,
-          error: `Too many recipients. Maximum ${licenseInfo.features.maxRecipientsPerEmail} allowed per email.`,
-          code: 'RECIPIENT_LIMIT_EXCEEDED'
-        });
-      }
-
-      // Check monthly email limit
-      const remainingEmails = licenseInfo.features.maxEmailsPerMonth - licenseInfo.emailsUsedThisMonth;
-      if (remainingEmails < recipientCount) {
-        return res.status(403).json({
-          success: false,
-          error: `Monthly email limit exceeded. ${remainingEmails} emails remaining.`,
-          remaining: remainingEmails,
-          code: 'EMAIL_LIMIT_EXCEEDED'
-        });
-      }
-
-      // Store recipient count for usage tracking
-      req.recipientCount = recipientCount;
-      
-      next();
-    } catch (error: any) {
-      console.error('Email limit check error:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Email limit check error',
-        details: error.message,
-        code: 'LIMIT_ERROR'
-      });
-    }
-  };
+  // All JWT validation is now handled by the jwtAuth middleware
+  // This replaces the individual validateLicenseToken, requireFeature, and checkEmailLimits functions
 
   /**
    * Email sending endpoint - advanced/new API
    */
   app.post('/api/emails/send', 
-    requirePermission('email:send'),
-    validateLicenseToken,
-    checkEmailLimits,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    requireJwtFeature('apiAccess'), // Check if API access is allowed
+    validateJwtEmailLimits, // Check email limits
+    attachJwtLicenseInfo, // Add license info to response
+    recordJwtEmailUsage, // Record usage after success
     upload.any(),
     async (req: Request, res: Response) => {
       try {
@@ -169,9 +53,11 @@ export function setupEmailRoutes(app: Express) {
    * Original email sending endpoint - legacy API
    */
   app.post('/api/original/sendMail',
-    requirePermission('email:send'),
-    validateLicenseToken,
-    checkEmailLimits,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    requireJwtFeature('apiAccess'), // Check if API access is allowed
+    validateJwtEmailLimits, // Check email limits
+    attachJwtLicenseInfo, // Add license info to response
+    recordJwtEmailUsage, // Record usage after success
     upload.any(),
     async (req: Request, res: Response) => {
       try {
@@ -201,8 +87,8 @@ export function setupEmailRoutes(app: Express) {
    * Get email job status
    */
   app.get('/api/emails/status/:jobId',
-    requirePermission('email:status'),
-    validateLicenseToken,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    attachJwtLicenseInfo, // Add license info to response
     async (req: Request, res: Response) => {
       try {
         const { jobId } = req.params;
@@ -239,8 +125,8 @@ export function setupEmailRoutes(app: Express) {
    * Get campaign status (original API)
    */
   app.get('/api/original/getCampaignStatus/:campaignId',
-    requirePermission('email:status'),
-    validateLicenseToken,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    attachJwtLicenseInfo, // Add license info to response
     async (req: Request, res: Response) => {
       try {
         const { campaignId } = req.params;
@@ -275,8 +161,8 @@ export function setupEmailRoutes(app: Express) {
    * Get available placeholders
    */
   app.get('/api/placeholders',
-    requirePermission('email:placeholders'),
-    validateLicenseToken,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    attachJwtLicenseInfo, // Add license info to response
     (req: Request, res: Response) => {
       try {
         res.json({
@@ -303,8 +189,9 @@ export function setupEmailRoutes(app: Express) {
    * Process HTML with placeholders (for preview)
    */
   app.post('/api/html/process',
-    requirePermission('email:preview'),
-    validateLicenseToken,
+    jwtAuthMiddleware, // JWT Bearer token authentication
+    requireJwtFeature('allowHTMLConvert'), // Check if HTML conversion is allowed
+    attachJwtLicenseInfo, // Add license info to response
     async (req: Request, res: Response) => {
       try {
         // TODO: Implement HTML processing with existing logic
