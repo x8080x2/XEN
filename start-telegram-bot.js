@@ -37,4 +37,4 @@ console.log('');
 console.log('✅ All environment variables loaded successfully');
 
 // Start the bot
-require('./telegram-license-bot.js');-bot.js');
+require('./telegram-license-bot.js');
