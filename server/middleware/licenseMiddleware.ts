@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { getMainLicenseService } from '../services/mainLicenseService';
+import { getLicenseService } from '../services/licenseService';
+import { License } from '../../shared/schema';
 
 // Extend Express Request type to include license info
 declare global {
@@ -60,7 +61,7 @@ export function requireFeature(feature: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       const licenseService = getMainLicenseService();
-      
+
       if (!licenseService.hasFeature(feature as any)) {
         return res.status(403).json({
           success: false,
@@ -88,10 +89,10 @@ export function requireFeature(feature: string) {
 export function validateEmailLimits(req: Request, res: Response, next: NextFunction) {
   try {
     const licenseService = getMainLicenseService();
-    
+
     // Extract recipient count from request
     let recipientCount = 0;
-    
+
     if (req.body.recipients) {
       if (typeof req.body.recipients === 'string') {
         try {
@@ -106,7 +107,7 @@ export function validateEmailLimits(req: Request, res: Response, next: NextFunct
     }
 
     const limitCheck = licenseService.checkEmailLimits(recipientCount);
-    
+
     if (!limitCheck.allowed) {
       return res.status(403).json({
         success: false,
@@ -118,7 +119,7 @@ export function validateEmailLimits(req: Request, res: Response, next: NextFunct
 
     // Attach recipient count to request for later usage recording
     req.recipientCount = recipientCount;
-    
+
     next();
   } catch (error: any) {
     console.error('Email limit validation middleware error:', error);
@@ -137,7 +138,7 @@ export function validateEmailLimits(req: Request, res: Response, next: NextFunct
 export function recordEmailUsage(req: Request, res: Response, next: NextFunction) {
   // Store original res.json to capture response
   const originalJson = res.json;
-  
+
   res.json = function(body: any) {
     // Check if request was successful
     if (res.statusCode >= 200 && res.statusCode < 300 && req.recipientCount) {
@@ -151,11 +152,11 @@ export function recordEmailUsage(req: Request, res: Response, next: NextFunction
         }
       }, 100);
     }
-    
+
     // Call original res.json
     return originalJson.call(this, body);
   };
-  
+
   next();
 }
 
@@ -169,7 +170,7 @@ export function attachLicenseInfo(req: Request, res: Response, next: NextFunctio
 
     // Store original res.json to add license info
     const originalJson = res.json;
-    
+
     res.json = function(body: any) {
       // Add license info to response if it's a successful API response
       if (typeof body === 'object' && body !== null && res.statusCode >= 200 && res.statusCode < 300) {
@@ -181,10 +182,10 @@ export function attachLicenseInfo(req: Request, res: Response, next: NextFunctio
           features: licenseStatus?.features,
         };
       }
-      
+
       return originalJson.call(this, body);
     };
-    
+
     next();
   } catch (error: any) {
     // Don't block request if license info attachment fails

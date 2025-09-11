@@ -9,7 +9,7 @@ const router = Router();
 router.post('/validate', async (req, res) => {
   try {
     const { licenseKey } = req.body;
-    
+
     if (!licenseKey) {
       return res.status(400).json({
         success: false,
@@ -86,7 +86,7 @@ router.get('/status', async (req, res) => {
 router.post('/check-limits', async (req, res) => {
   try {
     const { recipientCount } = req.body;
-    
+
     if (!recipientCount || recipientCount <= 0) {
       return res.status(400).json({
         success: false,
@@ -122,7 +122,7 @@ router.post('/check-limits', async (req, res) => {
 router.post('/check-feature', async (req, res) => {
   try {
     const { feature } = req.body;
-    
+
     if (!feature) {
       return res.status(400).json({
         success: false,
