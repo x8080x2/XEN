@@ -1,18 +1,29 @@
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 
-// Set environment variables directly
-process.env.TELEGRAM_BOT_TOKEN = '8240138674:AAE5InceD2XkMX2bBC-idSoLOPvqLjIFXx8';
-process.env.MAIN_BACKEND_URL = 'https://email-sender-main.onrender.com';
-process.env.ADMIN_API_KEY = 'admin-api-key-2024';
-
-// Configuration
+// Configuration - using secure environment variables
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL || 'https://email-sender-main.onrender.com';
-const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'admin-api-key-2024';
+const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
+const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID;
 
 if (!BOT_TOKEN) {
   console.error('❌ TELEGRAM_BOT_TOKEN is required');
+  process.exit(1);
+}
+
+if (!MAIN_BACKEND_URL) {
+  console.error('❌ MAIN_BACKEND_URL is required');
+  process.exit(1);
+}
+
+if (!ADMIN_API_KEY) {
+  console.error('❌ ADMIN_API_KEY is required');
+  process.exit(1);
+}
+
+if (!ADMIN_TELEGRAM_ID) {
+  console.error('❌ ADMIN_TELEGRAM_ID is required');
   process.exit(1);
 }
 
@@ -28,9 +39,22 @@ const bot = new TelegramBot(BOT_TOKEN, {
 
 console.log('🤖 Email Sender License Bot started!');
 console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
+console.log(`👤 Admin Telegram ID: ${ADMIN_TELEGRAM_ID}`);
 
 // User sessions storage
 const userSessions = new Map();
+
+// Admin authorization check
+function isAuthorizedAdmin(telegramId) {
+  return telegramId.toString() === ADMIN_TELEGRAM_ID.toString();
+}
+
+// Admin-only message
+function sendAdminOnlyMessage(chatId) {
+  return bot.sendMessage(chatId, '🔒 *Access Restricted*\n\nThis bot is restricted to authorized administrators only.\n\nPlease contact the system administrator for access.', {
+    parse_mode: 'Markdown'
+  });
+}
 
 // Create main menu keyboard
 function getMainMenuKeyboard() {
@@ -69,7 +93,16 @@ bot.onText(/\/start/, async (msg) => {
     const username = msg.from.username || `user_${chatId}`;
     const firstName = msg.from.first_name || 'User';
 
-    console.log(`📩 New /start from ${firstName} (${username})`);
+    console.log(`📩 New /start from ${firstName} (${username}) - ID: ${chatId}`);
+
+    // Check if user is authorized admin
+    if (!isAuthorizedAdmin(chatId)) {
+      console.log(`🚫 Unauthorized access attempt from ${chatId}`);
+      await sendAdminOnlyMessage(chatId);
+      return;
+    }
+
+    console.log(`✅ Authorized admin access: ${chatId}`);
 
     // Initialize user session
     userSessions.set(chatId, {
@@ -80,25 +113,25 @@ bot.onText(/\/start/, async (msg) => {
       licenses: []
     });
 
-    const welcomeMessage = `🎯 *Welcome ${firstName}!*
+    const welcomeMessage = `🎯 *Welcome Admin ${firstName}!*
 
-*Email Sender License System*
+*Email Sender License Administration System*
 
-🚀 *Quick Start Process:*
-1. 📋 View available license plans
-2. 🛒 Purchase a license with your details
-3. 🔑 Activate license with your Windows/RDP IP
-4. ✅ Start using your licensed email sender!
+👨‍💼 *Admin License Management:*
+1. 📋 View available license plans and pricing
+2. 🛒 Generate licenses for customers
+3. 🔑 Help customers activate their licenses
+4. 📊 Monitor license status and usage
 
-Choose an option from the menu below:
+Choose an option from the admin menu below:
 
-💰 *Balance* - Check your current balance
-📋 *Price List* - View available license plans  
-🛒 *Buy License* - Purchase a new license
-🔑 *Activate License* - Bind license to your computer
-📊 *My Licenses* - View your active licenses
+💰 *Balance* - View system balance information
+📋 *Price List* - Show available license plans  
+🛒 *Buy License* - Generate new customer licenses
+🔑 *Activate License* - Assist with license activation
+📊 *My Licenses* - View all generated licenses
 
-*No manual setup required - everything is automated!*`;
+*You are the administrator - you can generate licenses for customers!*`;
 
     await bot.sendMessage(chatId, welcomeMessage, {
       ...getMainMenuKeyboard(),
@@ -119,7 +152,14 @@ bot.on('message', async (msg) => {
     // Skip if it's a command
     if (text?.startsWith('/')) return;
 
-    console.log(`📨 Message from ${username}: "${text}"`);
+    console.log(`📨 Message from ${username} (ID: ${chatId}): "${text}"`);
+
+    // Check if user is authorized admin
+    if (!isAuthorizedAdmin(chatId)) {
+      console.log(`🚫 Unauthorized message from ${chatId}`);
+      await sendAdminOnlyMessage(chatId);
+      return;
+    }
 
     // Get or create user session
     if (!userSessions.has(chatId)) {
@@ -183,6 +223,19 @@ bot.on('callback_query', async (callbackQuery) => {
     const msg = callbackQuery.message;
     const chatId = msg.chat.id;
     const data = callbackQuery.data;
+    
+    console.log(`🔘 Button pressed: ${data} by user ${chatId}`);
+    
+    // Check if user is authorized admin
+    if (!isAuthorizedAdmin(chatId)) {
+      console.log(`🚫 Unauthorized callback from ${chatId}`);
+      await bot.answerCallbackQuery(callbackQuery.id, {
+        text: "🔒 Access restricted to administrators only",
+        show_alert: true
+      });
+      return;
+    }
+    
     let userSession = userSessions.get(chatId);
     
     // Ensure user session exists
@@ -196,8 +249,6 @@ bot.on('callback_query', async (callbackQuery) => {
       };
       userSessions.set(chatId, userSession);
     }
-    
-    console.log(`🔘 Button pressed: ${data} by user ${chatId}`);
 
     // Answer callback query immediately to prevent timeout
     bot.answerCallbackQuery(callbackQuery.id).catch(err => {
@@ -611,28 +662,29 @@ Use "🔑 Personal Activations" to activate pending licenses.`;
 // Help handler
 async function handleHelp(chatId) {
   try {
-    const helpMessage = `❓ *Help & Support*
+    const helpMessage = `❓ *Admin Help & Support*
 
-**🚀 Quick Process:**
-1. 📋 View Price List
-2. 🛒 Select a plan and provide your details
-3. 🔑 Activate license with your Windows/RDP IP
-4. ✅ Download and use the software
+**🚀 Admin Process for Customer Licenses:**
+1. 📋 Check Price List for current pricing
+2. 🛒 Generate a license for your customer
+3. 🔑 Help customer activate license with their Windows/RDP IP
+4. 📊 Monitor all generated licenses
 
-**Available Commands:**
-• 💰 Balance - Check your account balance
-• 📋 Price List - View all license plans
-• 🛒 Buy License - Purchase new licenses
-• 🔑 Activate License - Bind licenses to your computer
-• 📊 My Licenses - View your license status
+**Available Admin Commands:**
+• 💰 Balance - View system information
+• 📋 Price List - View all license plans & pricing
+• 🛒 Buy License - Generate new customer licenses
+• 🔑 Activate License - Assist customer activation
+• 📊 My Licenses - View all generated licenses
 
 **License Plans:**
 • Basic ($19) - 1K emails, basic features
 • Professional ($49) - 10K emails, advanced features
 • Enterprise ($99) - 50K emails, all features
 
-**Support:**
-For technical support, contact @your_support_username`;
+**Admin Access:**
+Only your Telegram ID (${ADMIN_TELEGRAM_ID}) can use this bot.
+Generate licenses for customers and help them activate.`;
 
     await bot.sendMessage(chatId, helpMessage, { 
       parse_mode: 'Markdown',
