@@ -8,7 +8,7 @@ import {
   LicenseValidation, 
   licenseTokenSchema,
   licenseValidationSchema 
-} from '@shared/schema';
+} from '../../shared/schema';
 
 interface LicenseServiceConfig {
   jwtSecret: string;
