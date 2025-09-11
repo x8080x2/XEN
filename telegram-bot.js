@@ -1,6 +1,11 @@
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 
+// Set environment variables directly
+process.env.TELEGRAM_BOT_TOKEN = '8240138674:AAE5InceD2XkMX2bBC-idSoLOPvqLjIFXx8';
+process.env.MAIN_BACKEND_URL = 'https://email-sender-main.onrender.com';
+process.env.ADMIN_API_KEY = 'admin-api-key-2024';
+
 // Configuration
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL || 'https://email-sender-main.onrender.com';
