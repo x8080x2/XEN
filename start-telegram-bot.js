@@ -1,6 +1,15 @@
 // Load environment variables from .env.telegram
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.telegram' });
+import { readFileSync } from 'fs';
+
+try {
+  const envConfig = dotenv.parse(readFileSync('.env.telegram'));
+  for (const k in envConfig) {
+    process.env[k] = envConfig[k];
+  }
+} catch (error) {
+  console.error('Could not load .env.telegram file:', error.message);
+}
 
 console.log('🚀 Starting Telegram License Bot...');
 console.log('');
