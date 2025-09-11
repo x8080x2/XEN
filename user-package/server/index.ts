@@ -43,11 +43,11 @@ initializeMainLicenseService({
 
 console.log('🔐 Remote license service initialized');
 
-// API Routes
+// License management routes only
 app.use('/api/license', licenseRoutes);
 
-// Proxy email requests to main backend
-app.use('/api/email/*', async (req, res) => {
+// Proxy all other API requests to main backend
+app.use('/api/*', async (req, res) => {
   try {
     const axios = require('axios');
     const response = await axios({
