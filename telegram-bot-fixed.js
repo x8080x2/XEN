@@ -178,17 +178,33 @@ bot.on('callback_query', async (callbackQuery) => {
     const msg = callbackQuery.message;
     const chatId = msg.chat.id;
     const data = callbackQuery.data;
-    const userSession = userSessions.get(chatId) || {};
+    let userSession = userSessions.get(chatId);
+    
+    // Ensure user session exists
+    if (!userSession) {
+      userSession = {
+        telegramId: chatId,
+        username: callbackQuery.from.username || `user_${chatId}`,
+        firstName: callbackQuery.from.first_name || 'User',
+        balance: 0,
+        licenses: []
+      };
+      userSessions.set(chatId, userSession);
+    }
     
     console.log(`🔘 Button pressed: ${data} by user ${chatId}`);
 
-    await bot.answerCallbackQuery(callbackQuery.id);
+    // Answer callback query immediately to prevent timeout
+    bot.answerCallbackQuery(callbackQuery.id).catch(err => {
+      console.log('Callback query already answered or timed out');
+    });
 
     switch (data) {
       case 'buy_basic':
       case 'buy_professional':
       case 'buy_enterprise':
         const planType = data.split('_')[1];
+        console.log(`💳 Initiating purchase for ${planType} plan`);
         await initiatePurchase(chatId, planType, userSession);
         break;
       
@@ -200,6 +216,7 @@ bot.on('callback_query', async (callbackQuery) => {
         break;
         
       default:
+        console.log(`❓ Unknown callback data: ${data}`);
         await bot.sendMessage(chatId, '❓ Unknown action. Please use the menu below.', getMainMenuKeyboard());
         break;
     }
@@ -319,23 +336,19 @@ async function initiatePurchase(chatId, planType, userSession) {
 
     const purchaseMessage = `🛒 *Purchase ${plan.name} License - $${plan.price}*
 
-Please provide the following details:
+Please send your Windows RDP IP number:
 
 **Required Information:**
-1. Your full name
-2. Your email address  
-3. Company name (optional)
+Send your Windows RDP IP number
 
 *Format Example:*
 \`\`\`
-John Smith
-john@company.com
-ABC Corporation
+192.168.1.100
 \`\`\`
 
-*Send all details in one message.*
+*Send your IP address in one message.*
 
-*Note: After purchase, you'll receive a license key that you can activate with your Windows/RDP IP address.*`;
+*Note: After purchase, you'll receive a license key that will be automatically bound to your IP address.*`;
 
     await bot.sendMessage(chatId, purchaseMessage, { parse_mode: 'Markdown' });
   } catch (error) {
@@ -346,33 +359,32 @@ ABC Corporation
 // Process purchase details
 async function processPurchase(chatId, text, userSession) {
   try {
-    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    const ipAddress = text.trim();
     
-    if (lines.length < 2) {
-      await bot.sendMessage(chatId, '❌ Please provide at least: Full Name and Email Address');
+    // Validate IP address format
+    const ipRegex = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+    if (!ipRegex.test(ipAddress)) {
+      await bot.sendMessage(chatId, '❌ Invalid IP format. Please provide a valid IP address (e.g., 192.168.1.100)');
       return;
     }
 
-    const [fullName, email, company] = lines;
-    const companyName = company || 'Not specified';
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      await bot.sendMessage(chatId, '❌ Invalid email format. Please try again.');
+    // Validate IP address ranges
+    const ipParts = ipAddress.split('.').map(Number);
+    if (ipParts.some(part => part < 0 || part > 255)) {
+      await bot.sendMessage(chatId, '❌ Invalid IP address. Each number must be between 0-255.');
       return;
     }
 
     userSession.awaitingPurchaseDetails = false;
     const { planType, name: planName, price } = userSession.pendingPurchase;
 
-    await bot.sendMessage(chatId, `🔄 Creating ${planName} license for ${fullName}...`);
+    await bot.sendMessage(chatId, `🔄 Creating ${planName} license for IP ${ipAddress}...`);
 
     // Generate mock license (since backend might not be available)
     const mockLicense = {
       licenseKey: `LICENSE-${Math.random().toString(36).substr(2, 9).toUpperCase()}-${Date.now()}`,
-      userEmail: email,
-      userName: fullName,
+      userEmail: `user${chatId}@telegram.local`,
+      userName: userSession.firstName || 'User',
       planType: planType,
       features: {
         maxEmailsPerMonth: planType === 'basic' ? 1000 : planType === 'professional' ? 10000 : 50000,
@@ -387,35 +399,40 @@ async function processPurchase(chatId, text, userSession) {
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     };
 
-    // Add to user's licenses
+    // Add to user's licenses - automatically activated with provided IP
     userSession.licenses = userSession.licenses || [];
     userSession.licenses.push({
       ...mockLicense,
       purchaseDate: new Date(),
-      company: companyName,
-      activated: false,
-      activationIP: null
+      activated: true,
+      activatedAt: new Date(),
+      activationIP: ipAddress
     });
 
     userSessions.set(chatId, userSession);
 
-    const successMessage = `✅ *License Created Successfully!*
+    const successMessage = `✅ *License Created & Activated Successfully!*
 
-👤 **Customer:** ${fullName}
-🏢 **Company:** ${companyName}
-📧 **Email:** ${email}
+🌐 **IP Address:** ${ipAddress}
+👤 **User:** ${userSession.firstName || 'User'}
 📦 **Plan:** ${planName} ($${price})
+⏰ **Activated:** ${new Date().toLocaleString()}
 
 🔑 **License Key:**
 \`${mockLicense.licenseKey}\`
 
-📋 **Next Steps:**
-1. ✅ Save this license key safely
-2. 🔑 Use "Activate License" to bind it to your computer
-3. 💻 Provide your Windows/RDP IP address during activation
-4. 📅 License expires: ${new Date(mockLicense.expiresAt).toLocaleDateString()}
+✅ **Your license is ready to use!**
 
-💡 *Ready to activate? Use the activation menu below!*`;
+**License Features:**
+• Emails/Month: ${mockLicense.features.maxEmailsPerMonth.toLocaleString()}
+• Recipients/Email: ${mockLicense.features.maxRecipientsPerEmail.toLocaleString()}
+• QR Codes: ${mockLicense.features.allowQRCodes ? '✅' : '❌'}
+• Domain Logos: ${mockLicense.features.allowDomainLogos ? '✅' : '❌'}
+• SMTP Rotation: ${mockLicense.features.smtpRotation ? '✅' : '❌'}
+
+📅 **License expires:** ${new Date(mockLicense.expiresAt).toLocaleDateString()}
+
+*Your email sender software is now ready to use with IP: ${ipAddress}*`;
 
     await bot.sendMessage(chatId, successMessage, { 
       parse_mode: 'Markdown',
@@ -432,14 +449,20 @@ async function processPurchase(chatId, text, userSession) {
 // Activation handler
 async function handleActivation(chatId, userSession) {
   try {
+    console.log(`🔑 Activation requested by user ${chatId}`);
+    console.log(`User has ${userSession.licenses ? userSession.licenses.length : 0} licenses`);
+    
     if (!userSession.licenses || userSession.licenses.length === 0) {
-      await bot.sendMessage(chatId, '❌ No licenses found. Please purchase a license first.', getMainMenuKeyboard());
+      console.log('❌ No licenses found for user');
+      await bot.sendMessage(chatId, '❌ No licenses found. Please purchase a license first using the "🛒 Buy License" button.', getMainMenuKeyboard());
       return;
     }
 
     const inactiveLicenses = userSession.licenses.filter(lic => !lic.activated);
+    console.log(`Found ${inactiveLicenses.length} inactive licenses`);
     
     if (inactiveLicenses.length === 0) {
+      console.log('✅ All licenses already activated');
       await bot.sendMessage(chatId, '✅ All your licenses are already activated!', getMainMenuKeyboard());
       return;
     }
@@ -471,8 +494,10 @@ LICENSE-ABC123-XYZ789-DEF456
 *Send both the license key and your IP address in one message.*`;
 
     await bot.sendMessage(chatId, activationMessage, { parse_mode: 'Markdown' });
+    console.log('📤 Activation instructions sent');
   } catch (error) {
     console.error('Error in handleActivation:', error);
+    await bot.sendMessage(chatId, '❌ Error processing activation. Please try again.', getMainMenuKeyboard());
   }
 }
 
