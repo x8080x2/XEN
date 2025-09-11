@@ -1,3 +1,4 @@
+
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import axios from 'axios';
@@ -43,7 +44,34 @@ export class MainLicenseService {
   }
 
   /**
-   * Validate license with main backend
+   * Get client IP address
+   */
+  private async getClientIP(): Promise<string> {
+    try {
+      // Try to get public IP from external service
+      const response = await axios.get('https://api.ipify.org?format=json', {
+        timeout: 5000,
+      });
+      return response.data.ip;
+    } catch (error) {
+      // Fallback to getting local network IP
+      const networkInterfaces = os.networkInterfaces();
+      for (const name of Object.keys(networkInterfaces)) {
+        const iface = networkInterfaces[name];
+        if (iface) {
+          for (const alias of iface) {
+            if (alias.family === 'IPv4' && !alias.internal) {
+              return alias.address;
+            }
+          }
+        }
+      }
+      return '127.0.0.1'; // Last resort fallback
+    }
+  }
+
+  /**
+   * Validate license with remote main backend
    */
   async validateLicense(licenseKey: string): Promise<{ 
     valid: boolean; 
@@ -52,11 +80,14 @@ export class MainLicenseService {
     error?: string 
   }> {
     try {
+      const clientIP = await this.getClientIP();
+      
       const response = await axios.post(
         `${this.config.mainBackendUrl}/api/license/validate`,
         {
           licenseKey,
           machineFingerprint: this.machineFingerprint,
+          ipAddress: clientIP,
           clientVersion: this.config.clientVersion,
         },
         {
@@ -76,7 +107,7 @@ export class MainLicenseService {
         this.cachedToken = token;
         this.lastValidation = new Date();
 
-        console.log(`✅ License validated for ${license.userEmail} (${license.planType})`);
+        console.log(`✅ License validated remotely for ${license.userEmail} (${license.planType})`);
         
         return {
           valid: true,
@@ -90,7 +121,7 @@ export class MainLicenseService {
         };
       }
     } catch (error: any) {
-      console.error('❌ License validation error:', error.message);
+      console.error('❌ Remote license validation error:', error.message);
       return {
         valid: false,
         error: error.response?.data?.error || error.message || 'Connection to license server failed',
@@ -123,7 +154,7 @@ export class MainLicenseService {
       }
     }
 
-    // No valid cached license, need to re-validate
+    // No valid cached license, need to re-validate with remote backend
     if (this.cachedLicense?.licenseKey) {
       return await this.validateLicense(this.cachedLicense.licenseKey);
     }
@@ -185,6 +216,55 @@ export class MainLicenseService {
       allowed: true,
       remaining: remainingEmails,
     };
+  }
+
+  /**
+   * Record email usage with remote backend
+   */
+  async recordEmailUsage(recipientCount: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (!this.cachedLicense || !this.cachedToken) {
+        return {
+          success: false,
+          error: 'No valid license',
+        };
+      }
+
+      const response = await axios.post(
+        `${this.config.mainBackendUrl}/api/license/usage`,
+        {
+          action: 'email_sent',
+          count: recipientCount,
+          metadata: {
+            timestamp: new Date().toISOString(),
+          },
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.cachedToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 5000,
+        }
+      );
+
+      if (response.data.success) {
+        // Update cached usage count
+        this.cachedLicense.emailsUsedThisMonth += recipientCount;
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: response.data.error || 'Failed to record usage',
+        };
+      }
+    } catch (error: any) {
+      console.error('Usage recording error:', error.message);
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Failed to record usage',
+      };
+    }
   }
 
   /**
