@@ -132,6 +132,7 @@ export const licenseSchema = z.object({
   expiresAt: z.date(),
   lastValidated: z.date().optional(),
   machineFingerprint: z.string().optional(), // Hardware/machine identification
+  ipAddress: z.string().optional(), // IP address binding
   activationCount: z.number().default(0), // Track activations
   maxActivations: z.number().default(1), // License transfer limit
 });
@@ -176,6 +177,7 @@ export type LicenseToken = z.infer<typeof licenseTokenSchema>;
 export const licenseValidationSchema = z.object({
   licenseKey: z.string(),
   machineFingerprint: z.string().optional(),
+  ipAddress: z.string().optional(),
   clientVersion: z.string().optional(),
 });
 

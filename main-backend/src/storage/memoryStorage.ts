@@ -14,8 +14,13 @@ class MemoryStorage {
       ...license,
       id,
     };
-    
+
     this.licenses.set(license.licenseKey, newLicense);
+    // Updated log to include IP address binding
+    console.log(`📝 License created: ${license.userEmail} (${license.planType}) - Key: ${license.licenseKey.substring(0, 8)}... - Expires: ${license.expiresAt.toISOString()}`);
+    console.log(`🔒 Machine binding: ${license.machineFingerprint || 'Not bound'}`);
+    console.log(`🌐 IP binding: ${license.ipAddress || 'Not bound'}`);
+    console.log(`🔢 Activation limit: ${license.activationCount}/${license.maxActivations}`);
     return newLicense;
   }
 
@@ -77,7 +82,7 @@ class MemoryStorage {
   getMonthlyEmailUsage(licenseId: string): number {
     const now = new Date();
     const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     const usage = this.licenseUsage.get(licenseId) || [];
     return usage
       .filter(u => u.action === 'email_sent' && u.timestamp >= firstOfMonth)
@@ -92,7 +97,7 @@ class MemoryStorage {
       id,
       createdAt: new Date(),
     };
-    
+
     this.apiKeys.set(newApiKey.hashedKey, newApiKey);
     return newApiKey;
   }
@@ -167,11 +172,11 @@ let storageInstance: MemoryStorage | null = null;
 export function initializeStorage(): MemoryStorage {
   if (!storageInstance) {
     storageInstance = new MemoryStorage();
-    
+
     // Create default admin API key if none exists
     const defaultApiKey = process.env.DEFAULT_API_KEY || 'admin-api-key-2024';
     const hashedKey = crypto.createHash('sha256').update(defaultApiKey).digest('hex');
-    
+
     storageInstance.createApiKey({
       keyName: 'Default Admin Key',
       hashedKey,
@@ -181,7 +186,7 @@ export function initializeStorage(): MemoryStorage {
 
     console.log('✅ Memory storage initialized with default API key');
   }
-  
+
   return storageInstance;
 }
 

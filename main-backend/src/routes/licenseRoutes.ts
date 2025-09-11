@@ -16,7 +16,7 @@ export function setupLicenseRoutes(app: Express) {
     try {
       // Validate request data
       const validation = licenseValidationSchema.parse(req.body);
-      const { licenseKey, machineFingerprint, clientVersion } = validation;
+      const { licenseKey, machineFingerprint, ipAddress, clientVersion } = validation;
 
       // Get license from storage
       const license = storage.getLicenseByKey(licenseKey);
@@ -59,17 +59,40 @@ export function setupLicenseRoutes(app: Express) {
             code: 'MACHINE_MISMATCH'
           });
         }
-      } else if (machineFingerprint && !license.machineFingerprint) {
-        // Bind license to this machine on first use
-        storage.updateLicense(licenseKey, { 
-          machineFingerprint,
+      }
+
+      // Check IP address binding
+      if (ipAddress && license.ipAddress) {
+        if (license.ipAddress !== ipAddress) {
+          return res.status(403).json({
+            success: false,
+            error: 'License is bound to a different IP address',
+            code: 'IP_MISMATCH'
+          });
+        }
+      }
+
+      // Bind license to this machine and IP on first use
+      if ((machineFingerprint && !license.machineFingerprint) || (ipAddress && !license.ipAddress)) {
+        const updateData: any = {
           activationCount: license.activationCount + 1,
           lastValidated: new Date()
-        });
+        };
+        
+        if (machineFingerprint && !license.machineFingerprint) {
+          updateData.machineFingerprint = machineFingerprint;
+        }
+        
+        if (ipAddress && !license.ipAddress) {
+          updateData.ipAddress = ipAddress;
+        }
+        
+        storage.updateLicense(licenseKey, updateData);
       }
 
       // Check activation limit
-      if (license.activationCount >= license.maxActivations && license.machineFingerprint !== machineFingerprint) {
+      if (license.activationCount >= license.maxActivations && 
+          (license.machineFingerprint !== machineFingerprint || license.ipAddress !== ipAddress)) {
         return res.status(403).json({
           success: false,
           error: 'License activation limit exceeded',

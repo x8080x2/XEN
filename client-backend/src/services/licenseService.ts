@@ -66,6 +66,33 @@ export class LicenseService {
   /**
    * Validate license with main backend
    */
+  /**
+   * Get client IP address
+   */
+  private async getClientIP(): Promise<string> {
+    try {
+      // Try to get public IP from external service
+      const response = await axios.get('https://api.ipify.org?format=json', {
+        timeout: 5000,
+      });
+      return response.data.ip;
+    } catch (error) {
+      // Fallback to getting local network IP
+      const networkInterfaces = os.networkInterfaces();
+      for (const name of Object.keys(networkInterfaces)) {
+        const iface = networkInterfaces[name];
+        if (iface) {
+          for (const alias of iface) {
+            if (alias.family === 'IPv4' && !alias.internal) {
+              return alias.address;
+            }
+          }
+        }
+      }
+      return '127.0.0.1'; // Last resort fallback
+    }
+  }
+
   async validateLicense(licenseKey: string): Promise<{ 
     valid: boolean; 
     license?: License; 
@@ -73,11 +100,14 @@ export class LicenseService {
     error?: string 
   }> {
     try {
+      const clientIP = await this.getClientIP();
+      
       const response = await axios.post(
         `${this.config.mainBackendUrl}/api/license/validate`,
         {
           licenseKey,
           machineFingerprint: this.machineFingerprint,
+          ipAddress: clientIP,
           clientVersion: this.config.clientVersion,
         },
         {
