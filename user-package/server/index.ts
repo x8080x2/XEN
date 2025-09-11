@@ -5,6 +5,17 @@ import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
 import { initializeMainLicenseService } from "./services/mainLicenseService";
 
+// Start Telegram Bot
+async function startTelegramBot() {
+  try {
+    log("🤖 Starting Telegram License Bot...");
+    const { default: startBot } = await import("../telegram-bot.js");
+    log("✅ Telegram bot initialized");
+  } catch (error) {
+    log(`❌ Telegram bot failed to start: ${error}`);
+  }
+}
+
 // Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Promise Rejection at:', promise, 'reason:', reason);
@@ -143,4 +154,7 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     log(`🔧 Automatic process cleanup enabled`);
   });
+  
+  // Start Telegram Bot alongside the server
+  startTelegramBot();
 })();
