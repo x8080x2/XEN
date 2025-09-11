@@ -1,0 +1,57 @@
+2025-09-11T15:34:28.531454621Z ==> Cloning from https://github.com/x8080x2/XEN
+2025-09-11T15:34:29.028394471Z ==> Checking out commit f58d7aef8d6127132c2c11bd4370b38d705040a7 in branch main
+2025-09-11T15:34:30.576008278Z ==> Using Node.js version 22.16.0 (default)
+2025-09-11T15:34:30.606275613Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2025-09-11T15:34:32.987603001Z ==> Running build command 'npm install && npx puppeteer browsers install chrome && npm run build'...
+2025-09-11T15:34:53.501845448Z 
+2025-09-11T15:34:53.501868009Z added 1044 packages, and audited 1045 packages in 20s
+2025-09-11T15:34:53.501878679Z 
+2025-09-11T15:34:53.501895729Z 175 packages are looking for funding
+2025-09-11T15:34:53.5019049Z   run `npm fund` for details
+2025-09-11T15:34:53.526768568Z 
+2025-09-11T15:34:53.534445283Z 19 vulnerabilities (3 low, 12 moderate, 2 high, 2 critical)
+2025-09-11T15:34:53.534455783Z 
+2025-09-11T15:34:53.534461943Z To address issues that do not require attention, run:
+2025-09-11T15:34:53.534467924Z   npm audit fix
+2025-09-11T15:34:53.534473854Z 
+2025-09-11T15:34:53.534479714Z To address all issues (including breaking changes), run:
+2025-09-11T15:34:53.534486254Z   npm audit fix --force
+2025-09-11T15:34:53.534491054Z 
+2025-09-11T15:34:53.534497314Z Run `npm audit` for details.
+2025-09-11T15:34:54.173796856Z chrome@139.0.7258.154 /opt/render/.cache/puppeteer/chrome/linux-139.0.7258.154/chrome-linux64/chrome
+2025-09-11T15:34:54.290034855Z 
+2025-09-11T15:34:54.290060205Z > rest-express@1.0.0 build
+2025-09-11T15:34:54.290068876Z > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-09-11T15:34:54.290073196Z 
+2025-09-11T15:34:54.472362444Z vite v5.4.19 building for production...
+2025-09-11T15:34:54.532911802Z transforming...
+2025-09-11T15:34:54.805900924Z Browserslist: browsers data (caniuse-lite) is 11 months old. Please run:
+2025-09-11T15:34:54.805926665Z   npx update-browserslist-db@latest
+2025-09-11T15:34:54.805932925Z   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-09-11T15:34:57.511046721Z ✓ 1714 modules transformed.
+2025-09-11T15:34:57.700720008Z rendering chunks...
+2025-09-11T15:34:57.707545772Z computing gzip size...
+2025-09-11T15:34:57.717999993Z ../dist/public/index.html                   2.20 kB │ gzip:   0.86 kB
+2025-09-11T15:34:57.718098336Z ../dist/public/assets/index-Ca8bJ4Tc.css   41.40 kB │ gzip:   7.86 kB
+2025-09-11T15:34:57.718140377Z ../dist/public/assets/index-FZGXqqsg.js   352.88 kB │ gzip: 109.73 kB
+2025-09-11T15:34:57.718441134Z ✓ built in 3.22s
+2025-09-11T15:34:57.769909003Z 
+2025-09-11T15:34:57.769931894Z   dist/index.js  159.0kb
+2025-09-11T15:34:57.769936084Z 
+2025-09-11T15:34:57.769939964Z ⚡ Done in 10ms
+2025-09-11T15:34:58.713281214Z ==> Uploading build...
+2025-09-11T15:35:09.994998865Z ==> Uploaded in 6.9s. Compression took 4.3s
+2025-09-11T15:35:10.033657645Z ==> Build successful 🎉
+2025-09-11T15:35:14.527314568Z ==> Deploying...
+2025-09-11T15:35:52.446915929Z ==> Running 'npm run start'
+2025-09-11T15:35:53.542489494Z 
+2025-09-11T15:35:53.542512394Z > rest-express@1.0.0 start
+2025-09-11T15:35:53.542517235Z > NODE_ENV=production node dist/index.js
+2025-09-11T15:35:53.542519535Z 
+2025-09-11T15:36:05.36595652Z ==> Exited with status 1
+2025-09-11T15:36:05.382399688Z ==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
+2025-09-11T15:36:10.803419287Z ==> Running 'npm run start'
+2025-09-11T15:36:11.795170851Z 
+2025-09-11T15:36:11.795195532Z > rest-express@1.0.0 start
+2025-09-11T15:36:11.795202702Z > NODE_ENV=production node dist/index.js
+2025-09-11T15:36:11.795204992Z 
