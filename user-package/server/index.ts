@@ -5,24 +5,7 @@ import { execSync } from "child_process";
 import { ProcessManager } from "./services/processManager";
 import { initializeMainLicenseService } from "./services/mainLicenseService";
 
-// Start Telegram Bot
-async function startTelegramBot() {
-  try {
-    log("🤖 Starting Telegram License Bot...");
-    const { disabled, start } = await import("../telegram-bot.js");
-    
-    if (disabled) {
-      log("⚠️  Telegram bot is disabled (missing environment variables)");
-      return;
-    }
-    
-    start();
-    log("✅ Telegram bot initialized");
-  } catch (error) {
-    log(`⚠️  Telegram bot failed to start: ${error}`);
-    log("✅ Server will continue without Telegram bot functionality");
-  }
-}
+// Telegram Bot is handled by main backend - no local bot needed
 
 // Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
@@ -53,17 +36,17 @@ function performStartupCleanup() {
   setTimeout(() => {
     try {
       log("🔧 Performing background cleanup...");
-      
+
       // Count processes first
       const processCount = execSync('ps aux | grep -E "(tsx|node)" | grep -v grep | wc -l', { encoding: 'utf8' }).trim();
       log(`Current process count: ${processCount}`);
-      
+
       // Only cleanup if high process count
       if (parseInt(processCount) > 15) {
         log("⚠️  High process count - performing cleanup");
         // Note: Don't kill current process, just log for now
       }
-      
+
       log("✅ Background cleanup check completed");
     } catch (error) {
       // Ignore cleanup errors to avoid blocking startup
@@ -82,7 +65,7 @@ try {
     apiKey: process.env.MAIN_BACKEND_API_KEY || 'default-api-key',
     clientVersion: process.env.CLIENT_VERSION || '1.0.0',
   };
-  
+
   initializeMainLicenseService(licenseConfig);
   log("🔐 License service initialized");
 } catch (error: any) {
@@ -148,12 +131,12 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  
+
   // Initialize process manager for automatic cleanup
   const processManager = ProcessManager.getInstance();
   processManager.startPeriodicCleanup();
   processManager.setupGracefulShutdown();
-  
+
   server.listen({
     port,
     host: "0.0.0.0",
@@ -162,7 +145,4 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
     log(`🔧 Automatic process cleanup enabled`);
   });
-  
-  // Start Telegram Bot alongside the server
-  startTelegramBot();
 })();

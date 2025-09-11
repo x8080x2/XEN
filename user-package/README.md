@@ -12,10 +12,8 @@ Complete email sending application with advanced features and licensing system.
 2. **Configure Environment Variables**
    Set up your environment variables in Replit Secrets or create a `.env` file:
    ```bash
-   TELEGRAM_BOT_TOKEN=your_bot_token
    MAIN_BACKEND_URL=your_license_server_url  
    MAIN_BACKEND_API_KEY=your_license_api_key
-   ADMIN_TELEGRAM_ID=your_telegram_id
    ```
 
 3. **Start Application**
@@ -26,7 +24,7 @@ Complete email sending application with advanced features and licensing system.
 4. **Access Application**
    - Open browser to: http://localhost:5000
    - Application runs on single port (5000) with Vite dev server
-   - Telegram bot starts automatically for license management
+   - License management is handled by the main backend
 
 ## Folder Structure
 
@@ -49,7 +47,6 @@ user-package/
 │   ├── logo/             # Logo files for emails  
 │   ├── leads.txt         # Email recipient list
 │   └── *.html            # Email templates
-├── telegram-bot.js   # Telegram license management bot
 └── package.json      # Modern dependencies and build scripts
 ```
 
@@ -145,7 +142,7 @@ This application requires a valid license key to operate. Features are unlocked 
 - **Professional ($49/month)**: 10,000 emails, QR codes, domain logos
 - **Enterprise ($99/month)**: 50,000 emails, SMTP rotation, API access
 
-Contact your administrator or use the Telegram bot for license generation and support.
+Contact your administrator for license generation and support through the main backend system.
 
 ## Troubleshooting
 
