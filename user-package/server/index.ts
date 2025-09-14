@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '3002', 10);
 
 // Middleware
 app.use(cors());
@@ -128,24 +128,9 @@ if (process.env.NODE_ENV === 'production') {
   await setupVite(app, server);
   
   // Auto-launch UI window after server starts (if not in headless environment)
-  // Allow auto-launch in development mode for better user experience
   if (!isHeadlessEnvironment()) {
     launchUIWindow();
   }
-}
-
-// Start server (for production only)
-if (process.env.NODE_ENV === 'production') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 User package server running on port ${PORT}`);
-    console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
-    
-    // Auto-launch UI window after server starts (if not in headless environment)
-    // Allow auto-launch in development mode for better user experience
-    if (!isHeadlessEnvironment()) {
-      launchUIWindow();
-    }
-  });
 }
 
 // Function to detect headless environments
