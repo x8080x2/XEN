@@ -132,6 +132,176 @@ app.get('/api/health', async (req, res) => {
 // License management routes only
 app.use('/api/license', licenseRoutes);
 
+// Add specific routes for user package functionality
+app.get('/api/smtp/list', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/smtp/list`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP list proxy error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to fetch SMTP list' });
+  }
+});
+
+app.post('/api/smtp/toggle-rotation', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/toggle-rotation`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP rotation proxy error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to toggle SMTP rotation' });
+  }
+});
+
+app.post('/api/smtp/add', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/add`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP add proxy error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to add SMTP' });
+  }
+});
+
+app.delete('/api/smtp/:smtpId', async (req, res) => {
+  try {
+    const response = await axios.delete(`${MAIN_BACKEND_URL}/api/smtp/${req.params.smtpId}`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP delete proxy error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to delete SMTP' });
+  }
+});
+
+app.post('/api/smtp/rotate', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/rotate`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP rotate proxy error:', error.message);
+    res.status(500).json({ success: false, error: 'Failed to rotate SMTP' });
+  }
+});
+
+app.get('/api/config/load', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/config/load`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Config load proxy error, falling back to local config:', error.message);
+    // Fallback to local config
+    const { configService } = await import('./services/configService');
+    const localConfig = configService.loadLocalConfig();
+    res.json({ success: true, config: localConfig });
+  }
+});
+
+app.get('/api/config/loadLeads', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/config/loadLeads`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Leads load proxy error, falling back to local leads:', error.message);
+    // Fallback to local leads
+    const { configService } = await import('./services/configService');
+    const localLeads = configService.loadLocalLeads();
+    res.json({ success: true, leads: localLeads });
+  }
+});
+
+app.get('/api/original/listFiles', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/original/listFiles`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Files list proxy error, falling back to local files:', error.message);
+    // Fallback to local files
+    try {
+      const filesDir = path.join(process.cwd(), 'files');
+      if (fs.existsSync(filesDir)) {
+        const files = fs.readdirSync(filesDir).filter(f => /\.html$|\.htm$/i.test(f));
+        res.json({ success: true, files });
+      } else {
+        res.json({ success: true, files: [] });
+      }
+    } catch (localError) {
+      res.json({ success: true, files: [] });
+    }
+  }
+});
+
+app.get('/api/original/listLogoFiles', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/original/listLogoFiles`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('Logo files list proxy error, falling back to local logo files:', error.message);
+    // Fallback to local logo files
+    try {
+      const logoDir = path.join(process.cwd(), 'files', 'logo');
+      if (fs.existsSync(logoDir)) {
+        const files = fs.readdirSync(logoDir).filter(f => {
+          const fullPath = path.join(logoDir, f);
+          return fs.statSync(fullPath).isFile();
+        });
+        res.json({ success: true, files });
+      } else {
+        res.json({ success: true, files: [] });
+      }
+    } catch (localError) {
+      res.json({ success: true, files: [] });
+    }
+  }
+});
+
 // Proxy all other API requests to main backend
 app.use('/api/*', async (req, res) => {
   try {
