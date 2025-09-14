@@ -7,57 +7,59 @@ const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY;
 const ADMIN_TELEGRAM_ID = process.env.ADMIN_TELEGRAM_ID;
 
-if (!BOT_TOKEN) {
-  console.error('❌ TELEGRAM_BOT_TOKEN is required');
-  process.exit(1);
-}
-
-if (!MAIN_BACKEND_URL) {
-  console.error('❌ MAIN_BACKEND_URL is required');
-  process.exit(1);
-}
-
-if (!ADMIN_API_KEY) {
-  console.error('❌ ADMIN_API_KEY is required');
-  process.exit(1);
-}
-
-if (!ADMIN_TELEGRAM_ID) {
-  console.error('❌ ADMIN_TELEGRAM_ID is required');
-  process.exit(1);
-}
-
-// Create bot instance with error handling
-const bot = new TelegramBot(BOT_TOKEN, { 
-  polling: {
-    autoStart: true,
-    params: {
-      timeout: 30
-    }
+// Main function to start the bot
+export default function startTelegramBot() {
+  if (!BOT_TOKEN) {
+    console.error('❌ TELEGRAM_BOT_TOKEN is required');
+    return;
   }
-});
 
-console.log('🤖 Email Sender License Bot started!');
-console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
-console.log(`👤 Admin Telegram ID: ${ADMIN_TELEGRAM_ID}`);
+  if (!MAIN_BACKEND_URL) {
+    console.error('❌ MAIN_BACKEND_URL is required');
+    return;
+  }
 
-// User sessions storage
-const userSessions = new Map();
+  if (!ADMIN_API_KEY) {
+    console.error('❌ ADMIN_API_KEY is required');
+    return;
+  }
 
-// Admin authorization check
-function isAuthorizedAdmin(telegramId) {
+  if (!ADMIN_TELEGRAM_ID) {
+    console.error('❌ ADMIN_TELEGRAM_ID is required');
+    return;
+  }
+
+  // Create bot instance with error handling
+  const bot = new TelegramBot(BOT_TOKEN, { 
+    polling: {
+      autoStart: true,
+      params: {
+        timeout: 30
+      }
+    }
+  });
+
+  console.log('🤖 Email Sender License Bot started!');
+  console.log(`📡 Main Backend: ${MAIN_BACKEND_URL}`);
+  console.log(`👤 Admin Telegram ID: ${ADMIN_TELEGRAM_ID}`);
+
+  // User sessions storage
+  const userSessions = new Map();
+
+  // Admin authorization check
+  function isAuthorizedAdmin(telegramId) {
   return telegramId.toString() === ADMIN_TELEGRAM_ID.toString();
 }
 
-// Admin-only message
-function sendAdminOnlyMessage(chatId) {
+  // Admin-only message
+  function sendAdminOnlyMessage(chatId) {
   return bot.sendMessage(chatId, '🔒 *Access Restricted*\n\nThis bot is restricted to authorized administrators only.\n\nPlease contact the system administrator for access.', {
     parse_mode: 'Markdown'
   });
 }
 
-// Create main menu keyboard
-function getMainMenuKeyboard() {
+  // Create main menu keyboard
+  function getMainMenuKeyboard() {
   return {
     reply_markup: {
       keyboard: [
@@ -72,8 +74,8 @@ function getMainMenuKeyboard() {
   };
 }
 
-// Create price list keyboard
-function getPriceListKeyboard() {
+  // Create price list keyboard
+  function getPriceListKeyboard() {
   return {
     reply_markup: {
       inline_keyboard: [
@@ -86,8 +88,8 @@ function getPriceListKeyboard() {
   };
 }
 
-// Start command and main menu
-bot.onText(/\/start/, async (msg) => {
+  // Start command and main menu
+  bot.onText(/\/start/, async (msg) => {
   try {
     const chatId = msg.chat.id;
     const username = msg.from.username || `user_${chatId}`;
@@ -142,8 +144,8 @@ Choose an option from the admin menu below:
   }
 });
 
-// Handle text messages (menu selections)
-bot.on('message', async (msg) => {
+  // Handle text messages (menu selections)
+  bot.on('message', async (msg) => {
   try {
     const chatId = msg.chat.id;
     const text = msg.text;
@@ -217,8 +219,8 @@ bot.on('message', async (msg) => {
   }
 });
 
-// Handle callback queries (inline buttons) 
-bot.on('callback_query', async (callbackQuery) => {
+  // Handle callback queries (inline buttons) 
+  bot.on('callback_query', async (callbackQuery) => {
   try {
     const msg = callbackQuery.message;
     const chatId = msg.chat.id;
@@ -282,8 +284,8 @@ bot.on('callback_query', async (callbackQuery) => {
   }
 });
 
-// Balance handler
-async function handleBalance(chatId, userSession) {
+  // Balance handler
+  async function handleBalance(chatId, userSession) {
   try {
     const balanceMessage = `💰 *Your Balance*
 
@@ -305,8 +307,8 @@ To add money to your balance, please contact support.
   }
 }
 
-// Price list handler
-async function handlePriceList(chatId) {
+  // Price list handler
+  async function handlePriceList(chatId) {
   try {
     const priceMessage = `📋 *License Price List*
 
@@ -343,8 +345,8 @@ Select a plan below to purchase:`;
   }
 }
 
-// Buy license handler
-async function handleBuyLicense(chatId) {
+  // Buy license handler
+  async function handleBuyLicense(chatId) {
   try {
     const buyMessage = `🛒 *Purchase License*
 
@@ -371,8 +373,8 @@ Choose your plan:`;
   }
 }
 
-// Initiate purchase process
-async function initiatePurchase(chatId, planType, userSession) {
+  // Initiate purchase process
+  async function initiatePurchase(chatId, planType, userSession) {
   try {
     const plans = {
       basic: { name: 'Basic', price: 19 },
@@ -412,8 +414,8 @@ Send your Windows RDP IP number
   }
 }
 
-// Process purchase details
-async function processPurchase(chatId, text, userSession) {
+  // Process purchase details
+  async function processPurchase(chatId, text, userSession) {
   try {
     const ipAddress = text.trim();
     
@@ -502,8 +504,8 @@ async function processPurchase(chatId, text, userSession) {
   }
 }
 
-// Activation handler
-async function handleActivation(chatId, userSession) {
+  // Activation handler
+  async function handleActivation(chatId, userSession) {
   try {
     console.log(`🔑 Activation requested by user ${chatId}`);
     console.log(`User has ${userSession.licenses ? userSession.licenses.length : 0} licenses`);
@@ -557,8 +559,8 @@ LICENSE-ABC123-XYZ789-DEF456
   }
 }
 
-// Process activation
-async function processActivation(chatId, text, userSession) {
+  // Process activation
+  async function processActivation(chatId, text, userSession) {
   try {
     userSession.awaitingActivation = false;
     userSessions.set(chatId, userSession);
@@ -627,8 +629,8 @@ async function processActivation(chatId, text, userSession) {
   }
 }
 
-// My licenses handler
-async function handleMyLicenses(chatId, userSession) {
+  // My licenses handler
+  async function handleMyLicenses(chatId, userSession) {
   try {
     if (!userSession.licenses || userSession.licenses.length === 0) {
       await bot.sendMessage(chatId, '❌ No licenses found. Purchase your first license!', getMainMenuKeyboard());
@@ -659,8 +661,8 @@ Use "🔑 Personal Activations" to activate pending licenses.`;
   }
 }
 
-// Help handler
-async function handleHelp(chatId) {
+  // Help handler
+  async function handleHelp(chatId) {
   try {
     const helpMessage = `❓ *Admin Help & Support*
 
@@ -695,20 +697,21 @@ Generate licenses for customers and help them activate.`;
   }
 }
 
-// Error handling
-bot.on('error', (error) => {
+  // Error handling
+  bot.on('error', (error) => {
   console.error('❌ Telegram Bot Error:', error);
 });
 
-bot.on('polling_error', (error) => {
+  bot.on('polling_error', (error) => {
   console.error('❌ Polling Error:', error);
 });
 
-// Graceful shutdown
-process.on('SIGINT', () => {
+  // Graceful shutdown
+  process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down Telegram bot...');
   bot.stopPolling();
   process.exit(0);
 });
 
-console.log('✅ Bot is ready! Send /start to begin.');
+  console.log('✅ Bot is ready! Send /start to begin.');
+}
