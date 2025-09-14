@@ -19,15 +19,9 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Environment variables validation
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
-const MAIN_BACKEND_API_KEY = process.env.MAIN_BACKEND_API_KEY;
 
 if (!MAIN_BACKEND_URL) {
   console.error('❌ MAIN_BACKEND_URL environment variable is required');
-  process.exit(1);
-}
-
-if (!MAIN_BACKEND_API_KEY) {
-  console.error('❌ MAIN_BACKEND_API_KEY environment variable is required');
   process.exit(1);
 }
 
@@ -37,7 +31,7 @@ console.log(`📡 Connecting to main backend: ${MAIN_BACKEND_URL}`);
 initializeMainLicenseService({
   jwtSecret: process.env.JWT_SECRET || 'default-secret',
   mainBackendUrl: MAIN_BACKEND_URL,
-  apiKey: MAIN_BACKEND_API_KEY,
+  apiKey: 'default-api-key',
   clientVersion: '1.0.0',
 });
 
@@ -55,7 +49,6 @@ app.use('/api/*', async (req, res) => {
       url: `${MAIN_BACKEND_URL}${req.originalUrl}`,
       headers: {
         ...req.headers,
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
         'host': undefined,
       },
       data: req.body,

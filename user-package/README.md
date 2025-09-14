@@ -13,8 +13,7 @@ Complete email sending application that connects to a remote licensing backend.
 2. **Configure Environment Variables**
    Set up your environment variables in Replit Secrets or create a `.env` file:
    ```bash
-   MAIN_BACKEND_URL=your_main_backend_url  
-   MAIN_BACKEND_API_KEY=your_backend_api_key
+   MAIN_BACKEND_URL=your_main_backend_url
    ```
 
 3. **Start Application**
@@ -38,7 +37,6 @@ This user package contains:
 
 ### Environment Variables
 - `MAIN_BACKEND_URL`: URL of your main backend server
-- `MAIN_BACKEND_API_KEY`: API key for backend authentication
 - `JWT_SECRET`: Optional JWT secret for token validation
 
 ### License Configuration
@@ -73,7 +71,7 @@ Contact your administrator for license generation and support.
 ## Troubleshooting
 
 ### Connection Issues
-1. Verify `MAIN_BACKEND_URL` and `MAIN_BACKEND_API_KEY` are correct
+1. Verify `MAIN_BACKEND_URL` is correct
 2. Check internet connection to main backend
 3. Ensure main backend server is running and accessible
 4. Check firewall settings for outbound connections

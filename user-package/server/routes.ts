@@ -12,9 +12,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const axios = require('axios');
       const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
-      const MAIN_BACKEND_API_KEY = process.env.MAIN_BACKEND_API_KEY;
 
-      if (!MAIN_BACKEND_URL || !MAIN_BACKEND_API_KEY) {
+      if (!MAIN_BACKEND_URL) {
         return res.status(500).json({
           success: false,
           error: 'Backend configuration missing'
@@ -26,7 +25,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         url: `${MAIN_BACKEND_URL}${req.originalUrl}`,
         headers: {
           ...req.headers,
-          'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
           'host': undefined,
         },
         data: req.body,
