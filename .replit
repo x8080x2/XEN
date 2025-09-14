@@ -52,4 +52,13 @@ mode = "sequential"
 task = "shell.exec"
 args = "npm run dev"
 
+[[workflows.workflow]]
+name = "Start User Package"
+author = 47594628
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd user-package && npm install && npm run dev"
+
 [agent]
