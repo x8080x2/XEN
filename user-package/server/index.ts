@@ -27,9 +27,32 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Environment variables validation
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
+const MAIN_BACKEND_API_KEY = process.env.MAIN_BACKEND_API_KEY;
 
 if (!MAIN_BACKEND_URL) {
   console.error('❌ MAIN_BACKEND_URL environment variable is required');
+  console.error('   Please set MAIN_BACKEND_URL to your main backend server URL (e.g., https://your-app.replit.app)');
+  process.exit(1);
+}
+
+if (!MAIN_BACKEND_API_KEY) {
+  console.error('❌ MAIN_BACKEND_API_KEY environment variable is required');
+  console.error('   Please set MAIN_BACKEND_API_KEY to match the API key configured on your main backend');
+  process.exit(1);
+}
+
+// Validate URL format
+try {
+  const url = new URL(MAIN_BACKEND_URL);
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+    console.warn('⚠️ WARNING: MAIN_BACKEND_URL is set to localhost. This will not work for customer deployments.');
+    console.warn('   Consider using your public Replit URL instead: https://your-app.replit.app');
+  }
+  if (url.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ WARNING: Using HTTP instead of HTTPS in production may cause issues');
+  }
+} catch (error) {
+  console.error('❌ MAIN_BACKEND_URL is not a valid URL format');
   process.exit(1);
 }
 
@@ -72,11 +95,39 @@ if (process.env.NODE_ENV === 'production' && (!JWT_SECRET || JWT_SECRET === 'def
 initializeMainLicenseService({
   jwtSecret: JWT_SECRET || 'default-secret',
   mainBackendUrl: MAIN_BACKEND_URL,
-  apiKey: 'default-api-key',
+  apiKey: MAIN_BACKEND_API_KEY,
   clientVersion: '1.0.0',
 });
 
 console.log('🔐 Remote license service initialized');
+
+// Health check endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/health`, {
+      timeout: 10000,
+    });
+    res.json({
+      success: true,
+      status: 'healthy',
+      mainBackend: {
+        url: MAIN_BACKEND_URL,
+        status: response.status,
+        available: true,
+      },
+    });
+  } catch (error: any) {
+    res.status(200).json({
+      success: false,
+      status: 'degraded',
+      mainBackend: {
+        url: MAIN_BACKEND_URL,
+        available: false,
+        error: error.message,
+      },
+    });
+  }
+});
 
 // License management routes only
 app.use('/api/license', licenseRoutes);
@@ -90,14 +141,46 @@ app.use('/api/*', async (req, res) => {
       headers: {
         ...req.headers,
         'host': undefined,
+        'connection': 'keep-alive',
       },
       data: req.body,
-      timeout: 30000,
+      timeout: 45000, // Increased timeout
+      validateStatus: (status) => status < 500, // Accept 2xx, 3xx, 4xx as valid
     });
+    
+    // Handle 304 Not Modified as success
+    if (response.status === 304) {
+      res.status(304).end();
+      return;
+    }
     
     res.status(response.status).json(response.data);
   } catch (error: any) {
-    console.error('Proxy error:', error.message);
+    // Only log actual errors, not 304 responses
+    if (error.response?.status !== 304) {
+      console.error('Proxy error:', error.message);
+    }
+    
+    // Handle timeout specifically
+    if (error.code === 'ECONNABORTED') {
+      res.status(504).json({
+        success: false,
+        error: 'Gateway timeout - main backend not responding',
+        details: 'The main backend server is taking too long to respond',
+      });
+      return;
+    }
+    
+    // Handle connection errors
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      res.status(502).json({
+        success: false,
+        error: 'Bad gateway - cannot reach main backend',
+        details: 'The main backend server is not available',
+      });
+      return;
+    }
+    
     res.status(500).json({
       success: false,
       error: 'Failed to connect to main backend',
