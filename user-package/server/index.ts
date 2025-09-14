@@ -106,7 +106,7 @@ app.use('/api/*', async (req, res) => {
   }
 });
 
-// Serve static files in production
+// Setup development server with Vite or serve static files in production
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../client/dist');
   app.use(express.static(clientPath));
@@ -114,9 +114,29 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientPath, 'index.html'));
   });
+} else {
+  // Development mode - setup Vite
+  const { setupVite } = await import('./vite');
+  const server = await new Promise<any>((resolve) => {
+    const httpServer = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 User package server running on port ${PORT}`);
+      console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
+      resolve(httpServer);
+    });
+  });
+  
+  await setupVite(app, server);
+  
+  // Auto-launch UI window after server starts (if not in headless environment)
+  // Allow auto-launch in development mode for better user experience
+  if (!isHeadlessEnvironment()) {
+    launchUIWindow();
+  }
+  
+  return; // Exit early since server is already started
 }
 
-// Start server
+// Start server (for production only)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 User package server running on port ${PORT}`);
   console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
