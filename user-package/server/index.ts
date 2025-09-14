@@ -133,21 +133,6 @@ app.get('/api/health', async (req, res) => {
 app.use('/api/license', licenseRoutes);
 
 // Add specific routes for user package functionality
-app.get('/api/smtp/list', async (req, res) => {
-  try {
-    const response = await axios.get(`${MAIN_BACKEND_URL}/api/smtp/list`, {
-      headers: {
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
-      },
-      timeout: 10000,
-    });
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('SMTP list proxy error:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to fetch SMTP list' });
-  }
-});
-
 app.post('/api/smtp/toggle-rotation', async (req, res) => {
   try {
     const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/toggle-rotation`, req.body, {
@@ -159,55 +144,17 @@ app.post('/api/smtp/toggle-rotation', async (req, res) => {
     });
     res.json(response.data);
   } catch (error: any) {
-    console.error('SMTP rotation proxy error:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to toggle SMTP rotation' });
-  }
-});
-
-app.post('/api/smtp/add', async (req, res) => {
-  try {
-    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/add`, req.body, {
-      headers: {
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 10000,
+    console.error('SMTP rotation proxy error, falling back to local toggle:', error.message);
+    // Fallback to local SMTP rotation toggle
+    const { configService } = await import('./services/configService');
+    const { enabled } = req.body;
+    configService.setSmtpRotation(enabled);
+    
+    res.json({
+      success: true,
+      rotationEnabled: configService.isSmtpRotationEnabled(),
+      currentSmtp: configService.getCurrentSmtpConfig()
     });
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('SMTP add proxy error:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to add SMTP' });
-  }
-});
-
-app.delete('/api/smtp/:smtpId', async (req, res) => {
-  try {
-    const response = await axios.delete(`${MAIN_BACKEND_URL}/api/smtp/${req.params.smtpId}`, {
-      headers: {
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
-      },
-      timeout: 10000,
-    });
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('SMTP delete proxy error:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to delete SMTP' });
-  }
-});
-
-app.post('/api/smtp/rotate', async (req, res) => {
-  try {
-    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/rotate`, req.body, {
-      headers: {
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      timeout: 10000,
-    });
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('SMTP rotate proxy error:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to rotate SMTP' });
   }
 });
 
@@ -244,6 +191,111 @@ app.get('/api/config/loadLeads', async (req, res) => {
     const { configService } = await import('./services/configService');
     const localLeads = configService.loadLocalLeads();
     res.json({ success: true, leads: localLeads });
+  }
+});
+
+// Local SMTP management routes with fallback
+app.get('/api/smtp/list', async (req, res) => {
+  try {
+    const response = await axios.get(`${MAIN_BACKEND_URL}/api/smtp/list`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP list proxy error, falling back to local SMTP configs:', error.message);
+    // Fallback to local SMTP configs
+    const { configService } = await import('./services/configService');
+    const smtpConfigs = configService.getAllSmtpConfigs();
+    const currentSmtp = configService.getCurrentSmtpConfig();
+    const rotationEnabled = configService.isSmtpRotationEnabled();
+    
+    res.json({
+      success: true,
+      smtpConfigs: smtpConfigs,
+      currentSmtp: currentSmtp,
+      rotationEnabled: rotationEnabled
+    });
+  }
+});
+
+app.post('/api/smtp/add', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/add`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP add proxy error, falling back to local addition:', error.message);
+    // Fallback to local SMTP addition
+    const { configService } = await import('./services/configService');
+    const smtpId = configService.addSmtpConfig(req.body);
+    const smtpConfigs = configService.getAllSmtpConfigs();
+    
+    res.json({
+      success: true,
+      smtpId: smtpId,
+      smtpConfigs: smtpConfigs
+    });
+  }
+});
+
+app.delete('/api/smtp/:smtpId', async (req, res) => {
+  try {
+    const response = await axios.delete(`${MAIN_BACKEND_URL}/api/smtp/${req.params.smtpId}`, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP delete proxy error, falling back to local deletion:', error.message);
+    // Fallback to local SMTP deletion
+    const { configService } = await import('./services/configService');
+    const success = configService.deleteSmtpConfig(req.params.smtpId);
+    
+    if (success) {
+      const smtpConfigs = configService.getAllSmtpConfigs();
+      const currentSmtp = configService.getCurrentSmtpConfig();
+      
+      res.json({
+        success: true,
+        smtpConfigs: smtpConfigs,
+        currentSmtp: currentSmtp
+      });
+    } else {
+      res.status(400).json({ success: false, error: 'Cannot delete SMTP or not found' });
+    }
+  }
+});
+
+app.post('/api/smtp/rotate', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/smtp/rotate`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('SMTP rotate proxy error, falling back to local rotation:', error.message);
+    // Fallback to local SMTP rotation
+    const { configService } = await import('./services/configService');
+    const currentSmtp = configService.rotateSmtp();
+    
+    res.json({
+      success: true,
+      currentSmtp: currentSmtp
+    });
   }
 });
 
@@ -298,6 +350,39 @@ app.get('/api/original/listLogoFiles', async (req, res) => {
       }
     } catch (localError) {
       res.json({ success: true, files: [] });
+    }
+  }
+});
+
+// Add missing readFile endpoint for template loading
+app.post('/api/original/readFile', async (req, res) => {
+  try {
+    const response = await axios.post(`${MAIN_BACKEND_URL}/api/original/readFile`, req.body, {
+      headers: {
+        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+    res.json(response.data);
+  } catch (error: any) {
+    console.error('File read proxy error, falling back to local file:', error.message);
+    // Fallback to local file reading
+    try {
+      const { filepath } = req.body;
+      if (!filepath) {
+        return res.json({ success: false, error: 'Filepath is required' });
+      }
+      
+      const fullPath = path.join(process.cwd(), filepath);
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        res.json({ success: true, content });
+      } else {
+        res.json({ success: false, error: 'File not found' });
+      }
+    } catch (localError) {
+      res.json({ success: false, error: `Local file read error: ${localError}` });
     }
   }
 });
