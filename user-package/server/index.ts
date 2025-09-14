@@ -10,6 +10,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { initializeMainLicenseService } from './services/mainLicenseService';
 import licenseRoutes from './routes/licenseRoutes';
+import { configService } from './services/configService';
 
 // Load environment variables from .env file
 dotenv.config();

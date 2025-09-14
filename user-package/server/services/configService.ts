@@ -8,6 +8,11 @@ export class ConfigService {
   private currentSmtpIndex: number = 0;
   private rotationEnabled: boolean = false;
 
+  constructor() {
+    // Auto-load config on initialization
+    this.loadLocalConfig();
+  }
+
   loadLocalConfig(): any {
     const configPath = join(process.cwd(), 'config', 'setup.ini');
     const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
