@@ -1,0 +1,52 @@
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Users\Administrator\Desktop\user-package>npm run build
+
+> email-sender-user-package@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+'vite' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\Administrator\Desktop\user-package>npm install
+npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+npm warn deprecated har-validator@5.1.5: this library is no longer supported
+npm warn deprecated uuid@3.4.0: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+npm warn deprecated request@2.88.2: request has been deprecated, see https://github.com/request/request/issues/3142
+npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+
+added 1260 packages, and audited 1261 packages in 4m
+
+189 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (10 moderate, 2 high, 2 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+C:\Users\Administrator\Desktop\user-package>cd user-package && npm install
+
+added 1 package, removed 9 packages, and audited 1261 packages in 5s
+
+189 packages are looking for funding
+  run `npm fund` for details
+
+14 vulnerabilities (10 moderate, 2 high, 2 critical)
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+C:\Users\Administrator\Desktop\user-package\user-package>cd user-package && npm run dev
+The system cannot find the path specified.
+
+C:\Users\Administrator\Desktop\user-package\user-package>cd user-package && npm run dev
+The system cannot find the path specified.
+
+C:\Users\Administrator\Desktop\user-package\user-package>
