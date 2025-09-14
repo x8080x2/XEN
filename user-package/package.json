@@ -16,12 +16,10 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "install-all": "npm install",
     "package": "npm run build && npm pack",
-    "dev:windows": "set NODE_ENV=development && npx tsx server/index.ts",
-    "start:windows": "set NODE_ENV=production && node dist/index.js",
-    "install:windows": "install-windows.bat",
-    "postinstall": "npm run build"
+    "postinstall": "npm run build",
+    "clean": "rm -rf dist client/dist node_modules/.vite",
+    "prepack": "npm run clean && npm run build"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.16.0",
