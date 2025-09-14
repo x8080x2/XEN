@@ -18,7 +18,7 @@
     "check": "tsc",
     "package": "npm run build && npm pack",
     "postinstall": "npm run build",
-    "clean": "rm -rf dist client/dist node_modules/.vite",
+    "clean": "rimraf dist client/dist node_modules/.vite",
     "prepack": "npm run clean && npm run build"
   },
   "dependencies": {
@@ -146,6 +146,7 @@
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
+    "rimraf": "^5.0.5",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",
     "typescript": "5.6.3",

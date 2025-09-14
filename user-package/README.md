@@ -11,9 +11,16 @@ Complete email sending application that connects to a remote licensing backend.
    ```
 
 2. **Configure Environment Variables**
-   Set up your environment variables in Replit Secrets or create a `.env` file:
+   Copy the environment template and update with your values:
    ```bash
-   MAIN_BACKEND_URL=your_main_backend_url
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and set these required variables:
+   ```bash
+   MAIN_BACKEND_URL=https://your-app-name.replit.app
+   MAIN_BACKEND_API_KEY=your-secure-api-key
+   JWT_SECRET=your-secure-jwt-secret
    ```
 
 3. **Start Application**
@@ -22,8 +29,8 @@ Complete email sending application that connects to a remote licensing backend.
    ```
 
 4. **Access Application**
-   - Open browser to: http://localhost:5000
-   - Application runs on single port (5000) with Vite dev server
+   - Open browser to: http://localhost:3002
+   - Application runs on single port (3002) by default
    - All licensing and email functionality is handled by the remote main backend
 
 ## Architecture
@@ -36,8 +43,11 @@ This user package contains:
 ## Configuration
 
 ### Environment Variables
-- `MAIN_BACKEND_URL`: URL of your main backend server
-- `JWT_SECRET`: Optional JWT secret for token validation
+- `MAIN_BACKEND_URL`: URL of your main backend server (e.g., https://your-app.replit.app)
+- `MAIN_BACKEND_API_KEY`: API key for authentication with main backend (required)
+- `JWT_SECRET`: JWT secret for token validation (required for production)
+- `PORT`: Application port (default: 3002)
+- `NODE_ENV`: Environment mode (production recommended for customer deployments)
 
 ### License Configuration
 The application requires a valid license key. Configure in `config/setup.ini`:
