@@ -132,21 +132,21 @@ if (process.env.NODE_ENV === 'production') {
   if (!isHeadlessEnvironment()) {
     launchUIWindow();
   }
-  
-  return; // Exit early since server is already started
 }
 
 // Start server (for production only)
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 User package server running on port ${PORT}`);
-  console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
-  
-  // Auto-launch UI window after server starts (if not in headless environment)
-  // Allow auto-launch in development mode for better user experience
-  if (!isHeadlessEnvironment()) {
-    launchUIWindow();
-  }
-});
+if (process.env.NODE_ENV === 'production') {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 User package server running on port ${PORT}`);
+    console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
+    
+    // Auto-launch UI window after server starts (if not in headless environment)
+    // Allow auto-launch in development mode for better user experience
+    if (!isHeadlessEnvironment()) {
+      launchUIWindow();
+    }
+  });
+}
 
 // Function to detect headless environments
 function isHeadlessEnvironment() {
