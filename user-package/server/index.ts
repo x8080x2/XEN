@@ -197,6 +197,19 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientPath, 'index.html'));
   });
+
+  // Start server in production mode
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 User package server running on port ${PORT}`);
+    console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
+    console.log(`🌐 Open your browser to: http://localhost:${PORT}`);
+    
+    // Auto-launch UI window after server starts (if not in headless environment)
+    if (!isHeadlessEnvironment()) {
+      launchUIWindow();
+    }
+  });
+
 } else {
   // Development mode - setup Vite
   const { setupVite } = await import('./vite');
