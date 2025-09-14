@@ -122,7 +122,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
   
   // Auto-launch UI window after server starts (if not in headless environment)
-  if (process.env.NODE_ENV !== 'development' && !isHeadlessEnvironment()) {
+  // Allow auto-launch in development mode for better user experience
+  if (!isHeadlessEnvironment()) {
     launchUIWindow();
   }
 });
