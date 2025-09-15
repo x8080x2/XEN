@@ -1,0 +1,47 @@
+Starting Email Sender User Package in Development Mode...
+
+[dotenv@17.2.2] injecting env (3) from .env -- tip: 📡 version env with Radar: https://dotenvx.com/radar
+[User Package ConfigService] Loaded 2 SMTP configs from C:\Users\Administrator\Desktop\user-package\config\smtp.ini
+[User Package ConfigService] Local configuration loaded
+[User Package ConfigService] Constructor - Configuration auto-loaded
+[User Package ConfigService] Loaded 2 SMTP configs from C:\Users\Administrator\Desktop\user-package\config\smtp.ini
+[User Package ConfigService] Local configuration loaded
+[User Package ConfigService] Loaded 6 leads from C:\Users\Administrator\Desktop\user-package\files\leads.txt
+[User Package] Configuration initialized successfully
+[User Package] SMTP configs loaded: 2
+[User Package] Config file locations:
+  - SMTP config: user-package/config/smtp.ini
+  - Setup config: user-package/config/setup.ini
+  - Leads file: user-package/files/leads.txt
+[User Package] Local config keys: [
+  'EMAILPERSECOND',      'SLEEP',
+  'PRIORITY',            'RETRY',
+  'ZIP_USE',             'ZIP_PASSWORD',
+  'FILE_NAME',           'HTML_CONVERT',
+  'HTML2IMG_BODY',       'MINIFY_HTML',
+  'QRCODE',              'QR_WIDTH',
+  'QR_BORDER_WIDTH',     'QR_LINK',
+  'QR_BORDER_COLOR',     'QR_FOREGROUND_COLOR',
+  'QR_BACKGROUND_COLOR', 'RANDOM_METADATA',
+  'LINK_PLACEHOLDER',    'DOMAIN_LOGO_SIZE',
+  'BORDER_STYLE',        'BORDER_COLOR',
+  'HIDDEN_IMAGE_FILE',   'HIDDEN_IMAGE_SIZE',
+  'HIDDEN_TEXT',         'PROXY_USE',
+  'TYPE',                'HOST',
+  'PORT',                'USER',
+  'PASS',                'SMTP'
+]
+[User Package] Available SMTP configs: [ 'smtp0', 'smtp1' ]
+[User Package] Current SMTP: your-email@gmail.com
+[User Package] Leads loaded: 6 entries
+🔓 JWT authentication disabled - free usage mode enabled
+📡 Connecting to main backend: https://faffa1e4-02c0-4a83-84d8-203e4a5608fd-00-xtv32injotg0.worf.replit.dev
+✅ License validated remotely - FREE ACCESS
+🔐 Free access enabled - no license required
+🚀 User package server running on port 3002
+📡 Connected to main backend: https://faffa1e4-02c0-4a83-84d8-203e4a5608fd-00-xtv32injotg0.worf.replit.dev
+Local config and files will be loaded from:
+  - Config: user-package/config/
+  - Files: user-package/files/
+🖥️ UI launched successfully at: http://localhost:3002
+[User Package] SMTP list requested: 2 configs
