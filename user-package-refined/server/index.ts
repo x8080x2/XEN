@@ -9,8 +9,7 @@ import fs from 'fs';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-// License service removed - not needed for user-package
-// License routes removed - not needed for user-package
+// Clean user-package - no license service needed
 import configRoutes from './routes/configRoutes';
 import smtpRoutes from './routes/smtpRoutes';
 

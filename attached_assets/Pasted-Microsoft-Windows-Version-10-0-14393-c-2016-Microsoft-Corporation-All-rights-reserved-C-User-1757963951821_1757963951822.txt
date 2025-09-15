@@ -1,0 +1,94 @@
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Users\Administrator\Desktop\user-package-refined>npm run build
+
+> email-sender-user-package@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+✓ 1717 modules transformed.
+dist/index.html                   2.20 kB │ gzip:   0.86 kB
+dist/assets/index-Ca8bJ4Tc.css   41.40 kB │ gzip:   7.86 kB
+dist/assets/index-BKLR1N_0.js   356.72 kB │ gzip: 111.03 kB
+✓ built in 7.59s
+
+  dist\index.js  34.6kb
+
+Done in 9ms
+
+C:\Users\Administrator\Desktop\user-package-refined>npm install
+
+> email-sender-user-package@1.0.0 postinstall
+> npm run build
+
+
+> email-sender-user-package@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+✓ 1717 modules transformed.
+dist/index.html                   2.20 kB │ gzip:   0.86 kB
+dist/assets/index-Ca8bJ4Tc.css   41.40 kB │ gzip:   7.86 kB
+dist/assets/index-BKLR1N_0.js   356.72 kB │ gzip: 111.03 kB
+✓ built in 7.54s
+
+  dist\index.js  34.6kb
+
+Done in 10ms
+
+added 131 packages, and audited 555 packages in 12s
+
+76 packages are looking for funding
+  run `npm fund` for details
+
+5 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+C:\Users\Administrator\Desktop\user-package-refined>npm start
+
+> email-sender-user-package@1.0.0 start
+> cross-env NODE_ENV=production node dist/index.js
+
+[dotenv@17.2.2] injecting env (2) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+📡 Connecting to main backend: https://faffa1e4-02c0-4a83-84d8-203e4a5608fd-00-xtv32injotg0.worf.replit.dev
+✅ Distribution integrity verified - all required files found
+🔐 Remote license service initialized
+🔧 Local configuration routes registered
+   - /api/config/* - Local setup configuration
+   - /api/smtp/* - Local SMTP configuration
+
+C:\Users\Administrator\Desktop\user-package-refined>npm run build
+
+> email-sender-user-package@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+✓ 1717 modules transformed.
+dist/index.html                   2.20 kB │ gzip:   0.86 kB
+dist/assets/index-Ca8bJ4Tc.css   41.40 kB │ gzip:   7.86 kB
+dist/assets/index-BKLR1N_0.js   356.72 kB │ gzip: 111.03 kB
+✓ built in 7.07s
+
+  dist\index.js  34.6kb
+
+Done in 10ms
+
+C:\Users\Administrator\Desktop\user-package-refined>npm start
+
+> email-sender-user-package@1.0.0 start
+> cross-env NODE_ENV=production node dist/index.js
+
+[dotenv@17.2.2] injecting env (3) from .env -- tip: 📡 observe env with Radar: https://dotenvx.com/radar
+📡 Connecting to main backend: https://xen-cls.replit.app
+✅ Distribution integrity verified - all required files found
+🔐 Remote license service initialized
+🔧 Local configuration routes registered
+   - /api/config/* - Local setup configuration
+   - /api/smtp/* - Local SMTP configuration
+
+C:\Users\Administrator\Desktop\user-package-refined>
