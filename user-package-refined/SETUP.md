@@ -5,22 +5,17 @@ This lightweight client connects to your main email sender service remotely. You
 
 ## Quick Setup
 
-1. **Get Your Package Token**
-   - Contact your service administrator to get a `PACKAGE_TOKEN`
-   - This token authenticates your package with the main service
-
-2. **Configure Environment**
+1. **Configure Environment**
    - Copy `.env.example` to `.env`
    - Set your `MAIN_BACKEND_URL` (main service URL)
-   - Set your `PACKAGE_TOKEN`
 
-3. **Customize Settings**
+2. **Customize Settings**
    - Edit `config/setup.ini` for email preferences
    - Edit `config/smtp.ini` for your SMTP servers
    - Add your email templates to `files/`
    - Add recipient lists to `files/leads.txt`
 
-4. **Start the Package**
+3. **Start the Package**
    ```bash
    npm install
    npm run dev
@@ -32,7 +27,6 @@ This lightweight client connects to your main email sender service remotely. You
 ### `.env` (Environment Variables)
 ```
 MAIN_BACKEND_URL=https://your-main-service.replit.app
-PACKAGE_TOKEN=your-token-here
 PORT=3002
 ```
 
@@ -51,10 +45,10 @@ PORT=3002
 
 ✅ **All Advanced Features** - QR codes, HTML conversion, rate limiting  
 ✅ **Local Configuration** - Your settings, stored locally  
-✅ **Secure Connection** - Encrypted communication with main service  
+✅ **Direct Connection** - Simple connection to main service  
 ✅ **Real-time Progress** - Live updates during sending  
 ✅ **Multiple SMTP** - Use your own SMTP servers  
 
 ## Support
 
-If you need help or a package token, contact your service administrator.
+If you need help, contact your service administrator.

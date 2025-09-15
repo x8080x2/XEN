@@ -30,7 +30,6 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Environment variables validation
 const MAIN_BACKEND_URL = process.env.MAIN_BACKEND_URL;
-const PACKAGE_TOKEN = process.env.PACKAGE_TOKEN;
 
 if (!MAIN_BACKEND_URL) {
   console.error('❌ MAIN_BACKEND_URL environment variable is required');
@@ -38,10 +37,7 @@ if (!MAIN_BACKEND_URL) {
   process.exit(1);
 }
 
-if (!PACKAGE_TOKEN) {
-  console.warn('⚠️  PACKAGE_TOKEN not provided - some features may be limited');
-  console.warn('   Contact your service administrator to get a package token');
-}
+// No token required - direct connection to main service
 
 console.log(`📡 Connecting to main backend: ${MAIN_BACKEND_URL}`);
 
@@ -151,11 +147,6 @@ const streamingProxy = createProxyMiddleware({
     sensitiveHeaders.forEach(header => {
       proxyReq.removeHeader(header);
     });
-    
-    // Add package token authentication
-    if (PACKAGE_TOKEN) {
-      proxyReq.setHeader('x-package-token', PACKAGE_TOKEN);
-    }
     
     // Ensure proper host header
     proxyReq.setHeader('host', new URL(MAIN_BACKEND_URL).host);

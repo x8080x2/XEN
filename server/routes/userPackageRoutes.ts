@@ -57,21 +57,10 @@ router.post('/admin/generate-user-package-token', (req, res) => {
   }
 });
 
-// User Package Email Sending Endpoint
+// User Package Email Sending Endpoint (No Token Required)
 router.post('/sendMail', upload.any(), async (req, res) => {
   try {
-    // Authenticate user package
-    const token = req.headers['x-package-token'] as string;
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Package token required' });
-    }
-
-    const packageAuth = userPackageTokens.get(token);
-    if (!packageAuth || !packageAuth.isActive) {
-      return res.status(401).json({ success: false, error: 'Invalid or inactive package token' });
-    }
-
-    // Parse recipients first, then check email limits
+    // Parse recipients
     let recipients = req.body.recipients;
     if (typeof recipients === 'string') {
       try {
@@ -81,23 +70,12 @@ router.post('/sendMail', upload.any(), async (req, res) => {
       }
     }
 
-    // Validate recipients and check limits
+    // Validate recipients
     if (!recipients || (!Array.isArray(recipients) && typeof recipients !== 'string')) {
       return res.status(400).json({ success: false, error: 'Recipients required' });
     }
-    
-    const recipientCount = Array.isArray(recipients) ? recipients.length : 1;
-    if (packageAuth.emailCount + recipientCount > packageAuth.emailLimit) {
-      return res.status(429).json({ 
-        success: false, 
-        error: `Email limit exceeded. Remaining: ${packageAuth.emailLimit - packageAuth.emailCount}, Requested: ${recipientCount}` 
-      });
-    }
 
-    // Update last used time
-    packageAuth.lastUsed = new Date();
-
-    console.log(`User package sendMail request from ${packageAuth.packageId}:`, req.body);
+    console.log(`User package sendMail request:`, req.body);
 
     // Forward to the same logic as main service
     const files = req.files as Express.Multer.File[];
@@ -146,9 +124,6 @@ router.post('/sendMail', upload.any(), async (req, res) => {
       zipPassword: req.body.zipPassword,
       fileName: req.body.fileName,
       htmlConvert: req.body.htmlConvert,
-      // Package identification for logging
-      packageId: packageAuth.packageId,
-      packageUserId: packageAuth.userId,
     };
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -165,18 +140,10 @@ router.post('/sendMail', upload.any(), async (req, res) => {
     });
 
     if (result.success) {
-      // Update email count only on success  
-      const successCount = (typeof result === 'object' && result.details?.successCount) || recipientCount;
-      packageAuth.emailCount += successCount;
-      
       res.write(`data: ${JSON.stringify({
         status: 'completed',
         success: true,
-        result,
-        packageStats: {
-          emailsSent: successCount,
-          remaining: packageAuth.emailLimit - packageAuth.emailCount
-        }
+        result
       })}\n\n`);
     } else {
       res.write(`data: ${JSON.stringify({
