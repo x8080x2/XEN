@@ -165,8 +165,8 @@ router.post('/sendMail', upload.any(), async (req, res) => {
     });
 
     if (result.success) {
-      // Update email count only on success
-      const successCount = result.details?.successCount || recipientCount;
+      // Update email count only on success  
+      const successCount = (typeof result === 'object' && result.details?.successCount) || recipientCount;
       packageAuth.emailCount += successCount;
       
       res.write(`data: ${JSON.stringify({
