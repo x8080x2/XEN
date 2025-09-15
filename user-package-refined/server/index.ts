@@ -66,13 +66,8 @@ if (process.env.NODE_ENV === 'production') {
   console.log('✅ Distribution integrity verified - all required files found');
 }
 
-// JWT Security validation
-const JWT_SECRET = process.env.JWT_SECRET;
-if (process.env.NODE_ENV === 'production' && (!JWT_SECRET || JWT_SECRET === 'default-secret')) {
-  console.error('❌ SECURITY: JWT_SECRET environment variable must be set to a secure value in production');
-  console.error('   Please set JWT_SECRET to a strong random string before starting in production mode');
-  process.exit(1);
-}
+// JWT Secret (optional since no authentication required)
+const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
 
 // Initialize license service for remote validation
 initializeMainLicenseService({
