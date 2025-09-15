@@ -65,8 +65,7 @@ if (process.env.NODE_ENV === 'production') {
   console.log('✅ Distribution integrity verified - all required files found');
 }
 
-// JWT Secret (optional since no authentication required)
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
+// No authentication needed - direct connection
 
 // No license service needed - direct connection to main backend
 
