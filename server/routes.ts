@@ -5,16 +5,6 @@ import { emailSendRequestSchema } from "../shared/schema";
 import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
-import { 
-  requireValidLicense, 
-  requireFeature, 
-  validateEmailLimits, 
-  recordEmailUsage, 
-  attachLicenseInfo 
-} from "./middleware/licenseMiddleware";
-import licenseRoutes from "./routes/licenseRoutes";
-import userPackageRoutes from "./routes/userPackageRoutes";
-import capabilityRoutes from "./routes/capabilityRoutes";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -37,14 +27,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
 
-  // License management routes
-  app.use('/api/license', licenseRoutes);
-  
-  // User package routes (lightweight proxy system)
-  app.use('/api/user-package', userPackageRoutes);
-  
-  // Capability routes (direct email sending URLs)
-  app.use('/api', capabilityRoutes);
 
   // Config loading routes - exact clone from main.js
 

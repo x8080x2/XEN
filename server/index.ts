@@ -2,19 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
-import { ProcessManager } from "./services/processManager";
-import { initializeMainLicenseService } from "./services/mainLicenseService";
-
-// Start Telegram Bot
-async function startTelegramBot() {
-  try {
-    log("🤖 Starting Telegram License Bot...");
-    const { default: startBot } = await import("../telegram-bot.js");
-    log("✅ Telegram bot initialized");
-  } catch (error) {
-    log(`❌ Telegram bot failed to start: ${error}`);
-  }
-}
 
 // Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
@@ -66,13 +53,6 @@ function performStartupCleanup() {
 // Perform cleanup on startup (non-blocking)
 performStartupCleanup();
 
-// Initialize free license service
-initializeMainLicenseService();
-
-console.log('🔐 Free access enabled - no license required');
-
-// Start Telegram Bot alongside the server
-startTelegramBot();
 
 const app = express();
 app.use(express.json());
@@ -134,10 +114,6 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
 
-  // Initialize process manager for automatic cleanup
-  const processManager = ProcessManager.getInstance();
-  processManager.startPeriodicCleanup();
-  processManager.setupGracefulShutdown();
 
   server.listen({
     port,
@@ -145,6 +121,5 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
-    log(`🔧 Automatic process cleanup enabled`);
   });
 })();
