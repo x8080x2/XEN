@@ -1,5 +1,5 @@
 
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 export class ConfigService {
@@ -11,6 +11,7 @@ export class ConfigService {
   constructor() {
     // Auto-load config on initialization
     this.loadLocalConfig();
+    console.log('[User Package ConfigService] Constructor - Configuration auto-loaded');
   }
 
   loadLocalConfig(): any {
@@ -46,6 +47,10 @@ export class ConfigService {
         if (smtpConfig.smtp0) {
           this.configData.SMTP = smtpConfig.smtp0;
         }
+        
+        console.log(`[User Package ConfigService] Loaded ${this.smtpConfigs.length} SMTP configs from ${smtpPath}`);
+      } else {
+        console.warn(`[User Package ConfigService] SMTP config file not found: ${smtpPath}`);
       }
 
       console.log('[User Package ConfigService] Local configuration loaded');
@@ -61,8 +66,11 @@ export class ConfigService {
     try {
       if (existsSync(leadsPath)) {
         const leads = readFileSync(leadsPath, 'utf8').trim();
-        console.log('[User Package ConfigService] Local leads loaded');
+        const leadCount = leads.split('\n').filter(line => line.trim()).length;
+        console.log(`[User Package ConfigService] Loaded ${leadCount} leads from ${leadsPath}`);
         return leads;
+      } else {
+        console.warn(`[User Package ConfigService] Leads file not found: ${leadsPath}`);
       }
     } catch (error) {
       console.error('[User Package ConfigService] Failed to load local leads:', error);
@@ -289,25 +297,68 @@ export class ConfigService {
   }
 
   addSmtpConfig(config: any): string {
-    const newId = `smtp${this.smtpConfigs.length}`;
-    const newConfig = { id: newId, ...config };
-    this.smtpConfigs.push(newConfig);
-    return newId;
+    const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
+    let content = '';
+    
+    if (existsSync(smtpPath)) {
+      content = readFileSync(smtpPath, 'utf8');
+    }
+    
+    // Find next available smtp index
+    const existingIds = this.smtpConfigs.map(s => s.id);
+    let nextIndex = 0;
+    while (existingIds.includes(`smtp${nextIndex}`)) {
+      nextIndex++;
+    }
+    
+    const smtpId = `smtp${nextIndex}`;
+    const newSection = `\n[${smtpId}]\nhost=${config.host}\nport=${config.port}\nuser=${config.user}\npass=${config.pass}\nfromEmail=${config.fromEmail}\nfromName=${config.fromName || ''}\n`;
+    
+    writeFileSync(smtpPath, content + newSection, 'utf8');
+    this.loadLocalConfig(); // Reload to include new SMTP
+    console.log(`[User Package ConfigService] Added SMTP config: ${smtpId}`);
+    return smtpId;
   }
 
   deleteSmtpConfig(smtpId: string): boolean {
     if (this.smtpConfigs.length <= 1) return false;
     
-    const index = this.smtpConfigs.findIndex(config => config.id === smtpId);
-    if (index === -1) return false;
+    const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
     
-    this.smtpConfigs.splice(index, 1);
+    if (!existsSync(smtpPath)) return false;
+    
+    const content = readFileSync(smtpPath, 'utf8');
+    const lines = content.split('\n');
+    
+    let inTargetSection = false;
+    const filteredLines = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      if (trimmed === `[${smtpId}]`) {
+        inTargetSection = true;
+        continue;
+      }
+      
+      if (trimmed.startsWith('[') && trimmed.endsWith(']') && inTargetSection) {
+        inTargetSection = false;
+      }
+      
+      if (!inTargetSection) {
+        filteredLines.push(line);
+      }
+    }
+    
+    writeFileSync(smtpPath, filteredLines.join('\n'), 'utf8');
+    this.loadLocalConfig(); // Reload after deletion
     
     // Adjust current index if needed
     if (this.currentSmtpIndex >= this.smtpConfigs.length) {
       this.currentSmtpIndex = 0;
     }
     
+    console.log(`[User Package ConfigService] Deleted SMTP config: ${smtpId}`);
     return true;
   }
 }
