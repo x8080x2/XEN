@@ -9,8 +9,8 @@ import fs from 'fs';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import { initializeMainLicenseService } from './services/mainLicenseService';
-import licenseRoutes from './routes/licenseRoutes';
+// License service removed - not needed for user-package
+// License routes removed - not needed for user-package
 import configRoutes from './routes/configRoutes';
 import smtpRoutes from './routes/smtpRoutes';
 
@@ -69,15 +69,7 @@ if (process.env.NODE_ENV === 'production') {
 // JWT Secret (optional since no authentication required)
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret';
 
-// Initialize license service for remote validation
-initializeMainLicenseService({
-  jwtSecret: JWT_SECRET || 'default-secret',
-  mainBackendUrl: MAIN_BACKEND_URL,
-  apiKey: 'default-api-key',
-  clientVersion: '1.0.0',
-});
-
-console.log('🔐 Remote license service initialized');
+// No license service needed - direct connection to main backend
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -106,9 +98,6 @@ app.get('/api/health', async (req, res) => {
     });
   }
 });
-
-// License management routes only
-app.use('/api/license', licenseRoutes);
 
 // Local configuration management routes (handled locally, not proxied)
 app.use('/api/config', configRoutes);
@@ -195,20 +184,9 @@ const streamingProxy = createProxyMiddleware({
   logLevel: process.env.NODE_ENV === 'development' ? 'debug' : 'warn',
 });
 
-// Apply streaming proxy with exclusions for specific endpoints
-app.use((req, res, next) => {
-  // Skip proxy for health, license, config, smtp, and static assets
-  if (req.path === '/api/health' || 
-      req.path.startsWith('/api/license') ||
-      req.path.startsWith('/api/config') ||
-      req.path.startsWith('/api/smtp') ||
-      !req.path.startsWith('/api/')) {
-    return next();
-  }
-  
-  // Use streaming proxy for all other API routes
-  streamingProxy(req, res, next);
-});
+// Apply streaming proxy ONLY for API requests to remote backend
+app.use('/api/original', streamingProxy);
+app.use('/api/user-package', streamingProxy);
 
 // Setup development server with Vite or serve static files in production
 if (process.env.NODE_ENV === 'production') {
