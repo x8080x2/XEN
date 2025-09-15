@@ -15,10 +15,9 @@ Complete email sending application that connects to a remote licensing backend.
    cp .env.example .env
    ```
 
-   Edit `.env` and set these required variables:
+   Edit `.env` and set this optional variable:
    ```bash
    MAIN_BACKEND_URL=https://your-app-name.replit.app
-   MAIN_BACKEND_API_KEY=your-secure-api-key-here
    ```
 
 3. **Start Application**
@@ -41,8 +40,7 @@ This user package contains:
 ## Configuration
 
 ### Environment Variables
-- `MAIN_BACKEND_URL`: URL of your main backend server (e.g., https://your-app.replit.app)
-- `MAIN_BACKEND_API_KEY`: API key for authentication with main backend (required)
+- `MAIN_BACKEND_URL`: URL of your main backend server (e.g., https://your-app.replit.app) - Optional
 - `PORT`: Application port (default: 3002)
 - `NODE_ENV`: Environment mode (production recommended for customer deployments)
 
