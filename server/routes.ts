@@ -130,11 +130,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Validate recipients array
       if (!Array.isArray(recipients) || recipients.length === 0) {
-        res.write(`data: ${JSON.stringify({ 
-          status: 'error', 
+        return res.status(400).json({ 
+          success: false, 
           error: 'Recipients must be a non-empty array' 
-        })}\n\n`);
-        return res.end();
+        });
       }
 
       // Update email count BEFORE sending (prevent race conditions)
@@ -209,7 +208,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Email count was already updated before sending to prevent race conditions
       
       sendProgress({ 
+        type: 'complete',
         status: 'completed', 
+        success: true,
         emailCount: capability.emailCount,
         emailLimit: capability.emailLimit,
         remaining: capability.emailLimit - capability.emailCount

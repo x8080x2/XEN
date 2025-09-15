@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { SMTPManager } from "@/components/SMTPManager";
+import { CapabilityConfig } from "@/components/CapabilityConfig";
 
 interface EmailProgress {
   recipient: string;
@@ -39,38 +39,9 @@ export default function OriginalEmailSender() {
   const [recipients, setRecipients] = useState("");
   const [recipientCount, setRecipientCount] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [templateFiles, setTemplateFiles] = useState<string[]>([]);
-  const [selectedTemplate, setSelectedTemplate] = useState("");
-  const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
-  const [attachmentHtml, setAttachmentHtml] = useState("");
+  // Template functionality removed - frontend-only version
 
-  // Attachment template change handler
-  const handleAttachmentTemplateChange = async (template: string) => {
-    setSelectedAttachmentTemplate(template);
-
-    if (template && template !== 'off') {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${template}` })
-        });
-        const data = await response.json();
-        if (data.success && data.content) {
-          setAttachmentHtml(data.content);
-        } else {
-          setAttachmentHtml('');
-        }
-      } catch (error) {
-        console.error('Error loading attachment template:', error);
-        setAttachmentHtml('');
-      }
-    } else {
-      setAttachmentHtml('');
-    }
-  };
+  // Template functionality removed - frontend-only version
 
   // SMTP Settings
   const [smtpSettings, setSMTPSettings] = useState<SMTPSettings>({
@@ -147,26 +118,13 @@ export default function OriginalEmailSender() {
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
-  const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
   const currentStatusRef = useRef<HTMLDivElement>(null);
-  const [smtpData, setSmtpData] = useState({
-    smtpConfigs: [] as any[],
-    currentSmtp: null as any,
-    rotationEnabled: false
-  });
-  const [newSmtp, setNewSmtp] = useState({
-    host: "",
-    port: "587", 
-    user: "",
-    pass: "",
-    fromEmail: "",
-    fromName: ""
-  });
+  // SMTP data management removed - users provide SMTP settings directly
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -177,13 +135,25 @@ export default function OriginalEmailSender() {
     setRecipientCount(lines.length);
   }, [recipients]);
 
-  // Load templates and logo files on component mount
-  const [logoFiles, setLogoFiles] = useState<string[]>([]);
+  // Capability URL configuration
+  const [capabilityUrl, setCapabilityUrl] = useState("");
 
+  // Load capability URL from localStorage on mount
   useEffect(() => {
-    loadTemplates();
-    loadLogoFiles();
+    const saved = localStorage.getItem('CAPABILITY_URL');
+    if (saved) {
+      setCapabilityUrl(saved);
+    }
   }, []);
+
+  // Update capability URL when CapabilityConfig changes it
+  const handleCapabilityConfigured = (url: string) => {
+    setCapabilityUrl(url);
+  };
+
+  // Check if capability URL is configured
+  const isCapabilityConfigured = Boolean(capabilityUrl && capabilityUrl.trim());
+  const canSendEmails = !isLoading && isCapabilityConfigured && recipientCount > 0 && emailContent.trim();
 
   // Auto-scroll to bottom when new logs are added
   useEffect(() => {
@@ -209,29 +179,7 @@ export default function OriginalEmailSender() {
     }
   }, [currentEmailStatus]);
 
-  const loadTemplates = async () => {
-    try {
-      const response = await fetch('/api/original/listFiles');
-      const data = await response.json();
-      if (data.files) {
-        setTemplateFiles(data.files);
-      }
-    } catch (error) {
-      console.error('Failed to load templates:', error);
-    }
-  };
-
-  const loadLogoFiles = async () => {
-    try {
-      const response = await fetch('/api/original/listLogoFiles');
-      const data = await response.json();
-      if (data.files) {
-        setLogoFiles(data.files);
-      }
-    } catch (error) {
-      console.error('Error loading logo files:', error);
-    }
-  };
+  // Backend loading functions removed - frontend-only version
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -248,259 +196,20 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Template change handler - exact clone from sender.html lines 992-1006
-  const handleTemplateChange = async (template: string) => {
-    setSelectedTemplate(template);
+  // Template functionality removed - users can paste content directly
 
-    // Load template content into textarea when selected - exact clone from sender.html lines 992-1006
-    if (template && template !== 'off') {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${template}` })
-        });
-        const data = await response.json();
-        if (data.success && data.content) {
-          setEmailContent(data.content);
-          setStatusText('');
-        } else {
-          setEmailContent('');
-          setStatusText('Error loading template content.');
-        }
-      } catch (error) {
-        setStatusText(`Error loading template: ${error}`);
-      }
-    }
-  };
+  // Auto-load configuration removed - frontend-only version
 
-  // Auto-load configuration on startup - exact clone from main.js line 308
-  useEffect(() => {
-    loadConfigFromFiles();
-    fetchSmtpData();
-  }, []); // Run once on component mount
+  // SMTP Management Functions removed - frontend-only version
+  // Users will provide SMTP settings directly in the form
 
-  // Prevent multiple config loads during development hot reloads
-  const [configLoaded, setConfigLoaded] = useState(false);
+  // Load configuration removed - frontend-only version
 
-  // SMTP Management Functions
-  const fetchSmtpData = async () => {
-    try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch SMTP data:', error);
-    }
-  };
-
-  const toggleSmtpRotation = async () => {
-    try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: data.rotationEnabled,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to toggle SMTP rotation');
-    }
-  };
-
-  const addNewSmtp = async () => {
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
-      setStatusText('All SMTP fields are required');
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs
-        }));
-        setNewSmtp({
-          host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
-        });
-        setStatusText(`SMTP ${data.smtpId} added successfully`);
-        fetchSmtpData();
-      }
-    } catch (error) {
-      setStatusText('Failed to add SMTP configuration');
-    }
-  };
-
-  const deleteSmtp = async (smtpId: string) => {
-    if (smtpData.smtpConfigs.length <= 1) {
-      setStatusText('Cannot delete the last SMTP configuration');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP ${smtpId} deleted successfully`);
-      }
-    } catch (error) {
-      setStatusText('Failed to delete SMTP configuration');
-    }
-  };
-
-  const rotateSmtp = async () => {
-    try {
-      const response = await fetch("/api/smtp/rotate", { method: "POST" });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`Rotated to: ${data.currentSmtp?.fromEmail}`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to rotate SMTP');
-    }
-  };
-
-  // Load configuration from files - exact clone from main.js
-  const loadConfigFromFiles = async () => {
-    if (configLoaded) return; // Prevent multiple loads
-    try {
-      const response = await fetch('/api/config/load');
-      const data = await response.json();
-
-      if (data.success && data.config) {
-        const config = data.config;
-
-        // Load SMTP settings
-        if (config.SMTP) {
-          const smtpConfig = {
-            host: config.SMTP.host || '',
-            port: config.SMTP.port || '587',
-            user: config.SMTP.user || '',
-            pass: config.SMTP.pass || '',
-            fromEmail: config.SMTP.fromEmail || '',
-            fromName: config.SMTP.fromName || ''
-          };
-          setSMTPSettings(smtpConfig);
-
-          // Auto-set sender email from SMTP config - exact clone from main.js behavior
-          if (smtpConfig.fromEmail) {
-            setSenderEmail(smtpConfig.fromEmail);
-            console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
-          }
-          if (smtpConfig.fromName) {
-            setSenderName(smtpConfig.fromName);
-            console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
-          }
-        }
-
-        // Load advanced settings with delivery protection
-        setAdvancedSettings({
-          qrcode: !!config.QRCODE,
-          randomMetadata: !!config.RANDOM_METADATA,
-          minifyHtml: !!config.MINIFY_HTML,
-
-          htmlImgBody: !!config.HTML2IMG_BODY,
-          zipUse: !!config.ZIP_USE,
-          zipPassword: config.ZIP_PASSWORD || '',
-          emailPerSecond: config.EMAILPERSECOND?.toString() || '5',
-          sleep: config.SLEEP?.toString() || '3',
-          fileName: config.FILE_NAME || 'attachment',
-          htmlConvert: config.HTML_CONVERT || '',
-          qrSize: config.QR_WIDTH?.toString() || '200',
-          qrBorder: config.QR_BORDER_WIDTH?.toString() || '2',
-          qrBorderColor: config.QR_BORDER_COLOR || '#000000',
-          qrLink: config.QR_LINK || 'https://example.com',
-          linkPlaceholder: config.LINK_PLACEHOLDER || '{email}',
-
-          domainLogoSize: config.DOMAIN_LOGO_SIZE || '50%',
-          borderStyle: config.BORDER_STYLE || 'solid',
-          borderColor: config.BORDER_COLOR || '#000000',
-          retry: config.RETRY?.toString() || '0',
-          priority: config.PRIORITY?.toString() || '2',
-
-          proxyUse: !!config.PROXY_USE,
-          proxyType: config.PROXY_TYPE || 'socks5',
-          proxyHost: config.PROXY_HOST || '',
-          proxyPort: config.PROXY_PORT?.toString() || '',
-          proxyUser: config.PROXY_USER || '',
-          proxyPass: config.PROXY_PASS || '',
-          qrForegroundColor: config.QR_FOREGROUND_COLOR || '#000000',
-          qrBackgroundColor: config.QR_BACKGROUND_COLOR || '#FFFFFF',
-          calendarMode: !!config.CALENDAR_MODE, // Load calendar mode
-          hiddenImageFile: config.HIDDEN_IMAGE_FILE || '',
-          hiddenImageSize: config.HIDDEN_IMAGE_SIZE?.toString() || '50',
-          hiddenText: config.HIDDEN_TEXT || ''
-        });
-
-        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
-        try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
-          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-            setRecipients(leadsData.leads);
-            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-            console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt`);
-          } else {
-            console.log('[Config Load] No leads.txt found, starting with empty recipients');
-          }
-        } catch (leadsError) {
-          console.log('[Config Load] Failed to load leads:', leadsError);
-        }
-
-        // Auto-load letter content if available
-        if (config.LETTER_CONTENT) {
-          setEmailContent(config.LETTER_CONTENT);
-          console.log('[Config Load] Auto-loaded letter content from config');
-        }
-
-        // Auto-load subject if available
-        if (config.SUBJECT) {
-          setSubject(config.SUBJECT);
-          console.log('[Config Load] Auto-loaded subject from config');
-        }
-
-        setStatusText('Configuration and maillist loaded automatically');
-        setTimeout(() => setStatusText("Ready to send emails"), 2000);
-        setConfigLoaded(true);
-      } else {
-        setStatusText('Failed to load configuration');
-      }
-    } catch (error) {
-      console.error('Config load error:', error);
-      setStatusText('Failed to load configuration');
-    }
-  };
-
-  const saveSMTPSettings = async () => {
-    // In the original, this saves to config file
+        // Advanced settings loading removed - frontend-only version
+  // Configuration loading code removed - frontend-only version
+  
+  const saveSMTPSettings = () => {
+    // Simplified for frontend-only version - just update local state
     console.log('Saving SMTP settings:', smtpSettings);
     setSenderEmail(smtpSettings.fromEmail);
     setStatusText("✓ SMTP settings saved");
@@ -521,65 +230,19 @@ export default function OriginalEmailSender() {
       return;
     }
 
-    // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
+    // HTML content validation - simplified for frontend-only version
     let bodyHtml = '';
 
-    // Priority 1: Selected template file (bodyHtmlFile equivalent)
-    if (selectedTemplate && selectedTemplate !== 'off') {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
-      } catch (error) {
-        console.error('Failed to load template:', error);
-        bodyHtml = '';
-      }
-    }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)  
-    else if (emailContent.trim()) {
+    // Use HTML from textarea
+    if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
-    }
-    // Priority 3: Default letter fallback (C.LETTER equivalent)
-    else {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: 'files/letter.html' })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
-      } catch (error) {
-        console.log('No default letter.html found');
-        bodyHtml = '';
-      }
-    }
-
-    if (!bodyHtml) {
-      setStatusText('Email content cannot be empty.');
+    } else {
+      setStatusText('Email content cannot be empty. Please enter your email content in the text area.');
       return;
     }
 
-    // Set mainHtml for FormData - this was missing
+    // Set mainHtml for FormData
     const mainHtml = bodyHtml;
-
-    // Attachment HTML handling - exact clone from main.js lines 583-605
-    let attachmentHtmlContent = '';
-    if (attachmentHtml && attachmentHtml.trim()) {
-      // Use direct attachment HTML (args.attachmentHtml equivalent)
-      attachmentHtmlContent = attachmentHtml.trim();
-    } else {
-      // Fallback to bodyHtml (main.js line 586)
-      attachmentHtmlContent = bodyHtml;
-    }
 
     setIsLoading(true);
     setProgress(0);
@@ -596,7 +259,7 @@ export default function OriginalEmailSender() {
       formData.append('senderName', senderName);
       formData.append('subject', subject);
       formData.append('html', mainHtml);
-      formData.append('attachmentHtml', attachmentHtml || '');
+      formData.append('emailContent', mainHtml);
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
       // SMTP settings
@@ -617,8 +280,15 @@ export default function OriginalEmailSender() {
         }
       }
 
+      // Direct connection to main backend capability URL
+      const capabilityUrl = localStorage.getItem('CAPABILITY_URL');
+      
+      if (!capabilityUrl) {
+        throw new Error('Connection not configured. Please configure your capability URL first.');
+      }
+
       // Use Server-Sent Events for real-time progress
-      const response = await fetch('/api/original/sendMail', {
+      const response = await fetch(capabilityUrl, {
         method: 'POST',
         body: formData,
       });
@@ -711,27 +381,20 @@ export default function OriginalEmailSender() {
     }
   };
 
-  const cancelSending = async () => {
-    try {
-      await fetch('/api/original/pause', { method: 'POST' });
-      setIsLoading(false);
-      setStatusText("Email sending cancelled");
-      setCurrentEmailStatus("");
-      
-      // Close any active event source
-      if ((window as any).currentEventSource) {
-        (window as any).currentEventSource.close();
-        (window as any).currentEventSource = null;
-      }
-    } catch (error) {
-      console.error('Failed to cancel sending:', error);
-    }
+  const cancelSending = () => {
+    // Frontend-only version - just reset UI state
+    setIsLoading(false);
+    setStatusText("Email sending cancelled");
+    setCurrentEmailStatus("");
   };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
       {/* Window Controls */}
-      <div className="flex justify-end items-center h-8 bg-[#131316] border-b border-[#26262b] px-4">
+      <div className="flex justify-between items-center h-8 bg-[#131316] border-b border-[#26262b] px-4">
+        <div className="flex items-center gap-2">
+          <CapabilityConfig onConfigured={handleCapabilityConfigured} />
+        </div>
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-[#3f3f46] hover:bg-[#52525b] cursor-pointer"></div>
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
@@ -862,25 +525,8 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white min-h-[200px]"
                   />
                   <div className="mt-2">
-                    <Label className="text-xs text-[red]">MAIN LETTER</Label>
-                    <Select value={selectedTemplate || "off"} onValueChange={handleTemplateChange}>
-                      <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
-                        <SelectValue placeholder="-- Off --" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#131316] border-[#26262b]">
-                        <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
-                        {templateFiles.map(file => (
-                          <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {/* Display which template is currently active - exact clone from sender.html */}
                     <div className="text-xs text-[#a1a1aa] mt-1">
-                      {selectedTemplate && selectedTemplate !== 'off' ? (
-                        <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
-                      ) : (
-                        <span>✏️ Put Off To Use TxT</span>
-                      )}
+                      <span>✏️ Type your email content directly in the text area above</span>
                     </div>
                   </div>
                 </div>
@@ -1015,24 +661,9 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML Template */}
                 <div>
-                  <Label className="text-xs text-[red]"> HTML CONVERT LETTER</Label>
-                  <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
-                    <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
-                      <SelectValue placeholder="-- Off --" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#131316] border-[#26262b]">
-                      <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
-                      {templateFiles.map(file => (
-                        <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs text-[red]">HTML CONTENT</Label>
                   <div className="text-xs text-[#a1a1aa] mt-1">
-                    {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
-                      <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
-                    ) : (
-                      <span>Select One</span>
-                    )}
+                    <span>HTML content will be generated from your email text above</span>
                   </div>
                 </div>
               </div>
@@ -1146,13 +777,30 @@ export default function OriginalEmailSender() {
                 <div className="flex justify-center gap-4">
                   <Button
                     onClick={handleSendEmails}
-                    disabled={isLoading}
-                    className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative"
+                    disabled={!canSendEmails}
+                    className={`min-w-[110px] text-white relative ${
+                      canSendEmails 
+                        ? 'bg-[#ef4444] hover:bg-[#dc2626]' 
+                        : 'bg-gray-600 cursor-not-allowed'
+                    }`}
+                    data-testid="button-send-emails"
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
                         <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
                         SENDING...
+                      </span>
+                    ) : !isCapabilityConfigured ? (
+                      <span className="flex items-center gap-2">
+                        ⚠️ NO CONNECTION
+                      </span>
+                    ) : recipientCount === 0 ? (
+                      <span className="flex items-center gap-2">
+                        👥 NO RECIPIENTS
+                      </span>
+                    ) : !emailContent.trim() ? (
+                      <span className="flex items-center gap-2">
+                        📝 NO CONTENT
                       </span>
                     ) : (
                       <span className="flex items-center gap-2">
@@ -1230,158 +878,13 @@ export default function OriginalEmailSender() {
                   Save
                 </Button>
               </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#26262b]">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={smtpData.rotationEnabled}
-                    onChange={toggleSmtpRotation}
-                    disabled={smtpData.smtpConfigs?.length <= 1}
-                    className="w-4 h-4"
-                  />
-                  <span className="text-[#a1a1aa] text-sm">ENABLE SMTP ROTATION</span>
-                </label>
-                {smtpData.rotationEnabled && smtpData.smtpConfigs?.length > 1 && (
-                  <Button
-                    onClick={rotateSmtp}
-                    variant="outline"
-                    size="sm"
-                    className="border-[#26262b] text-white hover:bg-[#26262b] h-8 text-xs"
-                  >
-                    🔄 ROTATE
-                  </Button>
-                )}
-              </div>
+              {/* SMTP rotation controls removed - frontend-only version */}
               
-              {/* SMTP Management - Moved to SMTP Settings Area */}
-              <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    ⚙️ SMTP MANAGMENT
-                  </h3>
-                  <div className="flex items-center gap-4">
-                    <Button
-                      onClick={() => setShowSmtpManager(!showSmtpManager)}
-                      variant="outline"
-                      size="sm"
-                      className="border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
-                    >
-                      {showSmtpManager ? "Hide" : "Manage"}
-                    </Button>
-                  </div>
-                </div>
+              {/* SMTP Management removed - frontend-only version */}
 
-                {/* Current SMTP Display */}
-                {smtpData.currentSmtp && (
-                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">Current:</span>
-                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
-                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
-                        </div>
-                        <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Current SMTP Display removed - frontend-only version */
 
-                {/* SMTP Management Panel */}
-                {showSmtpManager && (
-                  <div className="border-t border-[#26262b] pt-4">
-                    {/* Add New SMTP Form */}
-                    <div className="mb-4 p-3 bg-[#0f0f12] rounded border border-[#26262b]">
-                      <h4 className="text-white font-medium mb-3">Add New SMTP Server</h4>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <Input
-                          placeholder="SMTP Host"
-                          value={newSmtp.host}
-                          onChange={(e) => setNewSmtp({...newSmtp, host: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="Port (587)"
-                          value={newSmtp.port}
-                          onChange={(e) => setNewSmtp({...newSmtp, port: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="Username"
-                          value={newSmtp.user}
-                          onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          type="password"
-                          placeholder="Password"
-                          value={newSmtp.pass}
-                          onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="From Email"
-                          value={newSmtp.fromEmail}
-                          onChange={(e) => setNewSmtp({...newSmtp, fromEmail: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="From Name (optional)"
-                          value={newSmtp.fromName}
-                          onChange={(e) => setNewSmtp({...newSmtp, fromName: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                      </div>
-                      <Button
-                        onClick={addNewSmtp}
-                        className="bg-[#ef4444] text-white hover:bg-[#dc3636]"
-                        size="sm"
-                      >
-                        Add SMTP Server
-                      </Button>
-                    </div>
-
-                    {/* SMTP List */}
-                    <div>
-                      <h4 className="text-white font-medium mb-3">Available SMTP Servers ({smtpData.smtpConfigs?.length || 0})</h4>
-                      {smtpData.smtpConfigs?.map((smtp) => (
-                        <div
-                          key={smtp.id}
-                          className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id 
-                              ? 'border-blue-500 bg-blue-900/20' 
-                              : 'border-[#26262b] bg-[#0f0f12]'
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-gray-600 text-white rounded text-xs">{smtp.id}</span>
-                              <span className="text-white font-medium">{smtp.fromEmail}</span>
-                              {smtpData.currentSmtp?.id === smtp.id && (
-                                <span className="px-2 py-1 bg-green-500 text-white rounded text-xs">Active</span>
-                              )}
-                            </div>
-                            <p className="text-[#a1a1aa] text-sm mt-1">
-                              {smtp.host}:{smtp.port} ({smtp.user})
-                            </p>
-                          </div>
-                          <Button
-                            onClick={() => deleteSmtp(smtp.id)}
-                            disabled={smtpData.smtpConfigs?.length <= 1}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            🗑️
-                          </Button>
-                        </div>
-                      )) || <p className="text-[#a1a1aa] text-center py-4">No SMTP servers configured</p>}
-                    </div>
-                  </div>
-                )}
-              </div>
+                {/* SMTP Management Panel removed - frontend-only version */
             </div>
 
             {/* HTML Convert Settings - Moved to Front */}
@@ -1608,9 +1111,7 @@ export default function OriginalEmailSender() {
                         </SelectTrigger>
                         <SelectContent className="bg-[#131316] border-[#26262b]">
                           <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
-                          {logoFiles.map(file => (
-                            <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
-                          ))}
+                          {/* Logo files removed in frontend-only version */}
                         </SelectContent>
                       </Select>
                       <div className="text-xs text-[#a1a1aa] mt-1">
