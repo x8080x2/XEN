@@ -315,6 +315,213 @@ app.get('/api/original/listFiles', async (req, res) => {
   }
 });
 
+// Enhanced local file system access
+app.get('/api/local/browse', async (req, res) => {
+  try {
+    const { dir = '' } = req.query;
+    const targetDir = dir ? path.join(process.cwd(), dir as string) : process.cwd();
+    
+    // Security check: ensure we stay within project directory
+    const resolvedTarget = path.resolve(targetDir);
+    const projectRoot = path.resolve(process.cwd());
+    if (!resolvedTarget.startsWith(projectRoot)) {
+      return res.status(403).json({ success: false, error: 'Access denied: Outside project directory' });
+    }
+
+    if (!fs.existsSync(resolvedTarget)) {
+      return res.json({ success: false, error: 'Directory does not exist' });
+    }
+
+    const items = fs.readdirSync(resolvedTarget, { withFileTypes: true });
+    const result = {
+      currentDir: path.relative(process.cwd(), resolvedTarget) || '.',
+      items: items.map(item => ({
+        name: item.name,
+        type: item.isDirectory() ? 'directory' : 'file',
+        path: path.join(dir as string || '', item.name)
+      }))
+    };
+
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to browse directory: ${error.message}` });
+  }
+});
+
+app.get('/api/local/readFile', async (req, res) => {
+  try {
+    const { filepath } = req.query;
+    if (!filepath) {
+      return res.json({ success: false, error: 'Filepath is required' });
+    }
+
+    const fullPath = path.join(process.cwd(), filepath as string);
+    
+    // Security check: ensure we stay within project directory
+    const resolvedPath = path.resolve(fullPath);
+    const projectRoot = path.resolve(process.cwd());
+    if (!resolvedPath.startsWith(projectRoot)) {
+      return res.status(403).json({ success: false, error: 'Access denied: Outside project directory' });
+    }
+
+    if (!fs.existsSync(resolvedPath)) {
+      return res.json({ success: false, error: 'File does not exist' });
+    }
+
+    const stats = fs.statSync(resolvedPath);
+    if (!stats.isFile()) {
+      return res.json({ success: false, error: 'Path is not a file' });
+    }
+
+    // Check file size limit (10MB)
+    if (stats.size > 10 * 1024 * 1024) {
+      return res.json({ success: false, error: 'File too large (max 10MB)' });
+    }
+
+    const content = fs.readFileSync(resolvedPath, 'utf8');
+    res.json({ 
+      success: true, 
+      content,
+      filepath: filepath as string,
+      size: stats.size,
+      modified: stats.mtime
+    });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to read file: ${error.message}` });
+  }
+});
+
+app.get('/api/local/config', async (req, res) => {
+  try {
+    // Always use local config for user package
+    const { configService } = await import('./services/configService');
+    const localConfig = configService.loadLocalConfig();
+    
+    // Also read raw config files
+    const configFiles = {};
+    const configDir = path.join(process.cwd(), 'config');
+    
+    if (fs.existsSync(configDir)) {
+      const files = fs.readdirSync(configDir);
+      for (const file of files) {
+        if (file.endsWith('.ini')) {
+          const filePath = path.join(configDir, file);
+          const content = fs.readFileSync(filePath, 'utf8');
+          configFiles[file] = content;
+        }
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      config: localConfig,
+      configFiles,
+      configDir: path.relative(process.cwd(), configDir)
+    });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to load config: ${error.message}` });
+  }
+});
+
+app.get('/api/local/leads', async (req, res) => {
+  try {
+    // Always use local leads for user package
+    const { configService } = await import('./services/configService');
+    const localLeads = configService.loadLocalLeads();
+    
+    const leadsPath = path.join(process.cwd(), 'files', 'leads.txt');
+    const exists = fs.existsSync(leadsPath);
+    const stats = exists ? fs.statSync(leadsPath) : null;
+    
+    res.json({ 
+      success: true, 
+      leads: localLeads,
+      filepath: 'files/leads.txt',
+      exists,
+      modified: stats?.mtime || null
+    });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to load leads: ${error.message}` });
+  }
+});
+
+// Enhanced project structure browsing
+app.get('/api/local/structure', async (req, res) => {
+  try {
+    const { configService } = await import('./services/configService');
+    const structure = configService.getProjectStructure();
+    res.json({ success: true, structure });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to get project structure: ${error.message}` });
+  }
+});
+
+app.get('/api/local/findConfigs', async (req, res) => {
+  try {
+    const { configService } = await import('./services/configService');
+    const configFiles = configService.findConfigFiles();
+    res.json({ success: true, configFiles });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to find config files: ${error.message}` });
+  }
+});
+
+// Enhanced file operations with Windows support
+app.post('/api/local/readMultiple', async (req, res) => {
+  try {
+    const { filepaths } = req.body;
+    if (!Array.isArray(filepaths)) {
+      return res.json({ success: false, error: 'filepaths must be an array' });
+    }
+
+    const results = {};
+    const projectRoot = path.resolve(process.cwd());
+
+    for (const filepath of filepaths) {
+      try {
+        const fullPath = path.join(process.cwd(), filepath);
+        const resolvedPath = path.resolve(fullPath);
+        
+        // Security check
+        if (!resolvedPath.startsWith(projectRoot)) {
+          results[filepath] = { success: false, error: 'Access denied: Outside project directory' };
+          continue;
+        }
+
+        if (!fs.existsSync(resolvedPath)) {
+          results[filepath] = { success: false, error: 'File does not exist' };
+          continue;
+        }
+
+        const stats = fs.statSync(resolvedPath);
+        if (!stats.isFile()) {
+          results[filepath] = { success: false, error: 'Path is not a file' };
+          continue;
+        }
+
+        if (stats.size > 5 * 1024 * 1024) { // 5MB limit for batch reads
+          results[filepath] = { success: false, error: 'File too large for batch read' };
+          continue;
+        }
+
+        const content = fs.readFileSync(resolvedPath, 'utf8');
+        results[filepath] = { 
+          success: true, 
+          content, 
+          size: stats.size, 
+          modified: stats.mtime 
+        };
+      } catch (error: any) {
+        results[filepath] = { success: false, error: error.message };
+      }
+    }
+
+    res.json({ success: true, results });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to read multiple files: ${error.message}` });
+  }
+});
+
 app.get('/api/original/listLogoFiles', async (req, res) => {
   try {
     const response = await axios.get(`${MAIN_BACKEND_URL}/api/original/listLogoFiles`, {

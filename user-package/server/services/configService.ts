@@ -70,6 +70,157 @@ export class ConfigService {
     return '';
   }
 
+  // Enhanced file system access methods
+  readAnyFile(relativePath: string): string | null {
+    try {
+      const fullPath = join(process.cwd(), relativePath);
+      
+      // Security check: ensure we stay within project directory
+      const resolvedPath = require('path').resolve(fullPath);
+      const projectRoot = require('path').resolve(process.cwd());
+      if (!resolvedPath.startsWith(projectRoot)) {
+        throw new Error('Access denied: Outside project directory');
+      }
+
+      if (existsSync(fullPath)) {
+        const content = readFileSync(fullPath, 'utf8');
+        console.log(`[User Package ConfigService] File loaded: ${relativePath}`);
+        return content;
+      }
+    } catch (error) {
+      console.error(`[User Package ConfigService] Failed to read file ${relativePath}:`, error);
+    }
+    return null;
+  }
+
+  listDirectory(relativePath: string = ''): Array<{name: string, type: string, path: string}> | null {
+    try {
+      const fullPath = relativePath ? join(process.cwd(), relativePath) : process.cwd();
+      
+      // Security check
+      const resolvedPath = require('path').resolve(fullPath);
+      const projectRoot = require('path').resolve(process.cwd());
+      if (!resolvedPath.startsWith(projectRoot)) {
+        throw new Error('Access denied: Outside project directory');
+      }
+
+      if (existsSync(fullPath)) {
+        const { readdirSync, statSync } = require('fs');
+        const items = readdirSync(fullPath);
+        
+        return items.map(item => {
+          const itemPath = join(fullPath, item);
+          const stats = statSync(itemPath);
+          return {
+            name: item,
+            type: stats.isDirectory() ? 'directory' : 'file',
+            path: join(relativePath, item)
+          };
+        });
+      }
+    } catch (error) {
+      console.error(`[User Package ConfigService] Failed to list directory ${relativePath}:`, error);
+    }
+    return null;
+  }
+
+  getProjectStructure(): any {
+    try {
+      const structure = this.buildDirectoryTree(process.cwd(), '');
+      console.log('[User Package ConfigService] Project structure built');
+      return structure;
+    } catch (error) {
+      console.error('[User Package ConfigService] Failed to build project structure:', error);
+      return null;
+    }
+  }
+
+  private buildDirectoryTree(fullPath: string, relativePath: string, maxDepth: number = 3, currentDepth: number = 0): any {
+    if (currentDepth >= maxDepth) return null;
+    
+    try {
+      const { readdirSync, statSync } = require('fs');
+      const items = readdirSync(fullPath);
+      const result: any = {
+        name: require('path').basename(fullPath) || 'root',
+        type: 'directory',
+        path: relativePath,
+        children: []
+      };
+
+      for (const item of items) {
+        // Skip hidden files and node_modules
+        if (item.startsWith('.') || item === 'node_modules') continue;
+        
+        const itemFullPath = join(fullPath, item);
+        const itemRelativePath = join(relativePath, item);
+        const stats = statSync(itemFullPath);
+        
+        if (stats.isDirectory()) {
+          const subtree = this.buildDirectoryTree(itemFullPath, itemRelativePath, maxDepth, currentDepth + 1);
+          if (subtree) {
+            result.children.push(subtree);
+          }
+        } else {
+          result.children.push({
+            name: item,
+            type: 'file',
+            path: itemRelativePath,
+            size: stats.size
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Enhanced config file discovery
+  findConfigFiles(): Array<{path: string, type: string}> {
+    const configFiles: Array<{path: string, type: string}> = [];
+    
+    // Standard config locations
+    const configLocations = [
+      { dir: 'config', types: ['.ini', '.conf', '.cfg'] },
+      { dir: 'files', types: ['.txt', '.csv'] },
+      { dir: '.', types: ['.env', '.ini', '.json'] }
+    ];
+
+    for (const location of configLocations) {
+      try {
+        const dirPath = join(process.cwd(), location.dir);
+        if (existsSync(dirPath)) {
+          const { readdirSync, statSync } = require('fs');
+          const items = readdirSync(dirPath);
+          
+          for (const item of items) {
+            const itemPath = join(dirPath, item);
+            const stats = statSync(itemPath);
+            
+            if (stats.isFile()) {
+              for (const type of location.types) {
+                if (item.toLowerCase().endsWith(type)) {
+                  const relativePath = join(location.dir === '.' ? '' : location.dir, item);
+                  configFiles.push({
+                    path: relativePath,
+                    type: type.substring(1) // Remove dot
+                  });
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[User Package ConfigService] Failed to scan ${location.dir}:`, error);
+      }
+    }
+
+    return configFiles;
+  }
+
   private parseIniFile(content: string): any {
     const result: any = {};
     let currentSection = '';
