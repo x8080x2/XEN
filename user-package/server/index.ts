@@ -9,7 +9,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import { initializeMainLicenseService } from './services/mainLicenseService';
 import licenseRoutes from './routes/licenseRoutes';
-import { configService } from './services/configService';
+// import { configService } from './services/configService'; // This will be imported dynamically
 
 // Load environment variables from .env file
 dotenv.config();
@@ -19,6 +19,34 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3002', 10);
+
+// Initialize config service on startup
+let configService: any;
+async function initializeConfig() {
+  try {
+    const configModule = await import('./services/configService');
+    configService = configModule.configService;
+
+    // Force reload config to ensure it's loaded
+    const config = configService.loadLocalConfig();
+    const leads = configService.loadLocalLeads();
+    const smtpConfigs = configService.getAllSmtpConfigs();
+
+    console.log('[User Package] Configuration initialized');
+    console.log('[User Package] SMTP configs loaded:', smtpConfigs.length);
+    console.log('[User Package] Local config keys:', Object.keys(config));
+
+    if (leads) {
+      const leadCount = leads.split('\n').filter((line: string) => line.trim()).length;
+      console.log(`[User Package] Leads loaded: ${leadCount} entries`);
+    }
+  } catch (error) {
+    console.error('[User Package] Failed to initialize config:', error);
+  }
+}
+
+// Initialize config before starting server
+initializeConfig();
 
 // Middleware
 app.use(cors());
@@ -187,27 +215,25 @@ app.get('/api/config/loadLeads', async (req, res) => {
 // Local SMTP management routes with fallback
 app.get('/api/smtp/list', async (req, res) => {
   try {
-    const response = await axios.get(`${MAIN_BACKEND_URL}/api/smtp/list`, {
-      headers: {
-        'Authorization': `Bearer ${MAIN_BACKEND_API_KEY}`,
-      },
-      timeout: 10000,
-    });
-    res.json(response.data);
-  } catch (error: any) {
-    console.error('SMTP list proxy error, falling back to local SMTP configs:', error.message);
-    // Fallback to local SMTP configs
-    const { configService } = await import('./services/configService');
+    if (!configService) {
+      const configModule = await import('./services/configService');
+      configService = configModule.configService;
+    }
+
     const smtpConfigs = configService.getAllSmtpConfigs();
     const currentSmtp = configService.getCurrentSmtpConfig();
     const rotationEnabled = configService.isSmtpRotationEnabled();
 
+    console.log(`[User Package] SMTP list requested: ${smtpConfigs.length} configs`);
     res.json({
       success: true,
-      smtpConfigs: smtpConfigs,
-      currentSmtp: currentSmtp,
-      rotationEnabled: rotationEnabled
+      smtpConfigs,
+      currentSmtp,
+      rotationEnabled
     });
+  } catch (error: any) {
+    console.error('[User Package] SMTP list error:', error.message);
+    res.json({ success: false, error: error.message });
   }
 });
 
@@ -320,7 +346,7 @@ app.get('/api/local/browse', async (req, res) => {
   try {
     const { dir = '' } = req.query;
     const targetDir = dir ? path.join(process.cwd(), dir as string) : process.cwd();
-    
+
     // Security check: ensure we stay within project directory
     const resolvedTarget = path.resolve(targetDir);
     const projectRoot = path.resolve(process.cwd());
@@ -356,7 +382,7 @@ app.get('/api/local/readFile', async (req, res) => {
     }
 
     const fullPath = path.join(process.cwd(), filepath as string);
-    
+
     // Security check: ensure we stay within project directory
     const resolvedPath = path.resolve(fullPath);
     const projectRoot = path.resolve(process.cwd());
@@ -379,8 +405,8 @@ app.get('/api/local/readFile', async (req, res) => {
     }
 
     const content = fs.readFileSync(resolvedPath, 'utf8');
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       content,
       filepath: filepath as string,
       size: stats.size,
@@ -396,11 +422,11 @@ app.get('/api/local/config', async (req, res) => {
     // Always use local config for user package
     const { configService } = await import('./services/configService');
     const localConfig = configService.loadLocalConfig();
-    
+
     // Also read raw config files
     const configFiles: Record<string, string> = {};
     const configDir = path.join(process.cwd(), 'config');
-    
+
     if (fs.existsSync(configDir)) {
       const files = fs.readdirSync(configDir);
       for (const file of files) {
@@ -412,8 +438,8 @@ app.get('/api/local/config', async (req, res) => {
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       config: localConfig,
       configFiles,
       configDir: path.relative(process.cwd(), configDir)
@@ -428,13 +454,13 @@ app.get('/api/local/leads', async (req, res) => {
     // Always use local leads for user package
     const { configService } = await import('./services/configService');
     const localLeads = configService.loadLocalLeads();
-    
+
     const leadsPath = path.join(process.cwd(), 'files', 'leads.txt');
     const exists = fs.existsSync(leadsPath);
     const stats = exists ? fs.statSync(leadsPath) : null;
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       leads: localLeads,
       filepath: 'files/leads.txt',
       exists,
@@ -470,13 +496,13 @@ app.get('/api/local/findConfigs', async (req, res) => {
 app.get('/api/windows/test-config', async (req, res) => {
   try {
     const { windowsFileService } = await import('./services/windowsFileService');
-    
+
     // Test reading all config-related files
     const smtpResult = windowsFileService.loadSmtpConfigs();
     const setupResult = windowsFileService.loadSetupConfig();
     const leadsResult = windowsFileService.loadLeads();
     const allConfigsResult = windowsFileService.findAllConfigs();
-    
+
     res.json({
       success: true,
       smtp: smtpResult,
@@ -521,7 +547,7 @@ app.get('/api/config/load-windows', async (req, res) => {
   try {
     const { windowsFileService } = await import('./services/windowsFileService');
     const setupResult = windowsFileService.loadSetupConfig();
-    
+
     if (setupResult.success) {
       res.json({ success: true, config: setupResult.config });
     } else {
@@ -540,7 +566,7 @@ app.get('/api/smtp/list-windows', async (req, res) => {
   try {
     const { windowsFileService } = await import('./services/windowsFileService');
     const smtpResult = windowsFileService.loadSmtpConfigs();
-    
+
     if (smtpResult.success) {
       const configs = smtpResult.configs || [];
       res.json({
@@ -581,7 +607,7 @@ app.post('/api/local/readMultiple', async (req, res) => {
       try {
         const fullPath = path.join(process.cwd(), filepath);
         const resolvedPath = path.resolve(fullPath);
-        
+
         // Security check
         if (!resolvedPath.startsWith(projectRoot)) {
           (results as any)[filepath] = { success: false, error: 'Access denied: Outside project directory' };
@@ -605,11 +631,11 @@ app.post('/api/local/readMultiple', async (req, res) => {
         }
 
         const content = fs.readFileSync(resolvedPath, 'utf8');
-        (results as any)[filepath] = { 
-          success: true, 
-          content, 
-          size: stats.size, 
-          modified: stats.mtime 
+        (results as any)[filepath] = {
+          success: true,
+          content,
+          size: stats.size,
+          modified: stats.mtime
         };
       } catch (error: any) {
         (results as any)[filepath] = { success: false, error: error.message };
@@ -769,6 +795,9 @@ if (process.env.NODE_ENV === 'production') {
     const httpServer = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 User package server running on port ${PORT}`);
       console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
+      console.log('Local config and files will be loaded from:');
+      console.log('  - Config: user-package/config/');
+      console.log('  - Files: user-package/files/');
       resolve(httpServer);
     });
   });
