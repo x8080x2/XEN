@@ -49,34 +49,25 @@ This user package contains:
 - `PORT`: Application port (default: 3002)
 - `NODE_ENV`: Environment mode (production recommended for customer deployments)
 
-### License Configuration
-The application requires a valid license key. Configure in `config/setup.ini`:
-```ini
-[LICENSE]
-LICENSE_KEY=your_license_key_here
-```
+### Free Access
+This application provides free access to all features with no license required.
 
 ## System Requirements
 
 - **Node.js**: 18.0.0 or higher
 - **Operating System**: Windows, macOS, or Linux
 - **RAM**: 2GB minimum, 4GB recommended
-- **Network**: Internet connection for remote backend communication
+- **Network**: Internet connection for optimal backend communication (optional)
 
-## Licensing
+## Features
 
-This application requires a valid license key and connects to a remote backend for:
-- License validation and activation
-- Email sending functionality
-- Usage tracking and limits
-- Feature access control
-
-Features are unlocked based on your license plan:
-- **Basic ($19/month)**: 1,000 emails, basic features
-- **Professional ($49/month)**: 10,000 emails, QR codes, domain logos  
-- **Enterprise ($99/month)**: 50,000 emails, SMTP rotation, API access
-
-Contact your administrator for license generation and support.
+All features are available for free:
+- Unlimited email sending
+- QR code generation
+- Domain logo insertion
+- SMTP rotation
+- HTML conversion
+- API access
 
 ## Troubleshooting
 
@@ -86,11 +77,11 @@ Contact your administrator for license generation and support.
 3. Ensure main backend server is running and accessible
 4. Check firewall settings for outbound connections
 
-### License Issues
-1. Verify your license key in `config/setup.ini`
-2. Check license expiration date
+### Application Issues
+1. Check internet connection for backend communication
+2. Verify SMTP configuration in `config/smtp.ini`
 3. Ensure system date/time is correct
-4. Contact support with your license key if issues persist
+4. Check server logs for detailed error messages
 
 ### Application Issues
 1. Run `npm install` to update dependencies

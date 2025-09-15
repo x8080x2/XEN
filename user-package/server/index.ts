@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -63,7 +62,7 @@ console.log(`📡 Connecting to main backend: ${MAIN_BACKEND_URL}`);
 if (process.env.NODE_ENV === 'production') {
   const clientIndexPath = path.join(__dirname, '../client/dist/index.html');
   const serverDistPath = path.join(__dirname, 'index.js');
-  
+
   if (!fs.existsSync(clientIndexPath)) {
     console.error('❌ DISTRIBUTION ERROR: Client build files not found!');
     console.error(`   Missing: ${clientIndexPath}`);
@@ -72,7 +71,7 @@ if (process.env.NODE_ENV === 'production') {
     console.error('   The client application needs to be built before distribution.');
     process.exit(1);
   }
-  
+
   if (!fs.existsSync(serverDistPath)) {
     console.error('❌ DISTRIBUTION ERROR: Server build files not found!');
     console.error(`   Missing: ${serverDistPath}`);
@@ -80,27 +79,14 @@ if (process.env.NODE_ENV === 'production') {
     console.error('   Please ensure the package was created with: npm run package');
     process.exit(1);
   }
-  
+
   console.log('✅ Distribution integrity verified - all required files found');
 }
 
-// JWT Security validation
-const JWT_SECRET = process.env.JWT_SECRET;
-if (process.env.NODE_ENV === 'production' && (!JWT_SECRET || JWT_SECRET === 'default-secret')) {
-  console.error('❌ SECURITY: JWT_SECRET environment variable must be set to a secure value in production');
-  console.error('   Please set JWT_SECRET to a strong random string before starting in production mode');
-  process.exit(1);
-}
+// Initialize free license service
+initializeMainLicenseService();
 
-// Initialize license service for remote validation
-initializeMainLicenseService({
-  jwtSecret: JWT_SECRET || 'default-secret',
-  mainBackendUrl: MAIN_BACKEND_URL,
-  apiKey: MAIN_BACKEND_API_KEY,
-  clientVersion: '1.0.0',
-});
-
-console.log('🔐 Remote license service initialized');
+console.log('🔐 Free access enabled - no license required');
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -150,7 +136,7 @@ app.post('/api/smtp/toggle-rotation', async (req, res) => {
     const { configService } = await import('./services/configService');
     const { enabled } = req.body;
     configService.setSmtpRotation(enabled);
-    
+
     res.json({
       success: true,
       rotationEnabled: configService.isSmtpRotationEnabled(),
@@ -212,7 +198,7 @@ app.get('/api/smtp/list', async (req, res) => {
     const smtpConfigs = configService.getAllSmtpConfigs();
     const currentSmtp = configService.getCurrentSmtpConfig();
     const rotationEnabled = configService.isSmtpRotationEnabled();
-    
+
     res.json({
       success: true,
       smtpConfigs: smtpConfigs,
@@ -238,7 +224,7 @@ app.post('/api/smtp/add', async (req, res) => {
     const { configService } = await import('./services/configService');
     const smtpId = configService.addSmtpConfig(req.body);
     const smtpConfigs = configService.getAllSmtpConfigs();
-    
+
     res.json({
       success: true,
       smtpId: smtpId,
@@ -261,11 +247,11 @@ app.delete('/api/smtp/:smtpId', async (req, res) => {
     // Fallback to local SMTP deletion
     const { configService } = await import('./services/configService');
     const success = configService.deleteSmtpConfig(req.params.smtpId);
-    
+
     if (success) {
       const smtpConfigs = configService.getAllSmtpConfigs();
       const currentSmtp = configService.getCurrentSmtpConfig();
-      
+
       res.json({
         success: true,
         smtpConfigs: smtpConfigs,
@@ -292,7 +278,7 @@ app.post('/api/smtp/rotate', async (req, res) => {
     // Fallback to local SMTP rotation
     const { configService } = await import('./services/configService');
     const currentSmtp = configService.rotateSmtp();
-    
+
     res.json({
       success: true,
       currentSmtp: currentSmtp
@@ -374,7 +360,7 @@ app.post('/api/original/readFile', async (req, res) => {
       if (!filepath) {
         return res.json({ success: false, error: 'Filepath is required' });
       }
-      
+
       const fullPath = path.join(process.cwd(), filepath);
       if (fs.existsSync(fullPath)) {
         const content = fs.readFileSync(fullPath, 'utf8');
@@ -403,20 +389,20 @@ app.use('/api/*', async (req, res) => {
       timeout: 45000, // Increased timeout
       validateStatus: (status) => status < 500, // Accept 2xx, 3xx, 4xx as valid
     });
-    
+
     // Handle 304 Not Modified as success
     if (response.status === 304) {
       res.status(304).end();
       return;
     }
-    
+
     res.status(response.status).json(response.data);
   } catch (error: any) {
     // Only log actual errors, not 304 responses
     if (error.response?.status !== 304) {
       console.error('Proxy error:', error.message);
     }
-    
+
     // Handle timeout specifically
     if (error.code === 'ECONNABORTED') {
       res.status(504).json({
@@ -426,7 +412,7 @@ app.use('/api/*', async (req, res) => {
       });
       return;
     }
-    
+
     // Handle connection errors
     if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
       res.status(502).json({
@@ -436,7 +422,7 @@ app.use('/api/*', async (req, res) => {
       });
       return;
     }
-    
+
     res.status(500).json({
       success: false,
       error: 'Failed to connect to main backend',
@@ -449,7 +435,7 @@ app.use('/api/*', async (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const clientPath = path.join(__dirname, '../client/dist');
   app.use(express.static(clientPath));
-  
+
   app.get('*', (req, res) => {
     res.sendFile(path.join(clientPath, 'index.html'));
   });
@@ -459,7 +445,7 @@ if (process.env.NODE_ENV === 'production') {
     console.log(`🚀 User package server running on port ${PORT}`);
     console.log(`📡 Connected to main backend: ${MAIN_BACKEND_URL}`);
     console.log(`🌐 Open your browser to: http://localhost:${PORT}`);
-    
+
     // Auto-launch UI window after server starts (if not in headless environment)
     if (!isHeadlessEnvironment()) {
       launchUIWindow();
@@ -476,9 +462,9 @@ if (process.env.NODE_ENV === 'production') {
       resolve(httpServer);
     });
   });
-  
+
   await setupVite(app, server);
-  
+
   // Auto-launch UI window after server starts (if not in headless environment)
   if (!isHeadlessEnvironment()) {
     launchUIWindow();
@@ -493,17 +479,17 @@ function isHeadlessEnvironment() {
     'TRAVIS', 'CIRCLECI', 'JENKINS_URL', 'BUILDKITE', 'DRONE',
     'REPLIT', 'CODESPACES', 'GITPOD_WORKSPACE_ID'
   ];
-  
+
   // Check if any CI/headless environment variables are set
   if (headlessIndicators.some(indicator => process.env[indicator])) {
     return true;
   }
-  
+
   // Check for DISPLAY environment (Linux/Unix)
   if (os.platform() === 'linux' && !process.env.DISPLAY) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -511,9 +497,9 @@ function isHeadlessEnvironment() {
 function launchUIWindow() {
   const url = `http://localhost:${PORT}`;
   const platform = os.platform();
-  
+
   let command = '';
-  
+
   switch (platform) {
     case 'darwin': // macOS
       command = `open "${url}"`;
@@ -528,7 +514,7 @@ function launchUIWindow() {
       console.log(`🌐 Please open your browser to: ${url}`);
       return;
   }
-  
+
   exec(command, (error) => {
     if (error) {
       console.log(`⚠️ Could not auto-launch UI. Please open: ${url}`);
