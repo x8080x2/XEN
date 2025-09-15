@@ -41,6 +41,9 @@ if (!MAIN_BACKEND_API_KEY) {
   process.exit(1);
 }
 
+// JWT_SECRET is optional for free usage - no token authentication required
+console.log('🔓 JWT authentication disabled - free usage mode enabled');
+
 // Validate URL format
 try {
   const url = new URL(MAIN_BACKEND_URL);

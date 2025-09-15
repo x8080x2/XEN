@@ -1,4 +1,3 @@
-
 # Email Sender User Package
 
 Complete email sending application that connects to a remote licensing backend.
@@ -15,12 +14,11 @@ Complete email sending application that connects to a remote licensing backend.
    ```bash
    cp .env.example .env
    ```
-   
+
    Edit `.env` and set these required variables:
    ```bash
    MAIN_BACKEND_URL=https://your-app-name.replit.app
-   MAIN_BACKEND_API_KEY=your-secure-api-key
-   JWT_SECRET=your-secure-jwt-secret
+   MAIN_BACKEND_API_KEY=your-secure-api-key-here
    ```
 
 3. **Start Application**
@@ -45,7 +43,6 @@ This user package contains:
 ### Environment Variables
 - `MAIN_BACKEND_URL`: URL of your main backend server (e.g., https://your-app.replit.app)
 - `MAIN_BACKEND_API_KEY`: API key for authentication with main backend (required)
-- `JWT_SECRET`: JWT secret for token validation (required for production)
 - `PORT`: Application port (default: 3002)
 - `NODE_ENV`: Environment mode (production recommended for customer deployments)
 
