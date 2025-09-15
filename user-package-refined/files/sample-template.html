@@ -1,0 +1,39 @@
+ <body>
+ <style>
+        body { font-family: Arial, sans-serif; margin: 2px; }
+        .container { max-width: 600px; margin: 0;  padding: 3px; border-radius: 10px;  }
+        .header { text-align: left; margin-bottom: 30px; }
+        .content { line-height: 1.6; color: #333; }
+        .qr-section { text-align: center; margin: 20px 0; }
+        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+
+    <div class="container">
+        <div class="header" style="text-align: center; margin-bottom: 20px;">
+            {domainlogo}
+            <h1>Hello {username}!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Welcome to our service! We're excited to have you join us.</p>
+            <p>Your account details:</p>
+            <ul>
+                <li><strong>Email:</strong> {email}</li>
+                <li><strong>Domain:</strong> {domain}</li>
+                <li><strong>Registration Date:</strong> {date}</li>
+                <li><strong>User ID:</strong> {userid}</li>
+            </ul>
+            
+            <div class="qr-section">
+                {qrcode}
+            </div>
+            
+            <p>Thank you for joining us, {randfirst}!</p>
+        </div>
+        
+        <div class="footer">
+            <p>This email was sent to {user} on {date} at {time}</p>
+            <p>Random ID: {hash6} | Reference: {randnum4}</p>
+        </div>
+    </div>
+</body>
