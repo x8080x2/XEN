@@ -1,188 +1,103 @@
 import { Router } from 'express';
-import { getMainLicenseService } from '../services/mainLicenseService';
 
 const router = Router();
 
 /**
- * Validate license endpoint
+ * Mock validate license endpoint - always returns success for free access
  */
 router.post('/validate', async (req, res) => {
-  try {
-    const { licenseKey } = req.body;
-    
-    if (!licenseKey) {
-      return res.status(400).json({
-        success: false,
-        error: 'License key is required',
-        code: 'MISSING_LICENSE_KEY'
-      });
-    }
-
-    const licenseService = getMainLicenseService();
-    const result = await licenseService.validateLicense(licenseKey);
-
-    if (result.valid) {
-      res.json({
-        success: true,
-        license: result.license,
-        token: result.token,
-        message: 'License validated successfully'
-      });
-    } else {
-      res.status(403).json({
-        success: false,
-        error: result.error || 'License validation failed',
-        code: 'LICENSE_INVALID'
-      });
-    }
-  } catch (error: any) {
-    console.error('License validation error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'License validation error',
-      details: error.message,
-      code: 'VALIDATION_ERROR'
-    });
-  }
+  res.json({
+    success: true,
+    license: {
+      licenseKey: 'FREE-ACCESS',
+      planType: 'free',
+      features: {
+        maxEmailsPerMonth: 999999,
+        maxRecipientsPerEmail: 999999,
+        allowQRCodes: true,
+        allowAttachments: true,
+        allowDomainLogos: true,
+        allowHTMLConvert: true,
+        smtpRotation: true,
+        apiAccess: true,
+      },
+      emailsUsedThisMonth: 0,
+      status: 'active',
+      expiresAt: new Date('2099-12-31').toISOString(),
+    },
+    token: 'free-access-token',
+    message: 'Free access granted'
+  });
 });
 
 /**
- * Get current license status
+ * Mock license status - always returns free access
  */
 router.get('/status', async (req, res) => {
-  try {
-    const licenseService = getMainLicenseService();
-    const result = await licenseService.getCurrentLicense();
-
-    if (result.valid) {
-      const usage = licenseService.getUsageSummary();
-      res.json({
-        success: true,
-        license: result.license,
-        usage,
-        message: 'License status retrieved successfully'
-      });
-    } else {
-      res.status(403).json({
-        success: false,
-        error: result.error || 'No valid license',
-        code: 'NO_LICENSE'
-      });
-    }
-  } catch (error: any) {
-    console.error('License status error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get license status',
-      details: error.message,
-      code: 'STATUS_ERROR'
-    });
-  }
+  res.json({
+    success: true,
+    license: {
+      licenseKey: 'FREE-ACCESS',
+      planType: 'free',
+    },
+    usage: {
+      plan: 'free',
+      emailsUsed: 0,
+      emailsLimit: 999999,
+      emailsRemaining: 999999,
+      recipientsPerEmail: 999999,
+      features: {
+        qrCodes: true,
+        attachments: true,
+        domainLogos: true,
+        htmlConvert: true,
+        smtpRotation: true,
+        apiAccess: true,
+      },
+    },
+    message: 'Free access status'
+  });
 });
 
 /**
- * Check usage limits for email sending
+ * No limits for free version
  */
 router.post('/check-limits', async (req, res) => {
-  try {
-    const { recipientCount } = req.body;
-    
-    if (!recipientCount || recipientCount <= 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Valid recipient count is required',
-        code: 'INVALID_RECIPIENT_COUNT'
-      });
-    }
-
-    const licenseService = getMainLicenseService();
-    const limitCheck = licenseService.checkEmailLimits(recipientCount);
-
-    res.json({
-      success: true,
-      allowed: limitCheck.allowed,
-      reason: limitCheck.reason,
-      remaining: limitCheck.remaining,
-      message: limitCheck.allowed ? 'Email send allowed' : 'Email limit exceeded'
-    });
-  } catch (error: any) {
-    console.error('License limit check error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to check limits',
-      details: error.message,
-      code: 'LIMIT_CHECK_ERROR'
-    });
-  }
+  res.json({
+    success: true,
+    allowed: true,
+    message: 'No limits in free version'
+  });
 });
 
 /**
- * Check if specific feature is available
+ * All features available in free version
  */
 router.post('/check-feature', async (req, res) => {
-  try {
-    const { feature } = req.body;
-    
-    if (!feature) {
-      return res.status(400).json({
-        success: false,
-        error: 'Feature name is required',
-        code: 'MISSING_FEATURE'
-      });
-    }
-
-    const licenseService = getMainLicenseService();
-    const hasFeature = licenseService.hasFeature(feature);
-
-    res.json({
-      success: true,
-      hasFeature,
-      feature,
-      message: hasFeature ? 'Feature available' : 'Feature not available'
-    });
-  } catch (error: any) {
-    console.error('Feature check error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to check feature',
-      details: error.message,
-      code: 'FEATURE_CHECK_ERROR'
-    });
-  }
+  res.json({
+    success: true,
+    hasFeature: true,
+    feature: req.body.feature,
+    message: 'All features available in free version'
+  });
 });
 
 /**
- * Refresh license status (force re-validation)
+ * Mock refresh endpoint
  */
 router.post('/refresh', async (req, res) => {
-  try {
-    const licenseService = getMainLicenseService();
-    const result = await licenseService.getCurrentLicense(true); // Force refresh
-
-    if (result.valid) {
-      const usage = licenseService.getUsageSummary();
-      res.json({
-        success: true,
-        license: result.license,
-        usage,
-        message: 'License refreshed successfully'
-      });
-    } else {
-      res.status(403).json({
-        success: false,
-        error: result.error || 'License refresh failed',
-        code: 'REFRESH_FAILED'
-      });
-    }
-  } catch (error: any) {
-    console.error('License refresh error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to refresh license',
-      details: error.message,
-      code: 'REFRESH_ERROR'
-    });
-  }
+  res.json({
+    success: true,
+    license: {
+      licenseKey: 'FREE-ACCESS',
+      planType: 'free',
+    },
+    usage: {
+      plan: 'free',
+      emailsRemaining: 999999,
+    },
+    message: 'Free access refreshed'
+  });
 });
 
 export default router;

@@ -1,231 +1,115 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import axios from 'axios';
-import os from 'os';
-import { License } from '@shared/schema';
-
-interface LicenseServiceConfig {
-  jwtSecret: string;
-  mainBackendUrl: string;
-  apiKey: string;
-  clientVersion: string;
-}
 
 export class MainLicenseService {
-  private config: LicenseServiceConfig;
-  private cachedLicense: License | null = null;
-  private cachedToken: string | null = null;
-  private lastValidation: Date | null = null;
-  private validationInterval: number = 300000; // 5 minutes
-  private machineFingerprint: string;
-
-  constructor(config: LicenseServiceConfig) {
-    this.config = config;
-    this.machineFingerprint = this.generateMachineFingerprint();
+  constructor() {
+    // No initialization needed for free version
   }
 
   /**
-   * Generate machine fingerprint for license binding
-   */
-  private generateMachineFingerprint(): string {
-    const components = [
-      os.hostname(),
-      os.platform(),
-      os.arch(),
-      JSON.stringify(os.cpus().map((cpu: any) => cpu.model)),
-    ];
-    
-    return crypto
-      .createHash('sha256')
-      .update(components.join('|'))
-      .digest('hex')
-      .substring(0, 32);
-  }
-
-  /**
-   * Validate license with main backend
+   * Always return valid for free access
    */
   async validateLicense(licenseKey: string): Promise<{ 
     valid: boolean; 
-    license?: License; 
+    license?: any; 
     token?: string; 
     error?: string 
   }> {
-    try {
-      const response = await axios.post(
-        `${this.config.mainBackendUrl}/api/license/validate`,
-        {
-          licenseKey,
-          machineFingerprint: this.machineFingerprint,
-          clientVersion: this.config.clientVersion,
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${this.config.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-        }
-      );
-
-      if (response.data.success) {
-        const { license, token } = response.data;
-        
-        // Cache the license and token
-        this.cachedLicense = license;
-        this.cachedToken = token;
-        this.lastValidation = new Date();
-
-        console.log(`✅ License validated for ${license.userEmail} (${license.planType})`);
-        
-        return {
-          valid: true,
-          license,
-          token,
-        };
-      } else {
-        return {
-          valid: false,
-          error: response.data.error || 'License validation failed',
-        };
-      }
-    } catch (error: any) {
-      console.error('❌ License validation error:', error.message);
-      return {
-        valid: false,
-        error: error.response?.data?.error || error.message || 'Connection to license server failed',
-      };
-    }
-  }
-
-  /**
-   * Get current license status
-   */
-  async getCurrentLicense(forceRefresh = false): Promise<{ 
-    valid: boolean; 
-    license?: License; 
-    token?: string; 
-    error?: string 
-  }> {
-    // Check if we have a cached license and it's still valid
-    if (!forceRefresh && this.cachedLicense && this.cachedToken && this.lastValidation) {
-      const timeSinceValidation = Date.now() - this.lastValidation.getTime();
-      
-      if (timeSinceValidation < this.validationInterval) {
-        // Check if license is still valid (not expired)
-        if (new Date(this.cachedLicense.expiresAt) > new Date()) {
-          return {
-            valid: true,
-            license: this.cachedLicense,
-            token: this.cachedToken,
-          };
-        }
-      }
-    }
-
-    // No valid cached license, need to re-validate
-    if (this.cachedLicense?.licenseKey) {
-      return await this.validateLicense(this.cachedLicense.licenseKey);
-    }
-
     return {
-      valid: false,
-      error: 'No license configured',
+      valid: true,
+      license: {
+        licenseKey: 'FREE-ACCESS',
+        userEmail: 'free@user.com',
+        planType: 'free',
+        features: {
+          maxEmailsPerMonth: 999999,
+          maxRecipientsPerEmail: 999999,
+          allowQRCodes: true,
+          allowAttachments: true,
+          allowDomainLogos: true,
+          allowHTMLConvert: true,
+          smtpRotation: true,
+          apiAccess: true,
+        },
+        emailsUsedThisMonth: 0,
+        status: 'active',
+        expiresAt: new Date('2099-12-31').toISOString(),
+      },
+      token: 'free-access-token',
     };
   }
 
   /**
-   * Check if license allows specific feature
+   * Always return valid for free access
    */
-  hasFeature(feature: keyof License['features']): boolean {
-    if (!this.cachedLicense) {
-      return false;
-    }
-
-    return Boolean(this.cachedLicense.features[feature]);
+  async getCurrentLicense(): Promise<{ 
+    valid: boolean; 
+    license?: any; 
+    token?: string; 
+    error?: string 
+  }> {
+    return this.validateLicense('FREE-ACCESS');
   }
 
   /**
-   * Check email usage limits
+   * All features available in free version
+   */
+  hasFeature(feature: string): boolean {
+    return true;
+  }
+
+  /**
+   * No email limits in free version
    */
   checkEmailLimits(recipientCount: number): { 
     allowed: boolean; 
     reason?: string; 
     remaining?: number 
   } {
-    if (!this.cachedLicense) {
-      return {
-        allowed: false,
-        reason: 'No valid license',
-      };
-    }
-
-    const { maxEmailsPerMonth, maxRecipientsPerEmail } = this.cachedLicense.features;
-    const { emailsUsedThisMonth } = this.cachedLicense;
-
-    // Check recipients per email limit
-    if (recipientCount > maxRecipientsPerEmail) {
-      return {
-        allowed: false,
-        reason: `Too many recipients. Maximum ${maxRecipientsPerEmail} allowed per email.`,
-      };
-    }
-
-    // Check monthly email limit
-    const remainingEmails = maxEmailsPerMonth - emailsUsedThisMonth;
-    if (remainingEmails < recipientCount) {
-      return {
-        allowed: false,
-        reason: `Monthly email limit exceeded. ${remainingEmails} emails remaining.`,
-        remaining: remainingEmails,
-      };
-    }
-
     return {
       allowed: true,
-      remaining: remainingEmails,
+      remaining: 999999,
     };
   }
 
   /**
-   * Get cached token for API requests
+   * No usage recording needed for free version
+   */
+  async recordEmailUsage(recipientCount: number): Promise<{ success: boolean; error?: string }> {
+    return { success: true };
+  }
+
+  /**
+   * Return free access token
    */
   getAuthToken(): string | null {
-    return this.cachedToken;
+    return 'free-access-token';
   }
 
   /**
-   * Check if license is for specific plan types
+   * Check plan type
    */
-  isPlanType(planType: License['planType']): boolean {
-    return this.cachedLicense?.planType === planType;
+  isPlanType(planType: string): boolean {
+    return planType === 'free';
   }
 
   /**
-   * Get usage summary
+   * Return free usage summary
    */
   getUsageSummary() {
-    if (!this.cachedLicense) {
-      return null;
-    }
-
-    const { features, emailsUsedThisMonth } = this.cachedLicense;
-    
     return {
-      plan: this.cachedLicense.planType,
-      emailsUsed: emailsUsedThisMonth,
-      emailsLimit: features.maxEmailsPerMonth,
-      emailsRemaining: features.maxEmailsPerMonth - emailsUsedThisMonth,
-      recipientsPerEmail: features.maxRecipientsPerEmail,
+      plan: 'free',
+      emailsUsed: 0,
+      emailsLimit: 999999,
+      emailsRemaining: 999999,
+      recipientsPerEmail: 999999,
       features: {
-        qrCodes: features.allowQRCodes,
-        attachments: features.allowAttachments,
-        domainLogos: features.allowDomainLogos,
-        htmlConvert: features.allowHTMLConvert,
-        smtpRotation: features.smtpRotation,
-        apiAccess: features.apiAccess,
+        qrCodes: true,
+        attachments: true,
+        domainLogos: true,
+        htmlConvert: true,
+        smtpRotation: true,
+        apiAccess: true,
       },
-      expiresAt: this.cachedLicense.expiresAt,
+      expiresAt: new Date('2099-12-31').toISOString(),
     };
   }
 }
@@ -236,8 +120,8 @@ let mainLicenseService: MainLicenseService | null = null;
 /**
  * Initialize the main license service
  */
-export function initializeMainLicenseService(config: LicenseServiceConfig): void {
-  mainLicenseService = new MainLicenseService(config);
+export function initializeMainLicenseService(): void {
+  mainLicenseService = new MainLicenseService();
 }
 
 /**
@@ -245,7 +129,7 @@ export function initializeMainLicenseService(config: LicenseServiceConfig): void
  */
 export function getMainLicenseService(): MainLicenseService {
   if (!mainLicenseService) {
-    throw new Error('Main license service not initialized. Call initializeMainLicenseService() first.');
+    mainLicenseService = new MainLicenseService();
   }
   return mainLicenseService;
 }

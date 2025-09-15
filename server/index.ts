@@ -45,17 +45,17 @@ function performStartupCleanup() {
   setTimeout(() => {
     try {
       log("🔧 Performing background cleanup...");
-      
+
       // Count processes first
       const processCount = execSync('ps aux | grep -E "(tsx|node)" | grep -v grep | wc -l', { encoding: 'utf8' }).trim();
       log(`Current process count: ${processCount}`);
-      
+
       // Only cleanup if high process count
       if (parseInt(processCount) > 15) {
         log("⚠️  High process count - performing cleanup");
         // Note: Don't kill current process, just log for now
       }
-      
+
       log("✅ Background cleanup check completed");
     } catch (error) {
       // Ignore cleanup errors to avoid blocking startup
@@ -66,20 +66,10 @@ function performStartupCleanup() {
 // Perform cleanup on startup (non-blocking)
 performStartupCleanup();
 
-// Initialize license service
-try {
-  const licenseConfig = {
-    jwtSecret: process.env.JWT_SECRET || 'default-jwt-secret-key',
-    mainBackendUrl: process.env.MAIN_BACKEND_URL || 'https://email-sender-main.onrender.com',
-    apiKey: process.env.MAIN_BACKEND_API_KEY || 'default-api-key',
-    clientVersion: process.env.CLIENT_VERSION || '1.0.0',
-  };
-  
-  initializeMainLicenseService(licenseConfig);
-  log("🔐 License service initialized");
-} catch (error: any) {
-  log(`⚠️  License service initialization failed: ${error.message}`);
-}
+// Initialize free license service
+initializeMainLicenseService();
+
+console.log('🔐 Free access enabled - no license required');
 
 // Start Telegram Bot alongside the server
 startTelegramBot();
@@ -143,12 +133,12 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
-  
+
   // Initialize process manager for automatic cleanup
   const processManager = ProcessManager.getInstance();
   processManager.startPeriodicCleanup();
   processManager.setupGracefulShutdown();
-  
+
   server.listen({
     port,
     host: "0.0.0.0",
