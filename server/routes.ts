@@ -18,8 +18,16 @@ import { configService } from "./services/configService";
 import multer from "multer";
 import { join } from "path";
 import { readFileSync, existsSync } from "fs";
+import { randomBytes } from "crypto";
 
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB per file
+    files: 10, // Max 10 files
+    fields: 50 // Max 50 form fields
+  }
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const emailService = advancedEmailService; // Using the singleton instance
@@ -30,6 +38,219 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // License management routes
   app.use('/api/license', licenseRoutes);
+
+  // Capability URL System - Direct email sending for users
+  const capabilityTokens = new Map<string, {
+    userId: string;
+    createdAt: Date;
+    lastUsed: Date;
+    emailLimit: number;
+    emailCount: number;
+  }>();
+
+  // Generate capability token for a user (SECURED admin endpoint)
+  app.post('/api/admin/generate-capability-token', requireValidLicense, (req, res) => {
+    try {
+      // Additional security: Require admin secret (no default fallback)
+      const adminSecret = process.env.ADMIN_SECRET;
+      if (!adminSecret) {
+        return res.status(500).json({ 
+          success: false, 
+          error: 'ADMIN_SECRET environment variable must be configured' 
+        });
+      }
+      if (req.headers['x-admin-secret'] !== adminSecret) {
+        return res.status(403).json({ success: false, error: 'Invalid admin secret' });
+      }
+
+      const { userId, emailLimit = 1000 } = req.body;
+      const token = randomBytes(32).toString('hex'); // Generate secure random token
+      
+      capabilityTokens.set(token, {
+        userId: userId || 'user_' + randomBytes(4).toString('hex'),
+        createdAt: new Date(),
+        lastUsed: new Date(),
+        emailLimit,
+        emailCount: 0
+      });
+
+      res.json({
+        success: true,
+        token,
+        sendUrl: `/api/cap/${token}/send`,
+        fullUrl: `${req.protocol}://${req.get('host')}/api/cap/${token}/send`,
+        emailLimit
+      });
+    } catch (error: any) {
+      console.error('Token generation error:', error);
+      res.status(500).json({ success: false, error: 'Failed to generate capability token' });
+    }
+  });
+
+  // Capability URL endpoint - Direct email sending with just URL
+  app.post('/api/cap/:token/send', upload.any(), async (req, res) => {
+    try {
+      const { token } = req.params;
+      const capability = capabilityTokens.get(token);
+
+      // Validate capability token
+      if (!capability) {
+        return res.status(401).json({ success: false, error: 'Invalid capability token' });
+      }
+
+      // Check email limit
+      if (capability.emailCount >= capability.emailLimit) {
+        return res.status(429).json({ 
+          success: false, 
+          error: `Email limit reached (${capability.emailLimit})`,
+          emailCount: capability.emailCount,
+          emailLimit: capability.emailLimit
+        });
+      }
+
+      // Update last used
+      capability.lastUsed = new Date();
+
+      const files = req.files as Express.Multer.File[];
+      const attachments = files?.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        contentType: file.mimetype,
+      })) || [];
+
+      // Parse and validate recipients
+      let recipients = req.body.recipients;
+      if (typeof recipients === 'string') {
+        try {
+          recipients = JSON.parse(recipients);
+        } catch {
+          recipients = recipients.split('\n').filter((r: string) => r.trim());
+        }
+      }
+
+      // Validate recipients array
+      if (!Array.isArray(recipients) || recipients.length === 0) {
+        res.write(`data: ${JSON.stringify({ 
+          status: 'error', 
+          error: 'Recipients must be a non-empty array' 
+        })}\n\n`);
+        return res.end();
+      }
+
+      // Update email count BEFORE sending (prevent race conditions)
+      if (capability.emailCount + recipients.length > capability.emailLimit) {
+        return res.status(429).json({ 
+          success: false, 
+          error: `Would exceed email limit (${capability.emailLimit})`,
+          requested: recipients.length,
+          available: capability.emailLimit - capability.emailCount
+        });
+      }
+      
+      capability.emailCount += recipients.length;
+
+      // Set up Server-Sent Events for real-time progress
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
+
+      const sendProgress = (data: any) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+      };
+
+      // Load configuration from config service
+      const config = configService.loadConfig();
+      const emailConfig = configService.getEmailConfig();
+
+      // Prepare arguments for email service (similar to original endpoint)
+      const args = {
+        ...req.body,
+        recipients,
+        attachments,
+        senderEmail: req.body.senderEmail || emailConfig.SMTP?.USER || 'noreply@example.com',
+        senderName: req.body.senderName || 'Email Sender',
+        subject: req.body.subject || 'No Subject',
+        html: req.body.html || req.body.emailContent || '<p>No content</p>',
+        // SMTP settings from config or request
+        smtpHost: req.body.smtpHost || emailConfig.SMTP?.HOST,
+        smtpPort: req.body.smtpPort || emailConfig.SMTP?.PORT,
+        smtpUser: req.body.smtpUser || emailConfig.SMTP?.USER,
+        smtpPass: req.body.smtpPass || emailConfig.SMTP?.PASS,
+        // Advanced settings with defaults
+        emailPerSecond: parseInt(req.body.emailPerSecond) || parseInt(emailConfig.EMAILPERSECOND) || 5,
+        sleep: req.body.sleep || emailConfig.SLEEP || '1000',
+        qrcode: req.body.qrcode === 'true' || req.body.qrcode === true || emailConfig.QRCODE === 'true',
+        qrSize: parseInt(req.body.qrSize) || parseInt(emailConfig.QR_WIDTH) || 200,
+        qrBorder: parseInt(req.body.qrBorder) || parseInt(emailConfig.QR_BORDER_WIDTH) || 2,
+        qrForegroundColor: req.body.qrForegroundColor || emailConfig.QR_FOREGROUND_COLOR || '#000000',
+        qrBackgroundColor: req.body.qrBackgroundColor || emailConfig.QR_BACKGROUND_COLOR || '#FFFFFF',
+        linkPlaceholder: req.body.linkPlaceholder || emailConfig.LINK_PLACEHOLDER,
+        htmlImgBody: req.body.htmlImgBody === 'true' || req.body.htmlImgBody === true || emailConfig.HTML2IMG_BODY === 'true',
+        randomMetadata: req.body.randomMetadata === 'true' || req.body.randomMetadata === true || emailConfig.RANDOM_METADATA === 'true',
+        minifyHtml: req.body.minifyHtml === 'true' || req.body.minifyHtml === true || emailConfig.MINIFY_HTML === 'true',
+        zipUse: req.body.zipUse === 'true' || req.body.zipUse === true || emailConfig.ZIP_USE === 'true',
+        zipPassword: req.body.zipPassword || emailConfig.ZIP_PASSWORD,
+        fileName: req.body.fileName || emailConfig.FILE_NAME,
+        htmlConvert: req.body.htmlConvert || emailConfig.HTML_CONVERT
+      };
+
+      console.log(`[Capability] Starting email send for token ${token.substring(0, 8)}... (${recipients.length} recipients)`);
+      sendProgress({ status: 'starting', recipients: recipients.length, token: token.substring(0, 8) });
+
+      // Send emails using the advanced email service
+      await emailService.sendMail(args, (progress: any) => {
+        sendProgress(progress);
+      });
+
+      // Email count was already updated before sending to prevent race conditions
+      
+      sendProgress({ 
+        status: 'completed', 
+        emailCount: capability.emailCount,
+        emailLimit: capability.emailLimit,
+        remaining: capability.emailLimit - capability.emailCount
+      });
+      
+      console.log(`[Capability] Email send completed for token ${token.substring(0, 8)}...`);
+      res.end();
+
+    } catch (error: any) {
+      console.error('Capability send error:', error);
+      res.write(`data: ${JSON.stringify({ 
+        status: 'error', 
+        error: error.message || 'Failed to send emails' 
+      })}\n\n`);
+      res.end();
+    }
+  });
+
+  // Get capability token info
+  app.get('/api/cap/:token/info', (req, res) => {
+    try {
+      const { token } = req.params;
+      const capability = capabilityTokens.get(token);
+
+      if (!capability) {
+        return res.status(401).json({ success: false, error: 'Invalid capability token' });
+      }
+
+      res.json({
+        success: true,
+        userId: capability.userId,
+        emailCount: capability.emailCount,
+        emailLimit: capability.emailLimit,
+        remaining: capability.emailLimit - capability.emailCount,
+        createdAt: capability.createdAt,
+        lastUsed: capability.lastUsed
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
 
   // Config loading routes - exact clone from main.js
   app.get('/api/config/load', (req, res) => {
