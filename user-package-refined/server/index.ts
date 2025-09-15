@@ -118,11 +118,11 @@ console.log('🔧 Local configuration routes registered');
 console.log('   - /api/config/* - Local setup configuration');
 console.log('   - /api/smtp/* - Local SMTP configuration');
 
-// Configure streaming proxy for main backend with package token authentication
+// Configure streaming proxy for main backend API requests only
 const streamingProxy = createProxyMiddleware({
   target: MAIN_BACKEND_URL,
   changeOrigin: true,
-  ws: true, // Enable WebSocket proxying
+  ws: false, // Disable WebSocket proxying - let Vite handle its own WebSockets
   timeout: 45000,
   proxyTimeout: 45000,
   
