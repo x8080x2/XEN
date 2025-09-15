@@ -108,7 +108,7 @@ export class ConfigService {
         const { readdirSync, statSync } = require('fs');
         const items = readdirSync(fullPath);
         
-        return items.map(item => {
+        return items.map((item: any) => {
           const itemPath = join(fullPath, item);
           const stats = statSync(itemPath);
           return {

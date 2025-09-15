@@ -398,7 +398,7 @@ app.get('/api/local/config', async (req, res) => {
     const localConfig = configService.loadLocalConfig();
     
     // Also read raw config files
-    const configFiles = {};
+    const configFiles: Record<string, string> = {};
     const configDir = path.join(process.cwd(), 'config');
     
     if (fs.existsSync(configDir)) {
@@ -407,7 +407,7 @@ app.get('/api/local/config', async (req, res) => {
         if (file.endsWith('.ini')) {
           const filePath = path.join(configDir, file);
           const content = fs.readFileSync(filePath, 'utf8');
-          configFiles[file] = content;
+          (configFiles as any)[file] = content;
         }
       }
     }
@@ -466,6 +466,106 @@ app.get('/api/local/findConfigs', async (req, res) => {
   }
 });
 
+// Windows-compatible file reading endpoints
+app.get('/api/windows/test-config', async (req, res) => {
+  try {
+    const { windowsFileService } = await import('./services/windowsFileService');
+    
+    // Test reading all config-related files
+    const smtpResult = windowsFileService.loadSmtpConfigs();
+    const setupResult = windowsFileService.loadSetupConfig();
+    const leadsResult = windowsFileService.loadLeads();
+    const allConfigsResult = windowsFileService.findAllConfigs();
+    
+    res.json({
+      success: true,
+      smtp: smtpResult,
+      setup: setupResult,
+      leads: leadsResult,
+      allConfigs: allConfigsResult,
+      projectRoot: process.cwd()
+    });
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to test config: ${error.message}` });
+  }
+});
+
+app.get('/api/windows/read-file', async (req, res) => {
+  try {
+    const { path: filePath } = req.query;
+    if (!filePath) {
+      return res.json({ success: false, error: 'File path is required' });
+    }
+
+    const { windowsFileService } = await import('./services/windowsFileService');
+    const result = windowsFileService.readFile(filePath as string);
+    res.json(result);
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to read file: ${error.message}` });
+  }
+});
+
+app.get('/api/windows/list-directory', async (req, res) => {
+  try {
+    const { path: dirPath = '' } = req.query;
+    const { windowsFileService } = await import('./services/windowsFileService');
+    const result = windowsFileService.listDirectory(dirPath as string);
+    res.json(result);
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to list directory: ${error.message}` });
+  }
+});
+
+// Override config loading with Windows-compatible service
+app.get('/api/config/load-windows', async (req, res) => {
+  try {
+    const { windowsFileService } = await import('./services/windowsFileService');
+    const setupResult = windowsFileService.loadSetupConfig();
+    
+    if (setupResult.success) {
+      res.json({ success: true, config: setupResult.config });
+    } else {
+      // Fallback to original method
+      const { configService } = await import('./services/configService');
+      const localConfig = configService.loadLocalConfig();
+      res.json({ success: true, config: localConfig, fallback: true });
+    }
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to load config: ${error.message}` });
+  }
+});
+
+// Override SMTP loading with Windows-compatible service
+app.get('/api/smtp/list-windows', async (req, res) => {
+  try {
+    const { windowsFileService } = await import('./services/windowsFileService');
+    const smtpResult = windowsFileService.loadSmtpConfigs();
+    
+    if (smtpResult.success) {
+      const configs = smtpResult.configs || [];
+      res.json({
+        success: true,
+        smtpConfigs: configs,
+        currentSmtp: configs[0] || null,
+        rotationEnabled: false
+      });
+    } else {
+      // Fallback to original method
+      const { configService } = await import('./services/configService');
+      const smtpConfigs = configService.getAllSmtpConfigs();
+      res.json({
+        success: true,
+        smtpConfigs: smtpConfigs,
+        currentSmtp: configService.getCurrentSmtpConfig(),
+        rotationEnabled: configService.isSmtpRotationEnabled(),
+        fallback: true
+      });
+    }
+  } catch (error: any) {
+    res.json({ success: false, error: `Failed to load SMTP configs: ${error.message}` });
+  }
+});
+
 // Enhanced file operations with Windows support
 app.post('/api/local/readMultiple', async (req, res) => {
   try {
@@ -474,7 +574,7 @@ app.post('/api/local/readMultiple', async (req, res) => {
       return res.json({ success: false, error: 'filepaths must be an array' });
     }
 
-    const results = {};
+    const results: Record<string, any> = {};
     const projectRoot = path.resolve(process.cwd());
 
     for (const filepath of filepaths) {
@@ -484,35 +584,35 @@ app.post('/api/local/readMultiple', async (req, res) => {
         
         // Security check
         if (!resolvedPath.startsWith(projectRoot)) {
-          results[filepath] = { success: false, error: 'Access denied: Outside project directory' };
+          (results as any)[filepath] = { success: false, error: 'Access denied: Outside project directory' };
           continue;
         }
 
         if (!fs.existsSync(resolvedPath)) {
-          results[filepath] = { success: false, error: 'File does not exist' };
+          (results as any)[filepath] = { success: false, error: 'File does not exist' };
           continue;
         }
 
         const stats = fs.statSync(resolvedPath);
         if (!stats.isFile()) {
-          results[filepath] = { success: false, error: 'Path is not a file' };
+          (results as any)[filepath] = { success: false, error: 'Path is not a file' };
           continue;
         }
 
         if (stats.size > 5 * 1024 * 1024) { // 5MB limit for batch reads
-          results[filepath] = { success: false, error: 'File too large for batch read' };
+          (results as any)[filepath] = { success: false, error: 'File too large for batch read' };
           continue;
         }
 
         const content = fs.readFileSync(resolvedPath, 'utf8');
-        results[filepath] = { 
+        (results as any)[filepath] = { 
           success: true, 
           content, 
           size: stats.size, 
           modified: stats.mtime 
         };
       } catch (error: any) {
-        results[filepath] = { success: false, error: error.message };
+        (results as any)[filepath] = { success: false, error: error.message };
       }
     }
 
