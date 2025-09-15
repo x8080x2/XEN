@@ -179,7 +179,52 @@ export default function OriginalEmailSender() {
     }
   }, [currentEmailStatus]);
 
-  // Backend loading functions removed - frontend-only version
+  // Auto-load configuration on startup
+  const loadConfigFromFiles = async () => {
+    try {
+      // Load main configuration
+      const configResponse = await fetch('/api/config/load');
+      const configData = await configResponse.json();
+
+      if (configData.success && configData.config) {
+        console.log('[Config Load] Configuration loaded successfully');
+
+        // Load SMTP configuration
+        const smtpResponse = await fetch('/api/smtp/list');
+        const smtpData = await smtpResponse.json();
+
+        if (smtpData.success && smtpData.currentSmtp) {
+          setSenderEmail(smtpData.currentSmtp.fromEmail || '');
+          setSenderName(smtpData.currentSmtp.fromName || '');
+          console.log('[Config Load] Auto-set sender email:', smtpData.currentSmtp.fromEmail);
+        }
+
+        // Load leads
+        const leadsResponse = await fetch('/api/config/loadLeads');
+        const leadsData = await leadsResponse.json();
+
+        if (leadsData.success && leadsData.leads) {
+          setRecipients(leadsData.leads);
+          const leadCount = leadsData.leads.split('\n').filter((line: string) => line.trim()).length;
+          console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt`);
+        }
+
+        setStatusText('✓ Configuration and files loaded successfully');
+        setTimeout(() => setStatusText(''), 3000);
+      } else {
+        console.warn('[Config Load] Failed to load configuration');
+        setStatusText('⚠ Configuration not found - using defaults');
+      }
+    } catch (error) {
+      console.error('[Config Load] Error loading configuration:', error);
+      setStatusText('⚠ Error loading configuration files');
+    }
+  };
+
+  // Auto-load configuration on startup
+  useEffect(() => {
+    loadConfigFromFiles();
+  }, []);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -407,7 +452,7 @@ export default function OriginalEmailSender() {
           <div className="p-4">
             <div className="flex flex-col items-center mb-8">
               {/* Large ASCII Art Logo */}
-              <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre">
 {`
  ██████╗██╗     ███████╗
 ██╔════╝██║     ██╔════╝
@@ -661,7 +706,7 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML Template */}
                 <div>
-                  <Label className="text-xs text-[red]">HTML CONTENT</Label>
+                  <Label className="text-sm text-[red]">HTML CONTENT</Label>
                   <div className="text-xs text-[#a1a1aa] mt-1">
                     <span>HTML content will be generated from your email text above</span>
                   </div>
@@ -692,7 +737,7 @@ export default function OriginalEmailSender() {
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
-                      <div 
+                      <div
                         ref={currentStatusRef}
                         className="mb-3 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg animate-pulse"
                         data-testid="current-email-status"
@@ -779,8 +824,8 @@ export default function OriginalEmailSender() {
                     onClick={handleSendEmails}
                     disabled={!canSendEmails}
                     className={`min-w-[110px] text-white relative ${
-                      canSendEmails 
-                        ? 'bg-[#ef4444] hover:bg-[#dc2626]' 
+                      canSendEmails
+                        ? 'bg-[#ef4444] hover:bg-[#dc2626]'
                         : 'bg-gray-600 cursor-not-allowed'
                     }`}
                     data-testid="button-send-emails"
@@ -889,12 +934,12 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
 ╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
 ║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║  
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
-              </div>              
+              </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
@@ -996,7 +1041,7 @@ export default function OriginalEmailSender() {
 
         {/* Settings Overlay */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">            
+          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
             <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[1280px] max-h-[80vh] overflow-y-auto">
               <button
                 onClick={() => setShowSettings(false)}
@@ -1005,8 +1050,8 @@ export default function OriginalEmailSender() {
                 GO BACK ↩️
               </button>
               <div className=" items-center mb-6">
-                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
-                  {`   
+                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
+                  {`
                     .d8888b.                     .d888 d8b          
                    d88P  Y88b                   d88P"  Y8P          
                    888    888                   888                 
@@ -1035,7 +1080,7 @@ export default function OriginalEmailSender() {
                   |         [_____] []|__
                   |         [_____] []|  \__
                   L___________________J     \ \___\/
-                   ___________________      /\ 
+                   ___________________      /\
                   /###GET#CONNECTED###
               `}
               </div>
@@ -1102,8 +1147,8 @@ export default function OriginalEmailSender() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">QR MIDDLE IMG</Label>
-                      <Select 
-                        value={advancedSettings.hiddenImageFile || "off"} 
+                      <Select
+                        value={advancedSettings.hiddenImageFile || "off"}
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
                       >
                         <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white">

@@ -32,13 +32,24 @@ async function initializeConfig() {
     const leads = configService.loadLocalLeads();
     const smtpConfigs = configService.getAllSmtpConfigs();
 
-    console.log('[User Package] Configuration initialized');
+    console.log('[User Package] Configuration initialized successfully');
     console.log('[User Package] SMTP configs loaded:', smtpConfigs.length);
+    console.log('[User Package] Config file locations:');
+    console.log('  - SMTP config: user-package/config/smtp.ini');
+    console.log('  - Setup config: user-package/config/setup.ini');
+    console.log('  - Leads file: user-package/files/leads.txt');
     console.log('[User Package] Local config keys:', Object.keys(config));
+
+    if (smtpConfigs.length > 0) {
+      console.log('[User Package] Available SMTP configs:', smtpConfigs.map(s => s.id));
+      console.log('[User Package] Current SMTP:', configService.getCurrentSmtpConfig()?.fromEmail || 'None');
+    }
 
     if (leads) {
       const leadCount = leads.split('\n').filter((line: string) => line.trim()).length;
       console.log(`[User Package] Leads loaded: ${leadCount} entries`);
+    } else {
+      console.warn('[User Package] No leads loaded from files/leads.txt');
     }
   } catch (error) {
     console.error('[User Package] Failed to initialize config:', error);
@@ -46,7 +57,7 @@ async function initializeConfig() {
 }
 
 // Initialize config before starting server
-initializeConfig();
+await initializeConfig();
 
 // Middleware
 app.use(cors());
