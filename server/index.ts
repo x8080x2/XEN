@@ -133,14 +133,20 @@ app.use((req, res, next) => {
       log(`Development mode - using Vite middleware`);
     }
 
-    // Auto-open browser on Windows in development mode
-    if (process.platform === 'win32' && isDevelopment) {
+    // Auto-open browser on Windows
+    if (process.platform === 'win32') {
       const url = `http://localhost:${port}`;
       log(`Opening browser at ${url}`);
       try {
-        execSync(`start ${url}`, { stdio: 'ignore' });
+        execSync(`start "" "${url}"`, { stdio: 'ignore' });
       } catch (error) {
         log(`Failed to open browser automatically. Please visit: ${url}`);
+        // Try alternative method
+        try {
+          execSync(`rundll32 url.dll,FileProtocolHandler "${url}"`, { stdio: 'ignore' });
+        } catch (altError) {
+          log(`All auto-open methods failed. Please manually visit: ${url}`);
+        }
       }
     }
   });
