@@ -127,7 +127,7 @@ app.use((req, res, next) => {
   
   server.listen(port, host, () => {
     log(`serving on ${host}:${port}`);
-    if (isProduction) {
+    if (!isDevelopment) {
       log(`Production mode - serving static files from dist/public`);
     } else {
       log(`Development mode - using Vite middleware`);
