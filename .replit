@@ -76,7 +76,7 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd user-package && npm install && npm run dev"
+args = ""
 
 [agent]
 integrations = ["javascript_database:1.0.0"]

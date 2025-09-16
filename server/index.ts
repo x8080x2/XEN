@@ -122,9 +122,8 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
 
 
-  // Use different binding for local development vs production
-  const isProduction = process.env.NODE_ENV === 'production';
-  const host = isProduction ? "0.0.0.0" : "localhost";
+  // Use different binding for local development vs production  
+  const host = isDevelopment ? "localhost" : "0.0.0.0";
   
   server.listen(port, host, () => {
     log(`serving on ${host}:${port}`);
@@ -134,9 +133,9 @@ app.use((req, res, next) => {
       log(`Development mode - using Vite middleware`);
     }
 
-    // Auto-open browser on Windows
-    if (process.platform === 'win32' && process.env.NODE_ENV === 'development') {
-      const url = `http://${host}:${port}`;
+    // Auto-open browser on Windows in development mode
+    if (process.platform === 'win32' && isDevelopment) {
+      const url = `http://localhost:${port}`;
       log(`Opening browser at ${url}`);
       try {
         execSync(`start ${url}`, { stdio: 'ignore' });
