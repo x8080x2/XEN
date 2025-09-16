@@ -8,9 +8,16 @@ import {
   type AppSettings,
   type InsertAppSettings,
   type User, 
-  type InsertUser 
+  type InsertUser,
+  users,
+  emailConfigs,
+  emailJobs,
+  emailLogs,
+  appSettings
 } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -185,4 +192,149 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getEmailConfig(id: string): Promise<EmailConfig | undefined> {
+    const [config] = await db.select().from(emailConfigs).where(eq(emailConfigs.id, id));
+    return config || undefined;
+  }
+
+  async getEmailConfigsByUser(userId: string): Promise<EmailConfig[]> {
+    return await db.select().from(emailConfigs).where(eq(emailConfigs.userId, userId));
+  }
+
+  async createEmailConfig(insertConfig: InsertEmailConfig): Promise<EmailConfig> {
+    const [config] = await db
+      .insert(emailConfigs)
+      .values(insertConfig)
+      .returning();
+    return config;
+  }
+
+  async updateEmailConfig(id: string, updates: Partial<EmailConfig>): Promise<EmailConfig> {
+    const [config] = await db
+      .update(emailConfigs)
+      .set(updates)
+      .where(eq(emailConfigs.id, id))
+      .returning();
+    return config;
+  }
+
+  async deleteEmailConfig(id: string): Promise<void> {
+    await db.delete(emailConfigs).where(eq(emailConfigs.id, id));
+  }
+
+  async getEmailJob(id: string): Promise<EmailJob | undefined> {
+    const [job] = await db.select().from(emailJobs).where(eq(emailJobs.id, id));
+    return job ? {
+      ...job,
+      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
+      startedAt: job.startedAt || undefined,
+      completedAt: job.completedAt || undefined
+    } : undefined;
+  }
+
+  async getEmailJobsByUser(userId: string): Promise<EmailJob[]> {
+    const jobs = await db.select().from(emailJobs).where(eq(emailJobs.userId, userId));
+    return jobs.map(job => ({
+      ...job,
+      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
+      startedAt: job.startedAt || undefined,
+      completedAt: job.completedAt || undefined
+    }));
+  }
+
+  async createEmailJob(insertJob: InsertEmailJob): Promise<EmailJob> {
+    const [job] = await db
+      .insert(emailJobs)
+      .values(insertJob)
+      .returning();
+    return {
+      ...job,
+      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
+      startedAt: job.startedAt || undefined,
+      completedAt: job.completedAt || undefined
+    };
+  }
+
+  async updateEmailJob(id: string, updates: Partial<EmailJob>): Promise<EmailJob> {
+    const [job] = await db
+      .update(emailJobs)
+      .set(updates)
+      .where(eq(emailJobs.id, id))
+      .returning();
+    return {
+      ...job,
+      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
+      startedAt: job.startedAt || undefined,
+      completedAt: job.completedAt || undefined
+    };
+  }
+
+  async getEmailLogsByJob(jobId: string): Promise<EmailLog[]> {
+    const logs = await db.select().from(emailLogs).where(eq(emailLogs.jobId, jobId));
+    return logs.map(log => ({
+      ...log,
+      status: log.status as 'success' | 'failed',
+      error: log.error || undefined
+    }));
+  }
+
+  async createEmailLog(insertLog: InsertEmailLog): Promise<EmailLog> {
+    const [log] = await db
+      .insert(emailLogs)
+      .values(insertLog)
+      .returning();
+    return {
+      ...log,
+      status: log.status as 'success' | 'failed',
+      error: log.error || undefined
+    };
+  }
+
+  async getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined> {
+    const [settings] = await db
+      .select()
+      .from(appSettings)
+      .where(and(eq(appSettings.userId, userId), eq(appSettings.settingsType, settingsType)));
+    return settings || undefined;
+  }
+
+  async upsertAppSettings(insertSettings: InsertAppSettings): Promise<AppSettings> {
+    const existing = await this.getAppSettings(insertSettings.userId, insertSettings.settingsType);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(appSettings)
+        .set({ ...insertSettings, updatedAt: new Date() })
+        .where(eq(appSettings.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(appSettings)
+        .values(insertSettings)
+        .returning();
+      return created;
+    }
+  }
+}
+
+export const storage = new DatabaseStorage();

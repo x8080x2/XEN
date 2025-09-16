@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "postgresql-16"]
+modules = ["nodejs-20", "web"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
@@ -22,6 +22,10 @@ externalPort = 4200
 [[ports]]
 localPort = 38889
 externalPort = 3001
+
+[[ports]]
+localPort = 40897
+externalPort = 3003
 
 [[ports]]
 localPort = 41963
@@ -74,3 +78,4 @@ task = "shell.exec"
 args = "cd user-package && npm install && npm run dev"
 
 [agent]
+integrations = ["javascript_database:1.0.0"]
