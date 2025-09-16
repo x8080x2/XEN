@@ -1,0 +1,55 @@
+Building and running XEN Email Sender...
+
+Step 1: Installing dependencies...
+
+up to date, audited 1199 packages in 4s
+
+183 packages are looking for funding
+  run `npm fund` for details
+
+20 vulnerabilities (3 low, 12 moderate, 3 high, 2 critical)
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+Step 2: Building the project...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.19 building for production...
+✓ 1714 modules transformed.
+../dist/public/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/public/assets/index-Ca8bJ4Tc.css   41.40 kB │ gzip:   7.86 kB
+../dist/public/assets/index-FZGXqqsg.js   352.88 kB │ gzip: 109.73 kB
+✓ built in 7.13s
+
+  dist\index.js  134.4kb
+
+Done in 22ms
+
+Step 3: Starting the application...
+Opening browser automatically...
+⚠️  DATABASE_URL not set - running in local file mode
+AdvancedEmailService initialized
+10:14:24 AM [express] serving on 0.0.0.0:5000
+Uncaught Exception: ReferenceError: isProduction is not defined
+    at Server.<anonymous> (file:///C:/Users/Administrator/Desktop/XEN/dist/index.js:3227:5)
+    at Object.onceWrapper (node:events:622:28)
+    at Server.emit (node:events:520:35)
+    at emitListeningNT (node:net:1983:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+Error stack: ReferenceError: isProduction is not defined
+    at Server.<anonymous> (file:///C:/Users/Administrator/Desktop/XEN/dist/index.js:3227:5)
+    at Object.onceWrapper (node:events:622:28)
+    at Server.emit (node:events:520:35)
+    at emitListeningNT (node:net:1983:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+10:14:26 AM [express] 🔧 Performing background cleanup...
+10:14:26 AM [express] Windows detected - skipping process cleanup
+10:14:26 AM [express] ✅ Background cleanup check completed
