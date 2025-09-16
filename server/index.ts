@@ -33,19 +33,24 @@ function performStartupCleanup() {
     try {
       log("🔧 Performing background cleanup...");
 
-      // Count processes first
-      const processCount = execSync('ps aux | grep -E "(tsx|node)" | grep -v grep | wc -l', { encoding: 'utf8' }).trim();
-      log(`Current process count: ${processCount}`);
+      // Check if we're on Windows or Unix-like system
+      const isWindows = process.platform === 'win32';
+      
+      if (!isWindows) {
+        // Only run process counting on Unix-like systems
+        const processCount = execSync('ps aux | grep -E "(tsx|node)" | grep -v grep | wc -l', { encoding: 'utf8' }).trim();
+        log(`Current process count: ${processCount}`);
 
-      // Only cleanup if high process count
-      if (parseInt(processCount) > 15) {
-        log("⚠️  High process count - performing cleanup");
-        // Note: Don't kill current process, just log for now
+        if (parseInt(processCount) > 15) {
+          log("⚠️  High process count - performing cleanup");
+        }
+      } else {
+        log("Windows detected - skipping process cleanup");
       }
 
       log("✅ Background cleanup check completed");
     } catch (error) {
-      // Ignore cleanup errors to avoid blocking startup
+      log("Cleanup check failed (ignored)");
     }
   }, 2000);
 }
@@ -115,11 +120,11 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
 
 
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  // Use different binding for local development vs production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const host = isProduction ? "0.0.0.0" : "localhost";
+  
+  server.listen(port, host, () => {
+    log(`serving on ${host}:${port}`);
   });
 })();
