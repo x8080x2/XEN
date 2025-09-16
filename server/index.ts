@@ -131,5 +131,16 @@ app.use((req, res, next) => {
     } else {
       log(`Development mode - using Vite middleware`);
     }
+
+    // Auto-open browser on Windows
+    if (process.platform === 'win32' && process.env.NODE_ENV === 'development') {
+      const url = `http://${host}:${port}`;
+      log(`Opening browser at ${url}`);
+      try {
+        execSync(`start ${url}`, { stdio: 'ignore' });
+      } catch (error) {
+        log(`Failed to open browser automatically. Please visit: ${url}`);
+      }
+    }
   });
 })();
