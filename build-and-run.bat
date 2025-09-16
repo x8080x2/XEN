@@ -24,7 +24,7 @@ echo.
 echo Step 3: Starting the application...
 echo Opening browser automatically...
 set NODE_ENV=production
-call npm run start
+node dist/index.js
 
 echo.
 echo Application stopped. Press any key to exit.
