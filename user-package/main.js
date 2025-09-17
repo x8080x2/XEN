@@ -107,10 +107,20 @@ ipcMain.handle('list-files', async (event, dirpath) => {
     }
     
     const files = await fs.readdir(resolvedPath);
-    const htmlFiles = files.filter(file => /\.(html|htm)$/i.test(file));
     
-    console.log(`[Electron] Found ${htmlFiles.length} HTML files in ${dirpath}:`, htmlFiles);
-    return htmlFiles;
+    // Filter files based on directory type
+    let filteredFiles;
+    if (dirpath.includes('logo')) {
+      // For logo directory, filter image files
+      filteredFiles = files.filter(file => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file));
+      console.log(`[Electron] Found ${filteredFiles.length} image files in ${dirpath}:`, filteredFiles);
+    } else {
+      // For other directories, filter HTML files
+      filteredFiles = files.filter(file => /\.(html|htm)$/i.test(file));
+      console.log(`[Electron] Found ${filteredFiles.length} HTML files in ${dirpath}:`, filteredFiles);
+    }
+    
+    return filteredFiles;
   } catch (error) {
     console.error(`[Electron] Failed to list files in ${dirpath}:`, error);
     return [];
