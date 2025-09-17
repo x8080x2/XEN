@@ -640,30 +640,18 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
-    console.log('[Electron Send] Starting email send process...');
-    
     // Validation logic - exact clone from sender.html lines 1307-1321
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
     if (!recipientList.length) {
       setStatusText('Please enter at least one recipient.');
-      console.log('[Electron Send] Error: No recipients provided');
       return;
     }
 
     if (!senderEmail.trim()) {
       setStatusText('Sender email is required (from SMTP config).');
-      console.log('[Electron Send] Error: No sender email configured');
       return;
     }
-
-    console.log('[Electron Send] Validation passed:', {
-      recipients: recipientList.length,
-      senderEmail,
-      subject,
-      hasContent: !!emailContent,
-      smtpHost: smtpSettings.host
-    });
 
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
@@ -733,8 +721,6 @@ export default function OriginalEmailSender() {
     setCurrentEmailStatus("");
 
     try {
-      console.log('[Electron Send] Preparing form data...');
-      
       const formData = new FormData();
 
       // Add all form data - exact match to original args
@@ -758,26 +744,19 @@ export default function OriginalEmailSender() {
 
       // Add files
       if (selectedFiles) {
-        console.log('[Electron Send] Adding attachments:', selectedFiles.length);
         for (let i = 0; i < selectedFiles.length; i++) {
           formData.append('attachments', selectedFiles[i]);
         }
       }
 
-      console.log('[Electron Send] Making API request to /api/original/sendMail...');
-      
       // Use Server-Sent Events for real-time progress
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
 
-      console.log('[Electron Send] API response status:', response.status);
-
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[Electron Send] API error:', response.status, errorText);
-        throw new Error(`Failed to start email sending: ${response.status} ${errorText}`);
+        throw new Error('Failed to start email sending');
       }
 
       const reader = response.body?.getReader();
