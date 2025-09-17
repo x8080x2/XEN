@@ -369,10 +369,21 @@ export default function OriginalEmailSender() {
   // SMTP Management Functions
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(data);
+      if (window.electronAPI?.smtpList) {
+        // Use Electron API for SMTP data
+        const data = await window.electronAPI.smtpList();
+        if (data.success) {
+          setSmtpData(data);
+          console.log('[Electron] SMTP data loaded:', data);
+        }
+      } else {
+        // Fallback to web API
+        const response = await fetch("/api/smtp/list");
+        const data = await response.json();
+        if (data.success) {
+          setSmtpData(data);
+          console.log('[Backend API] SMTP data loaded:', data);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
@@ -473,20 +484,29 @@ export default function OriginalEmailSender() {
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      const response = await fetch('/api/config/load');
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.loadConfig) {
+        // Use Electron API for config loading
+        data = await window.electronAPI.loadConfig();
+        console.log('[Electron] Config loaded via Electron API');
+      } else {
+        // Fallback to web API
+        const response = await fetch('/api/config/load');
+        data = await response.json();
+        console.log('[Backend API] Config loaded via web API');
+      }
 
       if (data.success && data.config) {
         const config = data.config;
 
-        // Load SMTP settings
+        // Load SMTP settings - check both SMTP object and direct config properties
         if (config.SMTP) {
           const smtpConfig = {
-            host: config.SMTP.host || '',
-            port: config.SMTP.port || '587',
-            user: config.SMTP.user || '',
-            pass: config.SMTP.pass || '',
-            fromEmail: config.SMTP.fromEmail || '',
+            host: config.SMTP.host || config.HOST || '',
+            port: config.SMTP.port || config.PORT || '587',
+            user: config.SMTP.user || config.USER || '',
+            pass: config.SMTP.pass || config.PASS || '',
+            fromEmail: config.SMTP.fromEmail || config.SMTP || '',
             fromName: config.SMTP.fromName || ''
           };
           setSMTPSettings(smtpConfig);
@@ -499,6 +519,23 @@ export default function OriginalEmailSender() {
           if (smtpConfig.fromName) {
             setSenderName(smtpConfig.fromName);
             console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
+          }
+        } else if (config.HOST && config.USER && config.PASS && config.SMTP) {
+          // Direct config properties (from setup.ini)
+          const smtpConfig = {
+            host: config.HOST,
+            port: config.PORT || '587',
+            user: config.USER,
+            pass: config.PASS,
+            fromEmail: config.SMTP,
+            fromName: ''
+          };
+          setSMTPSettings(smtpConfig);
+
+          // Auto-set sender email from SMTP config
+          if (smtpConfig.fromEmail) {
+            setSenderEmail(smtpConfig.fromEmail);
+            console.log('[Config Load] Auto-set sender email from setup.ini:', smtpConfig.fromEmail);
           }
         }
 
@@ -570,12 +607,18 @@ export default function OriginalEmailSender() {
   // Load leads from file - both Electron and web support
   const loadLeadsFromFile = async () => {
     try {
-      // Use Electron API for leads.txt if available, otherwise fallback to fetch.
-      const leadsData = window.electronAPI
-        ? await window.electronAPI.loadLeads()
-        : await fetch('/api/config/loadLeads').then(res => res.json());
+      let leadsData;
+      if (window.electronAPI?.loadLeads) {
+        // Use Electron API for leads.txt
+        leadsData = await window.electronAPI.loadLeads();
+        console.log('[Electron] Leads loaded via Electron API');
+      } else {
+        // Fallback to web API
+        leadsData = await fetch('/api/config/loadLeads').then(res => res.json());
+        console.log('[Backend API] Leads loaded via web API');
+      }
 
-      if (leadsData && leadsData.leads && leadsData.leads.trim().length > 0) {
+      if (leadsData && leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
         setRecipients(leadsData.leads);
         const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
         console.log(`[${window.electronAPI ? 'Electron' : 'Backend API'}] Auto-loaded ${leadCount} leads from leads.txt`);
