@@ -415,41 +415,34 @@ export default function OriginalEmailSender() {
       });
       const data = await response.json();
       if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs
-        }));
+        // Update SMTP settings in form as well
+        setSMTPSettings({
+          host: newSmtp.host,
+          port: newSmtp.port,
+          user: newSmtp.user,
+          pass: newSmtp.pass,
+          fromEmail: newSmtp.fromEmail,
+          fromName: newSmtp.fromName
+        });
+        
+        setSenderEmail(newSmtp.fromEmail);
+        if (newSmtp.fromName) setSenderName(newSmtp.fromName);
+        
+        setStatusText('SMTP configuration updated successfully');
+        fetchSmtpData();
+        
+        // Clear form
         setNewSmtp({
           host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
         });
-        setStatusText(`SMTP ${data.smtpId} added successfully`);
-        fetchSmtpData();
       }
     } catch (error) {
-      setStatusText('Failed to add SMTP configuration');
+      setStatusText('Failed to update SMTP configuration');
     }
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    if (smtpData.smtpConfigs.length <= 1) {
-      setStatusText('Cannot delete the last SMTP configuration');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP ${smtpId} deleted successfully`);
-      }
-    } catch (error) {
-      setStatusText('Failed to delete SMTP configuration');
-    }
+    setStatusText('Cannot delete main SMTP config. Use "Add SMTP Server" to update it instead.');
   };
 
   const rotateSmtp = async () => {
@@ -1400,7 +1393,7 @@ export default function OriginalEmailSender() {
                   <div className="border-t border-[#26262b] pt-4">
                     {/* Add New SMTP Form */}
                     <div className="mb-4 p-3 bg-[#0f0f12] rounded border border-[#26262b]">
-                      <h4 className="text-white font-medium mb-3">Add New SMTP Server</h4>
+                      <h4 className="text-white font-medium mb-3">Update SMTP Configuration</h4>
                       <div className="grid grid-cols-2 gap-3 mb-3">
                         <Input
                           placeholder="SMTP Host"
@@ -1445,7 +1438,7 @@ export default function OriginalEmailSender() {
                         className="bg-[#ef4444] text-white hover:bg-[#dc3636]"
                         size="sm"
                       >
-                        Add SMTP Server
+                        Update SMTP Config
                       </Button>
                     </div>
 

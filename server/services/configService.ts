@@ -1,5 +1,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { mkdirSync } from 'fs';
+
 
 // Config loading service - exact clone from main.js lines 25-108
 export class ConfigService {
@@ -29,7 +31,7 @@ export class ConfigService {
         // Load all SMTP configs for rotation
         const smtpKeys = Object.keys(smtpConfig).filter(key => key.startsWith('smtp'));
         this.allSmtpConfigs = smtpKeys.map(key => ({ id: key, ...smtpConfig[key] }));
-        
+
         // Get current SMTP config (first one or rotated one)
         const currentSmtp = this.getCurrentSmtpConfig();
         if (currentSmtp) {
@@ -151,97 +153,85 @@ export class ConfigService {
     };
   }
 
-  // SMTP Rotation Methods
-  getCurrentSmtpConfig() {
-    if (this.allSmtpConfigs.length === 0) return null;
-    if (this.smtpRotationEnabled && this.allSmtpConfigs.length > 1) {
-      return this.allSmtpConfigs[this.currentSmtpIndex];
+  // Save configuration to file
+  saveConfig(config: any) {
+    const configPath = join('config', 'config.json');
+
+    try {
+      // Ensure config directory exists
+      if (!existsSync('config')) {
+        mkdirSync('config', { recursive: true });
+      }
+
+      writeFileSync(configPath, JSON.stringify(config, null, 2));
+      console.log('[ConfigService] Configuration saved to config.json');
+      this.config = config;
+    } catch (error) {
+      console.error('[ConfigService] Failed to save configuration:', error);
+      throw error;
     }
-    return this.allSmtpConfigs[0];
   }
 
+  // SMTP Management Methods - work with file-based config
   getAllSmtpConfigs() {
-    return this.allSmtpConfigs;
+    const config = this.getEmailConfig();
+    const smtpConfigs = [];
+
+    // Main SMTP config
+    if (config.SMTP) {
+      smtpConfigs.push({
+        id: 'smtp1',
+        host: config.SMTP.host,
+        port: config.SMTP.port,
+        user: config.SMTP.user,
+        pass: config.SMTP.pass,
+        fromEmail: config.SMTP.fromEmail,
+        fromName: config.SMTP.fromName || ''
+      });
+    }
+
+    return smtpConfigs;
   }
 
-  setSmtpRotation(enabled: boolean) {
-    this.smtpRotationEnabled = enabled;
-    this.loadConfig(); // Reload to apply current SMTP
+  getCurrentSmtpConfig() {
+    const configs = this.getAllSmtpConfigs();
+    return configs.length > 0 ? configs[0] : null;
   }
 
   isSmtpRotationEnabled() {
-    return this.smtpRotationEnabled;
+    return false; // Simple implementation - no rotation for file-based config
   }
 
-  rotateToNextSmtp() {
-    if (this.allSmtpConfigs.length > 1) {
-      this.currentSmtpIndex = (this.currentSmtpIndex + 1) % this.allSmtpConfigs.length;
-      this.loadConfig(); // Reload to apply new SMTP
-      return this.getCurrentSmtpConfig();
-    }
-    return null;
+  setSmtpRotation(enabled: boolean) {
+    // No-op for file-based config
+    return false;
   }
 
-  addSmtpConfig(smtpData: any) {
-    const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
-    let content = '';
-    
-    if (existsSync(smtpPath)) {
-      content = readFileSync(smtpPath, 'utf8');
-    }
-    
-    // Find next available smtp index
-    const existingIds = this.allSmtpConfigs.map(s => s.id);
-    let nextIndex = 0;
-    while (existingIds.includes(`smtp${nextIndex}`)) {
-      nextIndex++;
-    }
-    
-    const smtpId = `smtp${nextIndex}`;
-    const newSection = `\n[${smtpId}]\nhost=${smtpData.host}\nport=${smtpData.port}\nuser=${smtpData.user}\npass=${smtpData.pass}\nfromEmail=${smtpData.fromEmail}\nfromName=${smtpData.fromName || ''}\n`;
-    
-    writeFileSync(smtpPath, content + newSection, 'utf8');
-    this.loadConfig(); // Reload to include new SMTP
-    return smtpId;
+  addSmtpConfig(smtpConfig: any) {
+    const config = this.loadConfig();
+
+    // Update the main SMTP configuration
+    config.SMTP = {
+      host: smtpConfig.host,
+      port: smtpConfig.port,
+      user: smtpConfig.user,
+      pass: smtpConfig.pass,
+      fromEmail: smtpConfig.fromEmail,
+      fromName: smtpConfig.fromName || ''
+    };
+
+    this.saveConfig(config);
+    return 'smtp1';
   }
 
   deleteSmtpConfig(smtpId: string) {
-    const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
-    
-    if (!existsSync(smtpPath)) return false;
-    
-    const content = readFileSync(smtpPath, 'utf8');
-    const lines = content.split('\n');
-    
-    let inTargetSection = false;
-    const filteredLines = [];
-    
-    for (const line of lines) {
-      const trimmed = line.trim();
-      
-      if (trimmed === `[${smtpId}]`) {
-        inTargetSection = true;
-        continue;
-      }
-      
-      if (trimmed.startsWith('[') && trimmed.endsWith(']') && inTargetSection) {
-        inTargetSection = false;
-      }
-      
-      if (!inTargetSection) {
-        filteredLines.push(line);
-      }
-    }
-    
-    writeFileSync(smtpPath, filteredLines.join('\n'), 'utf8');
-    this.loadConfig(); // Reload after deletion
-    
-    // Reset current index if it's out of bounds
-    if (this.currentSmtpIndex >= this.allSmtpConfigs.length) {
-      this.currentSmtpIndex = 0;
-    }
-    
-    return true;
+    // Cannot delete the main SMTP config
+    return false;
+  }
+
+  rotateToNextSmtp() {
+    // No rotation in simple file-based config
+    return this.getCurrentSmtpConfig();
   }
 }
 
