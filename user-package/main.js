@@ -76,9 +76,10 @@ ipcMain.handle('read-file', async (event, filepath) => {
       }
     }
     
+    console.error(`[Electron] File not found in any of these paths:`, possiblePaths);
     throw new Error(`File not found in any location: ${filepath}`);
   } catch (error) {
-    console.error(`[Electron] Failed to read file ${filepath}:`, error);
+    console.error(`[Electron] Failed to read file ${filepath}:`, error.message);
     throw error;
   }
 });
