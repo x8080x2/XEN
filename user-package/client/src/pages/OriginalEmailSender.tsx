@@ -638,15 +638,22 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
+        if (window.electronAPI?.readFile) {
+          // Desktop version - read from local file system
+          bodyHtml = await window.electronAPI.readFile(`./files/${selectedTemplate}`);
+          console.log('[Desktop] Template loaded for sending:', selectedTemplate);
+        } else {
+          // Fallback to web API
+          const response = await fetch('/api/original/readFile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
+          });
+          const data = await response.json();
+          bodyHtml = data.success ? (data.content || '') : '';
+        }
       } catch (error) {
         console.error('Failed to load template:', error);
         bodyHtml = '';
@@ -659,15 +666,22 @@ export default function OriginalEmailSender() {
     // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
       try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: 'files/letter.html' })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
+        if (window.electronAPI?.readFile) {
+          // Desktop version - read from local file system
+          bodyHtml = await window.electronAPI.readFile('./files/letter.html');
+          console.log('[Desktop] Default letter loaded for sending');
+        } else {
+          // Fallback to web API
+          const response = await fetch('/api/original/readFile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filepath: 'files/letter.html' })
+          });
+          const data = await response.json();
+          bodyHtml = data.success ? (data.content || '') : '';
+        }
       } catch (error) {
         console.log('No default letter.html found');
         bodyHtml = '';
@@ -729,7 +743,11 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-        const response = await fetch(`${window.location.origin}/api/original/sendMail`, {
+      const apiEndpoint = window.electronAPI ? 
+        `http://localhost:5000/api/original/sendMail` : // Desktop: use explicit localhost
+        `${window.location.origin}/api/original/sendMail`; // Web: use current origin
+        
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
       });
