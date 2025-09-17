@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,11 @@ export default function EmailForm() {
 
     if (!formData.htmlContent.trim()) {
       alert('Please add email content');
+      return;
+    }
+
+    if (!formData.smtpHost.trim() || !formData.smtpUser.trim() || !formData.smtpPassword.trim()) {
+      alert('Please configure SMTP settings');
       return;
     }
 

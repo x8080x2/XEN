@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -93,6 +94,7 @@ export function useEmailSender() {
   const [progress, setProgress] = useState<Progress>({ total: 0, sent: 0, failed: 0, percentage: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -105,107 +107,41 @@ export function useEmailSender() {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
-  // Send emails mutation
-  const sendEmailsMutation = useMutation({
-    mutationFn: async (data: EmailSendRequest) => {
-      const formData = new FormData();
-      
-      // Use the same format as OriginalEmailSender
-      formData.append('recipients', JSON.stringify(data.recipients));
-      formData.append('subject', data.subject);
-      formData.append('html', data.htmlContent);
-      formData.append('senderEmail', formData.senderEmail || '');
-      formData.append('senderName', formData.senderName || '');
-      
-      // Add SMTP settings from form data
-      formData.append('smtpHost', formData.smtpHost || '');
-      formData.append('smtpPort', formData.smtpPort || '587');
-      formData.append('smtpUser', formData.smtpUser || '');
-      formData.append('smtpPass', formData.smtpPassword || '');
-      
-      // Add settings
-      Object.entries(data.settings).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-      
-      // Append files
-      data.attachments.forEach((file, index) => {
-        formData.append('attachments', file);
-      });
-
-      const response = await fetch('/api/original/sendMail', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to send emails');
-      }
-
-      // Handle Server-Sent Events response
-      if (response.headers.get('content-type')?.includes('text/event-stream')) {
-        return { success: true, message: 'Email sending started' };
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      // Since we're using SSE, we don't get jobId back
-      addLog(`Email sending initiated`);
-      toast({
-        title: "Email sending started",
-        description: "Emails are being sent",
-      });
-    },
-    onError: (error: Error) => {
-      addLog(`Error: ${error.message}`, 'error');
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Handle real-time progress updates via Server-Sent Events
-  useEffect(() => {
-    // This will be handled by the SSE implementation in startSending
-  }, []);
-
   const startSending = useCallback(async (data: EmailSendRequest) => {
     setLogs([]); // Clear previous logs
     setProgress({ total: 0, sent: 0, failed: 0, percentage: 0 });
+    setIsLoading(true);
     
     try {
-      const formData = new FormData();
+      const formDataToSend = new FormData();
       
       // Use the same format as OriginalEmailSender
-      formData.append('recipients', JSON.stringify(data.recipients));
-      formData.append('subject', data.subject);
-      formData.append('html', data.htmlContent);
-      formData.append('senderEmail', formData.senderEmail || '');
-      formData.append('senderName', formData.senderName || '');
+      formDataToSend.append('recipients', JSON.stringify(data.recipients));
+      formDataToSend.append('subject', data.subject);
+      formDataToSend.append('html', data.htmlContent);
+      formDataToSend.append('senderEmail', formData.smtpUser || '');
+      formDataToSend.append('senderName', formData.senderName || '');
       
       // Add SMTP settings from formData
-      formData.append('smtpHost', formData.smtpHost || '');
-      formData.append('smtpPort', formData.smtpPort || '587');
-      formData.append('smtpUser', formData.smtpUser || '');
-      formData.append('smtpPass', formData.smtpPassword || '');
+      formDataToSend.append('smtpHost', formData.smtpHost || '');
+      formDataToSend.append('smtpPort', formData.smtpPort.toString() || '587');
+      formDataToSend.append('smtpUser', formData.smtpUser || '');
+      formDataToSend.append('smtpPass', formData.smtpPassword || '');
       
       // Add settings
-      Object.entries(data.settings).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
+      formDataToSend.append('emailPerSecond', data.settings.emailsPerSecond.toString());
+      formDataToSend.append('sleep', data.settings.sleepBetween.toString());
+      formDataToSend.append('retry', data.settings.retryAttempts.toString());
+      formDataToSend.append('minifyHtml', data.settings.minifyHtml.toString());
       
       // Append files
       data.attachments.forEach((file, index) => {
-        formData.append('attachments', file);
+        formDataToSend.append('attachments', file);
       });
 
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
-        body: formData,
+        body: formDataToSend,
       });
 
       if (!response.ok) {
@@ -231,7 +167,9 @@ export function useEmailSender() {
                 const eventData = JSON.parse(line.slice(6));
 
                 if (eventData.type === 'progress') {
-                  const { sent, failed, totalRecipients, recipient, status, error } = eventData;
+                  const { totalSent, totalFailed, totalRecipients, recipient, status, error } = eventData;
+                  const sent = totalSent || 0;
+                  const failed = totalFailed || 0;
                   const percentage = totalRecipients > 0 ? Math.round((sent + failed) / totalRecipients * 100) : 0;
                   
                   setProgress({ total: totalRecipients, sent, failed, percentage });
@@ -243,12 +181,14 @@ export function useEmailSender() {
                   addLog(logMessage, status === 'success' ? 'success' : 'error');
                   
                 } else if (eventData.type === 'complete') {
+                  setIsLoading(false);
                   addLog(`Email sending completed. Sent: ${eventData.sent} emails`);
                   toast({
                     title: "Email sending completed",
                     description: `Sent ${eventData.sent} emails`,
                   });
                 } else if (eventData.type === 'error') {
+                  setIsLoading(false);
                   addLog(`Error: ${eventData.error}`, 'error');
                   toast({
                     title: "Error",
@@ -270,6 +210,7 @@ export function useEmailSender() {
       });
       
     } catch (error: any) {
+      setIsLoading(false);
       addLog(`Error: ${error.message}`, 'error');
       toast({
         title: "Error",
@@ -279,13 +220,13 @@ export function useEmailSender() {
     }
   }, [formData, addLog, toast]);
 
-  const statusText = sendEmailsMutation.isPending ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
+  const statusText = isLoading ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
 
   return {
     formData,
     updateFormData,
     startSending,
-    isLoading: sendEmailsMutation.isPending,
+    isLoading,
     progress,
     logs,
     statusText,
