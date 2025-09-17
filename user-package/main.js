@@ -56,17 +56,27 @@ ipcMain.handle('read-file', async (event, filepath) => {
   try {
     console.log(`[Electron] Reading file: ${filepath}`);
     
-    // Resolve relative paths from the app directory
-    const resolvedPath = path.resolve(process.cwd(), filepath);
-    console.log(`[Electron] Resolved path: ${resolvedPath}`);
+    // Try multiple locations for file resolution
+    const possiblePaths = [
+      path.resolve(__dirname, filepath), // user-package directory
+      path.resolve(process.cwd(), filepath), // current working directory
+      path.resolve(__dirname, '..', filepath), // parent directory
+    ];
     
-    if (!existsSync(resolvedPath)) {
-      throw new Error(`File not found: ${resolvedPath}`);
+    let resolvedPath = null;
+    let content = null;
+    
+    for (const testPath of possiblePaths) {
+      console.log(`[Electron] Trying path: ${testPath}`);
+      if (existsSync(testPath)) {
+        resolvedPath = testPath;
+        content = await fs.readFile(testPath, 'utf-8');
+        console.log(`[Electron] Successfully read file: ${filepath} from ${testPath} (${content.length} chars)`);
+        return content;
+      }
     }
     
-    const content = await fs.readFile(resolvedPath, 'utf-8');
-    console.log(`[Electron] Successfully read file: ${filepath} (${content.length} chars)`);
-    return content;
+    throw new Error(`File not found in any location: ${filepath}`);
   } catch (error) {
     console.error(`[Electron] Failed to read file ${filepath}:`, error);
     throw error;
@@ -97,16 +107,32 @@ ipcMain.handle('list-files', async (event, dirpath) => {
   try {
     console.log(`[Electron] Listing files in: ${dirpath}`);
     
-    // Resolve relative paths from the app directory
-    const resolvedPath = path.resolve(process.cwd(), dirpath);
-    console.log(`[Electron] Resolved directory: ${resolvedPath}`);
+    // Try multiple base directories
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
     
-    if (!existsSync(resolvedPath)) {
-      console.log(`[Electron] Directory not found: ${resolvedPath}`);
-      return [];
+    let files = [];
+    let foundPath = null;
+    
+    for (const basePath of basePaths) {
+      const resolvedPath = path.resolve(basePath, dirpath);
+      console.log(`[Electron] Trying directory: ${resolvedPath}`);
+      
+      if (existsSync(resolvedPath)) {
+        files = await fs.readdir(resolvedPath);
+        foundPath = resolvedPath;
+        console.log(`[Electron] Found directory: ${resolvedPath}`);
+        break;
+      }
     }
     
-    const files = await fs.readdir(resolvedPath);
+    if (!foundPath) {
+      console.log(`[Electron] Directory not found in any location: ${dirpath}`);
+      return [];
+    }
     
     // Filter files based on directory type
     let filteredFiles;
@@ -131,24 +157,40 @@ ipcMain.handle('read-config', async (event, configDir) => {
   try {
     console.log(`[Electron] Reading config from: ${configDir}`);
     
-    const setupPath = path.resolve(process.cwd(), configDir, 'setup.ini');
-    const smtpPath = path.resolve(process.cwd(), configDir, 'smtp.ini');
+    // Try multiple base directories
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
     
     const config = {};
     
-    // Read setup.ini if it exists
-    if (existsSync(setupPath)) {
-      const setupContent = await fs.readFile(setupPath, 'utf-8');
-      console.log(`[Electron] Found setup.ini`);
-      // Basic INI parsing - you might want to use a proper INI parser
-      config.setup = setupContent;
-    }
-    
-    // Read smtp.ini if it exists
-    if (existsSync(smtpPath)) {
-      const smtpContent = await fs.readFile(smtpPath, 'utf-8');
-      console.log(`[Electron] Found smtp.ini`);
-      config.smtp = smtpContent;
+    for (const basePath of basePaths) {
+      const setupPath = path.resolve(basePath, configDir, 'setup.ini');
+      const smtpPath = path.resolve(basePath, configDir, 'smtp.ini');
+      
+      console.log(`[Electron] Checking config paths in: ${basePath}`);
+      
+      // Read setup.ini if it exists
+      if (existsSync(setupPath)) {
+        const setupContent = await fs.readFile(setupPath, 'utf-8');
+        console.log(`[Electron] Found setup.ini at ${setupPath}`);
+        config.setup = setupContent;
+      }
+      
+      // Read smtp.ini if it exists
+      if (existsSync(smtpPath)) {
+        const smtpContent = await fs.readFile(smtpPath, 'utf-8');
+        console.log(`[Electron] Found smtp.ini at ${smtpPath}`);
+        config.smtp = smtpContent;
+      }
+      
+      // If we found any config files, break out of the loop
+      if (config.setup || config.smtp) {
+        console.log(`[Electron] Found config files in: ${basePath}`);
+        break;
+      }
     }
     
     return config;
