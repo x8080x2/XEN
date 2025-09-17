@@ -16,7 +16,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Config and SMTP operations
   loadConfig: () => ipcRenderer.invoke('load-config'),
   loadLeads: () => ipcRenderer.invoke('load-leads'),
-  smtpList: () => ipcRenderer.invoke('smtp-list')
+  smtpList: () => ipcRenderer.invoke('smtp-list'),
+  
+  // Server configuration
+  getServerUrl: () => process.env.REPLIT_SERVER_URL
 });
 
 // Log that preload script has loaded

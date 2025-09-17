@@ -8,7 +8,11 @@ export class LocalFileService {
   private async callBackendAPI(endpoint: string, params: Record<string, string> = {}): Promise<any> {
     try {
       const urlParams = new URLSearchParams(params);
-      const response = await fetch(`/api/electron/${endpoint}?${urlParams}`);
+      // Get server URL from Electron or use fallback
+      const baseUrl = (window as any).REPLIT_SERVER_URL || 
+                     window.electronAPI?.getServerUrl?.() || 
+                     'https://your-repl-name.your-username.repl.co';
+      const response = await fetch(`${baseUrl}/api/electron/${endpoint}?${urlParams}`);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }

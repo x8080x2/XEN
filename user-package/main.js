@@ -3,6 +3,9 @@ const path = require('path');
 const fs = require('fs').promises;
 const { existsSync } = require('fs');
 
+// Load environment variables
+require('dotenv').config();
+
 // Keep a global reference of the window object
 let mainWindow;
 
@@ -32,6 +35,13 @@ function createWindow() {
     const indexPath = path.join(__dirname, 'dist/index.html');
     mainWindow.loadURL(`file://${indexPath}#/`);
   }
+
+  // Pass server URL to renderer process
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(`
+      window.REPLIT_SERVER_URL = '${process.env.REPLIT_SERVER_URL || ''}';
+    `);
+  });
 
   // Emitted when the window is closed
   mainWindow.on('closed', function () {
