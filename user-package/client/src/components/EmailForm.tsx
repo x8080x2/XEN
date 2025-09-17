@@ -41,7 +41,7 @@ export default function EmailForm() {
     }
 
     if (!formData.smtpHost.trim() || !formData.smtpUser.trim() || !formData.smtpPassword.trim()) {
-      alert('Please configure SMTP settings');
+      alert('Please configure SMTP settings (Host, Email, and Password are required)');
       return;
     }
 

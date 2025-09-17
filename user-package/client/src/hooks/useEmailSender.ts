@@ -1,7 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 interface EmailFormData {
@@ -50,20 +48,6 @@ interface LogEntry {
   status: 'success' | 'error';
 }
 
-interface JobStatus {
-  id: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  total: number;
-  sent: number;
-  failed: number;
-  logs: Array<{
-    recipient: string;
-    status: 'success' | 'failed';
-    message: string;
-    timestamp: string;
-  }>;
-}
-
 const defaultFormData: EmailFormData = {
   smtpHost: "smtp.gmail.com",
   smtpPort: 587,
@@ -93,10 +77,8 @@ export function useEmailSender() {
   const [formData, setFormData] = useState<EmailFormData>(defaultFormData);
   const [progress, setProgress] = useState<Progress>({ total: 0, sent: 0, failed: 0, percentage: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const addLog = useCallback((message: string, status: 'success' | 'error' = 'success') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -115,7 +97,7 @@ export function useEmailSender() {
     try {
       const formDataToSend = new FormData();
       
-      // Use the same format as OriginalEmailSender
+      // Use the same format as your working backend
       formDataToSend.append('recipients', JSON.stringify(data.recipients));
       formDataToSend.append('subject', data.subject);
       formDataToSend.append('html', data.htmlContent);
@@ -139,7 +121,8 @@ export function useEmailSender() {
         formDataToSend.append('attachments', file);
       });
 
-      const response = await fetch('/api/original/sendMail', {
+      // Use the correct API endpoint that matches your backend
+      const response = await fetch('https://6de049ed-d066-449f-a2f8-4737450b039c-00-kff0o6vvrlqh.spock.replit.dev/api/original/sendMail', {
         method: 'POST',
         body: formDataToSend,
       });
