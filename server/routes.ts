@@ -306,19 +306,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/smtp/rotate", (req, res) => {
-    try {
-      const currentSmtp = configService.rotateToNextSmtp();
-      
-      res.json({
-        success: true,
-        currentSmtp: currentSmtp
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
-  });
-
   app.post("/api/smtp/add", (req, res) => {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;
@@ -344,12 +331,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/smtp/:smtpId", (req, res) => {
     try {
       const { smtpId } = req.params;
+      const deleted = configService.deleteSmtpConfig(smtpId);
       
-      // Cannot delete main SMTP config in file-based system
-      res.status(400).json({ 
-        success: false, 
-        error: "Cannot delete main SMTP configuration. Use 'Add SMTP' to update it." 
-      });
+      if (deleted) {
+        res.json({
+          success: true,
+          smtpConfigs: configService.getAllSmtpConfigs(),
+          currentSmtp: configService.getCurrentSmtpConfig()
+        });
+      } else {
+        res.status(404).json({ success: false, error: "SMTP config not found" });
+      }
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
     }
