@@ -542,7 +542,6 @@ export default function OriginalEmailSender() {
         });
 
         // Note: Leads loading is handled by separate loadLeadsFromFile() call
-        }
 
         // Auto-load letter content if available
         if (config.LETTER_CONTENT) {
