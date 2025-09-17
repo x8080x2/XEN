@@ -570,38 +570,21 @@ export default function OriginalEmailSender() {
   // Load leads from file - both Electron and web support
   const loadLeadsFromFile = async () => {
     try {
-      if (window.electronAPI?.readFile) {
-        // Use Electron API to read leads.txt directly
-        try {
-          const leadsContent = await window.electronAPI.readFile('./files/leads.txt');
-          if (leadsContent && leadsContent.trim().length > 0) {
-            setRecipients(leadsContent.trim());
-            const leadCount = leadsContent.trim().split('\n').filter(Boolean).length;
-            console.log(`[Electron] Auto-loaded ${leadCount} leads from leads.txt`);
-          } else {
-            console.log('[Electron] leads.txt is empty');
-          }
-        } catch (error) {
-          console.log('[Electron] No leads.txt found or failed to read:', error);
-        }
+      // Use Electron API for leads.txt if available, otherwise fallback to fetch.
+      const leadsData = window.electronAPI
+        ? await window.electronAPI.loadLeads()
+        : await fetch('/api/config/loadLeads').then(res => res.json());
+
+      if (leadsData && leadsData.leads && leadsData.leads.trim().length > 0) {
+        setRecipients(leadsData.leads);
+        const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
+        console.log(`[${window.electronAPI ? 'Electron' : 'Backend API'}] Auto-loaded ${leadCount} leads from leads.txt`);
       } else {
-        // Fallback to backend API for web version
-        try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
-          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-            setRecipients(leadsData.leads);
-            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-            console.log(`[Backend API] Auto-loaded ${leadCount} leads from leads.txt`);
-          } else {
-            console.log('[Backend API] No leads.txt found, starting with empty recipients');
-          }
-        } catch (leadsError) {
-          console.log('[Backend API] Failed to load leads:', leadsError);
-        }
+        console.log(`[${window.electronAPI ? 'Electron' : 'Backend API'}] No leads.txt found or it's empty, starting with empty recipients`);
       }
     } catch (error) {
       console.error('[File Load] Error loading leads:', error);
+      setStatusText('Failed to load leads');
     }
   };
 
@@ -1137,7 +1120,7 @@ export default function OriginalEmailSender() {
                     {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
                       <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
                     ) : (
-                      <span>select one</span>
+                      <span>image from logo folder</span>
                     )}
                   </div>
                 </div>

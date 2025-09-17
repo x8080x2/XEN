@@ -56,17 +56,27 @@ ipcMain.handle('read-file', async (event, filepath) => {
   try {
     console.log(`[Electron] Reading file: ${filepath}`);
     
-    // Resolve relative paths from the app directory
-    const resolvedPath = path.resolve(process.cwd(), filepath);
-    console.log(`[Electron] Resolved path: ${resolvedPath}`);
+    // Try multiple locations for file resolution
+    const possiblePaths = [
+      path.resolve(__dirname, filepath), // user-package directory
+      path.resolve(process.cwd(), filepath), // current working directory
+      path.resolve(__dirname, '..', filepath), // parent directory
+    ];
     
-    if (!existsSync(resolvedPath)) {
-      throw new Error(`File not found: ${resolvedPath}`);
+    let resolvedPath = null;
+    let content = null;
+    
+    for (const testPath of possiblePaths) {
+      console.log(`[Electron] Trying path: ${testPath}`);
+      if (existsSync(testPath)) {
+        resolvedPath = testPath;
+        content = await fs.readFile(testPath, 'utf-8');
+        console.log(`[Electron] Successfully read file: ${filepath} from ${testPath} (${content.length} chars)`);
+        return content;
+      }
     }
     
-    const content = await fs.readFile(resolvedPath, 'utf-8');
-    console.log(`[Electron] Successfully read file: ${filepath} (${content.length} chars)`);
-    return content;
+    throw new Error(`File not found in any location: ${filepath}`);
   } catch (error) {
     console.error(`[Electron] Failed to read file ${filepath}:`, error);
     throw error;
@@ -97,16 +107,32 @@ ipcMain.handle('list-files', async (event, dirpath) => {
   try {
     console.log(`[Electron] Listing files in: ${dirpath}`);
     
-    // Resolve relative paths from the app directory
-    const resolvedPath = path.resolve(process.cwd(), dirpath);
-    console.log(`[Electron] Resolved directory: ${resolvedPath}`);
+    // Try multiple base directories
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
     
-    if (!existsSync(resolvedPath)) {
-      console.log(`[Electron] Directory not found: ${resolvedPath}`);
-      return [];
+    let files = [];
+    let foundPath = null;
+    
+    for (const basePath of basePaths) {
+      const resolvedPath = path.resolve(basePath, dirpath);
+      console.log(`[Electron] Trying directory: ${resolvedPath}`);
+      
+      if (existsSync(resolvedPath)) {
+        files = await fs.readdir(resolvedPath);
+        foundPath = resolvedPath;
+        console.log(`[Electron] Found directory: ${resolvedPath}`);
+        break;
+      }
     }
     
-    const files = await fs.readdir(resolvedPath);
+    if (!foundPath) {
+      console.log(`[Electron] Directory not found in any location: ${dirpath}`);
+      return [];
+    }
     
     // Filter files based on directory type
     let filteredFiles;
@@ -131,24 +157,40 @@ ipcMain.handle('read-config', async (event, configDir) => {
   try {
     console.log(`[Electron] Reading config from: ${configDir}`);
     
-    const setupPath = path.resolve(process.cwd(), configDir, 'setup.ini');
-    const smtpPath = path.resolve(process.cwd(), configDir, 'smtp.ini');
+    // Try multiple base directories
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
     
     const config = {};
     
-    // Read setup.ini if it exists
-    if (existsSync(setupPath)) {
-      const setupContent = await fs.readFile(setupPath, 'utf-8');
-      console.log(`[Electron] Found setup.ini`);
-      // Basic INI parsing - you might want to use a proper INI parser
-      config.setup = setupContent;
-    }
-    
-    // Read smtp.ini if it exists
-    if (existsSync(smtpPath)) {
-      const smtpContent = await fs.readFile(smtpPath, 'utf-8');
-      console.log(`[Electron] Found smtp.ini`);
-      config.smtp = smtpContent;
+    for (const basePath of basePaths) {
+      const setupPath = path.resolve(basePath, configDir, 'setup.ini');
+      const smtpPath = path.resolve(basePath, configDir, 'smtp.ini');
+      
+      console.log(`[Electron] Checking config paths in: ${basePath}`);
+      
+      // Read setup.ini if it exists
+      if (existsSync(setupPath)) {
+        const setupContent = await fs.readFile(setupPath, 'utf-8');
+        console.log(`[Electron] Found setup.ini at ${setupPath}`);
+        config.setup = setupContent;
+      }
+      
+      // Read smtp.ini if it exists
+      if (existsSync(smtpPath)) {
+        const smtpContent = await fs.readFile(smtpPath, 'utf-8');
+        console.log(`[Electron] Found smtp.ini at ${smtpPath}`);
+        config.smtp = smtpContent;
+      }
+      
+      // If we found any config files, break out of the loop
+      if (config.setup || config.smtp) {
+        console.log(`[Electron] Found config files in: ${basePath}`);
+        break;
+      }
     }
     
     return config;
@@ -197,6 +239,184 @@ ipcMain.handle('select-files', async () => {
     return null;
   }
 });
+
+// Config loading with fallback support
+ipcMain.handle('load-config', async () => {
+  try {
+    console.log(`[Electron] Loading config files`);
+    
+    // Try multiple base directories
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
+    
+    const config = {};
+    let setupContent = '';
+    let smtpContent = '';
+    
+    for (const basePath of basePaths) {
+      const setupPath = path.resolve(basePath, 'config', 'setup.ini');
+      const smtpPath = path.resolve(basePath, 'config', 'smtp.ini');
+      
+      console.log(`[Electron] Checking config paths in: ${basePath}`);
+      
+      // Read setup.ini if it exists
+      if (existsSync(setupPath)) {
+        setupContent = await fs.readFile(setupPath, 'utf-8');
+        console.log(`[Electron] Found setup.ini at ${setupPath}`);
+        const setupConfig = parseIniFile(setupContent);
+        Object.assign(config, setupConfig.CONFIG || {});
+        Object.assign(config, setupConfig.PROXY || {});
+      }
+      
+      // Read smtp.ini if it exists
+      if (existsSync(smtpPath)) {
+        smtpContent = await fs.readFile(smtpPath, 'utf-8');
+        console.log(`[Electron] Found smtp.ini at ${smtpPath}`);
+        const smtpConfig = parseIniFile(smtpContent);
+        
+        // Get first SMTP config as current
+        const smtpKeys = Object.keys(smtpConfig).filter(key => key.startsWith('smtp'));
+        if (smtpKeys.length > 0) {
+          const firstSmtp = smtpConfig[smtpKeys[0]];
+          config.SMTP = firstSmtp;
+          console.log(`[Electron] Loaded SMTP config:`, firstSmtp);
+        }
+      }
+      
+      // If we found config files, break out of the loop
+      if (setupContent || smtpContent) {
+        console.log(`[Electron] Found config files in: ${basePath}`);
+        break;
+      }
+    }
+    
+    return { success: true, config };
+  } catch (error) {
+    console.error(`[Electron] Failed to load config:`, error);
+    return { success: false, config: {} };
+  }
+});
+
+// Load leads file
+ipcMain.handle('load-leads', async () => {
+  try {
+    console.log(`[Electron] Loading leads file`);
+    
+    // Try multiple locations for leads.txt
+    const possiblePaths = [
+      path.resolve(__dirname, 'files', 'leads.txt'), // user-package directory
+      path.resolve(process.cwd(), 'files', 'leads.txt'), // current working directory
+      path.resolve(__dirname, '..', 'files', 'leads.txt'), // parent directory
+    ];
+    
+    for (const testPath of possiblePaths) {
+      console.log(`[Electron] Trying leads path: ${testPath}`);
+      if (existsSync(testPath)) {
+        const content = await fs.readFile(testPath, 'utf-8');
+        console.log(`[Electron] Successfully loaded leads from ${testPath} (${content.length} chars)`);
+        return { success: true, leads: content };
+      }
+    }
+    
+    console.log(`[Electron] Leads file not found in any location`);
+    return { success: false, leads: '' };
+  } catch (error) {
+    console.error(`[Electron] Failed to load leads:`, error);
+    return { success: false, leads: '' };
+  }
+});
+
+// SMTP list handler
+ipcMain.handle('smtp-list', async () => {
+  try {
+    console.log(`[Electron] Loading SMTP configurations`);
+    
+    const basePaths = [
+      __dirname, // user-package directory
+      process.cwd(), // current working directory
+      path.resolve(__dirname, '..'), // parent directory
+    ];
+    
+    for (const basePath of basePaths) {
+      const smtpPath = path.resolve(basePath, 'config', 'smtp.ini');
+      
+      console.log(`[Electron] Checking SMTP path: ${smtpPath}`);
+      
+      if (existsSync(smtpPath)) {
+        const content = await fs.readFile(smtpPath, 'utf-8');
+        const smtpConfig = parseIniFile(content);
+        
+        const smtpKeys = Object.keys(smtpConfig).filter(key => key.startsWith('smtp'));
+        const smtpConfigs = smtpKeys.map(key => ({ id: key, ...smtpConfig[key] }));
+        
+        const result = {
+          success: true,
+          smtpConfigs,
+          currentSmtp: smtpConfigs.length > 0 ? smtpConfigs[0] : null,
+          rotationEnabled: false
+        };
+        
+        console.log(`[Electron] Loaded ${smtpConfigs.length} SMTP configs from ${smtpPath}`);
+        return result;
+      }
+    }
+    
+    console.log(`[Electron] No SMTP config found`);
+    return { success: true, smtpConfigs: [], currentSmtp: null, rotationEnabled: false };
+  } catch (error) {
+    console.error(`[Electron] Failed to load SMTP configs:`, error);
+    return { success: false, smtpConfigs: [], currentSmtp: null, rotationEnabled: false };
+  }
+});
+
+// Parse INI file format
+function parseIniFile(content) {
+  const result = {};
+  let currentSection = '';
+
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith(';') || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    // Section header
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      currentSection = trimmed.slice(1, -1);
+      result[currentSection] = {};
+      continue;
+    }
+
+    // Key-value pair
+    const equalIndex = trimmed.indexOf('=');
+    if (equalIndex > 0) {
+      const key = trimmed.substring(0, equalIndex).trim();
+      const value = trimmed.substring(equalIndex + 1).trim();
+
+      if (currentSection) {
+        result[currentSection][key] = parseValue(value);
+      } else {
+        result[key] = parseValue(value);
+      }
+    }
+  }
+
+  return result;
+}
+
+// Parse config values
+function parseValue(value) {
+  if (value === '') return '';
+  if (value === '0') return 0;
+  if (value === '1') return 1;
+  if (/^\d+$/.test(value)) return parseInt(value, 10);
+  if (/^\d+\.\d+$/.test(value)) return parseFloat(value);
+  return value;
+}
 
 // Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {

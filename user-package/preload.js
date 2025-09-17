@@ -8,16 +8,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (filepath, content) => ipcRenderer.invoke('write-file', filepath, content),
   listFiles: (dirpath) => ipcRenderer.invoke('list-files', dirpath),
   readConfig: (configDir) => ipcRenderer.invoke('read-config', configDir),
-  
+
   // File selection dialogs
   selectFile: () => ipcRenderer.invoke('select-file'),
   selectFiles: () => ipcRenderer.invoke('select-files'),
-  
-  // Platform info
-  platform: process.platform,
-  
-  // Logging for debug
-  log: (message) => console.log('[Renderer]', message)
+
+  // Config and SMTP operations
+  loadConfig: () => ipcRenderer.invoke('load-config'),
+  loadLeads: () => ipcRenderer.invoke('load-leads'),
+  smtpList: () => ipcRenderer.invoke('smtp-list')
 });
 
 // Log that preload script has loaded
