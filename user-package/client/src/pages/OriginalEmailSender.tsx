@@ -363,6 +363,31 @@ export default function OriginalEmailSender() {
     fetchSmtpData(); // Add SMTP data loading
   }, []); // Run once on component mount
 
+  // Auto-apply SMTP settings when smtpData changes
+  useEffect(() => {
+    if (smtpData.currentSmtp && !smtpSettings.host) {
+      const currentSmtp = smtpData.currentSmtp;
+      setSMTPSettings({
+        host: currentSmtp.host || '',
+        port: currentSmtp.port || '587',
+        user: currentSmtp.user || '',
+        pass: currentSmtp.pass || '',
+        fromEmail: currentSmtp.fromEmail || '',
+        fromName: currentSmtp.fromName || ''
+      });
+      
+      // Also set sender email if not already set
+      if (currentSmtp.fromEmail && !senderEmail) {
+        setSenderEmail(currentSmtp.fromEmail);
+      }
+      if (currentSmtp.fromName && !senderName) {
+        setSenderName(currentSmtp.fromName);
+      }
+      
+      console.log('[SMTP Auto-Apply] Applied current SMTP config:', currentSmtp.fromEmail);
+    }
+  }, [smtpData.currentSmtp, smtpSettings.host, senderEmail, senderName]);
+
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -648,6 +673,25 @@ export default function OriginalEmailSender() {
       return;
     }
 
+    // Use current SMTP settings or fallback to manual settings
+    let activeSmtpSettings = smtpSettings;
+    if (smtpData.currentSmtp) {
+      activeSmtpSettings = {
+        host: smtpData.currentSmtp.host || smtpSettings.host,
+        port: smtpData.currentSmtp.port || smtpSettings.port,
+        user: smtpData.currentSmtp.user || smtpSettings.user,
+        pass: smtpData.currentSmtp.pass || smtpSettings.pass,
+        fromEmail: smtpData.currentSmtp.fromEmail || smtpSettings.fromEmail,
+        fromName: smtpData.currentSmtp.fromName || smtpSettings.fromName
+      };
+    }
+
+    // Validate SMTP configuration
+    if (!activeSmtpSettings.host || !activeSmtpSettings.user || !activeSmtpSettings.pass) {
+      setStatusText('SMTP configuration is incomplete. Please check your settings.');
+      return;
+    }
+
     if (!senderEmail.trim()) {
       setStatusText('Sender email is required (from SMTP config).');
       return;
@@ -713,6 +757,15 @@ export default function OriginalEmailSender() {
       attachmentHtmlContent = bodyHtml;
     }
 
+    // Debug logging for SMTP configuration
+    console.log('[Send] Active SMTP Settings:', {
+      host: activeSmtpSettings.host,
+      port: activeSmtpSettings.port,
+      user: activeSmtpSettings.user,
+      fromEmail: activeSmtpSettings.fromEmail,
+      hasPassword: !!activeSmtpSettings.pass
+    });
+
     setIsLoading(true);
     setProgress(0);
     setStatusText("Preparing to send emails...");
@@ -731,11 +784,11 @@ export default function OriginalEmailSender() {
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-      // SMTP settings
-      formData.append('smtpHost', smtpSettings.host);
-      formData.append('smtpPort', smtpSettings.port);
-      formData.append('smtpUser', smtpSettings.user);
-      formData.append('smtpPass', smtpSettings.pass);
+      // SMTP settings - use active SMTP configuration
+      formData.append('smtpHost', activeSmtpSettings.host);
+      formData.append('smtpPort', activeSmtpSettings.port);
+      formData.append('smtpUser', activeSmtpSettings.user);
+      formData.append('smtpPass', activeSmtpSettings.pass);
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
