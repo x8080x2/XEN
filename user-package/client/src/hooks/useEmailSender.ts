@@ -121,14 +121,15 @@ export function useEmailSender() {
         formData.append(`attachment_${index}`, file);
       });
 
-      const response = await fetch('/api/emails/send', {
+        const response = await fetch(`${window.location.origin}/api/original/sendMail`, {
         method: 'POST',
         body: formData,
       });
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(error || 'Failed to send emails');
+        throw new Error(error || 'Failed to shi
+                        end emails');
       }
 
       return response.json();

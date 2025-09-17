@@ -43,15 +43,11 @@ externalPort = 5173
 localPort = 44129
 externalPort = 3003
 
-[[ports]]
-localPort = 46827
-externalPort = 6000
-
 [env]
 PORT = "5000"
 
 [workflows]
-runButton = "Project"
+runButton = "Start User Package"
 
 [[workflows.workflow]]
 name = "Project"
@@ -70,24 +66,6 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
-
-[[workflows.workflow]]
-name = "Start Fresh"
-author = 46291309
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm run dev"
-
-[[workflows.workflow]]
-name = "Start User Package"
-author = 47594628
-mode = "sequential"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = ""
 
 [agent]
 integrations = ["javascript_database:1.0.0"]

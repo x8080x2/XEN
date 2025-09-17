@@ -750,7 +750,7 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-      const response = await fetch('/api/original/sendMail', {
+        const response = await fetch(`${window.location.origin}/api/original/sendMail`, {
         method: 'POST',
         body: formData,
       });

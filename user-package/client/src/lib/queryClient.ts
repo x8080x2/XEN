@@ -8,7 +8,7 @@ async function throwIfResNotOk(res: Response) {
 }
 
 // API Base URL - replace with your deployed Replit app URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://6de049ed-d066-449f-a2f8-4737450b039c-00-kff0o6vvrlqh.spock.replit.dev";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://ae57ebf1-e457-47b8-9e70-3e9a750cc9c5-00-24labz448obe2.spock.replit.dev";
 
 export async function apiRequest(
   method: string,
