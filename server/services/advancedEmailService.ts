@@ -522,9 +522,10 @@ export class AdvancedEmailService {
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
 
-  // QR caching with cache locking
+  // QR caching with cache locking and size limits
   private qrCache = new Map<string, Buffer>();
   private qrCacheLocks = new Set<string>(); // Cache locking mechanism
+  private maxCacheSize = 100; // Limit cache size to prevent memory issues
 
   // Clear all caches with safety check
   public clearCaches() {
@@ -679,7 +680,12 @@ export class AdvancedEmailService {
         }
       });
 
-      // Cache the result
+      // Cache the result with size management
+      if (this.qrCache.size >= this.maxCacheSize) {
+        // Remove oldest entry
+        const firstKey = this.qrCache.keys().next().value;
+        this.qrCache.delete(firstKey);
+      }
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
 

@@ -619,18 +619,13 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
-    // Validate SMTP configuration before sending - use actual values being sent
-    const finalSmtpHost = smtpSettings.host || '';
-    const finalSmtpUser = smtpSettings.user || '';
-    const finalSmtpPass = smtpSettings.pass || '';
-
-    if (!finalSmtpHost || !finalSmtpUser || !finalSmtpPass) {
-      setStatusText('SMTP configuration incomplete. Host, User, and Password are required.');
+    // Validate SMTP configuration before sending
+    if (!smtpSettings.host || !smtpSettings.user || !smtpSettings.pass) {
+      setStatusText('SMTP configuration incomplete. Please check config files.');
       console.error('[Desktop] SMTP validation failed:', {
-        hasHost: !!finalSmtpHost,
-        hasUser: !!finalSmtpUser,
-        hasPass: !!finalSmtpPass,
-        smtpSettings
+        hasHost: !!smtpSettings.host,
+        hasUser: !!smtpSettings.user,
+        hasPass: !!smtpSettings.pass
       });
       return;
     }
@@ -773,7 +768,7 @@ export default function OriginalEmailSender() {
       // Use Server-Sent Events for real-time progress
       const apiEndpoint = window.electronAPI ? 
         `http://localhost:5000/api/original/sendMail` : // Desktop: use explicit localhost
-        `${window.location.origin}/api/original/sendMail`; // Web: use current origin
+        `/api/original/sendMail`; // Web: use relative path
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',

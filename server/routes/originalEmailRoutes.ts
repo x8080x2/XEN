@@ -18,6 +18,21 @@ export function setupOriginalEmailRoutes(app: Express) {
         senderEmail: req.body.senderEmail
       });
 
+      // Validate SMTP settings early
+      if (!req.body.smtpHost || !req.body.smtpUser || !req.body.smtpPass) {
+        const missingFields = [];
+        if (!req.body.smtpHost) missingFields.push('Host');
+        if (!req.body.smtpUser) missingFields.push('User');
+        if (!req.body.smtpPass) missingFields.push('Password');
+        
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
+        })}\n\n`);
+        res.end();
+        return;
+      }
+
       const files = req.files as Express.Multer.File[];
       const attachments = files?.map(file => file.path) || [];
 
