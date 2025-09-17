@@ -121,14 +121,14 @@ export function useEmailSender() {
         formDataToSend.append('attachments', file);
       });
 
-      // Use the correct API endpoint that matches your backend
-      const response = await fetch('https://6de049ed-d066-449f-a2f8-4737450b039c-00-kff0o6vvrlqh.spock.replit.dev/api/original/sendMail', {
+      // Use relative path for API endpoint
+      const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formDataToSend,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start email sending');
+        throw new Error(`Failed to start email sending: ${response.status} ${response.statusText}`);
       }
 
       const reader = response.body?.getReader();
@@ -194,12 +194,14 @@ export function useEmailSender() {
       
     } catch (error: any) {
       setIsLoading(false);
-      addLog(`Error: ${error.message}`, 'error');
+      const errorMessage = error.message || 'Network error occurred';
+      addLog(`Error: ${errorMessage}`, 'error');
       toast({
         title: "Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
+      console.error('Send error:', error);
     }
   }, [formData, addLog, toast]);
 

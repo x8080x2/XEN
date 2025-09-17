@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import FileUpload from "./FileUpload";
 import { useEmailSender } from "@/hooks/useEmailSender";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmailForm() {
   const {
@@ -16,6 +17,7 @@ export default function EmailForm() {
     statusText
   } = useEmailSender();
 
+  const { toast } = useToast();
   const [htmlFiles, setHtmlFiles] = useState<File[]>([]);
   const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
 
@@ -26,22 +28,38 @@ export default function EmailForm() {
       .filter(email => email.length > 0);
 
     if (recipients.length === 0) {
-      alert('Please add recipients');
+      toast({
+        title: "Recipients Required",
+        description: "Please add recipients",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.subject.trim()) {
-      alert('Please add a subject');
+      toast({
+        title: "Subject Required", 
+        description: "Please add a subject",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.htmlContent.trim()) {
-      alert('Please add email content');
+      toast({
+        title: "Content Required",
+        description: "Please add email content", 
+        variant: "destructive",
+      });
       return;
     }
 
     if (!formData.smtpHost.trim() || !formData.smtpUser.trim() || !formData.smtpPassword.trim()) {
-      alert('Please configure SMTP settings (Host, Email, and Password are required)');
+      toast({
+        title: "SMTP Configuration Required",
+        description: "Please configure SMTP settings (Host, Email, and Password are required)",
+        variant: "destructive",
+      });
       return;
     }
 
