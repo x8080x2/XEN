@@ -803,7 +803,16 @@ export default function OriginalEmailSender() {
 
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
-                  const progressData: EmailProgress = data;
+                  const progressData: EmailProgress = {
+                    recipient: data.recipient || 'Unknown',
+                    subject: data.subject || subject || 'No Subject',
+                    status: data.status || 'fail',
+                    error: data.error || null,
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    totalSent: data.totalSent,
+                    totalFailed: data.totalFailed,
+                    totalRecipients: data.totalRecipients
+                  };
 
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
@@ -815,12 +824,12 @@ export default function OriginalEmailSender() {
                       setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
                     }
 
-                    if (data.status === 'success') {
-                      setStatusText(`✓ Successfully sent to ${data.recipient}`);
-                      setCurrentEmailStatus(`✓ Successfully sent to ${data.recipient}`);
+                    if (progressData.status === 'success') {
+                      setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
+                      setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
                     } else {
-                      setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
-                      setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
+                      setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
+                      setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
                     }
                   });
 

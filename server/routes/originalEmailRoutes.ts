@@ -133,14 +133,14 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalFailed++;
           }
 
-          // Send progress update
+          // Send progress update with proper data validation
           res.write(`data: ${JSON.stringify({
             type: 'progress',
-            recipient: progress.recipient,
-            subject: progress.subject,
+            recipient: progress.recipient || 'Unknown',
+            subject: progress.subject || args.subject || 'No Subject',
             status: progress.status,
-            error: progress.error,
-            timestamp: progress.timestamp,
+            error: progress.error || null,
+            timestamp: progress.timestamp || new Date().toISOString(),
             totalSent,
             totalFailed,
             totalRecipients: recipients.length

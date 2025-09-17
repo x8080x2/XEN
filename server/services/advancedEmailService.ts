@@ -1936,23 +1936,24 @@ END:VCALENDAR`;
           }
 
             progressCallback?.({
-              recipient,
-              subject: dynamicSubject,
+              recipient: recipient || 'Unknown',
+              subject: dynamicSubject || args.subject || 'No Subject',
               status: result.success ? 'success' : 'fail',
-              error: result.success ? null : result.error || 'Unknown error',
+              error: result.success ? null : (result.error || 'Unknown error'),
               timestamp: new Date().toISOString()
             });
             batchResults.push(result);
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
+            const errorMessage = err && err.message ? err.message : String(err);
             progressCallback?.({
-              recipient,
-              subject: args.subject,
+              recipient: recipient || 'Unknown',
+              subject: dynamicSubject || args.subject || 'No Subject',
               status: 'fail',
-              error: err && err.message ? err.message : String(err),
+              error: errorMessage,
               timestamp: new Date().toISOString()
             });
-            batchResults.push({ success: false, error: err && err.message ? err.message : String(err), recipient });
+            batchResults.push({ success: false, error: errorMessage, recipient: recipient || 'Unknown' });
           }
 
           // Rate limiting: wait between emails within batch (except for last email)
