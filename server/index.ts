@@ -122,8 +122,8 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
 
 
-  // Use different binding for local development vs production  
-  const host = isDevelopment ? "localhost" : "0.0.0.0";
+  // Always bind to 0.0.0.0 for Replit compatibility
+  const host = "0.0.0.0";
   
   server.listen(port, host, () => {
     log(`serving on ${host}:${port}`);
