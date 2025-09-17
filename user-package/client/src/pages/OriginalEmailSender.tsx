@@ -541,16 +541,33 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
+        // Auto-load leads from files/leads.txt - with Electron support
         try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
-          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-            setRecipients(leadsData.leads);
-            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-            console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt`);
+          if (window.electronAPI?.readFile) {
+            // Use Electron API for direct file access
+            try {
+              const leadsContent = await window.electronAPI.readFile('./files/leads.txt');
+              if (leadsContent && leadsContent.trim().length > 0) {
+                setRecipients(leadsContent.trim());
+                const leadCount = leadsContent.trim().split('\n').filter(Boolean).length;
+                console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt via Electron API`);
+              } else {
+                console.log('[Config Load] leads.txt is empty via Electron API');
+              }
+            } catch (error) {
+              console.log('[Config Load] No leads.txt found via Electron API:', error);
+            }
           } else {
-            console.log('[Config Load] No leads.txt found, starting with empty recipients');
+            // Fallback to backend API for web version
+            const leadsResponse = await fetch('/api/config/loadLeads');
+            const leadsData = await leadsResponse.json();
+            if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+              setRecipients(leadsData.leads);
+              const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
+              console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt via Backend API`);
+            } else {
+              console.log('[Config Load] No leads.txt found via Backend API, starting with empty recipients');
+            }
           }
         } catch (leadsError) {
           console.log('[Config Load] Failed to load leads:', leadsError);
@@ -580,22 +597,41 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Placeholder for loadLeadsFromFile function
+  // Load leads from file - both Electron and web support
   const loadLeadsFromFile = async () => {
-    // This function seems to be called in the original effect, but not defined.
-    // Assuming it's meant to load recipients from a file, similar to the logic within loadConfigFromFiles.
     try {
-      const leadsResponse = await fetch('/api/config/loadLeads');
-      const leadsData = await leadsResponse.json();
-      if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-        setRecipients(leadsData.leads);
-        const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-        console.log(`[File Load] Auto-loaded ${leadCount} leads from leads.txt`);
+      if (window.electronAPI?.readFile) {
+        // Use Electron API to read leads.txt directly
+        try {
+          const leadsContent = await window.electronAPI.readFile('./files/leads.txt');
+          if (leadsContent && leadsContent.trim().length > 0) {
+            setRecipients(leadsContent.trim());
+            const leadCount = leadsContent.trim().split('\n').filter(Boolean).length;
+            console.log(`[Electron] Auto-loaded ${leadCount} leads from leads.txt`);
+          } else {
+            console.log('[Electron] leads.txt is empty');
+          }
+        } catch (error) {
+          console.log('[Electron] No leads.txt found or failed to read:', error);
+        }
       } else {
-        console.log('[File Load] No leads.txt found, starting with empty recipients');
+        // Fallback to backend API for web version
+        try {
+          const leadsResponse = await fetch('/api/config/loadLeads');
+          const leadsData = await leadsResponse.json();
+          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+            setRecipients(leadsData.leads);
+            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
+            console.log(`[Backend API] Auto-loaded ${leadCount} leads from leads.txt`);
+          } else {
+            console.log('[Backend API] No leads.txt found, starting with empty recipients');
+          }
+        } catch (leadsError) {
+          console.log('[Backend API] Failed to load leads:', leadsError);
+        }
       }
-    } catch (leadsError) {
-      console.log('[File Load] Failed to load leads:', leadsError);
+    } catch (error) {
+      console.error('[File Load] Error loading leads:', error);
     }
   };
 
