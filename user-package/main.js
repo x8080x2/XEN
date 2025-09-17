@@ -56,27 +56,17 @@ ipcMain.handle('read-file', async (event, filepath) => {
   try {
     console.log(`[Electron] Reading file: ${filepath}`);
     
-    // Try multiple locations for file resolution
-    const possiblePaths = [
-      path.resolve(__dirname, filepath), // user-package directory
-      path.resolve(process.cwd(), filepath), // current working directory
-      path.resolve(__dirname, '..', filepath), // parent directory
-    ];
+    // Use only the user-package directory as base
+    const resolvedPath = path.resolve(__dirname, filepath);
+    console.log(`[Electron] Resolved path: ${resolvedPath}`);
     
-    let resolvedPath = null;
-    let content = null;
-    
-    for (const testPath of possiblePaths) {
-      console.log(`[Electron] Trying path: ${testPath}`);
-      if (existsSync(testPath)) {
-        resolvedPath = testPath;
-        content = await fs.readFile(testPath, 'utf-8');
-        console.log(`[Electron] Successfully read file: ${filepath} from ${testPath} (${content.length} chars)`);
-        return content;
-      }
+    if (existsSync(resolvedPath)) {
+      const content = await fs.readFile(resolvedPath, 'utf-8');
+      console.log(`[Electron] Successfully read file: ${filepath} (${content.length} chars)`);
+      return content;
     }
     
-    throw new Error(`File not found in any location: ${filepath}`);
+    throw new Error(`File not found: ${filepath}`);
   } catch (error) {
     console.error(`[Electron] Failed to read file ${filepath}:`, error);
     throw error;
@@ -107,32 +97,16 @@ ipcMain.handle('list-files', async (event, dirpath) => {
   try {
     console.log(`[Electron] Listing files in: ${dirpath}`);
     
-    // Try multiple base directories
-    const basePaths = [
-      __dirname, // user-package directory
-      process.cwd(), // current working directory
-      path.resolve(__dirname, '..'), // parent directory
-    ];
+    // Use only the user-package directory as base
+    const resolvedPath = path.resolve(__dirname, dirpath);
+    console.log(`[Electron] Resolved directory: ${resolvedPath}`);
     
-    let files = [];
-    let foundPath = null;
-    
-    for (const basePath of basePaths) {
-      const resolvedPath = path.resolve(basePath, dirpath);
-      console.log(`[Electron] Trying directory: ${resolvedPath}`);
-      
-      if (existsSync(resolvedPath)) {
-        files = await fs.readdir(resolvedPath);
-        foundPath = resolvedPath;
-        console.log(`[Electron] Found directory: ${resolvedPath}`);
-        break;
-      }
-    }
-    
-    if (!foundPath) {
-      console.log(`[Electron] Directory not found in any location: ${dirpath}`);
+    if (!existsSync(resolvedPath)) {
+      console.log(`[Electron] Directory not found: ${dirpath}`);
       return [];
     }
+    
+    const files = await fs.readdir(resolvedPath);
     
     // Filter files based on directory type
     let filteredFiles;

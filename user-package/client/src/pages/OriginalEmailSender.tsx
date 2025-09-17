@@ -224,68 +224,47 @@ export default function OriginalEmailSender() {
 
   const loadTemplates = async () => {
     try {
-      // For local file reading, use File System Access API or Electron API
-      // This would scan the local ./files directory
       if (window.electronAPI?.listFiles) {
-        const files = await window.electronAPI.listFiles('./files');
+        // Desktop version - use local files only
+        const files = await window.electronAPI.listFiles('files');
         const htmlFiles = files.filter((file: string) => file.endsWith('.html'));
         setTemplateFiles(htmlFiles);
-        console.log('[Local] Loaded templates from local files directory:', htmlFiles);
+        console.log('[Desktop] Loaded templates:', htmlFiles);
       } else {
-        try {
-          // Use backend API to read actual files from local storage
-          const response = await fetch('/api/original/listFiles');
-          const data = await response.json();
-          const htmlFiles = data.files || [];
-          setTemplateFiles(htmlFiles);
-          console.log('[Backend API] Loaded templates from backend API:', htmlFiles);
-        } catch (error) {
-          // Fallback for web version - user would need to select files manually
-          const defaultTemplates = [
-            'sample-template.html',
-            'newsletter.html', 
-            'welcome.html'
-          ];
-          setTemplateFiles(defaultTemplates);
-          console.log('[Local] Using default templates - Backend API not available:', error);
+        // Web version fallback
+        const response = await fetch('/api/original/listFiles');
+        const data = await response.json();
+        if (data.files) {
+          setTemplateFiles(data.files);
         }
       }
     } catch (error) {
       console.error('Failed to load local templates:', error);
+      setTemplateFiles([]);
     }
   };
 
   const loadLogoFiles = async () => {
     try {
-      // For local file reading, scan the ./files/logo directory
       if (window.electronAPI?.listFiles) {
-        const files = await window.electronAPI.listFiles('./files/logo');
+        // Desktop version - use local files only
+        const files = await window.electronAPI.listFiles('files/logo');
         const imageFiles = files.filter((file: string) => 
           /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
         );
         setLogoFiles(imageFiles);
-        console.log('[Local] Loaded logos from local files/logo directory:', imageFiles);
+        console.log('[Desktop] Loaded logos:', imageFiles);
       } else {
-        try {
-          // Use backend API to read actual files from local storage
-          const response = await fetch('/api/original/listLogoFiles');
-          const data = await response.json();
-          const imageFiles = data.files || [];
-          setLogoFiles(imageFiles);
-          console.log('[Backend API] Loaded logos from backend API:', imageFiles);
-        } catch (error) {
-          // Fallback for web version
-          const defaultLogos = [
-            'logo1.png',
-            'logo2.jpg',
-            'company-logo.svg'
-          ];
-          setLogoFiles(defaultLogos);
-          console.log('[Local] Using default logos - Backend API not available:', error);
+        // Web version fallback
+        const response = await fetch('/api/original/listLogoFiles');
+        const data = await response.json();
+        if (data.files) {
+          setLogoFiles(data.files);
         }
       }
     } catch (error) {
-      console.error('Error loading local logo files:', error);
+      console.error('Failed to load local logos:', error);
+      setLogoFiles([]);
     }
   };
 
@@ -1817,7 +1796,7 @@ export default function OriginalEmailSender() {
 
                 {/* Domain Logo Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-red mb-3">🏢 DOMAIN LOGO </h3>
+                  <h3 className="text-lg font-medium text-red mt-6 mb-4">🏢 DOMAIN LOGO </h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">LOGO SIZE</Label>
