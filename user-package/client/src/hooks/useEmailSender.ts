@@ -110,18 +110,30 @@ export function useEmailSender() {
     mutationFn: async (data: EmailSendRequest) => {
       const formData = new FormData();
       
-      // Append form fields
+      // Use the same format as OriginalEmailSender
       formData.append('recipients', JSON.stringify(data.recipients));
       formData.append('subject', data.subject);
-      formData.append('htmlContent', data.htmlContent);
-      formData.append('settings', JSON.stringify(data.settings));
+      formData.append('html', data.htmlContent);
+      formData.append('senderEmail', formData.senderEmail || '');
+      formData.append('senderName', formData.senderName || '');
+      
+      // Add SMTP settings from form data
+      formData.append('smtpHost', formData.smtpHost || '');
+      formData.append('smtpPort', formData.smtpPort || '587');
+      formData.append('smtpUser', formData.smtpUser || '');
+      formData.append('smtpPass', formData.smtpPassword || '');
+      
+      // Add settings
+      Object.entries(data.settings).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
       
       // Append files
       data.attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
+        formData.append('attachments', file);
       });
 
-      const response = await fetch('/api/emails/send', {
+      const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
@@ -131,15 +143,19 @@ export function useEmailSender() {
         throw new Error(error || 'Failed to send emails');
       }
 
+      // Handle Server-Sent Events response
+      if (response.headers.get('content-type')?.includes('text/event-stream')) {
+        return { success: true, message: 'Email sending started' };
+      }
+
       return response.json();
     },
     onSuccess: (data) => {
-      setCurrentJobId(data.jobId);
-      setProgress({ total: data.totalRecipients, sent: 0, failed: 0, percentage: 0 });
-      addLog(`Started sending ${data.totalRecipients} emails`);
+      // Since we're using SSE, we don't get jobId back
+      addLog(`Email sending initiated`);
       toast({
         title: "Email sending started",
-        description: `Sending ${data.totalRecipients} emails`,
+        description: "Emails are being sent",
       });
     },
     onError: (error: Error) => {
@@ -152,50 +168,124 @@ export function useEmailSender() {
     },
   });
 
-  // Poll job status
-  const { data: jobStatus } = useQuery<JobStatus>({
-    queryKey: ['/api/emails/status', currentJobId],
-    enabled: !!currentJobId,
-    refetchInterval: 1000, // Poll every second
-  });
-
-  // Update progress when job status changes
+  // Handle real-time progress updates via Server-Sent Events
   useEffect(() => {
-    if (jobStatus) {
-      const { sent, failed, total, status, logs: jobLogs } = jobStatus;
-      const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
-      
-      setProgress({ total, sent, failed, percentage });
-      
-      // Add new logs
-      if (jobLogs && jobLogs.length > logs.length) {
-        const newLogs = jobLogs.slice(logs.length);
-        newLogs.forEach((log: any) => {
-          addLog(log.message, log.status);
-        });
-      }
-      
-      // Check if job is complete
-      if (status === 'completed' || status === 'failed') {
-        setCurrentJobId(null);
-        queryClient.invalidateQueries({ queryKey: ['/api/emails/status'] });
-      }
-    }
-  }, [jobStatus, logs.length, addLog, queryClient]);
+    // This will be handled by the SSE implementation in startSending
+  }, []);
 
   const startSending = useCallback(async (data: EmailSendRequest) => {
     setLogs([]); // Clear previous logs
     setProgress({ total: 0, sent: 0, failed: 0, percentage: 0 });
-    await sendEmailsMutation.mutateAsync(data);
-  }, [sendEmailsMutation]);
+    
+    try {
+      const formData = new FormData();
+      
+      // Use the same format as OriginalEmailSender
+      formData.append('recipients', JSON.stringify(data.recipients));
+      formData.append('subject', data.subject);
+      formData.append('html', data.htmlContent);
+      formData.append('senderEmail', formData.senderEmail || '');
+      formData.append('senderName', formData.senderName || '');
+      
+      // Add SMTP settings from formData
+      formData.append('smtpHost', formData.smtpHost || '');
+      formData.append('smtpPort', formData.smtpPort || '587');
+      formData.append('smtpUser', formData.smtpUser || '');
+      formData.append('smtpPass', formData.smtpPassword || '');
+      
+      // Add settings
+      Object.entries(data.settings).forEach(([key, value]) => {
+        formData.append(key, String(value));
+      });
+      
+      // Append files
+      data.attachments.forEach((file, index) => {
+        formData.append('attachments', file);
+      });
 
-  const statusText = currentJobId ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
+      const response = await fetch('/api/original/sendMail', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to start email sending');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value);
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(line.slice(6));
+
+                if (eventData.type === 'progress') {
+                  const { sent, failed, totalRecipients, recipient, status, error } = eventData;
+                  const percentage = totalRecipients > 0 ? Math.round((sent + failed) / totalRecipients * 100) : 0;
+                  
+                  setProgress({ total: totalRecipients, sent, failed, percentage });
+                  
+                  const logMessage = status === 'success' 
+                    ? `✓ Successfully sent to ${recipient}`
+                    : `✗ Failed to send to ${recipient}: ${error}`;
+                    
+                  addLog(logMessage, status === 'success' ? 'success' : 'error');
+                  
+                } else if (eventData.type === 'complete') {
+                  addLog(`Email sending completed. Sent: ${eventData.sent} emails`);
+                  toast({
+                    title: "Email sending completed",
+                    description: `Sent ${eventData.sent} emails`,
+                  });
+                } else if (eventData.type === 'error') {
+                  addLog(`Error: ${eventData.error}`, 'error');
+                  toast({
+                    title: "Error",
+                    description: eventData.error,
+                    variant: "destructive",
+                  });
+                }
+              } catch (e) {
+                console.error('Failed to parse SSE data:', e);
+              }
+            }
+          }
+        }
+      }
+      
+      toast({
+        title: "Email sending started",
+        description: `Sending ${data.recipients.length} emails`,
+      });
+      
+    } catch (error: any) {
+      addLog(`Error: ${error.message}`, 'error');
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  }, [formData, addLog, toast]);
+
+  const statusText = sendEmailsMutation.isPending ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
 
   return {
     formData,
     updateFormData,
     startSending,
-    isLoading: sendEmailsMutation.isPending || !!currentJobId,
+    isLoading: sendEmailsMutation.isPending,
     progress,
     logs,
     statusText,
