@@ -1,5 +1,6 @@
-
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface EmailFormData {
@@ -48,6 +49,20 @@ interface LogEntry {
   status: 'success' | 'error';
 }
 
+interface JobStatus {
+  id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  total: number;
+  sent: number;
+  failed: number;
+  logs: Array<{
+    recipient: string;
+    status: 'success' | 'failed';
+    message: string;
+    timestamp: string;
+  }>;
+}
+
 const defaultFormData: EmailFormData = {
   smtpHost: "smtp.gmail.com",
   smtpPort: 587,
@@ -77,8 +92,9 @@ export function useEmailSender() {
   const [formData, setFormData] = useState<EmailFormData>(defaultFormData);
   const [progress, setProgress] = useState<Progress>({ total: 0, sent: 0, failed: 0, percentage: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const addLog = useCallback((message: string, status: 'success' | 'error' = 'success') => {
     const timestamp = new Date().toLocaleTimeString();
@@ -89,129 +105,97 @@ export function useEmailSender() {
     setFormData(prev => ({ ...prev, ...updates }));
   }, []);
 
-  const startSending = useCallback(async (data: EmailSendRequest) => {
-    setLogs([]); // Clear previous logs
-    setProgress({ total: 0, sent: 0, failed: 0, percentage: 0 });
-    setIsLoading(true);
-    
-    try {
-      const formDataToSend = new FormData();
+  // Send emails mutation
+  const sendEmailsMutation = useMutation({
+    mutationFn: async (data: EmailSendRequest) => {
+      const formData = new FormData();
       
-      // Use the same format as your working backend
-      formDataToSend.append('recipients', JSON.stringify(data.recipients));
-      formDataToSend.append('subject', data.subject);
-      formDataToSend.append('html', data.htmlContent);
-      formDataToSend.append('senderEmail', formData.smtpUser || '');
-      formDataToSend.append('senderName', formData.senderName || '');
-      
-      // Add SMTP settings from formData
-      formDataToSend.append('smtpHost', formData.smtpHost || '');
-      formDataToSend.append('smtpPort', formData.smtpPort.toString() || '587');
-      formDataToSend.append('smtpUser', formData.smtpUser || '');
-      formDataToSend.append('smtpPass', formData.smtpPassword || '');
-      
-      // Add settings
-      formDataToSend.append('emailPerSecond', data.settings.emailsPerSecond.toString());
-      formDataToSend.append('sleep', data.settings.sleepBetween.toString());
-      formDataToSend.append('retry', data.settings.retryAttempts.toString());
-      formDataToSend.append('minifyHtml', data.settings.minifyHtml.toString());
+      // Append form fields
+      formData.append('recipients', JSON.stringify(data.recipients));
+      formData.append('subject', data.subject);
+      formData.append('htmlContent', data.htmlContent);
+      formData.append('settings', JSON.stringify(data.settings));
       
       // Append files
       data.attachments.forEach((file, index) => {
-        formDataToSend.append('attachments', file);
+        formData.append(`attachment_${index}`, file);
       });
 
-      // Use relative path for API endpoint
-      const response = await fetch('/api/original/sendMail', {
+      const response = await fetch('/api/emails/send', {
         method: 'POST',
-        body: formDataToSend,
+        body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to start email sending: ${response.status} ${response.statusText}`);
+        const error = await response.text();
+        throw new Error(error || 'Failed to send emails');
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value);
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const eventData = JSON.parse(line.slice(6));
-
-                if (eventData.type === 'progress') {
-                  const { totalSent, totalFailed, totalRecipients, recipient, status, error } = eventData;
-                  const sent = totalSent || 0;
-                  const failed = totalFailed || 0;
-                  const percentage = totalRecipients > 0 ? Math.round((sent + failed) / totalRecipients * 100) : 0;
-                  
-                  setProgress({ total: totalRecipients, sent, failed, percentage });
-                  
-                  const logMessage = status === 'success' 
-                    ? `✓ Successfully sent to ${recipient}`
-                    : `✗ Failed to send to ${recipient}: ${error}`;
-                    
-                  addLog(logMessage, status === 'success' ? 'success' : 'error');
-                  
-                } else if (eventData.type === 'complete') {
-                  setIsLoading(false);
-                  addLog(`Email sending completed. Sent: ${eventData.sent} emails`);
-                  toast({
-                    title: "Email sending completed",
-                    description: `Sent ${eventData.sent} emails`,
-                  });
-                } else if (eventData.type === 'error') {
-                  setIsLoading(false);
-                  addLog(`Error: ${eventData.error}`, 'error');
-                  toast({
-                    title: "Error",
-                    description: eventData.error,
-                    variant: "destructive",
-                  });
-                }
-              } catch (e) {
-                console.error('Failed to parse SSE data:', e);
-              }
-            }
-          }
-        }
-      }
-      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setCurrentJobId(data.jobId);
+      setProgress({ total: data.totalRecipients, sent: 0, failed: 0, percentage: 0 });
+      addLog(`Started sending ${data.totalRecipients} emails`);
       toast({
         title: "Email sending started",
-        description: `Sending ${data.recipients.length} emails`,
+        description: `Sending ${data.totalRecipients} emails`,
       });
-      
-    } catch (error: any) {
-      setIsLoading(false);
-      const errorMessage = error.message || 'Network error occurred';
-      addLog(`Error: ${errorMessage}`, 'error');
+    },
+    onError: (error: Error) => {
+      addLog(`Error: ${error.message}`, 'error');
       toast({
         title: "Error",
-        description: errorMessage,
+        description: error.message,
         variant: "destructive",
       });
-      console.error('Send error:', error);
-    }
-  }, [formData, addLog, toast]);
+    },
+  });
 
-  const statusText = isLoading ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
+  // Poll job status
+  const { data: jobStatus } = useQuery<JobStatus>({
+    queryKey: ['/api/emails/status', currentJobId],
+    enabled: !!currentJobId,
+    refetchInterval: 1000, // Poll every second
+  });
+
+  // Update progress when job status changes
+  useEffect(() => {
+    if (jobStatus) {
+      const { sent, failed, total, status, logs: jobLogs } = jobStatus;
+      const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
+      
+      setProgress({ total, sent, failed, percentage });
+      
+      // Add new logs
+      if (jobLogs && jobLogs.length > logs.length) {
+        const newLogs = jobLogs.slice(logs.length);
+        newLogs.forEach((log: any) => {
+          addLog(log.message, log.status);
+        });
+      }
+      
+      // Check if job is complete
+      if (status === 'completed' || status === 'failed') {
+        setCurrentJobId(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/emails/status'] });
+      }
+    }
+  }, [jobStatus, logs.length, addLog, queryClient]);
+
+  const startSending = useCallback(async (data: EmailSendRequest) => {
+    setLogs([]); // Clear previous logs
+    setProgress({ total: 0, sent: 0, failed: 0, percentage: 0 });
+    await sendEmailsMutation.mutateAsync(data);
+  }, [sendEmailsMutation]);
+
+  const statusText = currentJobId ? 'Sending Emails...' : progress.sent > 0 ? 'Sending Complete' : 'Ready to Send';
 
   return {
     formData,
     updateFormData,
     startSending,
-    isLoading,
+    isLoading: sendEmailsMutation.isPending || !!currentJobId,
     progress,
     logs,
     statusText,
