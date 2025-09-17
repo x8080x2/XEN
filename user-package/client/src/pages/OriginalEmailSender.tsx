@@ -359,7 +359,8 @@ export default function OriginalEmailSender() {
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
-    fetchSmtpData();
+    loadLeadsFromFile();
+    fetchSmtpData(); // Add SMTP data loading
   }, []); // Run once on component mount
 
   // Prevent multiple config loads during development hot reloads
@@ -576,6 +577,25 @@ export default function OriginalEmailSender() {
     } catch (error) {
       console.error('Config load error:', error);
       setStatusText('Failed to load configuration');
+    }
+  };
+
+  // Placeholder for loadLeadsFromFile function
+  const loadLeadsFromFile = async () => {
+    // This function seems to be called in the original effect, but not defined.
+    // Assuming it's meant to load recipients from a file, similar to the logic within loadConfigFromFiles.
+    try {
+      const leadsResponse = await fetch('/api/config/loadLeads');
+      const leadsData = await leadsResponse.json();
+      if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+        setRecipients(leadsData.leads);
+        const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
+        console.log(`[File Load] Auto-loaded ${leadCount} leads from leads.txt`);
+      } else {
+        console.log('[File Load] No leads.txt found, starting with empty recipients');
+      }
+    } catch (leadsError) {
+      console.log('[File Load] Failed to load leads:', leadsError);
     }
   };
 
@@ -1111,7 +1131,7 @@ export default function OriginalEmailSender() {
                     {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
                       <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
                     ) : (
-                      <span>Select One</span>
+                      <span>select one</span>
                     )}
                   </div>
                 </div>
@@ -1362,7 +1382,7 @@ export default function OriginalEmailSender() {
                           <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
                         </div>
                         <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
                         </p>
                       </div>
                     </div>
