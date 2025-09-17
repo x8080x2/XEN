@@ -11,11 +11,12 @@ export default defineConfig({
   },
   root: "client",
   server: {
-    host: "0.0.0.0",
+    host: "localhost",
     port: 5173,
   },
   build: {
     outDir: "../dist",
     emptyOutDir: true,
   },
+  base: "./",
 });
