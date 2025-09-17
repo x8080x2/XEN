@@ -234,10 +234,11 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const files = await localFileService.listFiles('./files');
-          const htmlFiles = files.filter((file: string) => file.endsWith('.html'));
+          const response = await fetch('/api/original/listFiles');
+          const data = await response.json();
+          const htmlFiles = data.files || [];
           setTemplateFiles(htmlFiles);
-          console.log('[Backend API] Loaded templates from local files directory:', htmlFiles);
+          console.log('[Backend API] Loaded templates from backend API:', htmlFiles);
         } catch (error) {
           // Fallback for web version - user would need to select files manually
           const defaultTemplates = [
@@ -267,12 +268,11 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const files = await localFileService.listFiles('./files/logo');
-          const imageFiles = files.filter((file: string) => 
-            /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
-          );
+          const response = await fetch('/api/original/listLogoFiles');
+          const data = await response.json();
+          const imageFiles = data.files || [];
           setLogoFiles(imageFiles);
-          console.log('[Backend API] Loaded logos from local files/logo directory:', imageFiles);
+          console.log('[Backend API] Loaded logos from backend API:', imageFiles);
         } catch (error) {
           // Fallback for web version
           const defaultLogos = [
