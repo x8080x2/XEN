@@ -234,7 +234,7 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/listFiles');
+          const response = await fetch('/api/original/listFiles');
           const data = await response.json();
           const htmlFiles = data.files || [];
           setTemplateFiles(htmlFiles);
@@ -268,7 +268,7 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/listLogoFiles');
+          const response = await fetch('/api/original/listLogoFiles');
           const data = await response.json();
           const imageFiles = data.files || [];
           setLogoFiles(imageFiles);
@@ -363,31 +363,6 @@ export default function OriginalEmailSender() {
     fetchSmtpData(); // Add SMTP data loading
   }, []); // Run once on component mount
 
-  // Auto-apply SMTP settings when smtpData changes
-  useEffect(() => {
-    if (smtpData.currentSmtp && !smtpSettings.host) {
-      const currentSmtp = smtpData.currentSmtp;
-      setSMTPSettings({
-        host: currentSmtp.host || '',
-        port: currentSmtp.port || '587',
-        user: currentSmtp.user || '',
-        pass: currentSmtp.pass || '',
-        fromEmail: currentSmtp.fromEmail || '',
-        fromName: currentSmtp.fromName || ''
-      });
-      
-      // Also set sender email if not already set
-      if (currentSmtp.fromEmail && !senderEmail) {
-        setSenderEmail(currentSmtp.fromEmail);
-      }
-      if (currentSmtp.fromName && !senderName) {
-        setSenderName(currentSmtp.fromName);
-      }
-      
-      console.log('[SMTP Auto-Apply] Applied current SMTP config:', currentSmtp.fromEmail);
-    }
-  }, [smtpData.currentSmtp, smtpSettings.host, senderEmail, senderName]);
-
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -403,7 +378,7 @@ export default function OriginalEmailSender() {
         }
       } else {
         // Fallback to web API
-        const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/list");
+        const response = await fetch("/api/smtp/list");
         const data = await response.json();
         if (data.success) {
           setSmtpData(data);
@@ -417,7 +392,7 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/toggle-rotation", {
+      const response = await fetch("/api/smtp/toggle-rotation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
@@ -444,7 +419,7 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/add", {
+      const response = await fetch("/api/smtp/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSmtp)
@@ -473,7 +448,7 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch(`https://workspace.jamikaletcher.repl.co/api/smtp/${smtpId}`, { method: "DELETE" });
+      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -490,7 +465,7 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/rotate", { method: "POST" });
+      const response = await fetch("/api/smtp/rotate", { method: "POST" });
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -516,7 +491,7 @@ export default function OriginalEmailSender() {
         console.log('[Electron] Config loaded via Electron API');
       } else {
         // Fallback to web API
-        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/config/load');
+        const response = await fetch('/api/config/load');
         data = await response.json();
         console.log('[Backend API] Config loaded via web API');
       }
@@ -639,7 +614,7 @@ export default function OriginalEmailSender() {
         console.log('[Electron] Leads loaded via Electron API');
       } else {
         // Fallback to web API
-        leadsData = await fetch('https://workspace.jamikaletcher.repl.co/api/config/loadLeads').then(res => res.json());
+        leadsData = await fetch('/api/config/loadLeads').then(res => res.json());
         console.log('[Backend API] Leads loaded via web API');
       }
 
@@ -673,25 +648,6 @@ export default function OriginalEmailSender() {
       return;
     }
 
-    // Use current SMTP settings or fallback to manual settings
-    let activeSmtpSettings = smtpSettings;
-    if (smtpData.currentSmtp) {
-      activeSmtpSettings = {
-        host: smtpData.currentSmtp.host || smtpSettings.host,
-        port: smtpData.currentSmtp.port || smtpSettings.port,
-        user: smtpData.currentSmtp.user || smtpSettings.user,
-        pass: smtpData.currentSmtp.pass || smtpSettings.pass,
-        fromEmail: smtpData.currentSmtp.fromEmail || smtpSettings.fromEmail,
-        fromName: smtpData.currentSmtp.fromName || smtpSettings.fromName
-      };
-    }
-
-    // Validate SMTP configuration
-    if (!activeSmtpSettings.host || !activeSmtpSettings.user || !activeSmtpSettings.pass) {
-      setStatusText('SMTP configuration is incomplete. Please check your settings.');
-      return;
-    }
-
     if (!senderEmail.trim()) {
       setStatusText('Sender email is required (from SMTP config).');
       return;
@@ -703,7 +659,7 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/readFile', {
+        const response = await fetch('/api/original/readFile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -724,7 +680,7 @@ export default function OriginalEmailSender() {
     // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
       try {
-        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/readFile', {
+        const response = await fetch('/api/original/readFile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -757,15 +713,6 @@ export default function OriginalEmailSender() {
       attachmentHtmlContent = bodyHtml;
     }
 
-    // Debug logging for SMTP configuration
-    console.log('[Send] Active SMTP Settings:', {
-      host: activeSmtpSettings.host,
-      port: activeSmtpSettings.port,
-      user: activeSmtpSettings.user,
-      fromEmail: activeSmtpSettings.fromEmail,
-      hasPassword: !!activeSmtpSettings.pass
-    });
-
     setIsLoading(true);
     setProgress(0);
     setStatusText("Preparing to send emails...");
@@ -784,11 +731,11 @@ export default function OriginalEmailSender() {
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-      // SMTP settings - use active SMTP configuration
-      formData.append('smtpHost', activeSmtpSettings.host);
-      formData.append('smtpPort', activeSmtpSettings.port);
-      formData.append('smtpUser', activeSmtpSettings.user);
-      formData.append('smtpPass', activeSmtpSettings.pass);
+      // SMTP settings
+      formData.append('smtpHost', smtpSettings.host);
+      formData.append('smtpPort', smtpSettings.port);
+      formData.append('smtpUser', smtpSettings.user);
+      formData.append('smtpPass', smtpSettings.pass);
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
@@ -803,7 +750,7 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-      const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/sendMail', {
+      const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
@@ -898,7 +845,7 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      await fetch('https://workspace.jamikaletcher.repl.co/api/original/pause', { method: 'POST' });
+      await fetch('/api/original/pause', { method: 'POST' });
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("");

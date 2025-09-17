@@ -121,7 +121,7 @@ export function useEmailSender() {
         formData.append(`attachment_${index}`, file);
       });
 
-      const response = await fetch('https://workspace.jamikaletcher.repl.co/api/emails/send', {
+      const response = await fetch('/api/emails/send', {
         method: 'POST',
         body: formData,
       });
@@ -154,7 +154,7 @@ export function useEmailSender() {
 
   // Poll job status
   const { data: jobStatus } = useQuery<JobStatus>({
-    queryKey: ['https://workspace.jamikaletcher.repl.co/api/emails/status', currentJobId],
+    queryKey: ['/api/emails/status', currentJobId],
     enabled: !!currentJobId,
     refetchInterval: 1000, // Poll every second
   });

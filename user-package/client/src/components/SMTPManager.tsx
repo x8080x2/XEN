@@ -3,8 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, RotateCcw, Settings, Mail } from "lucide-react";
@@ -47,7 +45,7 @@ export function SMTPManager() {
 
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/list");
+      const response = await fetch("/api/smtp/list");
       const data = await response.json();
       if (data.success) {
         setSmtpData(data);
@@ -68,7 +66,7 @@ export function SMTPManager() {
   const toggleRotation = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/toggle-rotation", {
+      const response = await fetch("/api/smtp/toggle-rotation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
@@ -108,7 +106,7 @@ export function SMTPManager() {
 
     setLoading(true);
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/add", {
+      const response = await fetch("/api/smtp/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSmtp)
@@ -156,7 +154,7 @@ export function SMTPManager() {
 
     setLoading(true);
     try {
-      const response = await fetch(`https://workspace.jamikaletcher.repl.co/api/smtp/${smtpId}`, {
+      const response = await fetch(`/api/smtp/${smtpId}`, {
         method: "DELETE"
       });
       
@@ -185,7 +183,7 @@ export function SMTPManager() {
   const rotateSmtp = async () => {
     setLoading(true);
     try {
-      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/rotate", {
+      const response = await fetch("/api/smtp/rotate", {
         method: "POST"
       });
       
