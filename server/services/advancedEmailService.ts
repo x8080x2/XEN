@@ -1167,7 +1167,20 @@ export class AdvancedEmailService {
       const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
 
       if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        throw new Error('SMTP configuration is incomplete');
+        const missingFields = [];
+        if (!smtpHost) missingFields.push('Host');
+        if (!smtpPort) missingFields.push('Port');
+        if (!smtpUser) missingFields.push('User');
+        if (!smtpPass) missingFields.push('Password');
+        
+        console.error('SMTP configuration is incomplete. Missing:', missingFields);
+        console.error('SMTP values received:', {
+          host: smtpHost,
+          port: smtpPort, 
+          user: smtpUser,
+          hasPass: !!smtpPass
+        });
+        throw new Error(`SMTP configuration is incomplete. Missing: ${missingFields.join(', ')}`);
       }
 
       const host = smtpHost;

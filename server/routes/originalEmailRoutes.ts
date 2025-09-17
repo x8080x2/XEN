@@ -9,7 +9,14 @@ export function setupOriginalEmailRoutes(app: Express) {
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
-      console.log('Original sendMail endpoint called with:', req.body);
+      console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
+      console.log('SMTP Settings received:', {
+        smtpHost: req.body.smtpHost,
+        smtpPort: req.body.smtpPort,
+        smtpUser: req.body.smtpUser,
+        hasSmtpPass: !!req.body.smtpPass,
+        senderEmail: req.body.senderEmail
+      });
 
       const files = req.files as Express.Multer.File[];
       const attachments = files?.map(file => file.path) || [];
@@ -44,11 +51,11 @@ export function setupOriginalEmailRoutes(app: Express) {
         subject: req.body.subject,
         html: req.body.html || req.body.emailContent,
         attachmentHtml: req.body.attachmentHtml,
-        // SMTP settings
-        smtpHost: req.body.smtpHost,
-        smtpPort: req.body.smtpPort,
-        smtpUser: req.body.smtpUser,
-        smtpPass: req.body.smtpPass,
+        // SMTP settings - with validation
+        smtpHost: req.body.smtpHost || '',
+        smtpPort: req.body.smtpPort || '587',
+        smtpUser: req.body.smtpUser || '',
+        smtpPass: req.body.smtpPass || '',
         // Advanced settings
         sleep: req.body.sleep,
         qrSize: parseInt(req.body.qrSize) || 200,

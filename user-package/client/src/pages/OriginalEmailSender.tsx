@@ -619,7 +619,22 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
-    // Validation logic - exact clone from sender.html lines 1307-1321
+    // Validate SMTP configuration before sending - use actual values being sent
+    const finalSmtpHost = smtpSettings.host || '';
+    const finalSmtpUser = smtpSettings.user || '';
+    const finalSmtpPass = smtpSettings.pass || '';
+
+    if (!finalSmtpHost || !finalSmtpUser || !finalSmtpPass) {
+      setStatusText('SMTP configuration incomplete. Host, User, and Password are required.');
+      console.error('[Desktop] SMTP validation failed:', {
+        hasHost: !!finalSmtpHost,
+        hasUser: !!finalSmtpUser,
+        hasPass: !!finalSmtpPass,
+        smtpSettings
+      });
+      return;
+    }
+
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
     if (!recipientList.length) {
@@ -724,11 +739,24 @@ export default function OriginalEmailSender() {
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-      // SMTP settings
-      formData.append('smtpHost', smtpSettings.host);
-      formData.append('smtpPort', smtpSettings.port);
-      formData.append('smtpUser', smtpSettings.user);
-      formData.append('smtpPass', smtpSettings.pass);
+      // SMTP settings - ensure they're properly set from auto-loaded config
+      const finalSmtpHost = smtpSettings.host || '';
+      const finalSmtpPort = smtpSettings.port || '587';
+      const finalSmtpUser = smtpSettings.user || '';
+      const finalSmtpPass = smtpSettings.pass || '';
+
+      console.log('[Desktop] SMTP Settings being sent:', {
+        host: finalSmtpHost,
+        port: finalSmtpPort,
+        user: finalSmtpUser,
+        hasPassword: !!finalSmtpPass
+      });
+
+      // Ensure all SMTP parameters are properly formatted strings
+      formData.append('smtpHost', String(finalSmtpHost));
+      formData.append('smtpPort', String(finalSmtpPort));
+      formData.append('smtpUser', String(finalSmtpUser));
+      formData.append('smtpPass', String(finalSmtpPass));
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
@@ -746,7 +774,7 @@ export default function OriginalEmailSender() {
       const apiEndpoint = window.electronAPI ? 
         `http://localhost:5000/api/original/sendMail` : // Desktop: use explicit localhost
         `${window.location.origin}/api/original/sendMail`; // Web: use current origin
-        
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
@@ -1170,7 +1198,7 @@ export default function OriginalEmailSender() {
               {(isLoading || emailLogs.length > 0) && (
                 <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
                   <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
-                    <span>{isLoading ? '📤 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
+                    <span>{isLoading ? ' T 🚀 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded">
                       {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
                     </span>
