@@ -359,7 +359,7 @@ export default function OriginalEmailSender() {
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
-    loadLeadsFromFile();
+    loadLeadsFromFile(); // Load leads separately to avoid duplication
     fetchSmtpData(); // Add SMTP data loading
   }, []); // Run once on component mount
 
@@ -541,36 +541,7 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads from files/leads.txt - with Electron support
-        try {
-          if (window.electronAPI?.readFile) {
-            // Use Electron API for direct file access
-            try {
-              const leadsContent = await window.electronAPI.readFile('./files/leads.txt');
-              if (leadsContent && leadsContent.trim().length > 0) {
-                setRecipients(leadsContent.trim());
-                const leadCount = leadsContent.trim().split('\n').filter(Boolean).length;
-                console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt via Electron API`);
-              } else {
-                console.log('[Config Load] leads.txt is empty via Electron API');
-              }
-            } catch (error) {
-              console.log('[Config Load] No leads.txt found via Electron API:', error);
-            }
-          } else {
-            // Fallback to backend API for web version
-            const leadsResponse = await fetch('/api/config/loadLeads');
-            const leadsData = await leadsResponse.json();
-            if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-              setRecipients(leadsData.leads);
-              const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-              console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt via Backend API`);
-            } else {
-              console.log('[Config Load] No leads.txt found via Backend API, starting with empty recipients');
-            }
-          }
-        } catch (leadsError) {
-          console.log('[Config Load] Failed to load leads:', leadsError);
+        // Note: Leads loading is handled by separate loadLeadsFromFile() call
         }
 
         // Auto-load letter content if available

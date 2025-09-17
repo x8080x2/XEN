@@ -5,7 +5,6 @@ import multer from "multer";
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
-  // Use the singleton instance instead of creating a new one
 
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
@@ -197,17 +196,5 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
 
-  // Clear caches endpoint for testing new logo sources
-  app.post("/api/original/clear-caches", async (req, res) => {
-    try {
-      advancedEmailService.clearCaches();
-      res.json({ success: true, message: 'Caches cleared successfully' });
-    } catch (error) {
-      console.error('Error clearing caches:', error);
-      res.status(500).json({ success: false, error: 'Failed to clear caches' });
-    }
-  });
-
-  // Note: Cleanup handlers should be registered once in the main server file
-  // Removed duplicate process handlers to prevent conflicts
+  
 }
