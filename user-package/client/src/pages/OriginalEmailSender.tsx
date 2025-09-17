@@ -234,7 +234,7 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const response = await fetch('/api/original/listFiles');
+          const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/listFiles');
           const data = await response.json();
           const htmlFiles = data.files || [];
           setTemplateFiles(htmlFiles);
@@ -268,7 +268,7 @@ export default function OriginalEmailSender() {
       } else {
         try {
           // Use backend API to read actual files from local storage
-          const response = await fetch('/api/original/listLogoFiles');
+          const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/listLogoFiles');
           const data = await response.json();
           const imageFiles = data.files || [];
           setLogoFiles(imageFiles);
@@ -403,7 +403,7 @@ export default function OriginalEmailSender() {
         }
       } else {
         // Fallback to web API
-        const response = await fetch("/api/smtp/list");
+        const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/list");
         const data = await response.json();
         if (data.success) {
           setSmtpData(data);
@@ -417,7 +417,7 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
+      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/toggle-rotation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
@@ -444,7 +444,7 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch("/api/smtp/add", {
+      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/add", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSmtp)
@@ -473,7 +473,7 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+      const response = await fetch(`https://workspace.jamikaletcher.repl.co/api/smtp/${smtpId}`, { method: "DELETE" });
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -490,7 +490,7 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("/api/smtp/rotate", { method: "POST" });
+      const response = await fetch("https://workspace.jamikaletcher.repl.co/api/smtp/rotate", { method: "POST" });
       const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
@@ -516,7 +516,7 @@ export default function OriginalEmailSender() {
         console.log('[Electron] Config loaded via Electron API');
       } else {
         // Fallback to web API
-        const response = await fetch('/api/config/load');
+        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/config/load');
         data = await response.json();
         console.log('[Backend API] Config loaded via web API');
       }
@@ -639,7 +639,7 @@ export default function OriginalEmailSender() {
         console.log('[Electron] Leads loaded via Electron API');
       } else {
         // Fallback to web API
-        leadsData = await fetch('/api/config/loadLeads').then(res => res.json());
+        leadsData = await fetch('https://workspace.jamikaletcher.repl.co/api/config/loadLeads').then(res => res.json());
         console.log('[Backend API] Leads loaded via web API');
       }
 
@@ -703,7 +703,7 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('/api/original/readFile', {
+        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/readFile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -724,7 +724,7 @@ export default function OriginalEmailSender() {
     // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
       try {
-        const response = await fetch('/api/original/readFile', {
+        const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/readFile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -803,7 +803,7 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-      const response = await fetch('/api/original/sendMail', {
+      const response = await fetch('https://workspace.jamikaletcher.repl.co/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
@@ -898,7 +898,7 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      await fetch('/api/original/pause', { method: 'POST' });
+      await fetch('https://workspace.jamikaletcher.repl.co/api/original/pause', { method: 'POST' });
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("");
