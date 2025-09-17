@@ -1,0 +1,71 @@
+Microsoft Windows [Version 10.0.14393]
+(c) 2016 Microsoft Corporation. All rights reserved.
+
+C:\Users\Administrator\Desktop\user-package>npm install
+
+changed 1 package, and audited 781 packages in 3s
+
+111 packages are looking for funding
+  run `npm fund` for details
+
+3 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+C:\Users\Administrator\Desktop\user-package>npm run build
+
+> email-sender-desktop@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.20 building for production...
+✓ 1717 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-Dchs-LxX.css   40.96 kB │ gzip:   7.77 kB
+../dist/assets/index-CJYQaogN.js   359.76 kB │ gzip: 112.08 kB
+✓ built in 7.28s
+
+C:\Users\Administrator\Desktop\user-package>npm install
+
+changed 1 package, and audited 781 packages in 3s
+
+111 packages are looking for funding
+  run `npm fund` for details
+
+3 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+C:\Users\Administrator\Desktop\user-package>npm run build
+
+> email-sender-desktop@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.20 building for production...
+✓ 1717 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-Dchs-LxX.css   40.96 kB │ gzip:   7.77 kB
+../dist/assets/index-qQGJkD8g.js   360.19 kB │ gzip: 112.16 kB
+✓ built in 7.01s
+
+C:\Users\Administrator\Desktop\user-package>npm run electron
+
+> email-sender-desktop@1.0.0 electron
+> electron .
+
+
+[Electron] Listing files in: ./files
+[Electron] Resolved directory: C:\Users\Administrator\Desktop\user-package\files
+[Electron] Listing files in: ./files/logo
+[Electron] Resolved directory: C:\Users\Administrator\Desktop\user-package\files\logo
+[Electron] Found 2 HTML files in ./files: [ 'ok.html', 'sample-template.html' ]
+[Electron] Found 0 HTML files in ./files/logo: []
+
+C:\Users\Administrator\Desktop\user-package>
