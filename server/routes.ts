@@ -5,6 +5,7 @@ import { emailSendRequestSchema } from "../shared/schema";
 import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { setupElectronRoutes } from "./routes/electronRoutes";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -26,6 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+  
+  // Setup electron-compatible routes for user-package integration
+  setupElectronRoutes(app);
 
 
   // Config loading routes - exact clone from main.js
