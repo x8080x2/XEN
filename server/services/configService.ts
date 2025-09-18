@@ -166,7 +166,7 @@ export class ConfigService {
 
   setSmtpRotation(enabled: boolean) {
     this.smtpRotationEnabled = enabled;
-    // No need to reload config, just update the flag
+    this.loadConfig(); // Reload to apply current SMTP
   }
 
   isSmtpRotationEnabled() {
@@ -176,6 +176,7 @@ export class ConfigService {
   rotateToNextSmtp() {
     if (this.allSmtpConfigs.length > 1) {
       this.currentSmtpIndex = (this.currentSmtpIndex + 1) % this.allSmtpConfigs.length;
+      this.loadConfig(); // Reload to apply new SMTP
       return this.getCurrentSmtpConfig();
     }
     return null;

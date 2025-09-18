@@ -273,7 +273,7 @@ export default function EmailForm() {
               onChange={(e) => updateFormData({ 
                 settings: { 
                   ...formData.settings, 
-                  emailsPerSecond: parseInt(e.target.value) || 1 
+                  emailsPerSecond: parseInt(e.target.value) || 5 
                 } 
               })}
               data-testid="input-emails-per-second"

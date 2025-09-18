@@ -8,14 +8,22 @@ export class ReplitApiService {
   }
 
   private getServerUrl(): string {
-    // Check sources in order of priority
-    const electronUrl = (window as any).REPLIT_SERVER_URL;
-    const envUrl = process.env.REPLIT_SERVER_URL;
-    const storedUrl = localStorage.getItem('replit_server_url');
-    const fallbackUrl = 'https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev';
+    // Try multiple sources for the server URL
+    const sources = [
+      (window as any).REPLIT_SERVER_URL, // From Electron main process
+      process.env.REPLIT_SERVER_URL, // From environment
+      localStorage.getItem('replit_server_url'), // From user settings
+      'https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev' // Fallback
+    ];
 
-    const url = electronUrl || envUrl || storedUrl || fallbackUrl;
-    return url.trim().replace(/\/$/, ''); // Remove trailing slash
+    for (const url of sources) {
+      if (url && url.trim()) {
+        return url.trim().replace(/\/$/, ''); // Remove trailing slash
+      }
+    }
+
+    console.warn('No Replit server URL found, using fallback');
+    return sources[sources.length - 1]; // Use fallback
   }
 
   // Set server URL manually (for user configuration)
