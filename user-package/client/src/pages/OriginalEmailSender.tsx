@@ -630,9 +630,9 @@ export default function OriginalEmailSender() {
         return;
       }
       
-      // Import and use the configurable Replit API service
+      // Import and use the configurable Replit API service  
       const { replitApiService } = await import('../services/replitApiService');
-      const apiEndpoint = `${replitApiService.getServerUrl()}/api/original/sendMail`;
+      const apiEndpoint = replitApiService.getEmailSendEndpoint();
 
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();

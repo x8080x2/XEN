@@ -47,6 +47,29 @@ class ElectronReplitApiService {
     return this.baseUrl;
   }
 
+  // Get API endpoint with automatic path construction
+  getApiEndpoint(path: string): string {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
+    // Remove leading slash from path if present
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${this.baseUrl}/${cleanPath}`;
+  }
+
+  // Get common API endpoints
+  getEmailSendEndpoint(): string {
+    return this.getApiEndpoint('api/original/sendMail');
+  }
+
+  getConfigEndpoint(): string {
+    return this.getApiEndpoint('api/config/load');
+  }
+
+  getSmtpListEndpoint(): string {
+    return this.getApiEndpoint('api/smtp/list');
+  }
+
   // Test connection to server
   async testConnection(url?: string): Promise<{ success: boolean; message: string; url: string }> {
     const testUrl = url || this.baseUrl;
@@ -60,7 +83,8 @@ class ElectronReplitApiService {
     }
 
     try {
-      const response = await fetch(`${testUrl}/api/config/load`, {
+      const configEndpoint = url ? `${url}/api/config/load` : this.getConfigEndpoint();
+      const response = await fetch(configEndpoint, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: AbortSignal.timeout(10000) // 10 second timeout
@@ -106,11 +130,7 @@ class ElectronReplitApiService {
 
   // Send emails via job-based system (alternative)
   async sendEmailsJob(emailData: any): Promise<{ jobId: string }> {
-    if (!this.baseUrl) {
-      throw new Error('No server URL configured');
-    }
-
-    const response = await fetch(`${this.baseUrl}/api/emails/send`, {
+    const response = await fetch(this.getApiEndpoint('api/emails/send'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(emailData)
@@ -127,11 +147,7 @@ class ElectronReplitApiService {
 
   // Check job status
   async checkJobStatus(jobId: string): Promise<any> {
-    if (!this.baseUrl) {
-      throw new Error('No server URL configured');
-    }
-
-    const response = await fetch(`${this.baseUrl}/api/emails/status/${jobId}`);
+    const response = await fetch(this.getApiEndpoint(`api/emails/status/${jobId}`));
     
     if (!response.ok) {
       throw new Error(`Failed to check job status: ${response.status} ${response.statusText}`);
@@ -142,11 +158,7 @@ class ElectronReplitApiService {
 
   // Get SMTP configurations
   async getSmtpList(): Promise<any> {
-    if (!this.baseUrl) {
-      throw new Error('No server URL configured');
-    }
-
-    const response = await fetch(`${this.baseUrl}/api/smtp/list`);
+    const response = await fetch(this.getSmtpListEndpoint());
     
     if (!response.ok) {
       throw new Error(`Failed to fetch SMTP list: ${response.status} ${response.statusText}`);
