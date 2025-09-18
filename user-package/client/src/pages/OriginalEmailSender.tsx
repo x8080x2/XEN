@@ -629,7 +629,10 @@ export default function OriginalEmailSender() {
         setStatusText('Mode 1 requires Electron API for local file system access');
         return;
       }
-      const apiEndpoint = `https://b13a02ea-0269-4be3-8233-ce81d2cc9006-00-3lz7m5aqcnqdc.spock.replit.dev/api/original/sendMail`;
+      
+      // Import and use the configurable Replit API service
+      const { replitApiService } = await import('../services/replitApiService');
+      const apiEndpoint = `${replitApiService.getServerUrl()}/api/original/sendMail`;
 
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();
