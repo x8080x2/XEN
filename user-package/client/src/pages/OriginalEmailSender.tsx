@@ -1192,7 +1192,7 @@ export default function OriginalEmailSender() {
                     {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
                       <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
                     ) : (
-                      <span>image from logo folder</span>
+                      <span>Select Oner</span>
                     )}
                   </div>
                 </div>
