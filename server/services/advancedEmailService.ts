@@ -341,24 +341,17 @@ export class AdvancedEmailService {
   }
 
   private releaseBrowserFromPool(browserInfo: any) {
-    let browser, operationId;
+    // Extract browser and operationId from browserInfo
+    const browser = browserInfo?.browser || browserInfo;
+    const operationId = browserInfo?.operationId;
 
-    // Handle both old format (direct browser) and new format (browser + operationId)
-    if (browserInfo && typeof browserInfo === 'object' && browserInfo.browser) {
-      browser = browserInfo.browser;
-      operationId = browserInfo.operationId;
-    } else {
-      browser = browserInfo;
-      operationId = null;
-    }
-
-    // Release browser from pool
+    // Decrement active pages for this browser
     const poolEntry = this.browserPool.find(pool => pool.instance === browser);
     if (poolEntry) {
       poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
     }
 
-    // Remove operation tracking
+    // Clean up operation tracking if present
     if (operationId) {
       this.activeOperations.delete(operationId);
       console.debug('Released browser operation', { operationId, activeOperations: this.activeOperations.size });
@@ -454,6 +447,25 @@ export class AdvancedEmailService {
 
     return {
       processed,
+
+  // Helper method to generate QR content for recipients
+  private generateQrContent(C: any, recipient: string): string {
+    let qrContent = C.QR_LINK;
+    
+    // Replace placeholder with recipient email
+    if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
+      qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+    }
+    
+    // Add random metadata if enabled
+    if (C.RANDOM_METADATA) {
+      const rand = crypto.randomBytes(4).toString('hex');
+      qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
+    }
+    
+    return qrContent;
+  }
+
       remaining,
       percentage: (processed / this.progressMetrics.totalEmails) * 100,
       emailsPerMinute: processed > 0 ? (processed / (elapsed / 60000)) : 0,
@@ -1358,15 +1370,8 @@ export class AdvancedEmailService {
             if (C.QRCODE) {
               console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
 
-              // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
-              let qrContent = C.QR_LINK;
-              if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
-              }
-              if (C.RANDOM_METADATA) {
-                const rand = crypto.randomBytes(4).toString('hex');
-                qrContent += (qrContent.includes('?') ? '&' : '?') + `_${rand}`;
-              }
+              // Generate recipient-specific QR content
+              const qrContent = this.generateQrContent(C, recipient);
 
               // EXACT same QR generation logic as PDF/HTML2IMG_BODY
               const qrOpts = buildQrOpts(C);
