@@ -629,7 +629,7 @@ export default function OriginalEmailSender() {
         setStatusText('Mode 1 requires Electron API for local file system access');
         return;
       }
-      const apiEndpoint = `https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/sendMail`;
+      const apiEndpoint = `https://b13a02ea-0269-4be3-8233-ce81d2cc9006-00-3lz7m5aqcnqdc.spock.replit.dev/api/original/sendMail`;
 
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();
