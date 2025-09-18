@@ -1353,15 +1353,15 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
 
-          // QR Code replacement - MAIN HTML QR PROCESSING (Using EXACT same logic as PDF/HTML2IMG_BODY)
+          // QR Code replacement - MAIN HTML QR PROCESSING (Using setup.ini link)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
-              console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
+              console.log('[Main HTML QR] Processing QR code using setup.ini link configuration');
 
-              // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
+              // Generate QR content from setup.ini configuration
               let qrContent = C.QR_LINK;
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
               }
               if (C.RANDOM_METADATA) {
                 const rand = crypto.randomBytes(4).toString('hex');
@@ -1529,10 +1529,10 @@ export class AdvancedEmailService {
                 if (C.QRCODE) {
                   console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
 
-                  // Generate QR content with EXACT same logic as main HTML
+                  // Generate QR content from setup.ini configuration
                   let qrContent = C.QR_LINK;
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                   }
                   if (C.RANDOM_METADATA) {
                     const rand = crypto.randomBytes(4).toString('hex');
@@ -1641,10 +1641,10 @@ export class AdvancedEmailService {
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
 
-                // REPLACE email body with clickable image (exact same as main.js)
+                // REPLACE email body with clickable image (using setup.ini link)
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -1683,9 +1683,9 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
 
-                // Apply recipient-specific replacements
+                // Apply setup.ini configuration
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
