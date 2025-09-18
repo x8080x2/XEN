@@ -1,6 +1,15 @@
-# Email Sender Desktop App
+# Email Sender Desktop App - Mode 1: Standalone (Local Processing)
 
-This is the desktop Electron version of the Email Sender application that can access your local files directly.
+This is the desktop Electron version of the Email Sender application that operates in **Mode 1 - Standalone (Local Processing)** only. It accesses your local files directly and makes API calls only to the hosted Replit server for actual email sending.
+
+## Mode 1 Operation
+- ✅ Loads templates from local `files/` folder
+- ✅ Reads SMTP configs from local `config/smtp.ini`
+- ✅ Reads recipients from local `files/leads.txt`
+- ✅ Makes API calls to hosted Replit server for actual email sending
+- ❌ No web browser support
+- ❌ No backend API fallbacks
+- ❌ No sample content fallbacks
 
 ## Setup Instructions
 
@@ -71,11 +80,21 @@ The desktop app can now access your local files directly:
 - Leads list from `./files/leads.txt`
 - Logo files from `./files/logo/` directory
 
+## Mode 1 Requirements
+
+⚠️ **This application ONLY works in Electron desktop environment**
+- Requires all files to be present locally (templates, configs, leads)
+- No web browser compatibility 
+- SMTP configurations must be in local `config/smtp.ini` file
+- Will show error messages if Electron API is not available
+
 ## Troubleshooting
 
-1. **"electronAPI is not defined"** - Make sure you're running the Electron app, not the web version
-2. **Files not found** - Ensure your files are in the correct directories relative to the user-package folder
-3. **Permission errors** - Run as administrator if needed, or check file permissions
+1. **"Mode 1 requires Electron API"** - This message appears when running outside Electron environment
+2. **"electronAPI is not defined"** - Make sure you're running the Electron app, not in a web browser
+3. **Files not found** - Ensure your files are in the correct directories relative to the user-package folder
+4. **SMTP config errors** - Check that `config/smtp.ini` exists and contains valid SMTP settings
+5. **Permission errors** - Run as administrator if needed, or check file permissions
 
 ## Logs
 
