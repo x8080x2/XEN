@@ -7,35 +7,21 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// API Base URL - replace with your deployed Replit app URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://ae57ebf1-e457-47b8-9e70-3e9a750cc9c5-00-24labz448obe2.spock.replit.dev";
-
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const fullUrl = url.startsWith('/api') ? `${API_BASE_URL}${url}` : `${API_BASE_URL}/api${url}`;
-  
-  const res = await fetch(fullUrl, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
-
-  await throwIfResNotOk(res);
-  return res;
+// Electron-only mode - no web API fallback
+export async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  throw new Error('Web API requests are disabled - this app requires Electron desktop environment');
 }
 
-type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const fullUrl = `${API_BASE_URL}/${queryKey.join("/")}`;
-    
+
     const res = await fetch(fullUrl, {
       credentials: "include",
     });

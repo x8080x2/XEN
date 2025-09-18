@@ -1,14 +1,16 @@
-// Service for connecting to the hosted Replit server for email sending
-export class ReplitApiService {
-  private baseUrl: string;
+
+import { ReplitApiService } from './replitApiService';
+
+// Electron-only Replit API service - no web fallbacks
+class ElectronReplitApiService {
+  private baseUrl: string | null = null;
 
   constructor() {
-    // Get the Replit server URL from environment variables or electron context
-    this.baseUrl = this.getServerUrl();
+    this.initializeServerUrl();
   }
 
-  private getServerUrl(): string {
-    // Try multiple sources for the server URL
+  private initializeServerUrl(): void {
+    // Only check environment sources - no hardcoded fallbacks
     const sources = [
       (window as any).REPLIT_SERVER_URL, // From Electron main process
       process.env.REPLIT_SERVER_URL, // From environment
@@ -16,8 +18,10 @@ export class ReplitApiService {
     ];
 
     for (const url of sources) {
-      if (url && url.trim()) {
-        return url.trim().replace(/\/$/, ''); // Remove trailing slash
+      if (url && typeof url === 'string' && url.trim()) {
+        this.baseUrl = url.trim().replace(/\/$/, ''); // Remove trailing slash
+        console.log(`[ReplitAPI] Using server URL: ${this.baseUrl}`);
+        return;
       }
     }
 
@@ -25,136 +29,132 @@ export class ReplitApiService {
   }
 
   // Set server URL manually (for user configuration)
-  public setServerUrl(url: string): void {
-    this.baseUrl = url.replace(/\/$/, '');
+  setServerUrl(url: string): void {
+    if (!url || typeof url !== 'string') {
+      throw new Error('Invalid server URL provided');
+    }
+    
+    this.baseUrl = url.trim().replace(/\/$/, '');
     localStorage.setItem('replit_server_url', this.baseUrl);
+    console.log(`[ReplitAPI] Server URL updated: ${this.baseUrl}`);
   }
 
   // Get current server URL
-  public getServerUrlForDisplay(): string {
+  getServerUrl(): string {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
     return this.baseUrl;
   }
 
-  // Send emails using the original sendMail endpoint
-  public async sendEmails(data: {
-    recipients: string[];
-    subject: string;
-    htmlContent: string;
-    attachments: File[];
-    settings: any;
-    smtpConfig?: {
-      host: string;
-      port: number;
-      user: string;
-      password: string;
-      senderName: string;
-      replyTo: string;
-    };
-  }): Promise<any> {
-    const formData = new FormData();
+  // Test connection to server
+  async testConnection(url?: string): Promise<{ success: boolean; message: string; url: string }> {
+    const testUrl = url || this.baseUrl;
     
-    // Append core email data
-    formData.append('recipients', JSON.stringify(data.recipients));
-    formData.append('subject', data.subject);
-    formData.append('html', data.htmlContent);
-    formData.append('emailContent', data.htmlContent);
-    formData.append('settings', JSON.stringify(data.settings));
-    
-    // Add SMTP configuration if provided
-    if (data.smtpConfig) {
-      formData.append('smtpHost', data.smtpConfig.host);
-      formData.append('smtpPort', data.smtpConfig.port.toString());
-      formData.append('smtpUser', data.smtpConfig.user);
-      formData.append('smtpPass', data.smtpConfig.password);
-      formData.append('senderEmail', data.smtpConfig.user);
-      formData.append('senderName', data.smtpConfig.senderName || '');
-      formData.append('replyTo', data.smtpConfig.replyTo || data.smtpConfig.user);
-    }
-    
-    // Append files
-    data.attachments.forEach((file, index) => {
-      formData.append(`attachment_${index}`, file);
-    });
-
-    const response = await fetch(`${this.baseUrl}/api/original/sendMail`, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Failed to send emails to Replit server');
+    if (!testUrl) {
+      return { 
+        success: false, 
+        message: 'No server URL to test', 
+        url: testUrl || '' 
+      };
     }
 
-    return response.json();
+    try {
+      const response = await fetch(`${testUrl}/api/config/load`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+
+      if (response.ok) {
+        return { 
+          success: true, 
+          message: 'Connection successful', 
+          url: testUrl 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: `Server responded with status ${response.status}`, 
+          url: testUrl 
+        };
+      }
+    } catch (error) {
+      return { 
+        success: false, 
+        message: `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 
+        url: testUrl 
+      };
+    }
   }
 
-  // Alternative method using the job-based email sending endpoint
-  public async sendEmailsJob(data: {
-    recipients: string[];
-    subject: string;
-    htmlContent: string;
-    attachments: File[];
-    settings: any;
-  }): Promise<any> {
-    const formData = new FormData();
-    
-    formData.append('recipients', JSON.stringify(data.recipients));
-    formData.append('subject', data.subject);
-    formData.append('htmlContent', data.htmlContent);
-    formData.append('settings', JSON.stringify(data.settings));
-    
-    // Append files
-    data.attachments.forEach((file, index) => {
-      formData.append(`attachment_${index}`, file);
+  // Send emails via server-sent events (streaming)
+  async sendEmails(emailData: any): Promise<EventSource> {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
+
+    const url = `${this.baseUrl}/api/original/sendMail`;
+    const eventSource = new EventSource(url, {
+      // Note: EventSource doesn't support POST body directly
+      // The server endpoint should handle this appropriately
     });
+
+    console.log(`[ReplitAPI] Starting email sending stream: ${url}`);
+    return eventSource;
+  }
+
+  // Send emails via job-based system (alternative)
+  async sendEmailsJob(emailData: any): Promise<{ jobId: string }> {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
 
     const response = await fetch(`${this.baseUrl}/api/emails/send`, {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailData)
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || 'Failed to create email job');
+      throw new Error(`Failed to start email job: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    const result = await response.json();
+    console.log(`[ReplitAPI] Email job started: ${result.jobId}`);
+    return result;
   }
 
-  // Get job status
-  public async getJobStatus(jobId: string): Promise<any> {
+  // Check job status
+  async checkJobStatus(jobId: string): Promise<any> {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
+
     const response = await fetch(`${this.baseUrl}/api/emails/status/${jobId}`);
     
     if (!response.ok) {
-      throw new Error('Failed to get job status');
+      throw new Error(`Failed to check job status: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
   }
 
-  // Get SMTP configurations from server
-  public async getSmtpConfigs(): Promise<any> {
+  // Get SMTP configurations
+  async getSmtpList(): Promise<any> {
+    if (!this.baseUrl) {
+      throw new Error('No server URL configured');
+    }
+
     const response = await fetch(`${this.baseUrl}/api/smtp/list`);
     
     if (!response.ok) {
-      throw new Error('Failed to get SMTP configurations');
+      throw new Error(`Failed to fetch SMTP list: ${response.status} ${response.statusText}`);
     }
 
     return response.json();
-  }
-
-  // Test connection to the Replit server
-  public async testConnection(): Promise<boolean> {
-    try {
-      const response = await fetch(`${this.baseUrl}/api/smtp/list`);
-      return response.ok;
-    } catch (error) {
-      console.error('Connection test failed:', error);
-      return false;
-    }
   }
 }
 
 // Export singleton instance
-export const replitApiService = new ReplitApiService();
+export const replitApiService = new ElectronReplitApiService();
