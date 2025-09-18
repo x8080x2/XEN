@@ -38,11 +38,16 @@ function createWindow() {
 
   // Pass server URL to renderer process
   mainWindow.webContents.on('did-finish-load', () => {
-    const serverUrl = process.env.REPLIT_SERVER_URL || 'https://b13a02ea-0269-4be3-8233-ce81d2cc9006-00-3lz7m5aqcnqdc.spock.replit.dev';
-    mainWindow.webContents.executeJavaScript(`
-      window.REPLIT_SERVER_URL = '${serverUrl}';
-      console.log('[Electron] Server URL set to:', '${serverUrl}');
-    `);
+    const serverUrl = process.env.REPLIT_SERVER_URL;
+    if (serverUrl) {
+      mainWindow.webContents.executeJavaScript(`
+        window.REPLIT_SERVER_URL = '${serverUrl}';
+        console.log('[Electron] Server URL set to:', '${serverUrl}');
+      `);
+    } else {
+      console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
+    }
+    
   });
 
   // Emitted when the window is closed
