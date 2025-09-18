@@ -13,7 +13,7 @@ export class ReplitApiService {
       (window as any).REPLIT_SERVER_URL, // From Electron main process
       process.env.REPLIT_SERVER_URL, // From environment
       localStorage.getItem('replit_server_url'), // From user settings
-      'https://workspace-graciebarillo.replit.app' // Fallback
+      'https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev' // Fallback
     ];
 
     for (const url of sources) {
