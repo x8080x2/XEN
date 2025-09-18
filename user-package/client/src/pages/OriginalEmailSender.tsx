@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
-import { localFileService } from "@/lib/localFileService";
 
 interface EmailProgress {
   recipient: string;
@@ -44,8 +43,11 @@ export default function OriginalEmailSender() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
+  
+  // AbortController for proper email sending cancellation (Mode 1)
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Attachment template change handler - local file reading
+  // Attachment template change handler - local file reading only (Mode 1)
   const handleAttachmentTemplateChange = async (template: string) => {
     setSelectedAttachmentTemplate(template);
 
@@ -55,31 +57,10 @@ export default function OriginalEmailSender() {
           // Read actual file content from local file system
           const content = await window.electronAPI.readFile(`./files/${template}`);
           setAttachmentHtml(content);
-          console.log('[Local] Attachment template loaded from file:', template);
+          console.log('[Mode 1] Attachment template loaded from local file:', template);
         } else {
-          try {
-            // Use backend API to read actual file content from local storage
-            const content = await localFileService.readFile(`./files/${template}`);
-            setAttachmentHtml(content);
-            console.log('[Backend API] Attachment template loaded from file:', template);
-          } catch (error) {
-            // Fallback sample content for web version
-            let sampleContent = '';
-
-            switch (template) {
-              case 'sample-template.html':
-                sampleContent = `<div style="border:1px solid #ccc; padding:20px;"><h2>Attachment for {user}</h2><p>Content from {domain}</p></div>`;
-                break;
-              case 'newsletter.html':
-                sampleContent = `<div style="background:#f5f5f5; padding:15px;"><h3>Newsletter Attachment</h3><p>Hello {username}!</p></div>`;
-                break;
-              default:
-                sampleContent = `<div style="padding:10px;"><h3>Attachment Content</h3><p>Custom attachment for {user}</p></div>`;
-            }
-
-            setAttachmentHtml(sampleContent);
-            console.log('[Local] Sample attachment template loaded (Backend API not available):', template, error);
-          }
+          console.error('Electron API not available - Mode 1 requires local file system access');
+          setAttachmentHtml('');
         }
       } catch (error) {
         console.error('Error loading attachment template:', error);
@@ -225,18 +206,14 @@ export default function OriginalEmailSender() {
   const loadTemplates = async () => {
     try {
       if (window.electronAPI?.listFiles) {
-        // Desktop version - use local files only
+        // Mode 1 - use local files only
         const files = await window.electronAPI.listFiles('files');
         const htmlFiles = files.filter((file: string) => file.endsWith('.html'));
         setTemplateFiles(htmlFiles);
-        console.log('[Desktop] Loaded templates:', htmlFiles);
+        console.log('[Mode 1] Loaded templates from local files:', htmlFiles);
       } else {
-        // Web version fallback
-        const response = await fetch('/api/original/listFiles');
-        const data = await response.json();
-        if (data.files) {
-          setTemplateFiles(data.files);
-        }
+        console.error('Mode 1 requires Electron API for local file access');
+        setTemplateFiles([]);
       }
     } catch (error) {
       console.error('Failed to load local templates:', error);
@@ -247,20 +224,16 @@ export default function OriginalEmailSender() {
   const loadLogoFiles = async () => {
     try {
       if (window.electronAPI?.listFiles) {
-        // Desktop version - use local files only
+        // Mode 1 - use local files only
         const files = await window.electronAPI.listFiles('files/logo');
         const imageFiles = files.filter((file: string) => 
           /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
         );
         setLogoFiles(imageFiles);
-        console.log('[Desktop] Loaded logos:', imageFiles);
+        console.log('[Mode 1] Loaded logos from local files:', imageFiles);
       } else {
-        // Web version fallback
-        const response = await fetch('/api/original/listLogoFiles');
-        const data = await response.json();
-        if (data.files) {
-          setLogoFiles(data.files);
-        }
+        console.error('Mode 1 requires Electron API for local file access');
+        setLogoFiles([]);
       }
     } catch (error) {
       console.error('Failed to load local logos:', error);
@@ -283,11 +256,11 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Template change handler - local file reading
+  // Template change handler - local file reading only (Mode 1)
   const handleTemplateChange = async (template: string) => {
     setSelectedTemplate(template);
 
-    // Load template content from local files
+    // Load template content from local files only
     if (template && template !== 'off') {
       try {
         if (window.electronAPI?.readFile) {
@@ -295,42 +268,18 @@ export default function OriginalEmailSender() {
           const content = await window.electronAPI.readFile(`./files/${template}`);
           setEmailContent(content);
           setStatusText(`✓ Loaded template: ${template}`);
-          console.log('[Local] Template loaded from file:', template);
+          console.log('[Mode 1] Template loaded from local file:', template);
         } else {
-          try {
-            // Use backend API to read actual file content from local storage
-            const content = await localFileService.readFile(`./files/${template}`);
-            setEmailContent(content);
-            setStatusText(`✓ Loaded template: ${template}`);
-            console.log('[Backend API] Template loaded from file:', template);
-          } catch (error) {
-            // Fallback sample content for web version
-            let sampleContent = '';
-
-            switch (template) {
-              case 'sample-template.html':
-                sampleContent = `<html><body><h1>Hello {user}!</h1><p>Welcome to our service from {randcompany}.</p></body></html>`;
-                break;
-              case 'newsletter.html':
-                sampleContent = `<html><body><h2>Newsletter for {user}</h2><p>Latest updates from {domain}.</p></body></html>`;
-                break;
-              case 'welcome.html':
-                sampleContent = `<html><body><h1>Welcome {username}!</h1><p>Thank you for joining us.</p></body></html>`;
-                break;
-              default:
-                sampleContent = `<html><body><h1>Hello {user}!</h1><p>Your custom template content here.</p></body></html>`;
-            }
-
-            setEmailContent(sampleContent);
-            setStatusText(`✓ Loaded sample template: ${template}`);
-            console.log('[Local] Sample template loaded (Backend API not available):', template, error);
-          }
+          setStatusText('Error: Mode 1 requires local file system access');
+          console.error('Electron API not available - Mode 1 requires local file system access');
+          setEmailContent('');
         }
 
         setTimeout(() => setStatusText(''), 3000);
       } catch (error) {
         setStatusText(`Error loading template: ${error}`);
         console.error('Template loading error:', error);
+        setEmailContent('');
       }
     }
   };
@@ -345,7 +294,7 @@ export default function OriginalEmailSender() {
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
 
-  // SMTP Management Functions
+  // SMTP Management Functions - Mode 1 local access only
   const fetchSmtpData = async () => {
     try {
       if (window.electronAPI?.smtpList) {
@@ -353,16 +302,10 @@ export default function OriginalEmailSender() {
         const data = await window.electronAPI.smtpList();
         if (data.success) {
           setSmtpData(data);
-          console.log('[Electron] SMTP data loaded:', data);
+          console.log('[Mode 1] SMTP data loaded from local config:', data);
         }
       } else {
-        // Fallback to web API
-        const response = await fetch("/api/smtp/list");
-        const data = await response.json();
-        if (data.success) {
-          setSmtpData(data);
-          console.log('[Backend API] SMTP data loaded:', data);
-        }
+        console.error('Mode 1 requires Electron API for local SMTP config access');
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
@@ -370,109 +313,41 @@ export default function OriginalEmailSender() {
   };
 
   const toggleSmtpRotation = async () => {
-    try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: data.rotationEnabled,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to toggle SMTP rotation');
-    }
+    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
+    setStatusText('Mode 1: SMTP configs are managed via local config/smtp.ini file only');
+    setTimeout(() => setStatusText(""), 3000);
   };
 
   const addNewSmtp = async () => {
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
-      setStatusText('All SMTP fields are required');
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs
-        }));
-        setNewSmtp({
-          host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
-        });
-        setStatusText(`SMTP ${data.smtpId} added successfully`);
-        fetchSmtpData();
-      }
-    } catch (error) {
-      setStatusText('Failed to add SMTP configuration');
-    }
+    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
+    setStatusText('Mode 1: Please add SMTP configs to your local config/smtp.ini file');
+    setTimeout(() => setStatusText(""), 3000);
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    if (smtpData.smtpConfigs.length <= 1) {
-      setStatusText('Cannot delete the last SMTP configuration');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP ${smtpId} deleted successfully`);
-      }
-    } catch (error) {
-      setStatusText('Failed to delete SMTP configuration');
-    }
+    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
+    setStatusText('Mode 1: Please modify SMTP configs in your local config/smtp.ini file');
+    setTimeout(() => setStatusText(""), 3000);
   };
 
   const rotateSmtp = async () => {
-    try {
-      const response = await fetch("/api/smtp/rotate", { method: "POST" });
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`Rotated to: ${data.currentSmtp?.fromEmail}`);
-        setTimeout(() => setStatusText(""), 3000);
-      }
-    } catch (error) {
-      setStatusText('Failed to rotate SMTP');
-    }
+    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
+    setStatusText('Mode 1: SMTP rotation managed via local config/smtp.ini file');
+    setTimeout(() => setStatusText(""), 3000);
   };
 
-  // Load configuration from files - exact clone from main.js
+  // Load configuration from files - Mode 1 local access only
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
       let data;
       if (window.electronAPI?.loadConfig) {
-        // Use Electron API for config loading
+        // Mode 1 - use Electron API for config loading only
         data = await window.electronAPI.loadConfig();
-        console.log('[Electron] Config loaded via Electron API');
+        console.log('[Mode 1] Config loaded from local config files');
       } else {
-        // Fallback to web API
-        const response = await fetch('/api/config/load');
-        data = await response.json();
-        console.log('[Backend API] Config loaded via web API');
+        console.error('Mode 1 requires Electron API for local config access');
+        return;
       }
 
       if (data.success && data.config) {
@@ -583,30 +458,29 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Load leads from file - both Electron and web support
+  // Load leads from file - Mode 1 local access only
   const loadLeadsFromFile = async () => {
     try {
       let leadsData;
       if (window.electronAPI?.loadLeads) {
-        // Use Electron API for leads.txt
+        // Mode 1 - use Electron API for leads.txt only
         leadsData = await window.electronAPI.loadLeads();
-        console.log('[Electron] Leads loaded via Electron API');
+        console.log('[Mode 1] Leads loaded from local leads.txt file');
       } else {
-        // Fallback to web API
-        leadsData = await fetch('/api/config/loadLeads').then(res => res.json());
-        console.log('[Backend API] Leads loaded via web API');
+        console.error('Mode 1 requires Electron API for local file access');
+        return;
       }
 
       if (leadsData && leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
         setRecipients(leadsData.leads);
         const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-        console.log(`[${window.electronAPI ? 'Electron' : 'Backend API'}] Auto-loaded ${leadCount} leads from leads.txt`);
+        console.log(`[Mode 1] Auto-loaded ${leadCount} leads from local leads.txt`);
       } else {
-        console.log(`[${window.electronAPI ? 'Electron' : 'Backend API'}] No leads.txt found or it's empty, starting with empty recipients`);
+        console.log('[Mode 1] No leads.txt found locally or it\'s empty, starting with empty recipients');
       }
     } catch (error) {
-      console.error('[File Load] Error loading leads:', error);
-      setStatusText('Failed to load leads');
+      console.error('[Mode 1] Error loading leads from local file:', error);
+      setStatusText('Failed to load leads from local file');
     }
   };
 
@@ -645,24 +519,16 @@ export default function OriginalEmailSender() {
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
 
-    // Priority 1: Selected template file (bodyHtmlFile equivalent)
+    // Priority 1: Selected template file (Mode 1 - local only)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
         if (window.electronAPI?.readFile) {
-          // Desktop version - read from local file system
+          // Mode 1 - read from local file system only
           bodyHtml = await window.electronAPI.readFile(`./files/${selectedTemplate}`);
-          console.log('[Desktop] Template loaded for sending:', selectedTemplate);
+          console.log('[Mode 1] Template loaded for sending:', selectedTemplate);
         } else {
-          // Fallback to hosted Replit server API
-          const response = await fetch('https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/readFile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-          });
-          const data = await response.json();
-          bodyHtml = data.success ? (data.content || '') : '';
+          console.error('Mode 1 requires Electron API for local file system access');
+          bodyHtml = '';
         }
       } catch (error) {
         console.error('Failed to load template:', error);
@@ -673,27 +539,19 @@ export default function OriginalEmailSender() {
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
-    // Priority 3: Default letter fallback (C.LETTER equivalent)
+    // Priority 3: Default letter fallback (Mode 1 - local only)
     else {
       try {
         if (window.electronAPI?.readFile) {
-          // Desktop version - read from local file system
+          // Mode 1 - read from local file system only
           bodyHtml = await window.electronAPI.readFile('./files/letter.html');
-          console.log('[Desktop] Default letter loaded for sending');
+          console.log('[Mode 1] Default letter loaded for sending');
         } else {
-          // Fallback to hosted Replit server API
-          const response = await fetch('https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/readFile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ filepath: 'files/letter.html' })
-          });
-          const data = await response.json();
-          bodyHtml = data.success ? (data.content || '') : '';
+          console.error('Mode 1 requires Electron API for local file system access');
+          bodyHtml = '';
         }
       } catch (error) {
-        console.log('No default letter.html found');
+        console.log('No default letter.html found locally');
         bodyHtml = '';
       }
     }
@@ -766,13 +624,20 @@ export default function OriginalEmailSender() {
       }
 
       // Use Server-Sent Events for real-time progress
-      const apiEndpoint = window.electronAPI ? 
-        `https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/sendMail` : // Desktop: use hosted Replit server
-        `/api/original/sendMail`; // Web: use relative path
+      // Mode 1 - Always use hosted Replit server for email sending
+      if (!window.electronAPI) {
+        setStatusText('Mode 1 requires Electron API for local file system access');
+        return;
+      }
+      const apiEndpoint = `https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/sendMail`;
 
+      // Create AbortController for cancellation (Mode 1)
+      abortControllerRef.current = new AbortController();
+      
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
+        signal: abortControllerRef.current.signal
       });
 
       if (!response.ok) {
@@ -807,7 +672,7 @@ export default function OriginalEmailSender() {
                     recipient: data.recipient || 'Unknown',
                     subject: data.subject || subject || 'No Subject',
                     status: data.status || 'fail',
-                    error: data.error || null,
+                    error: data.error ?? undefined,
                     timestamp: data.timestamp || new Date().toISOString(),
                     totalSent: data.totalSent,
                     totalFailed: data.totalFailed,
@@ -859,12 +724,11 @@ export default function OriginalEmailSender() {
       setIsLoading(false);
       setStatusText(`Error: ${error instanceof Error ? error.message : String(error)}`);
       setEmailLogs(prev => [...prev, {
-        type: 'error',
-        message: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
-        timestamp: new Date().toISOString(),
-        recipient: "N/A", // Added for type safety
-        subject: "N/A", // Added for type safety
-        status: "fail" // Added for type safety
+        recipient: "N/A",
+        subject: "N/A",
+        status: "fail" as const,
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
       }]);
     } finally {
       // Always ensure sending state is reset
@@ -873,20 +737,15 @@ export default function OriginalEmailSender() {
   };
 
   const cancelSending = async () => {
-    try {
-      await fetch('/api/original/pause', { method: 'POST' });
-      setIsLoading(false);
-      setStatusText("Email sending cancelled");
-      setCurrentEmailStatus("");
-
-      // Close any active event source
-      if ((window as any).currentEventSource) {
-        (window as any).currentEventSource.close();
-        (window as any).currentEventSource = null;
-      }
-    } catch (error) {
-      console.error('Failed to cancel sending:', error);
+    // Mode 1 - Use AbortController for proper cancellation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
+    
+    setIsLoading(false);
+    setStatusText("Email sending cancelled (Mode 1)");
+    setCurrentEmailStatus("");
   };
 
   return (
