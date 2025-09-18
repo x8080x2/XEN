@@ -164,9 +164,9 @@ export function useEmailSender() {
     if (jobStatus) {
       const { sent, failed, total, status, logs: jobLogs } = jobStatus;
       const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
-      
+
       setProgress({ total, sent, failed, percentage });
-      
+
       // Add new logs
       if (jobLogs && jobLogs.length > logs.length) {
         const newLogs = jobLogs.slice(logs.length);
@@ -174,7 +174,7 @@ export function useEmailSender() {
           addLog(log.message, log.status);
         });
       }
-      
+
       // Check if job is complete
       if (status === 'completed' || status === 'failed') {
         setCurrentJobId(null);
