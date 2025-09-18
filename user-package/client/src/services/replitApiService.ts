@@ -1,6 +1,4 @@
 
-import { ReplitApiService } from './replitApiService';
-
 // Electron-only Replit API service - no web fallbacks
 class ElectronReplitApiService {
   private baseUrl: string | null = null;
@@ -114,11 +112,7 @@ class ElectronReplitApiService {
 
   // Send emails via server-sent events (streaming)
   async sendEmails(emailData: any): Promise<EventSource> {
-    if (!this.baseUrl) {
-      throw new Error('No server URL configured');
-    }
-
-    const url = `${this.baseUrl}/api/original/sendMail`;
+    const url = this.getEmailSendEndpoint();
     const eventSource = new EventSource(url, {
       // Note: EventSource doesn't support POST body directly
       // The server endpoint should handle this appropriately
