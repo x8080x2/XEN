@@ -13,7 +13,6 @@ export class ReplitApiService {
       (window as any).REPLIT_SERVER_URL, // From Electron main process
       process.env.REPLIT_SERVER_URL, // From environment
       localStorage.getItem('replit_server_url'), // From user settings
-      'https://b13a02ea-0269-4be3-8233-ce81d2cc9006-00-3lz7m5aqcnqdc.spock.replit.dev/' // Fallback
     ];
 
     for (const url of sources) {
@@ -22,8 +21,7 @@ export class ReplitApiService {
       }
     }
 
-    console.warn('No Replit server URL found, using fallback');
-    return sources[sources.length - 1]; // Use fallback
+    throw new Error('No Replit server URL configured. Please set the server URL in settings.');
   }
 
   // Set server URL manually (for user configuration)
