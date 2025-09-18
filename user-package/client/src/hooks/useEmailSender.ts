@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { replitApiService } from "@/services/replitApiService";
 
 interface EmailFormData {
   smtpHost: string;
@@ -108,31 +109,25 @@ export function useEmailSender() {
   // Send emails mutation
   const sendEmailsMutation = useMutation({
     mutationFn: async (data: EmailSendRequest) => {
-      const formData = new FormData();
-      
-      // Append form fields
-      formData.append('recipients', JSON.stringify(data.recipients));
-      formData.append('subject', data.subject);
-      formData.append('htmlContent', data.htmlContent);
-      formData.append('settings', JSON.stringify(data.settings));
-      
-      // Append files
-      data.attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
+      // Extract SMTP configuration from form data
+      const smtpConfig = {
+        host: formData.smtpHost,
+        port: formData.smtpPort,
+        user: formData.smtpUser,
+        password: formData.smtpPassword,
+        senderName: formData.senderName,
+        replyTo: formData.replyTo
+      };
+
+      // Use the Replit API service to send emails
+      return await replitApiService.sendEmails({
+        recipients: data.recipients,
+        subject: data.subject,
+        htmlContent: data.htmlContent,
+        attachments: data.attachments,
+        settings: data.settings,
+        smtpConfig
       });
-
-        const response = await fetch(`${window.location.origin}/api/original/sendMail`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to shi
-                        end emails');
-      }
-
-      return response.json();
     },
     onSuccess: (data) => {
       setCurrentJobId(data.jobId);
@@ -155,7 +150,11 @@ export function useEmailSender() {
 
   // Poll job status
   const { data: jobStatus } = useQuery<JobStatus>({
-    queryKey: ['/api/emails/status', currentJobId],
+    queryKey: ['replitJobStatus', currentJobId],
+    queryFn: async () => {
+      if (!currentJobId) return null;
+      return await replitApiService.getJobStatus(currentJobId);
+    },
     enabled: !!currentJobId,
     refetchInterval: 1000, // Poll every second
   });

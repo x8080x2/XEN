@@ -10,7 +10,6 @@ export class LocalFileService {
       const urlParams = new URLSearchParams(params);
       // Get server URL from Electron or use fallback
       const baseUrl = (window as any).REPLIT_SERVER_URL || 
-                     window.electronAPI?.getServerUrl?.() || 
                      'https://your-repl-name.your-username.repl.co';
       const response = await fetch(`${baseUrl}/api/electron/${endpoint}?${urlParams}`);
       if (!response.ok) {
