@@ -653,8 +653,8 @@ export default function OriginalEmailSender() {
           bodyHtml = await window.electronAPI.readFile(`./files/${selectedTemplate}`);
           console.log('[Desktop] Template loaded for sending:', selectedTemplate);
         } else {
-          // Fallback to web API
-          const response = await fetch('/api/original/readFile', {
+          // Fallback to hosted Replit server API
+          const response = await fetch('https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/readFile', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -681,8 +681,8 @@ export default function OriginalEmailSender() {
           bodyHtml = await window.electronAPI.readFile('./files/letter.html');
           console.log('[Desktop] Default letter loaded for sending');
         } else {
-          // Fallback to web API
-          const response = await fetch('/api/original/readFile', {
+          // Fallback to hosted Replit server API
+          const response = await fetch('https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/readFile', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -767,7 +767,7 @@ export default function OriginalEmailSender() {
 
       // Use Server-Sent Events for real-time progress
       const apiEndpoint = window.electronAPI ? 
-        `http://localhost:5000/api/original/sendMail` : // Desktop: use explicit localhost
+        `https://7bb275f6-8278-4b24-a6bf-306c1d44cc7a-00-3rgrdg95qx2mk.worf.replit.dev/api/original/sendMail` : // Desktop: use hosted Replit server
         `/api/original/sendMail`; // Web: use relative path
 
       const response = await fetch(apiEndpoint, {
