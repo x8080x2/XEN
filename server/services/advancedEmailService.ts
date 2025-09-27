@@ -953,22 +953,8 @@ export class AdvancedEmailService {
       console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
       return pdfBuffer;
     } catch (e) {
-      if (page) {
-        try { 
-          await page.close(); 
-        } catch (closeError) {
-          console.error('Failed to close page during PDF conversion cleanup:', closeError);
-        }
-      }
-      if (usingPool && browserInfo) {
-        this.releaseBrowserFromPool(browserInfo);
-      } else if (browser) {
-        try { 
-          await browser.close(); 
-        } catch (closeError) {
-          console.error('Failed to close browser during PDF conversion cleanup:', closeError);
-        }
-      }
+      // Enhanced error handling with resource cleanup
+      await this.cleanupBrowserResources(page, browser, browserInfo, usingPool, 'PDF conversion');
       console.error('PDF conversion failed:', {
         error: e instanceof Error ? e.message : String(e),
         stack: e instanceof Error ? e.stack : undefined,
@@ -2356,24 +2342,122 @@ END:VCALENDAR`;
     return content;
   }
 
-  // Cleanup method to be called on service shutdown
-  async cleanup() {
-    console.info('Starting cleanup');
-
-    // Close all browser instances
-    for (const pool of this.browserPool) {
-      try {
-        await pool.instance.close();
-      } catch (error) {
-        console.warn('Error closing browser during cleanup', { error });
+  // Centralized browser resource cleanup helper
+  private async cleanupBrowserResources(page: any, browser: any, browserInfo: any, usingPool: boolean, operation: string): Promise<void> {
+    try {
+      // Close page first
+      if (page) {
+        try { 
+          await page.close(); 
+        } catch (closeError) {
+          console.error(`Failed to close page during ${operation} cleanup:`, closeError);
+        }
       }
+
+      // Always release from pool if browserInfo contains operation tracking
+      if (browserInfo && typeof browserInfo === 'object' && browserInfo.operationId) {
+        // This handles operation ID cleanup and browser pool management
+        this.releaseBrowserFromPool(browserInfo);
+        
+        // For non-pooled browsers, we still need to close the browser
+        if (!usingPool && browser) {
+          try { 
+            await browser.close(); 
+          } catch (closeError) {
+            console.error(`Failed to close temporary browser during ${operation} cleanup:`, closeError);
+          }
+        }
+      } else if (usingPool && browserInfo) {
+        // Legacy format - just release from pool
+        this.releaseBrowserFromPool(browserInfo);
+      } else if (browser) {
+        // Direct browser without tracking - just close it
+        try { 
+          await browser.close(); 
+        } catch (closeError) {
+          console.error(`Failed to close browser during ${operation} cleanup:`, closeError);
+        }
+      }
+    } catch (error) {
+      console.error(`Unexpected error during ${operation} resource cleanup:`, error);
     }
+  }
+
+  // Enhanced cleanup method with better resource management
+  async cleanup() {
+    console.info('Starting comprehensive cleanup');
+
+    // Wait for any active operations to complete (with timeout)
+    let waitTime = 0;
+    const maxWaitTime = 10000; // 10 seconds
+    while (this.activeOperations.size > 0 && waitTime < maxWaitTime) {
+      console.log(`Waiting for ${this.activeOperations.size} active operations to complete...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      waitTime += 1000;
+    }
+
+    if (this.activeOperations.size > 0) {
+      console.warn(`Forcefully proceeding with cleanup despite ${this.activeOperations.size} active operations`);
+    }
+
+    // Stop rate limiting queue processing
+    this.rateLimitProcessing = false;
+    this.rateLimitQueue = [];
+
+    // Clear QR generation promises and caches
+    this.qrGenerationPromises.clear();
+    this.qrCacheLocks.clear();
+    this.qrCache.clear();
+
+    // Close all browser instances with enhanced error handling
+    const browserCleanupPromises = this.browserPool.map(async (pool, index) => {
+      try {
+        if (pool.instance && typeof pool.instance.close === 'function') {
+          // Try to get all pages first to close them individually
+          try {
+            const pages = await pool.instance.pages();
+            for (const page of pages) {
+              try {
+                await page.close();
+              } catch (pageError) {
+                console.warn(`Error closing page in browser ${index}:`, pageError);
+              }
+            }
+          } catch (pagesError) {
+            console.warn(`Error getting pages for browser ${index}:`, pagesError);
+          }
+
+          // Now close the browser
+          await Promise.race([
+            pool.instance.close(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Browser close timeout')), 5000))
+          ]);
+          console.debug(`Successfully closed browser ${index}`);
+        }
+      } catch (error) {
+        console.warn(`Error closing browser ${index} during cleanup:`, { 
+          error: error instanceof Error ? error.message : String(error),
+          lastUsed: new Date(pool.lastUsed).toISOString(),
+          activePages: pool.activePages
+        });
+      }
+    });
+
+    // Wait for all browser cleanup operations to complete
+    try {
+      await Promise.allSettled(browserCleanupPromises);
+    } catch (error) {
+      console.error('Error during browser cleanup operations:', error);
+    }
+
     this.browserPool = [];
 
-    // Clear template cache
+    // Clear all caches and tracking data
     this.templateCache.clear();
+    this.activeOperations.clear();
+    this.smtpResponseTimes = [];
 
-    console.info('Cleanup completed');
+    console.info('Comprehensive cleanup completed');
   }
   async writeFile(filepath: string, content: string) {
     try {

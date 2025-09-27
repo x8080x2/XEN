@@ -16,9 +16,14 @@ export class FileService {
     "user-package/config"
   ];
 
+  // Track temporary files for cleanup
+  private tempFiles = new Set<string>();
+  private cleanupInterval?: NodeJS.Timeout;
+
   constructor() {
     this.ensureUploadDir();
     this.ensureFilesDir(); // Ensure the base files directory exists
+    this.startTempFileCleanup();
   }
 
   private async ensureUploadDir(): Promise<void> {
@@ -38,7 +43,13 @@ export class FileService {
   }
 
   async processUploadedFile(file: Express.Multer.File): Promise<any> {
+    // Track temporary file for cleanup
+    this.tempFiles.add(file.path);
+    
     try {
+      // Validate file exists and is accessible
+      await fs.access(file.path);
+      
       // Generate unique filename
       const ext = path.extname(file.originalname);
       const filename = `${crypto.randomUUID()}${ext}`;
@@ -46,6 +57,9 @@ export class FileService {
 
       // Move file to permanent location
       await fs.rename(file.path, filepath);
+      
+      // Remove from temp tracking since it's now permanent
+      this.tempFiles.delete(file.path);
 
       return {
         id: crypto.randomUUID(),
@@ -57,12 +71,9 @@ export class FileService {
         uploadedAt: new Date(),
       };
     } catch (error) {
-      // Clean up temporary file if it exists
-      try {
-        await fs.unlink(file.path);
-      } catch {}
-
-      throw new Error(`Failed to process uploaded file: ${error}`);
+      // Enhanced cleanup with better error handling
+      await this.cleanupTempFile(file.path);
+      throw new Error(`Failed to process uploaded file: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -269,5 +280,56 @@ export class FileService {
       console.error(`[FileService] Failed to write file ${filePath}:`, error);
       return false;
     }
+  }
+
+  // Enhanced temporary file cleanup
+  private async cleanupTempFile(filePath: string): Promise<void> {
+    try {
+      this.tempFiles.delete(filePath);
+      
+      // Check if file exists before attempting deletion
+      try {
+        await fs.access(filePath);
+        await fs.unlink(filePath);
+        console.debug(`[FileService] Cleaned up temporary file: ${filePath}`);
+      } catch (accessError) {
+        // File doesn't exist or is inaccessible - that's okay
+        console.debug(`[FileService] Temporary file not found (already cleaned?): ${filePath}`);
+      }
+    } catch (error) {
+      console.error(`[FileService] Failed to cleanup temporary file ${filePath}:`, error);
+    }
+  }
+
+  // Periodic cleanup of abandoned temporary files
+  private startTempFileCleanup(): void {
+    this.cleanupInterval = setInterval(async () => {
+      if (this.tempFiles.size > 0) {
+        console.debug(`[FileService] Performing periodic cleanup of ${this.tempFiles.size} tracked temp files`);
+        
+        const filesToClean = Array.from(this.tempFiles);
+        for (const filePath of filesToClean) {
+          await this.cleanupTempFile(filePath);
+        }
+      }
+    }, 300000); // Clean up every 5 minutes
+  }
+
+  // Cleanup method for service shutdown
+  async cleanup(): Promise<void> {
+    console.info('[FileService] Starting cleanup');
+    
+    // Clear cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
+
+    // Clean up any remaining temporary files
+    const filesToClean = Array.from(this.tempFiles);
+    for (const filePath of filesToClean) {
+      await this.cleanupTempFile(filePath);
+    }
+
+    console.info('[FileService] Cleanup completed');
   }
 }
