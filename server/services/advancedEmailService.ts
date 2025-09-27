@@ -684,7 +684,9 @@ export class AdvancedEmailService {
       if (this.qrCache.size >= this.maxCacheSize) {
         // Remove oldest entry
         const firstKey = this.qrCache.keys().next().value;
-        this.qrCache.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.qrCache.delete(firstKey);
+        }
       }
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
@@ -1297,6 +1299,7 @@ export class AdvancedEmailService {
         const batchResults = [];
         for (let i = 0; i < batch.length; i++) {
           const recipient = batch[i];
+          let dynamicSubject = args.subject; // Initialize with fallback value
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -1343,9 +1346,10 @@ export class AdvancedEmailService {
                 configService.rotateToNextSmtp();
               }
             }
+          
           // Apply placeholders to both HTML content and subject - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
-          const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+          dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
