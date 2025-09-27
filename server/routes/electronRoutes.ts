@@ -1,5 +1,6 @@
 import { Express } from "express";
 import { FileService } from "../services/fileService";
+import { filePathSchema, fileContentSchema, validateRequest, formatValidationError } from "../utils/validation";
 
 export function setupElectronRoutes(app: Express) {
   const fileService = new FileService();
@@ -45,21 +46,29 @@ export function setupElectronRoutes(app: Express) {
     try {
       const filepath = req.query.filepath as string;
       
-      if (!filepath) {
-        return res.status(400).json({ error: 'filepath parameter is required' });
+      // Enhanced validation for file path
+      const validation = validateRequest(filePathSchema, filepath);
+      if (!validation.success) {
+        return res.status(400).json(formatValidationError(validation.errors));
       }
 
-      const content = await fileService.readFileWithFallback(filepath);
+      const content = await fileService.readFileWithFallback(validation.data);
       
       if (content === null) {
-        return res.status(404).json({ error: 'File not found' });
+        return res.status(404).json({ 
+          error: 'File not found',
+          message: 'The requested file does not exist in any configured location'
+        });
       }
 
-      console.log(`[ElectronAPI] Successfully read file: ${filepath}`);
-      res.json({ content });
+      console.log(`[ElectronAPI] Successfully read file: ${validation.data}`);
+      res.json({ content, filepath: validation.data });
     } catch (error) {
       console.error('[ElectronAPI] Read file error:', error);
-      res.status(500).json({ error: 'Failed to read file' });
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'Failed to read file due to server error'
+      });
     }
   });
 
@@ -68,27 +77,47 @@ export function setupElectronRoutes(app: Express) {
     try {
       const { filepath, content } = req.body;
       
-      if (!filepath || typeof content !== 'string') {
-        return res.status(400).json({ 
-          error: 'filepath and content are required',
-          success: false 
+      // Validate file path
+      const pathValidation = validateRequest(filePathSchema, filepath);
+      if (!pathValidation.success) {
+        return res.status(400).json({
+          ...formatValidationError(pathValidation.errors),
+          success: false
         });
       }
 
-      const success = await fileService.writeFileSecure(filepath, content);
+      // Validate file content
+      const contentValidation = validateRequest(fileContentSchema, content);
+      if (!contentValidation.success) {
+        return res.status(400).json({
+          ...formatValidationError(contentValidation.errors),
+          success: false
+        });
+      }
+
+      const success = await fileService.writeFileSecure(pathValidation.data, contentValidation.data);
       
       if (!success) {
         return res.status(400).json({ 
-          error: 'Invalid file path or write failed',
+          error: 'Write operation failed',
+          message: 'File path is not allowed or write operation failed',
           success: false 
         });
       }
 
-      console.log(`[ElectronAPI] Successfully wrote file: ${filepath}`);
-      res.json({ success: true });
+      console.log(`[ElectronAPI] Successfully wrote file: ${pathValidation.data}`);
+      res.json({ 
+        success: true, 
+        filepath: pathValidation.data,
+        size: contentValidation.data.length 
+      });
     } catch (error) {
       console.error('[ElectronAPI] Write file error:', error);
-      res.status(500).json({ error: 'Failed to write file', success: false });
+      res.status(500).json({ 
+        error: 'Internal server error',
+        message: 'Failed to write file due to server error',
+        success: false 
+      });
     }
   });
 
