@@ -275,7 +275,10 @@ export class AdvancedEmailService {
     AdvancedEmailService.instance = this;
   }
 
-  // Improvement 1: Browser Pool Management (Fixed connection issues)
+  // Browser pool synchronization
+  private browserPoolLock = false;
+  
+  // Improvement 1: Browser Pool Management (Thread-safe)
   private async getBrowserFromPool(): Promise<any> {
     const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -283,17 +286,24 @@ export class AdvancedEmailService {
     this.activeOperations.add(operationId);
 
     try {
-      const now = Date.now();
+      // Wait for exclusive access to browser pool
+      while (this.browserPoolLock) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      this.browserPoolLock = true;
 
-      // Clean up any closed browsers first
-      this.browserPool = this.browserPool.filter(pool => {
-        try {
-          // Check if browser is still connected
-          return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
-        } catch {
-          return false;
-        }
-      });
+      try {
+        const now = Date.now();
+
+        // Clean up any closed browsers first
+        this.browserPool = this.browserPool.filter(pool => {
+          try {
+            // Check if browser is still connected
+            return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
+          } catch {
+            return false;
+          }
+        });
 
       // Find available browser or create new one
       let availableBrowser = this.browserPool.find(pool => 
@@ -325,13 +335,16 @@ export class AdvancedEmailService {
         return { browser: availableBrowser.instance, operationId };
       }
 
-      // Last resort - create temporary browser
-      try {
-        const browser = await this.launchBrowser({});
-        return { browser, operationId };
-      } catch (error) {
-        console.error('Failed to launch fallback browser', { error });
-        throw error;
+        // Last resort - create temporary browser
+        try {
+          const browser = await this.launchBrowser({});
+          return { browser, operationId };
+        } catch (error) {
+          console.error('Failed to launch fallback browser', { error });
+          throw error;
+        }
+      } finally {
+        this.browserPoolLock = false;
       }
     } catch (error) {
       // Remove operation tracking on error
@@ -358,11 +371,28 @@ export class AdvancedEmailService {
       operationId = null;
     }
 
-    // Release browser from pool
-    const poolEntry = this.browserPool.find(pool => pool.instance === browser);
-    if (poolEntry) {
-      poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
-    }
+    // Thread-safe browser pool release
+    const releaseOperation = async () => {
+      while (this.browserPoolLock) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      this.browserPoolLock = true;
+      
+      try {
+        // Release browser from pool
+        const poolEntry = this.browserPool.find(pool => pool.instance === browser);
+        if (poolEntry) {
+          poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
+        }
+      } finally {
+        this.browserPoolLock = false;
+      }
+    };
+
+    // Execute release operation asynchronously to avoid blocking
+    releaseOperation().catch(error => {
+      console.error('Error during browser pool release:', error);
+    });
 
     // Remove operation tracking
     if (operationId) {
@@ -389,69 +419,110 @@ export class AdvancedEmailService {
   }
 
   private async cleanupBrowserPool() {
-    // More aggressive cleanup for better memory management
-    const now = Date.now();
-    const staleThreshold = 300000; // Reduced to 5 minutes
-    let cleaned = 0;
-
-    // Clean up stale browsers even with some active operations
-    if (this.activeOperations.size > 3) {
-      console.log('High activity detected, performing partial cleanup', { activeCount: this.activeOperations.size });
+    // Thread-safe cleanup with proper synchronization
+    while (this.browserPoolLock) {
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
+    this.browserPoolLock = true;
 
-    for (let i = this.browserPool.length - 1; i >= 0; i--) {
-      const pool = this.browserPool[i];
-      if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
-        try {
-          await pool.instance.close();
-          this.browserPool.splice(i, 1);
-          cleaned++;
-          console.log('Cleaned up stale browser', { 
-            poolIndex: i,
-            remaining: this.browserPool.length,
-            totalCleaned: cleaned 
-          });
-        } catch (error) {
-          console.error('Error closing browser during cleanup:', {
-            poolIndex: i,
-            lastUsed: new Date(pool.lastUsed).toISOString(),
-            error: error instanceof Error ? error.message : String(error)
-          });
-          // Remove from pool even if close failed to prevent future issues
-          this.browserPool.splice(i, 1);
+    try {
+      // More aggressive cleanup for better memory management
+      const now = Date.now();
+      const staleThreshold = 300000; // Reduced to 5 minutes
+      let cleaned = 0;
+
+      // Clean up stale browsers even with some active operations
+      if (this.activeOperations.size > 3) {
+        console.log('High activity detected, performing partial cleanup', { activeCount: this.activeOperations.size });
+      }
+
+      for (let i = this.browserPool.length - 1; i >= 0; i--) {
+        const pool = this.browserPool[i];
+        if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
+          try {
+            await pool.instance.close();
+            this.browserPool.splice(i, 1);
+            cleaned++;
+            console.log('Cleaned up stale browser', { 
+              poolIndex: i,
+              remaining: this.browserPool.length,
+              totalCleaned: cleaned 
+            });
+          } catch (error) {
+            console.error('Error closing browser during cleanup:', {
+              poolIndex: i,
+              lastUsed: new Date(pool.lastUsed).toISOString(),
+              error: error instanceof Error ? error.message : String(error)
+            });
+            // Remove from pool even if close failed to prevent future issues
+            this.browserPool.splice(i, 1);
+          }
         }
       }
+    } finally {
+      this.browserPoolLock = false;
     }
   }
 
-  // Improvement 3: Adaptive Rate Limiting
+  // Improvement 3: Adaptive Rate Limiting (Queue-based)
+  private rateLimitQueue: Array<{ responseTime: number; success: boolean }> = [];
+  private rateLimitProcessing = false;
+  
   private updateRateLimit(responseTime: number, success: boolean) {
-    this.smtpResponseTimes.push(responseTime);
-    if (this.smtpResponseTimes.length > 10) {
-      this.smtpResponseTimes.shift();
+    // Queue the update to ensure all events are processed
+    this.rateLimitQueue.push({ responseTime, success });
+    
+    // Process queue if not already processing
+    if (!this.rateLimitProcessing) {
+      this.processRateLimitQueue();
     }
+  }
 
-    const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
-    const oldRate = this.currentRateLimit;
+  private async processRateLimitQueue() {
+    if (this.rateLimitProcessing) return;
+    this.rateLimitProcessing = true;
 
-    // Gradual rate limiting - smaller increments to reduce conflicts
-    if (success && avgResponseTime < 2000) {
-      // Fast responses - gradual increase
-      this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + this.rateChangeStep);
-    } else if (!success || avgResponseTime > 5000) {
-      // Slow responses or failures - gradual decrease
-      this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
-    }
+    try {
+      while (this.rateLimitQueue.length > 0) {
+        const updates = this.rateLimitQueue.splice(0); // Process all queued updates
+        
+        // Process each update individually to maintain accurate adaptive behavior
+        for (const { responseTime, success } of updates) {
+          this.smtpResponseTimes.push(responseTime);
+          if (this.smtpResponseTimes.length > 10) {
+            this.smtpResponseTimes.shift();
+          }
 
-    // Only log when rate actually changes significantly
-    if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
-      console.debug('Rate limit updated gradually', { 
-        oldRate,
-        newRate: this.currentRateLimit, 
-        avgResponseTime,
-        success,
-        change: this.currentRateLimit - oldRate
-      });
+          // Calculate new rate based on each individual update
+          if (this.smtpResponseTimes.length > 0) {
+            const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
+            const oldRate = this.currentRateLimit;
+
+            // Gradual rate limiting - process each success/failure individually
+            if (success && avgResponseTime < 2000) {
+              // Fast responses - gradual increase
+              this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + this.rateChangeStep);
+            } else if (!success || avgResponseTime > 5000) {
+              // Slow responses or failures - gradual decrease
+              this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
+            }
+
+            // Only log when rate actually changes significantly
+            if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
+              console.debug('Rate limit updated gradually', { 
+                oldRate,
+                newRate: this.currentRateLimit, 
+                avgResponseTime,
+                success,
+                change: this.currentRateLimit - oldRate,
+                remainingInQueue: this.rateLimitQueue.length
+              });
+            }
+          }
+        }
+      }
+    } finally {
+      this.rateLimitProcessing = false;
     }
   }
 
@@ -659,25 +730,41 @@ export class AdvancedEmailService {
     return null;
   }
 
-  // QR Code generation with cache locking and activity tracking
+  // QR generation promise queue to prevent race conditions
+  private qrGenerationPromises = new Map<string, Promise<Buffer | null>>();
+  
+  // QR Code generation with proper synchronization
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
 
     // Create cache key based on link and visual settings
     const cacheKey = `${link}_${C.QR_WIDTH || 200}_${C.QR_FOREGROUND_COLOR || '#000000'}_${C.QR_BACKGROUND_COLOR || '#FFFFFF'}`;
 
-    // Wait for ongoing operations on this cache key
-    while (this.qrCacheLocks.has(cacheKey)) {
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-
-    // Check cache again after waiting
+    // Check cache first
     if (this.qrCache.has(cacheKey)) {
       console.log(`[QR Generation] Using cached QR code`);
       return this.qrCache.get(cacheKey)!;
     }
 
-    // Lock cache key during generation
+    // Check if generation is already in progress
+    if (this.qrGenerationPromises.has(cacheKey)) {
+      console.log(`[QR Generation] Waiting for existing generation`);
+      return this.qrGenerationPromises.get(cacheKey)!;
+    }
+
+    // Start generation and store promise
+    const generationPromise = this.generateQRCodeInternalActual(link, C, cacheKey);
+    this.qrGenerationPromises.set(cacheKey, generationPromise);
+
+    try {
+      return await generationPromise;
+    } finally {
+      this.qrGenerationPromises.delete(cacheKey);
+    }
+  }
+
+  private async generateQRCodeInternalActual(link: string, C: any, cacheKey: string): Promise<Buffer | null> {
+    // Lock cache key during generation (for compatibility with clearCaches)
     this.qrCacheLocks.add(cacheKey);
 
     try {
