@@ -336,6 +336,12 @@ export class AdvancedEmailService {
     } catch (error) {
       // Remove operation tracking on error
       this.activeOperations.delete(operationId);
+      console.error('Browser pool operation failed:', {
+        operationId,
+        error: error instanceof Error ? error.message : String(error),
+        activeOperations: this.activeOperations.size,
+        poolSize: this.browserPool.length
+      });
       throw error;
     }
   }
@@ -399,9 +405,20 @@ export class AdvancedEmailService {
         try {
           await pool.instance.close();
           this.browserPool.splice(i, 1);
-          console.log('Cleaned up stale browser', { remaining: this.browserPool.length });
+          cleaned++;
+          console.log('Cleaned up stale browser', { 
+            poolIndex: i,
+            remaining: this.browserPool.length,
+            totalCleaned: cleaned 
+          });
         } catch (error) {
-          console.error('Error closing browser', error);
+          console.error('Error closing browser during cleanup:', {
+            poolIndex: i,
+            lastUsed: new Date(pool.lastUsed).toISOString(),
+            error: error instanceof Error ? error.message : String(error)
+          });
+          // Remove from pool even if close failed to prevent future issues
+          this.browserPool.splice(i, 1);
         }
       }
     }
@@ -850,14 +867,28 @@ export class AdvancedEmailService {
       return pdfBuffer;
     } catch (e) {
       if (page) {
-        try { await page.close(); } catch {}
+        try { 
+          await page.close(); 
+        } catch (closeError) {
+          console.error('Failed to close page during PDF conversion cleanup:', closeError);
+        }
       }
-      if (usingPool) {
+      if (usingPool && browserInfo) {
         this.releaseBrowserFromPool(browserInfo);
-      } else {
-        try { await browser.close(); } catch {}
+      } else if (browser) {
+        try { 
+          await browser.close(); 
+        } catch (closeError) {
+          console.error('Failed to close browser during PDF conversion cleanup:', closeError);
+        }
       }
-      console.error('PDF conversion failed', { error: e });
+      console.error('PDF conversion failed:', {
+        error: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+        usingPool,
+        hasBrowser: !!browser,
+        hasPage: !!page
+      });
       throw e;
     }
   }
@@ -909,14 +940,28 @@ export class AdvancedEmailService {
         return pngBuffer;
       } catch (e) {
         if (page) {
-          try { await page.close(); } catch {}
+          try { 
+            await page.close(); 
+          } catch (closeError) {
+            console.error('Failed to close page during image conversion cleanup:', closeError);
+          }
         }
-        if (usingPool) {
+        if (usingPool && browser) {
           this.releaseBrowserFromPool(browser);
-        } else {
-          try { await browser.close(); } catch {}
+        } else if (browser) {
+          try { 
+            await browser.close(); 
+          } catch (closeError) {
+            console.error('Failed to close browser during image conversion cleanup:', closeError);
+          }
         }
-        console.error('Image generation failed', { error: e });
+        console.error('Image generation failed:', {
+          error: e instanceof Error ? e.message : String(e),
+          stack: e instanceof Error ? e.stack : undefined,
+          usingPool,
+          hasBrowser: !!browser,
+          hasPage: !!page
+        });
         throw e;
       }
   }

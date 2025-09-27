@@ -81,11 +81,14 @@ export class FileService {
     }
   }
 
-  async deleteFile(filepath: string): Promise<void> {
+  async deleteFile(filepath: string): Promise<{ success: boolean; error?: string }> {
     try {
       await fs.unlink(filepath);
+      return { success: true };
     } catch (error) {
-      console.error(`Failed to delete file ${filepath}:`, error);
+      const errorMessage = `Failed to delete file ${filepath}: ${error instanceof Error ? error.message : String(error)}`;
+      console.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
   }
 
