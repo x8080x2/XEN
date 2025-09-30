@@ -1108,7 +1108,11 @@ export class AdvancedEmailService {
 
   // Complete sendMail function with all advanced features - exact clone
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
-    console.log('Advanced sendMail invoked with args:', args);
+    // Log args but redact sensitive information
+    const safeArgs = { ...args };
+    if (safeArgs.smtpPass) safeArgs.smtpPass = '[REDACTED]';
+    if (safeArgs.proxyPass) safeArgs.proxyPass = '[REDACTED]';
+    console.log('Advanced sendMail invoked with args:', safeArgs);
     const sendMailStart = Date.now();
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
