@@ -1444,7 +1444,7 @@ export class AdvancedEmailService {
                 emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
 
                 // Create individual transporter for this email
-                emailTransporter = nodemailer.createTransporter({
+                emailTransporter = nodemailer.createTransport({
                   host: currentSmtpConfig.host,
                   port: parseInt(currentSmtpConfig.port),
                   secure: parseInt(currentSmtpConfig.port) === 465,
@@ -1473,10 +1473,7 @@ export class AdvancedEmailService {
           dynamicSenderName = replacePlaceholders(dynamicSenderName);
 
           // Update emailFromName to use the processed sender name
-          emailFromName = dynamicSenderName;</old_str>
-
-          // Continue with HTML processing
-          let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);</old_str>
+          emailFromName = dynamicSenderName;
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
@@ -1565,6 +1562,8 @@ export class AdvancedEmailService {
                 }
 
                 // EXACT same HTML structure as original main.js lines 938-943
+                const borderStyle = C.BORDER_STYLE || 'solid';
+                const qrBorderColor = C.BORDER_COLOR || '#000000';
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
@@ -2058,7 +2057,7 @@ END:VCALENDAR`;
             fromName: emailFromName,
             transporter: emailTransporter,
             C
-          });</old_str>
+          });
 
           // Close individual transporter if we created one for rotation
           if (emailTransporter !== transporter && configService.isSmtpRotationEnabled()) {
