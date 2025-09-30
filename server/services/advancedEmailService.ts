@@ -1431,7 +1431,8 @@ export class AdvancedEmailService {
                 error,
                 timestamp: new Date().toISOString()
               });
-              return { success: false, error, recipient };
+              batchResults.push({ success: false, error, recipient });
+              continue;
             }
 
             // Get current SMTP config for this email (enables per-email rotation)
