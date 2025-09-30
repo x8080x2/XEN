@@ -1468,9 +1468,15 @@ export class AdvancedEmailService {
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
 
-          // Process sender name with placeholders for each recipient
-          let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, fromEmail, dateStr, timeStr);
+          // Process sender name with placeholders for each recipient BEFORE using it
+          let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
           dynamicSenderName = replacePlaceholders(dynamicSenderName);
+
+          // Update emailFromName to use the processed sender name
+          emailFromName = dynamicSenderName;</old_str>
+
+          // Continue with HTML processing
+          let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);</old_str>
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
@@ -2019,7 +2025,7 @@ DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
 DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
-ORGANIZER;CN=${dynamicSenderName}:MAILTO:${emailFromEmail}
+ORGANIZER;CN=${emailFromName}:MAILTO:${emailFromEmail}</old_str>
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
 SEQUENCE:0
@@ -2049,10 +2055,10 @@ END:VCALENDAR`;
             text,
             attachments: emailAttachments,
             from: emailFromEmail,
-            fromName: dynamicSenderName,
+            fromName: emailFromName,
             transporter: emailTransporter,
             C
-          });
+          });</old_str>
 
           // Close individual transporter if we created one for rotation
           if (emailTransporter !== transporter && configService.isSmtpRotationEnabled()) {
