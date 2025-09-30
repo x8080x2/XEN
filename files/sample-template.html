@@ -1,39 +1,22 @@
- <body>
- <style>
-        body { font-family: Arial, sans-serif; margin: 2px; }
-        .container { max-width: 600px; margin: 0;  padding: 3px; border-radius: 10px;  }
-        .header { text-align: left; margin-bottom: 30px; }
-        .content { line-height: 1.6; color: #333; }
-        .qr-section { text-align: center; margin: 20px 0; }
-        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
-    </style>
-
-    <div class="container">
-        <div class="header" style="text-align: center; margin-bottom: 20px;">
-            {domainlogo}
-            <h1>Hello {username}!</h1>
-        </div>
-        
-        <div class="content">
-            <p>Welcome to our service! We're excited to have you join us.</p>
-            <p>Your account details:</p>
-            <ul>
-                <li><strong>Email:</strong> {email}</li>
-                <li><strong>Domain:</strong> {domain}</li>
-                <li><strong>Registration Date:</strong> {date}</li>
-                <li><strong>User ID:</strong> {userid}</li>
-            </ul>
-            
-            <div class="qr-section">
-                {qrcode}
-            </div>
-            
-            <p>Thank you for joining us, {randfirst}!</p>
-        </div>
-        
-        <div class="footer">
-            <p>This email was sent to {user} on {date} at {time}</p>
-            <p>Random ID: {hash6} | Reference: {randnum4}</p>
-        </div>
+<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 10px; width: 798px; margin: 20px auto; border-radius: 10px;">
+    <div style="background-color: #2b55a1; color: white; padding: 30px; text-align: center; border-radius: 6px; font-weight: 600; font-size: 18px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <span style="font-size: 44px;">&#8690;</span>
+        <div>Please refer to the document for an important notification from <b>{domain}</b></div>
     </div>
-</body>
+    <div style="text-align: center; margin-top: 30px; font-size: 16px; color: #000;">@{user} is added to view the document "Acc" and complete the signature.</div>
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="{link}" target="_blank" style="display: inline-block; background-color: #2b55a1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+            View 
+        </a>
+    </div>
+    <div style="text-align: center; margin-top: 10px; font-size: 13px; color: #777;">Secured Message Generated for only accessed recipients</div>
+    <div style="background-color: #f8f8f8; padding: 20px; margin-top: 30px; border-radius: 6px; font-size: 10px; color: #000;">
+        <p><strong>Do Not Distribute This Email</strong><br/>This email includes a secure link to DocuSign. Please do not share this email link or access code with anyone else.</p>
+        <p><strong>About DocuSign</strong><br/>Sign documents electronically in just a few minutes. It’s safe, secure, and legally binding. Whether you’re in an office, at home, on the move, or even internationally, DocuSign provides a reliable solution for {host}.</p>
+        <p><strong>Questions About the Document?</strong><br/>If you need to modify the document or have any inquiries regarding the details, please contact the sender by replying to this email.</p>
+        <p>Please refrain from sharing this email, as it contains a secure link to our platform. We appreciate your cooperation in ensuring security and confidentiality by not disclosing this link or its access code to others. You are accessing sensitive information; please confirm your password to complete the verification process.</p>
+    </div>
+    <div style="width: 600px; background-color: #f8f8f8; padding: 20px; margin: 20px auto; border-radius: 6px; font-size: 13px; color: #000;">
+        <div style="font-size: 13px; font-weight: bold; color: #5E5E5E;">DocuSign</div>
+    </div>
+</div>
