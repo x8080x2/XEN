@@ -1314,7 +1314,7 @@ export class AdvancedEmailService {
       const user = smtpUser;
       const pass = smtpPass;
       const fromEmail = senderEmail;
-      const fromName = senderName || 'Sender';
+      const fromName = senderName || '';
       const secure = port === 465;
 
       console.log('SMTP Config Loaded:', {
@@ -1442,7 +1442,7 @@ export class AdvancedEmailService {
             if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
               if (currentSmtpConfig) {
                 emailFromEmail = currentSmtpConfig.fromEmail;
-                emailFromName = currentSmtpConfig.fromName || 'Sender';
+                emailFromName = currentSmtpConfig.fromName || '';
                 
                 // Create individual transporter for this email
                 emailTransporter = nodemailer.createTransport({

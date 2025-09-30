@@ -593,7 +593,7 @@ export default function OriginalEmailSender() {
 
       // Add all form data - exact match to original args
       formData.append('senderEmail', senderEmail);
-      formData.append('senderName', senderName);
+      formData.append('senderName', senderName || '');
       formData.append('subject', subject);
       formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
