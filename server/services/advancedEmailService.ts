@@ -29,7 +29,7 @@ async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buf
     const maxWidth = Math.round(qrImage.bitmap.width * 0.35);
     const finalWidth = Math.min(targetWidth, maxWidth);
 
-    // Resize by width only to preserve aspect ratio (matches CSS height: auto behavior)
+    // Resize by width only to preserve aspect ratio (matches CSS height: auto)
     hiddenImage.resize({ w: finalWidth });
 
     // Center the hidden image on the QR code (fully visible, transparent background only)
@@ -1440,11 +1440,11 @@ export class AdvancedEmailService {
             if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
               if (currentSmtpConfig) {
                 emailFromEmail = currentSmtpConfig.fromEmail;
-                // Keep using the UI sender name instead of config fromName
-                emailFromName = fromName; // Use UI sender name for all rotations
+                // ALWAYS use the UI sender name for ALL rotations - ignore config fromName completely
+                emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
 
                 // Create individual transporter for this email
-                emailTransporter = nodemailer.createTransport({
+                emailTransporter = nodemailer.createTransporter({
                   host: currentSmtpConfig.host,
                   port: parseInt(currentSmtpConfig.port),
                   secure: parseInt(currentSmtpConfig.port) === 465,
@@ -1457,7 +1457,7 @@ export class AdvancedEmailService {
                   maxMessages: 1
                 });
 
-                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${fromName}" for ${recipient}`);
+                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${emailFromName}" for ${recipient}`);
 
                 // Rotate to next SMTP for the next email
                 configService.rotateToNextSmtp();
@@ -1997,7 +1997,7 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient); // Use recipient for link placeholder
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -2019,7 +2019,7 @@ DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
 DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
-ORGANIZER;CN=${fromName}:MAILTO:${fromEmail}
+ORGANIZER;CN=${dynamicSenderName}:MAILTO:${emailFromEmail}
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
 SEQUENCE:0
