@@ -1146,10 +1146,7 @@ export class AdvancedEmailService {
         args.senderEmail = emailConfig.SMTP.fromEmail;
         console.log('[AdvancedEmailService] Auto-applied sender email from config:', args.senderEmail);
       }
-      if (!args.senderName || args.senderName.trim() === '') {
-        args.senderName = emailConfig.SMTP.fromName || '';
-        console.log('[AdvancedEmailService] Auto-applied sender name from config:', args.senderName);
-      }
+      
 
       // Auto-apply SMTP settings if not provided - exact clone from main.js
       if (!args.smtpHost && emailConfig.SMTP.host) {

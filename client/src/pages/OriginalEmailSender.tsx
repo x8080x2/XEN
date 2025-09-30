@@ -412,10 +412,7 @@ export default function OriginalEmailSender() {
             setSenderEmail(smtpConfig.fromEmail);
             console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
           }
-          if (smtpConfig.fromName) {
-            setSenderName(smtpConfig.fromName);
-            console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
-          }
+          
         }
 
         // Load advanced settings with delivery protection
