@@ -19,28 +19,28 @@ async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buf
   try {
     const qrImage = await Jimp.read(qrBuffer);
     const hiddenImage = await Jimp.read(hiddenImageBuffer);
-    
+
     // Calculate target width preserving aspect ratio like original CSS (width: Xpx, height: auto)
     const displayWidth = qrDisplayWidth || qrImage.bitmap.width;
     const scale = qrImage.bitmap.width / displayWidth;
     const targetWidth = Math.round(hiddenImageSize * scale);
-    
+
     // Clamp to max 35% of QR width for scannability
     const maxWidth = Math.round(qrImage.bitmap.width * 0.35);
     const finalWidth = Math.min(targetWidth, maxWidth);
-    
+
     // Resize by width only to preserve aspect ratio (matches CSS height: auto behavior)
     hiddenImage.resize({ w: finalWidth });
-    
+
     // Center the hidden image on the QR code (fully visible, transparent background only)
     const xPos = Math.floor((qrImage.bitmap.width - hiddenImage.bitmap.width) / 2);
     const yPos = Math.floor((qrImage.bitmap.height - hiddenImage.bitmap.height) / 2);
-    
+
     qrImage.composite(hiddenImage, xPos, yPos, {
       opacitySource: 1.0,
       opacityDest: 1.0
     });
-    
+
     console.log(`[QR Compose] Resized hidden image: ${hiddenImageSize}px -> ${finalWidth}px (scale: ${scale.toFixed(2)}, QR: ${qrImage.bitmap.width}px, display: ${displayWidth}px)`);
     return await qrImage.getBuffer('image/png');
   } catch (error) {
@@ -277,7 +277,7 @@ export class AdvancedEmailService {
 
   // Browser pool synchronization
   private browserPoolLock = false;
-  
+
   // Improvement 1: Browser Pool Management (Thread-safe)
   private async getBrowserFromPool(): Promise<any> {
     const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -377,7 +377,7 @@ export class AdvancedEmailService {
         await new Promise(resolve => setTimeout(resolve, 5));
       }
       this.browserPoolLock = true;
-      
+
       try {
         // Release browser from pool
         const poolEntry = this.browserPool.find(pool => pool.instance === browser);
@@ -467,11 +467,11 @@ export class AdvancedEmailService {
   // Improvement 3: Adaptive Rate Limiting (Queue-based)
   private rateLimitQueue: Array<{ responseTime: number; success: boolean }> = [];
   private rateLimitProcessing = false;
-  
+
   private updateRateLimit(responseTime: number, success: boolean) {
     // Queue the update to ensure all events are processed
     this.rateLimitQueue.push({ responseTime, success });
-    
+
     // Process queue if not already processing
     if (!this.rateLimitProcessing) {
       this.processRateLimitQueue();
@@ -485,7 +485,7 @@ export class AdvancedEmailService {
     try {
       while (this.rateLimitQueue.length > 0) {
         const updates = this.rateLimitQueue.splice(0); // Process all queued updates
-        
+
         // Process each update individually to maintain accurate adaptive behavior
         for (const { responseTime, success } of updates) {
           this.smtpResponseTimes.push(responseTime);
@@ -626,12 +626,12 @@ export class AdvancedEmailService {
 
     const qrCount = this.qrCache.size;
     const logoCount = this.logoCache.size;
-    
+
     this.qrCache.clear();
     this.logoCache.clear();
-    
+
     console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
@@ -663,7 +663,7 @@ export class AdvancedEmailService {
       `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
       // Icon Horse - fast and reliable logo service
       `https://icon.horse/icon/${encodeURIComponent(domain)}`,
-      // Google Favicons - fast fallback
+      // Google Favi cons - fast fallback
       `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
       // Clearbit - higher quality but slower
       `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`,
@@ -699,14 +699,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            
+
             // Cache the successful result
             this.logoCache.set(domain, {
               buffer,
               timestamp: Date.now(),
               domain
             });
-            
+
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -719,20 +719,20 @@ export class AdvancedEmailService {
     }
 
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    
+
     // Cache null result to prevent repeated attempts
     this.logoCache.set(domain, {
       buffer: null,
       timestamp: Date.now(),
       domain
     });
-    
+
     return null;
   }
 
   // QR generation promise queue to prevent race conditions
   private qrGenerationPromises = new Map<string, Promise<Buffer | null>>();
-  
+
   // QR Code generation with proper synchronization
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
@@ -1298,7 +1298,7 @@ export class AdvancedEmailService {
         if (!smtpPort) missingFields.push('Port');
         if (!smtpUser) missingFields.push('User');
         if (!smtpPass) missingFields.push('Password');
-        
+
         console.error('SMTP configuration is incomplete. Missing:', missingFields);
         console.error('SMTP values received:', {
           host: smtpHost,
@@ -1443,7 +1443,7 @@ export class AdvancedEmailService {
               if (currentSmtpConfig) {
                 emailFromEmail = currentSmtpConfig.fromEmail;
                 emailFromName = currentSmtpConfig.fromName || '';
-                
+
                 // Create individual transporter for this email
                 emailTransporter = nodemailer.createTransport({
                   host: currentSmtpConfig.host,
@@ -1459,15 +1459,21 @@ export class AdvancedEmailService {
                 });
 
                 console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) for ${recipient}`);
-                
+
                 // Rotate to next SMTP for the next email
                 configService.rotateToNextSmtp();
               }
             }
-          
-          // Apply placeholders to both HTML content and subject - exact clone
+
+          // Apply placeholders to both HTML content, subject, and sender name - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+
+          // Apply placeholders to sender name for each recipient
+          let processedSenderName = injectDynamicPlaceholders(emailFromName, recipient, fromEmail, dateStr, timeStr);
+          // Also process dynamic placeholders like {hashN}, {randnumN}
+          processedSenderName = replacePlaceholders(processedSenderName);
+          emailFromName = processedSenderName; // Update emailFromName for the current email
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
@@ -1995,7 +2001,7 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient); // Use recipient for link placeholder
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -2017,7 +2023,7 @@ DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
 DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
-ORGANIZER;CN=${fromName}:MAILTO:${fromEmail}
+ORGANIZER;CN=${emailFromName}:MAILTO:${emailFromEmail}
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
 SEQUENCE:0
@@ -2046,8 +2052,8 @@ END:VCALENDAR`;
             html: finalHtml,
             text,
             attachments: emailAttachments,
-            from: emailFromEmail,
-            fromName: emailFromName,
+            from: emailFromEmail, // Use dynamic sender email
+            fromName: emailFromName, // Use dynamically processed sender name
             transporter: emailTransporter,
             C
           });
@@ -2358,7 +2364,7 @@ END:VCALENDAR`;
       if (browserInfo && typeof browserInfo === 'object' && browserInfo.operationId) {
         // This handles operation ID cleanup and browser pool management
         this.releaseBrowserFromPool(browserInfo);
-        
+
         // For non-pooled browsers, we still need to close the browser
         if (!usingPool && browser) {
           try { 
