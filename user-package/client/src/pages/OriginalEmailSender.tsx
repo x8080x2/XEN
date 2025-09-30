@@ -43,7 +43,7 @@ export default function OriginalEmailSender() {
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
-  
+
   // AbortController for proper email sending cancellation (Mode 1)
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -629,14 +629,14 @@ export default function OriginalEmailSender() {
         setStatusText('Mode 1 requires Electron API for local file system access');
         return;
       }
-      
+
       // Import and use the configurable Replit API service  
       const { replitApiService } = await import('../services/replitApiService');
       const apiEndpoint = replitApiService.getEmailSendEndpoint();
 
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();
-      
+
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
@@ -745,7 +745,7 @@ export default function OriginalEmailSender() {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    
+
     setIsLoading(false);
     setStatusText("Email sending cancelled (Mode 1)");
     setCurrentEmailStatus("");
@@ -941,6 +941,7 @@ export default function OriginalEmailSender() {
                           <div><span className="text-cyan-400">{'{userupper}'}</span> - Username uppercase</div>
                           <div><span className="text-cyan-400">{'{userlower}'}</span> - Username lowercase</div>
                           <div><span className="text-cyan-400">{'{domainbase}'}</span> - Domain without TLD</div>
+                          <div><span className="text-cyan-400">{'{host}'}</span> - Host name (domain without TLD)</div>
                           <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
                           <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
                           <div><span className="text-cyan-400">{'{emailb64}'}</span> - Base64 encoded email</div>

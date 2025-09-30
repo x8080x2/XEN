@@ -156,6 +156,7 @@ export default function EmailForm() {
                   <div><span className="text-green-400">{'{username}'}</span> - Same as user</div>
                   <div><span className="text-green-400">{'{email}'}</span> - Full email address</div>
                   <div><span className="text-green-400">{'{domain}'}</span> - Email domain</div>
+                  <div><span className="text-green-400">{'{host}'}</span> - Host name (domain without TLD)</div>
                   <div><span className="text-green-400">{'{date}'}</span> - Current date</div>
                   <div><span className="text-green-400">{'{time}'}</span> - Current time</div>
                 </div>

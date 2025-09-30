@@ -538,7 +538,7 @@ export default function OriginalEmailSender() {
         bodyHtml = '';
       }
     }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)  
+    // Priority 2: Direct HTML from textarea (args.html equivalent)
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
@@ -918,6 +918,7 @@ export default function OriginalEmailSender() {
                           <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
                           <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
                           <div><span className="text-cyan-400">{'{emailb64}'}</span> - Base64 encoded email</div>
+                          <div><span className="text-green-400">{'{host}'}</span> - Host name (domain without TLD)</div>
                         </div>
                       </div>
 
@@ -1058,7 +1059,7 @@ export default function OriginalEmailSender() {
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
-                      <div 
+                      <div
                         ref={currentStatusRef}
                         className="mb-3 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg animate-pulse"
                         data-testid="current-email-status"
@@ -1347,8 +1348,8 @@ export default function OriginalEmailSender() {
                         <div
                           key={smtp.id}
                           className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id 
-                              ? 'border-blue-500 bg-blue-900/20' 
+                            smtpData.currentSmtp?.id === smtp.id
+                              ? 'border-blue-500 bg-blue-900/20'
                               : 'border-[#26262b] bg-[#0f0f12]'
                           }`}
                         >
@@ -1383,12 +1384,12 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
 ╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
 ║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║  
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
-              </div>              
+              </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
@@ -1490,7 +1491,7 @@ export default function OriginalEmailSender() {
 
         {/* Settings Overlay */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">            
+          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
             <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[1280px] max-h-[80vh] overflow-y-auto">
               <button
                 onClick={() => setShowSettings(false)}
@@ -1499,8 +1500,8 @@ export default function OriginalEmailSender() {
                 GO BACK ↩️
               </button>
               <div className=" items-center mb-6">
-                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
-                  {`   
+                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
+                  {`
                     .d8888b.                     .d888 d8b          
                    d88P  Y88b                   d88P"  Y8P          
                    888    888                   888                 
@@ -1529,7 +1530,7 @@ export default function OriginalEmailSender() {
                   |         [_____] []|__
                   |         [_____] []|  \__
                   L___________________J     \ \___\/
-                   ___________________      /\ 
+                   ___________________      /\
                   /###GET#CONNECTED###
               `}
               </div>
@@ -1596,8 +1597,8 @@ export default function OriginalEmailSender() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">QR MIDDLE IMG</Label>
-                      <Select 
-                        value={advancedSettings.hiddenImageFile || "off"} 
+                      <Select
+                        value={advancedSettings.hiddenImageFile || "off"}
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
                       >
                         <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white">

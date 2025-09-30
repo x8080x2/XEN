@@ -98,6 +98,7 @@ export function injectDynamicPlaceholders(text: string, user: string, email: str
              .replace(/{userlower}/g, username.toLowerCase())
              .replace(/{domain}/g, domain)
              .replace(/{domainbase}/g, domainBase)
+             .replace(/{host}/g, domainBase) // {host} = domain without TLD (same as domainbase)
              .replace(/{initials}/g, initials)
              .replace(/{userid}/g, userId);
 
