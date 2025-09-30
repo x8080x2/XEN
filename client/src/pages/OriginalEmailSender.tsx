@@ -19,6 +19,8 @@ interface EmailProgress {
   totalSent?: number;
   totalFailed?: number;
   totalRecipients?: number;
+  type: string; // Added for SSE data type
+  message?: string; // Added for error messages
 }
 
 interface SMTPSettings {
@@ -150,7 +152,7 @@ export default function OriginalEmailSender() {
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
-  
+
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
   const currentStatusRef = useRef<HTMLDivElement>(null);
@@ -160,12 +162,7 @@ export default function OriginalEmailSender() {
     rotationEnabled: false
   });
   const [newSmtp, setNewSmtp] = useState({
-    host: "",
-    port: "587", 
-    user: "",
-    pass: "",
-    fromEmail: "",
-    fromName: ""
+    host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
   });
 
   // File input ref
@@ -189,15 +186,15 @@ export default function OriginalEmailSender() {
   useEffect(() => {
     if (logContainerRef.current && emailLogs.length > 0) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
-      
+
       // Mark the latest log as recently added for highlighting
       setRecentlyAddedLogIndex(emailLogs.length - 1);
-      
+
       // Clear the highlight after 3 seconds
       const timer = setTimeout(() => {
         setRecentlyAddedLogIndex(-1);
       }, 3000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [emailLogs.length]);
@@ -638,7 +635,7 @@ export default function OriginalEmailSender() {
 
           // Add new data to buffer
           buffer += decoder.decode(value);
-          
+
           // Process complete lines
           const lines = buffer.split('\n');
           // Keep the last potentially incomplete line in buffer
@@ -652,7 +649,7 @@ export default function OriginalEmailSender() {
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
                   const progressData: EmailProgress = data;
-                  
+
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
                     setEmailLogs(prev => [...prev, progressData]);
@@ -671,7 +668,7 @@ export default function OriginalEmailSender() {
                       setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
                     }
                   });
-                  
+
                 } else if (data.type === 'complete') {
                   setIsLoading(false);
                   setProgress(100);
@@ -717,7 +714,7 @@ export default function OriginalEmailSender() {
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("");
-      
+
       // Close any active event source
       if ((window as any).currentEventSource) {
         (window as any).currentEventSource.close();
@@ -752,15 +749,15 @@ export default function OriginalEmailSender() {
 ██║     ██║     ╚════██║
 ╚██████╗███████╗███████║
  ╚═════╝╚══════╝╚══════╝
-                        
+
 `}
               </div>
-              
+
               {/* Decorative Elements */}
               <div className="text-[#ef4444] font-mono text-xs mb-4 opacity-60">
                 ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
               </div>
-              
+
               <div className="text-center text-[#a1a1aa] text-xs">
                 <div className="mb-1">EMAIL DELIVERY SYSTEM⚡</div>
                 <div className="text-[#ef4444] font-bold"> SHOOTER</div>
@@ -811,7 +808,7 @@ export default function OriginalEmailSender() {
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
             </div>
-            
+
             <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1041,7 +1038,7 @@ export default function OriginalEmailSender() {
               {(isLoading || emailLogs.length > 0) && (
                 <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
                   <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
-                    <span>{isLoading ? '📤 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
+                    <span>{isLoading ? ' pouls SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded">
                       {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
                     </span>
@@ -1088,7 +1085,7 @@ export default function OriginalEmailSender() {
                             {emailLogs.slice(-20).reverse().map((log, index) => {
                               const logIndex = emailLogs.length - 1 - index;
                               const isRecentlyAdded = logIndex === recentlyAddedLogIndex;
-                              
+
                               return (
                                 <div
                                   key={index}
@@ -1252,7 +1249,7 @@ export default function OriginalEmailSender() {
                   </Button>
                 )}
               </div>
-              
+
               {/* SMTP Management - Moved to SMTP Settings Area */}
               <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -1282,7 +1279,7 @@ export default function OriginalEmailSender() {
                           <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
                         </div>
                         <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
                         </p>
                       </div>
                     </div>
@@ -1516,7 +1513,7 @@ export default function OriginalEmailSender() {
                                                            Y8b d88P 
                                                             "Y88P"  `}
               </div>
-               
+
               </div>
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
               {`
@@ -1644,7 +1641,7 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-                
+
 
                 <div>
                   <Label className="text-sm text-[red]">QR LINK: USE {"{email}"} placeholder</Label>
@@ -1815,7 +1812,7 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-              
+
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
