@@ -73,7 +73,7 @@ function pickRand(arr: any[]): any {
 export function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
   if (!text) return '';
 
-  // Recipient logic
+  // Recipient logic - extract domain from the recipient email (user parameter)
   const username = user?.split('@')[0] || '';
   const domain = user?.split('@')[1] || '';
   const domainBase = domain?.split('.')[0] || '';
@@ -1465,9 +1465,13 @@ export class AdvancedEmailService {
               }
             }
           
-          // Apply placeholders to both HTML content and subject - exact clone
+          // Apply placeholders to both HTML content, subject, and sender name - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
           dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+          
+          // Process sender name with placeholders for each recipient
+          let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, fromEmail, dateStr, timeStr);
+          dynamicSenderName = replacePlaceholders(dynamicSenderName);
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
@@ -2047,7 +2051,7 @@ END:VCALENDAR`;
             text,
             attachments: emailAttachments,
             from: emailFromEmail,
-            fromName: emailFromName,
+            fromName: dynamicSenderName,
             transporter: emailTransporter,
             C
           });
