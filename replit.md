@@ -44,6 +44,22 @@ Preferred communication style: Simple, everyday language.
 - **Memory Monitoring**: Prevents system resource exhaustion with threshold monitoring and periodic checks.
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
+# Replit Environment Setup
+
+## Development Configuration (September 30, 2025)
+- **Database**: PostgreSQL database provisioned and schema pushed successfully
+- **Drizzle Config**: Migrated from JSON to TypeScript config (drizzle.config.ts) for proper environment variable support
+- **Workflow**: Configured to run on port 5000 with webview output
+- **Vite Server**: Already configured with `allowedHosts: true` for Replit proxy compatibility
+- **Host Binding**: Server binds to 0.0.0.0:5000 for Replit environment
+- **Deployment**: Configured for autoscale deployment with production build
+
+## Running the Application
+- **Development**: `npm run dev` - Runs Express server with Vite middleware on port 5000
+- **Production Build**: `npm run build` - Builds frontend and backend
+- **Production Start**: `npm run start` - Runs production server
+- **Database Push**: `npm run db:push` - Pushes schema changes to database
+
 # External Dependencies
 
 ## Core Framework Dependencies
