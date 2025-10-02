@@ -1424,12 +1424,23 @@ export class AdvancedEmailService {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
               const error = 'Invalid email format';
+              const currentSmtpForInvalid = configService.getCurrentSmtpConfig();
+              const smtpInfoInvalid = currentSmtpForInvalid ? {
+                id: currentSmtpForInvalid.id,
+                fromEmail: currentSmtpForInvalid.fromEmail,
+                host: currentSmtpForInvalid.host
+              } : {
+                id: 'default',
+                fromEmail: fromEmail,
+                host: smtpHost
+              };
               progressCallback?.({
                 recipient,
                 subject: args.subject,
                 status: 'fail',
                 error,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                smtp: smtpInfoInvalid
               });
               batchResults.push({ success: false, error, recipient });
               continue;
@@ -1440,6 +1451,17 @@ export class AdvancedEmailService {
             let emailFromEmail = fromEmail;
             let emailFromName = fromName;
             let emailTransporter = transporter;
+            
+            // Prepare SMTP info for progress tracking
+            const smtpInfo = currentSmtpConfig ? {
+              id: currentSmtpConfig.id,
+              fromEmail: currentSmtpConfig.fromEmail,
+              host: currentSmtpConfig.host
+            } : {
+              id: 'default',
+              fromEmail: fromEmail,
+              host: smtpHost
+            };
 
             // If rotation is enabled and we have multiple SMTP configs, create individual transporter
             if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
@@ -2074,7 +2096,8 @@ END:VCALENDAR`;
               subject: dynamicSubject || args.subject || 'No Subject',
               status: result.success ? 'success' : 'fail',
               error: result.success ? null : (result.error || 'Unknown error'),
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              smtp: smtpInfo
             });
             batchResults.push(result);
           } catch (err: any) {
@@ -2085,7 +2108,8 @@ END:VCALENDAR`;
               subject: dynamicSubject || args.subject || 'No Subject',
               status: 'fail',
               error: errorMessage,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
+              smtp: smtpInfo
             });
             batchResults.push({ success: false, error: errorMessage, recipient: recipient || 'Unknown' });
           }

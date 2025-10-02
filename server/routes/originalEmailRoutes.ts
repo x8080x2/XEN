@@ -143,7 +143,8 @@ export function setupOriginalEmailRoutes(app: Express) {
             timestamp: progress.timestamp || new Date().toISOString(),
             totalSent,
             totalFailed,
-            totalRecipients: recipients.length
+            totalRecipients: recipients.length,
+            smtp: progress.smtp || null
           })}\n\n`);
           
           // Force flush to prevent buffering - use Node.js HTTP response method

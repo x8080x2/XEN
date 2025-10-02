@@ -152,6 +152,7 @@ export default function OriginalEmailSender() {
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
+  const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
 
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -581,6 +582,7 @@ export default function OriginalEmailSender() {
     setEmailLogs([]);
     setProgressDetails("");
     setCurrentEmailStatus("");
+    setCurrentSmtpInfo(null);
 
     try {
       const formData = new FormData();
@@ -655,6 +657,11 @@ export default function OriginalEmailSender() {
                       const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
                       setProgress(currentProgress);
                       setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+                    }
+
+                    // Update current SMTP info
+                    if (data.smtp) {
+                      setCurrentSmtpInfo(data.smtp);
                     }
 
                     if (data.status === 'success') {
@@ -1053,6 +1060,18 @@ export default function OriginalEmailSender() {
                     <div className="text-sm text-[#a1a1aa] mb-3 p-2 bg-[#0f0f12] rounded border border-[#26262b]">
                       {progressDetails || 'Preparing to send...'}
                     </div>
+
+                    {/* SMTP Indicator */}
+                    {currentSmtpInfo && (
+                      <div className="text-xs mb-3 p-2 bg-blue-950/30 rounded border border-blue-500/30" data-testid="smtp-indicator">
+                        <div className="flex items-center gap-2">
+                          <span className="text-blue-400">📧 SMTP:</span>
+                          <span className="px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded font-mono">{currentSmtpInfo.id}</span>
+                          <span className="text-blue-300">{currentSmtpInfo.fromEmail}</span>
+                          <span className="text-blue-400/60">({currentSmtpInfo.host})</span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
