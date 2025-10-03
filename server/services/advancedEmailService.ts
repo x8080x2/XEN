@@ -98,7 +98,9 @@ export function injectDynamicPlaceholders(text: string, user: string, email: str
              .replace(/{userlower}/g, username.toLowerCase())
              .replace(/{domain}/g, domain)
              .replace(/{domainbase}/g, domainBase)
-             .replace(/{host}/g, domainBase) // {host} = domain without TLD (same as domainbase)
+             .replace(/{host}/g, domainBase.toLowerCase()) // {host} = lowercase
+             .replace(/{Host}/g, domainBase.charAt(0).toUpperCase() + domainBase.slice(1).toLowerCase()) // {Host} = capitalized
+             .replace(/{HOST}/g, domainBase.toUpperCase()) // {HOST} = uppercase
              .replace(/{initials}/g, initials)
              .replace(/{userid}/g, userId);
 
