@@ -950,7 +950,9 @@ export default function OriginalEmailSender() {
                           <div><span className="text-cyan-400">{'{userupper}'}</span> - Username uppercase</div>
                           <div><span className="text-cyan-400">{'{userlower}'}</span> - Username lowercase</div>
                           <div><span className="text-cyan-400">{'{domainbase}'}</span> - Domain without TLD</div>
-                          <div><span className="text-cyan-400">{'{host}'}</span> - Host name (domain without TLD)</div>
+                          <div><span className="text-cyan-400">{'{host}'}</span> - Host lowercase (gmail)</div>
+                          <div><span className="text-cyan-400">{'{Host}'}</span> - Host capitalized (Gmail)</div>
+                          <div><span className="text-cyan-400">{'{HOST}'}</span> - Host uppercase (GMAIL)</div>
                           <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
                           <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
                           <div><span className="text-cyan-400">{'{emailb64}'}</span> - Base64 encoded email</div>
