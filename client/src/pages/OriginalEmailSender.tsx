@@ -21,6 +21,11 @@ interface EmailProgress {
   totalRecipients?: number;
   type: string; // Added for SSE data type
   message?: string; // Added for error messages
+  smtp?: { // Added to store SMTP info
+    id: string;
+    fromEmail: string;
+    host: string;
+  };
 }
 
 interface SMTPSettings {
@@ -413,7 +418,7 @@ export default function OriginalEmailSender() {
             setSenderEmail(smtpConfig.fromEmail);
             console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
           }
-          
+
         }
 
         // Load advanced settings with delivery protection
@@ -643,20 +648,18 @@ export default function OriginalEmailSender() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
-                const data = JSON.parse(line.slice(6));
+                const data: EmailProgress = JSON.parse(line.slice(6)); // Use EmailProgress interface
 
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
-                  const progressData: EmailProgress = data;
-
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
-                    setEmailLogs(prev => [...prev, progressData]);
+                    setEmailLogs(prev => [...prev, data]);
 
-                    if (progressData.totalRecipients) {
-                      const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
+                    if (data.totalRecipients) {
+                      const currentProgress = ((data.totalSent || 0) + (data.totalFailed || 0)) / data.totalRecipients * 100;
                       setProgress(currentProgress);
-                      setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+                      setProgressDetails(`Sent: ${data.totalSent || 0}, Failed: ${data.totalFailed || 0}, Total: ${data.totalRecipients}`);
                     }
 
                     // Update current SMTP info
@@ -962,7 +965,7 @@ export default function OriginalEmailSender() {
                         </div>
                       </div>
 
-                      <div className="mt-3 p-2 bg-[#1a1a1f] rounded border-l-2 border-[#ef4444]">
+                      <div className="mt-3 p-2 bg-[#1a1f] rounded border-l-2 border-[#ef4444]">
                         <div className="text-[#ef4444] font-semibold text-[10px] mb-1">💡 Pro Tips:</div>
                         <div className="text-[10px] space-y-1">
                           <div>• Use placeholders in both subject and email body</div>
@@ -1138,6 +1141,11 @@ export default function OriginalEmailSender() {
                                     {log.error && (
                                       <div className="text-red-300 text-[10px] mt-1">
                                         Error: {log.error}
+                                      </div>
+                                    )}
+                                    {log.smtp && (
+                                      <div className="text-blue-400 text-[10px] mt-1">
+                                        SMTP: {log.smtp.fromEmail} ({log.smtp.id} - {log.smtp.host})
                                       </div>
                                     )}
                                   </div>

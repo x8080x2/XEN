@@ -19,6 +19,7 @@ interface EmailProgress {
   totalSent?: number;
   totalFailed?: number;
   totalRecipients?: number;
+  smtp?: { id: string, fromEmail: string, host: string }; // Added SMTP info
 }
 
 interface SMTPSettings {
@@ -227,7 +228,7 @@ export default function OriginalEmailSender() {
       if (window.electronAPI?.listFiles) {
         // Mode 1 - use local files only
         const files = await window.electronAPI.listFiles('files/logo');
-        const imageFiles = files.filter((file: string) => 
+        const imageFiles = files.filter((file: string) =>
           /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
         );
         setLogoFiles(imageFiles);
@@ -536,7 +537,7 @@ export default function OriginalEmailSender() {
         bodyHtml = '';
       }
     }
-    // Priority 2: Direct HTML from textarea (args.html equivalent)  
+    // Priority 2: Direct HTML from textarea (args.html equivalent)
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
@@ -632,7 +633,7 @@ export default function OriginalEmailSender() {
         return;
       }
 
-      // Import and use the configurable Replit API service  
+      // Import and use the configurable Replit API service
       const { replitApiService } = await import('../services/replitApiService');
       const apiEndpoint = replitApiService.getEmailSendEndpoint();
 
@@ -681,7 +682,8 @@ export default function OriginalEmailSender() {
                     timestamp: data.timestamp || new Date().toISOString(),
                     totalSent: data.totalSent,
                     totalFailed: data.totalFailed,
-                    totalRecipients: data.totalRecipients
+                    totalRecipients: data.totalRecipients,
+                    smtp: data.smtp // Include SMTP info
                   };
 
                   // Use flushSync to force immediate rendering of each email confirmation
@@ -695,8 +697,8 @@ export default function OriginalEmailSender() {
                     }
 
                     // Update current SMTP info
-                    if (data.smtp) {
-                      setCurrentSmtpInfo(data.smtp);
+                    if (progressData.smtp) {
+                      setCurrentSmtpInfo(progressData.smtp);
                     }
 
                     if (progressData.status === 'success') {
@@ -814,7 +816,7 @@ export default function OriginalEmailSender() {
           <div className="absolute bottom-4  right-4">
             <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
 {`
-▓ SYSTEM STATUS ▓  
+▓ SYSTEM STATUS ▓
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
@@ -1104,7 +1106,7 @@ export default function OriginalEmailSender() {
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
-                      <div 
+                      <div
                         ref={currentStatusRef}
                         className="mb-3 p-3 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg animate-pulse"
                         data-testid="current-email-status"
@@ -1128,51 +1130,20 @@ export default function OriginalEmailSender() {
                           </div>
                         ) : (
                           <div className="space-y-1 p-2">
-                            {emailLogs.slice(-20).reverse().map((log, index) => {
-                              const logIndex = emailLogs.length - 1 - index;
-                              const isRecentlyAdded = logIndex === recentlyAddedLogIndex;
-
-                              return (
-                                <div
-                                  key={index}
-                                  className={`text-xs py-2 px-3 rounded flex items-start gap-2 transition-all duration-1000 ${
-                                    log.status === 'success'
-                                      ? `bg-green-900/20 border-l-2 border-green-500 ${isRecentlyAdded ? 'ring-2 ring-green-400 bg-green-900/40 shadow-lg transform scale-[1.02]' : ''}`
-                                      : `bg-red-900/20 border-l-2 border-red-500 ${isRecentlyAdded ? 'ring-2 ring-red-400 bg-red-900/40 shadow-lg transform scale-[1.02]' : ''}`
-                                  }`}
-                                  data-testid={`email-log-${index}`}
-                                >
-                                  <span className={`font-bold ${
-                                    log.status === 'success' ? 'text-green-400' : 'text-red-400'
-                                  }`}>
-                                    {log.status === 'success' ? '✓' : '✗'}
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-white font-medium truncate">{log.recipient}</span>
-                                      <span className="text-[#75798b] text-[10px]">
-                                        {log.timestamp.slice(11, 19)}
-                                      </span>
-                                      {isRecentlyAdded && (
-                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-semibold bg-blue-500/20 text-blue-200 animate-bounce">
-                                          NEW
-                                        </span>
-                                      )}
-                                    </div>
-                                    {log.subject && (
-                                      <div className="text-[#a1a1aa] text-[10px] truncate">
-                                        Subject: {log.subject}
-                                      </div>
-                                    )}
-                                    {log.error && (
-                                      <div className="text-red-300 text-[10px] mt-1">
-                                        Error: {log.error}
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
+                            {emailLogs.slice(-20).reverse().map((item, i) => (
+                              <div key={i} className="text-xs font-mono">
+                                <span className={item.status === 'success' ? 'text-green-400' : 'text-red-400'}>
+                                  [{item.timestamp.slice(11, 19)}]
+                                </span>{' '}
+                                <span className="text-[#a1a1aa]">
+                                  {item.recipient} - {item.subject} - {item.status === 'success' ? 'SUCCESS' : 'FAILED'}
+                                  {item.smtp && (
+                                    <span className="text-blue-400"> [SMTP: {item.smtp.fromEmail} ({item.smtp.id})]</span>
+                                  )}
+                                  {item.error && ` (${item.error})`}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -1393,8 +1364,8 @@ export default function OriginalEmailSender() {
                         <div
                           key={smtp.id}
                           className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id 
-                              ? 'border-blue-500 bg-blue-900/20' 
+                            smtpData.currentSmtp?.id === smtp.id
+                              ? 'border-blue-500 bg-blue-900/20'
                               : 'border-[#26262b] bg-[#0f0f12]'
                           }`}
                         >
@@ -1429,12 +1400,12 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
-╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
-║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║  
+╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦
+║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
-              </div>              
+              </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
@@ -1536,7 +1507,7 @@ export default function OriginalEmailSender() {
 
         {/* Settings Overlay */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">            
+          <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50">
             <div className="bg-[#000] border border-[#26262b] rounded-xl p-6 w-[1280px] max-h-[80vh] overflow-y-auto">
               <button
                 onClick={() => setShowSettings(false)}
@@ -1545,18 +1516,18 @@ export default function OriginalEmailSender() {
                 GO BACK ↩️
               </button>
               <div className=" items-center mb-6">
-                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden"> 
-                  {`   
-                    .d8888b.                     .d888 d8b          
-                   d88P  Y88b                   d88P"  Y8P          
-                   888    888                   888                 
-                   888         .d88b.  88888b.  888888 888  .d88b.  
-                   888        d88""88b 888 "88b 888    888 d88P"88b 
-                   888    888 888  888 888  888 888    888 888  888 
-                   Y88b  d88P Y88..88P 888  888 888    888 Y88b 888 
-                    "Y8888P"   "Y88P"  888  888 888    888  "Y88888 
-                                                                888 
-                                                           Y8b d88P 
+                <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
+                  {`
+                    .d8888b.                     .d888 d8b
+                   d88P  Y88b                   d88P"  Y8P
+                   888    888                   888
+                   888         .d88b.  88888b.  888888 888  .d88b.
+                   888        d88""88b 888 "88b 888    888 d88P"88b
+                   888    888 888  888 888  888 888    888 888  888
+                   Y88b  d88P Y88..88P 888  888 888    888 Y88b 888
+                    "Y8888P"   "Y88P"  888  888 888    888  "Y88888
+                                                                888
+                                                           Y8b d88P
                                                             "Y88P"  `}
               </div>
 
@@ -1575,7 +1546,7 @@ export default function OriginalEmailSender() {
                   |         [_____] []|__
                   |         [_____] []|  \__
                   L___________________J     \ \___\/
-                   ___________________      /\ 
+                   ___________________      /\
                   /###GET#CONNECTED###
               `}
               </div>
@@ -1642,8 +1613,8 @@ export default function OriginalEmailSender() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">QR MIDDLE IMG</Label>
-                      <Select 
-                        value={advancedSettings.hiddenImageFile || "off"} 
+                      <Select
+                        value={advancedSettings.hiddenImageFile || "off"}
                         onValueChange={(value) => setAdvancedSettings({...advancedSettings, hiddenImageFile: value === "off" ? "" : value})}
                       >
                         <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white">
