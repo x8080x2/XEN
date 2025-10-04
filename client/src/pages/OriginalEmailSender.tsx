@@ -1926,17 +1926,7 @@ export default function OriginalEmailSender() {
                         <Label className="text-sm text-[#a1a1aa]">
                           Enable AI for email campaigns
                         </Label>
-                      </div>
-
-                      <div className="text-xs text-[#75798b] bg-[#131316] p-3 rounded">
-                        <div className="font-semibold text-yellow-400 mb-2">What AI does:</div>
-                        <ul className="space-y-1 list-disc list-inside">
-                          <li>Generates unique subject line for each recipient</li>
-                          <li>Creates varied sender names</li>
-                          <li>Modifies first &lt;div&gt; in HTML to make content unique</li>
-                          <li>Helps bypass spam filters with content variation</li>
-                        </ul>
-                      </div>
+                      </div>              
                     </div>
                   </div>
                 </div>
