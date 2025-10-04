@@ -1671,7 +1671,7 @@ export default function OriginalEmailSender() {
 
 
                 <div>
-                  <Label className="text-sm text-[red]">QR LINK: USE {"{email}"} placeholder</Label>
+                  <Label className="text-sm text-[red]">QR LINK </Label>
                   <Input
                     value={advancedSettings.qrLink}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
@@ -1681,7 +1681,7 @@ export default function OriginalEmailSender() {
                 </div>
 
                 <div>
-                  <Label className="text-sm text-[red]">LINK </Label>
+                  <Label className="text-sm text-[red]">LINK: USE {"{link}"} placeholder </Label>
                   <Input
                     value={advancedSettings.linkPlaceholder}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
