@@ -96,10 +96,18 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Auto-initialize AI service if OPENAI_API_KEY is present
-  if (process.env.OPENAI_API_KEY) {
+  // Auto-initialize AI service (prefer Google Gemini over OpenAI)
+  if (process.env.GOOGLE_AI_KEY) {
     const { aiService } = await import('./services/aiService');
-    const initialized = aiService.initialize(process.env.OPENAI_API_KEY);
+    const initialized = aiService.initialize(process.env.GOOGLE_AI_KEY, 'gemini');
+    if (initialized) {
+      log('✅ AI Service auto-initialized with Google Gemini (15 RPM, 1M/day limit)');
+    } else {
+      log('⚠️  AI Service initialization failed');
+    }
+  } else if (process.env.OPENAI_API_KEY) {
+    const { aiService } = await import('./services/aiService');
+    const initialized = aiService.initialize(process.env.OPENAI_API_KEY, 'openai');
     if (initialized) {
       log('✅ AI Service auto-initialized with OpenAI API key');
     } else {
