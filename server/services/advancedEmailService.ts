@@ -1505,19 +1505,21 @@ export class AdvancedEmailService {
           // AI Enhancement: Generate unique subject, sender name, and modify HTML
           if (aiService.isInitialized() && args.useAI) {
             try {
-              // Generate unique subject
+              // Generate unique subject based on HTML content
               const aiSubject = await aiService.generateSubject({
                 recipient,
                 originalSubject: dynamicSubject,
-                industry: args.industry
+                industry: args.industry,
+                htmlContent: html
               });
               dynamicSubject = aiSubject;
               console.log(`[AI] Generated subject for ${recipient}: ${aiSubject}`);
 
-              // Generate unique sender name
+              // Generate unique sender name based on HTML content
               const aiSenderName = await aiService.generateSenderName({
                 originalName: dynamicSenderName,
-                tone: args.senderTone || 'professional'
+                tone: args.senderTone || 'professional',
+                htmlContent: html
               });
               dynamicSenderName = aiSenderName;
               console.log(`[AI] Generated sender name for ${recipient}: ${aiSenderName}`);

@@ -23,20 +23,25 @@ class AIService {
     }
   }
 
-  async generateSubject(context: { recipient: string; originalSubject?: string; industry?: string }): Promise<string> {
+  async generateSubject(context: { recipient: string; originalSubject?: string; industry?: string; htmlContent?: string }): Promise<string> {
     if (!this.geminiClient) {
       throw new Error('AI Service not initialized. Please provide a Google AI API key.');
     }
 
     try {
-      const prompt = `Generate a unique, engaging email subject line for ${context.recipient}. 
-${context.originalSubject ? `Base it on this theme: "${context.originalSubject}"` : ''}
-${context.industry ? `Industry context: ${context.industry}` : ''}
+      const prompt = `Analyze this email HTML content and generate a matching subject line for ${context.recipient}:
+
+EMAIL CONTENT:
+${context.htmlContent || 'No content provided'}
+
+${context.originalSubject ? `Original subject: "${context.originalSubject}"` : ''}
+${context.industry ? `Industry: ${context.industry}` : ''}
 
 IMPORTANT RULES:
+- Subject MUST match the content and tone of the HTML
 - Do NOT use placeholder text like [Your Name], [City], [Region], etc.
-- Use only concrete, specific values
-- Keep any values that are already in the original subject
+- Use only concrete, specific values that align with the email content
+- Keep any actual values from the original subject
 - Make it personalized, professional, and attention-grabbing
 - Return ONLY the subject line, nothing else`;
 
@@ -48,20 +53,25 @@ IMPORTANT RULES:
     }
   }
 
-  async generateSenderName(context: { originalName?: string; tone?: string }): Promise<string> {
+  async generateSenderName(context: { originalName?: string; tone?: string; htmlContent?: string }): Promise<string> {
     if (!this.geminiClient) {
       throw new Error('AI Service not initialized. Please provide a Google AI API key.');
     }
 
     try {
-      const prompt = `Generate a realistic professional sender name.
-${context.originalName ? `Similar to: "${context.originalName}"` : ''}
+      const prompt = `Analyze this email HTML content and generate a sender name that matches the content:
+
+EMAIL CONTENT:
+${context.htmlContent || 'No content provided'}
+
+${context.originalName ? `Original name: "${context.originalName}"` : ''}
 ${context.tone ? `Tone: ${context.tone}` : 'Professional and trustworthy'}
 
 IMPORTANT RULES:
+- Sender name MUST match the email content and industry/context
 - Return ONLY an actual full name (First Last)
 - Do NOT use placeholder text like [Name], [Your Name], etc.
-- Use a real-sounding name only
+- Use a real-sounding name that fits the email's purpose
 - No brackets, no placeholders, just a clean name`;
 
       const result = await this.geminiClient.generateContent(prompt);
