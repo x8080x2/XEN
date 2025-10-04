@@ -1423,6 +1423,14 @@ export class AdvancedEmailService {
         for (let i = 0; i < batch.length; i++) {
           const recipient = batch[i];
           let dynamicSubject = args.subject; // Initialize with fallback value
+          
+          // Declare smtpInfo outside try block so it's accessible in catch
+          let smtpInfo: { id: string; fromEmail: string; host: string } = {
+            id: 'default',
+            fromEmail: fromEmail,
+            host: smtpHost
+          };
+          
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -1456,7 +1464,7 @@ export class AdvancedEmailService {
             let emailTransporter = transporter;
             
             // Prepare SMTP info for progress tracking
-            const smtpInfo = currentSmtpConfig ? {
+            smtpInfo = currentSmtpConfig ? {
               id: currentSmtpConfig.id,
               fromEmail: currentSmtpConfig.fromEmail,
               host: currentSmtpConfig.host
