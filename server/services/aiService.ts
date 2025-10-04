@@ -62,33 +62,8 @@ Return only the full name (First Last), nothing else.`;
   }
 
   async modifyHtmlFirstDiv(html: string, recipient: string): Promise<string> {
-    if (!this.geminiClient) {
-      throw new Error('AI Service not initialized. Please provide a Google AI API key.');
-    }
-
-    try {
-      const divMatch = html.match(/<div[^>]*>([\s\S]*?)<\/div>/i);
-      if (!divMatch) {
-        return html;
-      }
-
-      const originalDiv = divMatch[0];
-      const divContent = divMatch[1];
-
-      const prompt = `Rewrite this HTML div content to be unique while keeping the same meaning and structure. 
-Make it personalized for ${recipient}.
-Original: ${divContent}
-Return only the new div content (without the <div> tags), nothing else.`;
-
-      const result = await this.geminiClient.generateContent(prompt);
-      const newContent = result.response.text().trim() || divContent;
-      const newDiv = originalDiv.replace(divContent, newContent);
-      
-      return html.replace(originalDiv, newDiv);
-    } catch (error) {
-      console.error('[AIService] HTML modification failed:', error);
-      return html;
-    }
+    // Return original HTML without modifications to preserve div structure
+    return html;
   }
 
   isInitialized(): boolean {
