@@ -1450,7 +1450,7 @@ export default function OriginalEmailSender() {
                     value={advancedSettings.zipPassword}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
                     className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="Optional password for ZIP files"
+                    placeholder="Optional"
                   />
                 </div>
                 <div className="flex items-center gap-6">
@@ -1656,7 +1656,7 @@ export default function OriginalEmailSender() {
                       value={advancedSettings.hiddenText}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
-                      placeholder="Optional text overlay"
+                      placeholder="Optional"
                     />
                   </div>
                 </div>
