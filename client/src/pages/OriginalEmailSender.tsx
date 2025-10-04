@@ -155,6 +155,9 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
+  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('openai_api_key') || '');
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
@@ -283,7 +286,46 @@ export default function OriginalEmailSender() {
   useEffect(() => {
     loadConfigFromFiles();
     fetchSmtpData();
+    checkAIStatus();
   }, []); // Run once on component mount
+
+  const checkAIStatus = async () => {
+    try {
+      const response = await fetch('/api/ai/status');
+      const data = await response.json();
+      setAiStatus(data);
+      setAiEnabled(data.initialized);
+    } catch (error) {
+      console.error('Failed to check AI status:', error);
+    }
+  };
+
+  const initializeAI = async () => {
+    if (!aiApiKey) {
+      setStatusText('Please enter OpenAI API key');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/ai/initialize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: aiApiKey })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        localStorage.setItem('openai_api_key', aiApiKey);
+        setAiEnabled(true);
+        setStatusText('AI initialized successfully');
+        await checkAIStatus();
+      } else {
+        setStatusText('AI initialization failed');
+      }
+    } catch (error) {
+      setStatusText('Failed to initialize AI');
+    }
+  };
 
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -610,6 +652,9 @@ export default function OriginalEmailSender() {
       Object.entries(advancedSettings).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
+
+      // AI settings
+      formData.append('useAI', String(aiEnabled));
 
       // Add files
       if (selectedFiles) {
@@ -1840,6 +1885,61 @@ export default function OriginalEmailSender() {
                 </div>
 
 
+
+                {/* AI Settings Section */}
+                <div className="border-t border-[#26262b] pt-6">
+                  <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
+                  <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
+                    <p className="text-sm text-[#a1a1aa] mb-3">
+                      Use ChatGPT to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-[red]">OpenAI API Key</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            value={aiApiKey}
+                            onChange={(e) => setAiApiKey(e.target.value)}
+                            placeholder="sk-..."
+                            className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
+                          />
+                          <Button
+                            onClick={initializeAI}
+                            className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                          >
+                            {aiStatus.initialized ? 'Update' : 'Initialize'}
+                          </Button>
+                        </div>
+                        {aiStatus.initialized && (
+                          <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={aiEnabled}
+                          onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                          disabled={!aiStatus.initialized}
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          Enable AI for email campaigns
+                        </Label>
+                      </div>
+
+                      <div className="text-xs text-[#75798b] bg-[#131316] p-3 rounded">
+                        <div className="font-semibold text-yellow-400 mb-2">What AI does:</div>
+                        <ul className="space-y-1 list-disc list-inside">
+                          <li>Generates unique subject line for each recipient</li>
+                          <li>Creates varied sender names</li>
+                          <li>Modifies first &lt;div&gt; in HTML to make content unique</li>
+                          <li>Helps bypass spam filters with content variation</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button

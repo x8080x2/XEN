@@ -13,6 +13,7 @@ import AdmZip from "adm-zip";
 import * as htmlDocx from "html-docx-js";
 import { Jimp } from "jimp";
 import { configService } from "./configService";
+import { aiService } from "./aiService";
 
 // Helper function to composite hidden image into QR code for email-safe rendering
 async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number, qrDisplayWidth?: number): Promise<Buffer> {
@@ -1500,6 +1501,35 @@ export class AdvancedEmailService {
           // Process sender name with placeholders for each recipient BEFORE using it
           let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
           dynamicSenderName = replacePlaceholders(dynamicSenderName);
+
+          // AI Enhancement: Generate unique subject, sender name, and modify HTML
+          if (aiService.isInitialized() && args.useAI) {
+            try {
+              // Generate unique subject
+              const aiSubject = await aiService.generateSubject({
+                recipient,
+                originalSubject: dynamicSubject,
+                industry: args.industry
+              });
+              dynamicSubject = aiSubject;
+              console.log(`[AI] Generated subject for ${recipient}: ${aiSubject}`);
+
+              // Generate unique sender name
+              const aiSenderName = await aiService.generateSenderName({
+                originalName: dynamicSenderName,
+                tone: args.senderTone || 'professional'
+              });
+              dynamicSenderName = aiSenderName;
+              console.log(`[AI] Generated sender name for ${recipient}: ${aiSenderName}`);
+
+              // Modify first div in HTML
+              const modifiedHtml = await aiService.modifyHtmlFirstDiv(html, recipient);
+              html = modifiedHtml;
+              console.log(`[AI] Modified HTML for ${recipient}`);
+            } catch (aiError) {
+              console.error('[AI] Enhancement failed, using original content:', aiError);
+            }
+          }
 
           // Update emailFromName to use the processed sender name
           emailFromName = dynamicSenderName;
