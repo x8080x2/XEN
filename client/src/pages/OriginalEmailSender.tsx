@@ -1111,17 +1111,7 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
-                    {/* SMTP Indicator */}
-                    {currentSmtpInfo && (
-                      <div className="text-xs mb-3 p-2 bg-blue-950/30 rounded border border-blue-500/30" data-testid="smtp-indicator">
-                        <div className="flex items-center gap-2">
-                          <span className="text-blue-400">📧 SMTP:</span>
-                          <span className="px-2 py-0.5 bg-blue-600/40 text-blue-200 rounded font-mono">{currentSmtpInfo.id}</span>
-                          <span className="text-blue-300">{currentSmtpInfo.fromEmail}</span>
-                          <span className="text-blue-400/60">({currentSmtpInfo.host})</span>
-                        </div>
-                      </div>
-                    )}
+                  
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
