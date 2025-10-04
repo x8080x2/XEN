@@ -73,13 +73,24 @@ function pickRand(arr: any[]): any {
 // Complete placeholder replacement - exact clone from main.js
 export function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
   if (!text) return '';
+  
+  // Null safety: validate inputs but don't silently fix bad data
+  if (!user || typeof user !== 'string' || !user.includes('@')) {
+    console.error('[injectDynamicPlaceholders] Invalid recipient email provided:', user);
+    // Return original text unchanged for invalid recipients - let caller handle the error
+    return text;
+  }
+  if (!email || typeof email !== 'string') {
+    console.warn('[injectDynamicPlaceholders] Invalid sender email, using empty string');
+    email = '';
+  }
 
   // Recipient logic - extract domain from the recipient email (user parameter)
-  const username = user?.split('@')[0] || '';
-  const domain = user?.split('@')[1] || '';
-  const domainBase = domain?.split('.')[0] || '';
-  const initials = username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).join('');
-  const userId = Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6);
+  const username = user.split('@')[0] || '';
+  const domain = user.split('@')[1] || '';
+  const domainBase = domain.split('.')[0] || '';
+  const initials = username.length > 0 ? username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).filter(Boolean).join('') : '';
+  const userId = username.length > 0 ? Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6) : '000000';
 
   // Generate random values for placeholders
   const randfirst = pickRand(randFirstNames);

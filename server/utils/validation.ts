@@ -98,6 +98,54 @@ export const emailSettingsSchema = z.object({
   proxyUse: z.boolean().default(false)
 });
 
+// Complete sendMail request schema
+export const sendMailRequestSchema = z.object({
+  // Required fields
+  smtpHost: z.string().min(1, 'SMTP host is required'),
+  smtpPort: z.string().regex(/^\d+$/, 'Port must be a number').default('587'),
+  smtpUser: z.string().min(1, 'SMTP user is required'),
+  smtpPass: z.string().min(1, 'SMTP password is required'),
+  senderEmail: emailSchema,
+  senderName: z.string().min(1, 'Sender name is required').max(100, 'Sender name too long'),
+  subject: z.string().min(1, 'Subject is required').max(255, 'Subject too long'),
+  recipients: recipientsSchema,
+  html: z.string().min(1, 'Email content is required').max(5 * 1024 * 1024, 'Email content too large'),
+  
+  // Optional fields
+  attachmentHtml: z.string().optional(),
+  sleep: z.coerce.number().int().min(0).max(300).optional(),
+  qrSize: z.coerce.number().int().min(50).max(1000).optional(),
+  qrBorder: z.coerce.number().int().min(0).max(20).optional(),
+  qrForegroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  qrBackgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  hiddenImageFile: z.string().optional(),
+  hiddenImageSize: z.coerce.number().int().min(10).max(200).optional(),
+  hiddenText: z.string().optional(),
+  qrcode: z.coerce.boolean().optional(),
+  linkPlaceholder: z.string().optional(),
+  htmlImgBody: z.coerce.boolean().optional(),
+  randomMetadata: z.coerce.boolean().optional(),
+  minifyHtml: z.coerce.boolean().optional(),
+  emailPerSecond: z.coerce.number().int().min(1).max(100).optional(),
+  zipUse: z.coerce.boolean().optional(),
+  zipPassword: z.string().optional(),
+  fileName: z.string().optional(),
+  htmlConvert: z.string().optional(),
+  retry: z.coerce.number().int().min(0).max(10).optional(),
+  priority: z.string().optional(),
+  domainLogoSize: z.string().regex(/^\d+%?$/).optional(),
+  borderStyle: z.enum(['solid', 'dashed', 'dotted', 'double', 'none']).optional(),
+  borderColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  proxyUse: z.coerce.boolean().optional(),
+  proxyType: z.enum(['http', 'https', 'socks4', 'socks5']).optional(),
+  proxyHost: z.string().optional(),
+  proxyPort: z.string().optional(),
+  proxyUser: z.string().optional(),
+  proxyPass: z.string().optional(),
+  useAI: z.coerce.boolean().optional(),
+  industry: z.string().optional()
+}).passthrough(); // Allow additional fields for settings
+
 // Content validation schema for file writing
 export const fileContentSchema = z.string()
   .max(10 * 1024 * 1024, 'File content too large (max 10MB)')
@@ -120,7 +168,10 @@ export const fileContentSchema = z.string()
   }, 'Content contains potentially dangerous scripts');
 
 // Helper function to validate and transform request data
-export function validateRequest<T>(schema: z.ZodSchema<T>, data: unknown): { success: true; data: T } | { success: false; errors: string[] } {
+export function validateRequest<T extends z.ZodTypeAny>(
+  schema: T, 
+  data: unknown
+): { success: true; data: z.infer<T> } | { success: false; errors: string[] } {
   try {
     const result = schema.safeParse(data);
     if (result.success) {
