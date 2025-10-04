@@ -6,15 +6,15 @@ class AIService {
   private apiKey: string = '';
 
   initialize(apiKey: string) {
-    if (!apiKey) {
-      console.warn('[AIService] No API key provided');
+    if (!apiKey || !apiKey.startsWith('sk-')) {
+      console.warn('[AIService] Invalid API key provided');
       return false;
     }
     
     try {
       this.apiKey = apiKey;
       this.client = new OpenAI({ apiKey });
-      console.log('[AIService] Initialized successfully');
+      console.log('[AIService] Initialized successfully with key:', apiKey.substring(0, 10) + '...');
       return true;
     } catch (error) {
       console.error('[AIService] Initialization failed:', error);
