@@ -155,7 +155,7 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('openai_api_key') || '');
+  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
   const [aiEnabled, setAiEnabled] = useState(false);
   const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
@@ -302,7 +302,7 @@ export default function OriginalEmailSender() {
 
   const initializeAI = async () => {
     if (!aiApiKey) {
-      setStatusText('Please enter OpenAI API key');
+      setStatusText('Please enter Google AI API key');
       return;
     }
 
@@ -315,7 +315,7 @@ export default function OriginalEmailSender() {
       const data = await response.json();
       
       if (data.success) {
-        localStorage.setItem('openai_api_key', aiApiKey);
+        localStorage.setItem('google_ai_key', aiApiKey);
         setAiEnabled(true);
         setStatusText('AI initialized successfully');
         await checkAIStatus();
@@ -1891,18 +1891,18 @@ export default function OriginalEmailSender() {
                   <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
                   <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
                     <p className="text-sm text-[#a1a1aa] mb-3">
-                      Use ChatGPT to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
+                      Use Google Gemini to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
                     </p>
                     
                     <div className="space-y-4">
                       <div>
-                        <Label className="text-sm text-[red]">OpenAI API Key</Label>
+                        <Label className="text-sm text-[red]">Google AI API Key</Label>
                         <div className="flex gap-2">
                           <Input
                             type="password"
                             value={aiApiKey}
                             onChange={(e) => setAiApiKey(e.target.value)}
-                            placeholder="sk-..."
+                            placeholder="AIzaSy..."
                             className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
                           />
                           <Button
