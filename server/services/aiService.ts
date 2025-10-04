@@ -32,7 +32,13 @@ class AIService {
       const prompt = `Generate a unique, engaging email subject line for ${context.recipient}. 
 ${context.originalSubject ? `Base it on this theme: "${context.originalSubject}"` : ''}
 ${context.industry ? `Industry context: ${context.industry}` : ''}
-Make it personalized, professional, and attention-grabbing. Return only the subject line, nothing else.`;
+
+IMPORTANT RULES:
+- Do NOT use placeholder text like [Your Name], [City], [Region], etc.
+- Use only concrete, specific values
+- Keep any values that are already in the original subject
+- Make it personalized, professional, and attention-grabbing
+- Return ONLY the subject line, nothing else`;
 
       const result = await this.geminiClient.generateContent(prompt);
       return result.response.text().trim() || context.originalSubject || 'Important Message';
@@ -51,7 +57,12 @@ Make it personalized, professional, and attention-grabbing. Return only the subj
       const prompt = `Generate a realistic professional sender name.
 ${context.originalName ? `Similar to: "${context.originalName}"` : ''}
 ${context.tone ? `Tone: ${context.tone}` : 'Professional and trustworthy'}
-Return only the full name (First Last), nothing else.`;
+
+IMPORTANT RULES:
+- Return ONLY an actual full name (First Last)
+- Do NOT use placeholder text like [Name], [Your Name], etc.
+- Use a real-sounding name only
+- No brackets, no placeholders, just a clean name`;
 
       const result = await this.geminiClient.generateContent(prompt);
       return result.response.text().trim() || context.originalName || 'Alex Morgan';
