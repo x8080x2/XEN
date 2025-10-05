@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { execSync } from "child_process";
+import { telegramBotService } from "./services/telegramBot";
 
 // Enhanced error handling to prevent crashes
 process.on('unhandledRejection', (reason, promise) => {
@@ -158,6 +159,15 @@ app.use((req, res, next) => {
       log(`Production mode - serving static files from dist/public`);
     } else {
       log(`Development mode - using Vite middleware`);
+    }
+
+    // Initialize Telegram Bot for license generation
+    const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (telegramToken) {
+      telegramBotService.initialize(telegramToken);
+    } else {
+      log('[TelegramBot] TELEGRAM_BOT_TOKEN not set - bot will not start');
+      log('[TelegramBot] To enable: Add TELEGRAM_BOT_TOKEN=your-token to .env');
     }
 
     // Auto-open browser on Windows
