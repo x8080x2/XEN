@@ -112,12 +112,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRecipients: validatedData.recipients.length,
       });
 
-      // Build email service args with SMTP config from request
+      // REQUIRE SMTP config from request - no fallback to server config
+      if (!smtpHost || !smtpPort || !smtpUser || !smtpPassword) {
+        throw new Error('SMTP configuration required: smtpHost, smtpPort, smtpUser, and smtpPassword must be provided');
+      }
+
+      // Build email service args with SMTP config from request ONLY
       const emailArgs: any = {
         recipients: validatedData.recipients,
         subject: validatedData.subject,
         html: validatedData.content,
         jobId: job.id,
+        smtpHost: smtpHost,
+        smtpPort: smtpPort,
+        smtpUser: smtpUser,
+        smtpPass: smtpPassword,
+        senderEmail: smtpUser, // Use SMTP user as sender email
+        senderName: senderName || '',
         attachments: files?.map(file => ({
           filename: file.originalname,
           path: file.path,
@@ -125,16 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })) || []
       };
 
-      // Add SMTP config if provided (from user-package)
-      if (smtpHost) {
-        emailArgs.smtpHost = smtpHost;
-        emailArgs.smtpPort = smtpPort;
-        emailArgs.smtpUser = smtpUser;
-        emailArgs.smtpPass = smtpPassword;
-        emailArgs.senderEmail = smtpUser; // Use SMTP user as sender email
-        emailArgs.senderName = senderName || '';
-        console.log('[API] Using SMTP config from request:', { smtpHost, smtpPort, smtpUser });
-      }
+      console.log('[API] Using SMTP config from request (no fallback):', { smtpHost, smtpPort, smtpUser });
 
       // Start processing emails in background with job tracking
       emailService.sendMail(emailArgs, async (progress) => {
