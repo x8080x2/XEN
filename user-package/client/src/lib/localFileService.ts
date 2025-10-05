@@ -169,29 +169,35 @@ export class LocalFileService {
     }
   }
 
-  // Electron API only: readFile with caching
+  // Read file - try Electron API first, fallback to backend API
   async readFile(filePath: string): Promise<string | null> {
-    if (!window.electronAPI?.readFile) {
-      throw new Error('Electron API not available - this feature requires the desktop app');
-    }
-
-    // Check cache first
-    if (this.templateCache.has(filePath)) {
-      console.log(`[Cache] Using cached content for ${filePath}`);
-      return this.templateCache.get(filePath)!;
-    }
-
-    try {
-      const content = await window.electronAPI.readFile(filePath);
-      if (content) {
-        // Cache the content
-        this.templateCache.set(filePath, content);
-        console.log(`[LocalFileService] Successfully read and cached: ${filePath}`);
-        return content;
+    // Try Electron API if available
+    if (window.electronAPI?.readFile) {
+      // Check cache first
+      if (this.templateCache.has(filePath)) {
+        console.log(`[Cache] Using cached content for ${filePath}`);
+        return this.templateCache.get(filePath)!;
       }
-      return null;
+
+      try {
+        const content = await window.electronAPI.readFile(filePath);
+        if (content) {
+          // Cache the content
+          this.templateCache.set(filePath, content);
+          console.log(`[LocalFileService] Successfully read and cached: ${filePath}`);
+          return content;
+        }
+      } catch (error) {
+        console.error(`Failed to read file ${filePath}:`, error);
+      }
+    }
+
+    // Fallback to backend API
+    try {
+      const result = await this.callBackendAPI('readFile', { filepath: filePath });
+      return result.content;
     } catch (error) {
-      console.error(`Failed to read file ${filePath}:`, error);
+      console.error('Failed to read file via backend API:', error);
       return null;
     }
   }

@@ -100,6 +100,11 @@ export default function OriginalEmailSender() {
     };
   });
 
+  // Auto-save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('emailFormData', JSON.stringify(formData));
+  }, [formData]);
+
   const [advancedSettings, setAdvancedSettings] = useState(() => {
     const saved = localStorage.getItem('emailAdvancedSettings');
     return saved ? JSON.parse(saved) : {
