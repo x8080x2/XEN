@@ -123,10 +123,18 @@ class ElectronReplitApiService {
   }
 
   // Send emails via job-based system (alternative)
-  async sendEmailsJob(emailData: any): Promise<{ jobId: string }> {
+  async sendEmailsJob(emailData: any, licenseKey?: string): Promise<{ jobId: string }> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+
+    if (licenseKey) {
+      headers['X-License-Key'] = licenseKey;
+    }
+
     const response = await fetch(this.getApiEndpoint('api/emails/send'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(emailData)
     });
 

@@ -6,7 +6,9 @@ import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import { setupElectronRoutes } from "./routes/electronRoutes";
-import { setupAIRoutes } from "./routes/aiRoutes"; // Assuming setupAIRoutes will be defined here
+import { setupAIRoutes } from "./routes/aiRoutes";
+import { setupLicenseRoutes } from "./routes/licenseRoutes";
+import { verifyLicenseMiddleware } from "./middleware/licenseMiddleware";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -34,6 +36,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup AI routes
   setupAIRoutes(app);
+
+  // Setup license verification routes
+  setupLicenseRoutes(app);
 
 
   // Config loading routes - exact clone from main.js
@@ -78,8 +83,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Start email sending job
-  app.post("/api/emails/send", upload.any(), async (req, res) => {
+  // Start email sending job (protected by license middleware)
+  app.post("/api/emails/send", verifyLicenseMiddleware, upload.any(), async (req, res) => {
     try {
       const { recipients, subject, htmlContent, settings } = req.body;
       const files = req.files as Express.Multer.File[];

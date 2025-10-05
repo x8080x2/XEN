@@ -1,14 +1,15 @@
 import type { Express } from "express";
 import { advancedEmailService } from "../services/advancedEmailService";
 import { sendMailRequestSchema, validateRequest, formatValidationError } from "../utils/validation";
+import { verifyLicenseMiddleware } from "../middleware/licenseMiddleware";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
 
-  // Main sendMail endpoint - with comprehensive validation
-  app.post("/api/original/sendMail", upload.any(), async (req, res) => {
+  // Main sendMail endpoint - with comprehensive validation (protected by license middleware)
+  app.post("/api/original/sendMail", verifyLicenseMiddleware, upload.any(), async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
       

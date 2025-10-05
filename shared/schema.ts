@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, varchar, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
@@ -101,6 +101,33 @@ export const insertAppSettingsSchema = appSettingsSchema.omit({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 
+// License Schema
+export const licenseSchema = z.object({
+  id: z.string(),
+  licenseKey: z.string(),
+  isActive: z.boolean().default(true),
+  expiresAt: z.date().optional(),
+  createdAt: z.date().default(() => new Date()),
+  lastValidated: z.date().optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const insertLicenseSchema = licenseSchema.omit({ 
+  id: true, 
+  createdAt: true,
+  lastValidated: true
+});
+
+export type License = z.infer<typeof licenseSchema>;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+
+// License Verification Request Schema
+export const licenseVerifyRequestSchema = z.object({
+  licenseKey: z.string().min(1, "License key is required"),
+});
+
+export type LicenseVerifyRequest = z.infer<typeof licenseVerifyRequestSchema>;
+
 // Email Send Request Schema
 export const emailSendRequestSchema = z.object({
   configId: z.string(),
@@ -164,6 +191,16 @@ export const appSettings = pgTable("app_settings", {
   settingsType: varchar("settings_type", { length: 255 }).notNull(),
   settings: jsonb("settings").notNull().$type<Record<string, any>>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const licenses = pgTable("licenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  licenseKey: varchar("license_key", { length: 255 }).notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastValidated: timestamp("last_validated", { withTimezone: true }),
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
 });
 
 // Relations

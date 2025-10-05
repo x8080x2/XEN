@@ -495,6 +495,24 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
+    // Check license before sending
+    const { licenseService } = await import('@/services/licenseService');
+    
+    if (!licenseService.isConfigured()) {
+      setStatusText('❌ License key or server URL not configured. Please configure in Settings.');
+      console.error('[Desktop] License not configured');
+      return;
+    }
+
+    const licenseResult = await licenseService.verifyLicense();
+    if (!licenseResult.valid) {
+      setStatusText(`❌ License verification failed: ${licenseResult.message}`);
+      console.error('[Desktop] License verification failed:', licenseResult.message);
+      return;
+    }
+
+    console.log('[Desktop] License verified successfully, proceeding with email send');
+
     // Validate SMTP configuration before sending
     if (!smtpSettings.host || !smtpSettings.user || !smtpSettings.pass) {
       setStatusText('SMTP configuration incomplete. Please check config files.');
@@ -635,13 +653,23 @@ export default function OriginalEmailSender() {
 
       // Import and use the configurable Replit API service
       const { replitApiService } = await import('../services/replitApiService');
+      const { licenseService } = await import('@/services/licenseService');
       const apiEndpoint = replitApiService.getEmailSendEndpoint();
+
+      // Get license key for request
+      const licenseKey = licenseService.getLicenseKey();
+      if (!licenseKey) {
+        throw new Error('License key not found. Please configure your license in settings.');
+      }
 
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
+        headers: {
+          'X-License-Key': licenseKey
+        },
         body: formData,
         signal: abortControllerRef.current.signal
       });
