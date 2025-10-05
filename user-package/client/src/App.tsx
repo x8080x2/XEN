@@ -21,15 +21,7 @@ function App() {
 
   useEffect(() => {
     const verifyLicenseOnStartup = async () => {
-      // Debug: log what we're seeing
-      console.log('[App] Starting license check...');
-      console.log('[App] window.LICENSE_KEY:', (window as any).LICENSE_KEY ? 'SET' : 'NOT SET');
-      console.log('[App] window.REPLIT_SERVER_URL:', (window as any).REPLIT_SERVER_URL || 'NOT SET');
-      console.log('[App] localStorage license_key:', localStorage.getItem('license_key') || 'NOT SET');
-      console.log('[App] localStorage replit_server_url:', localStorage.getItem('replit_server_url') || 'NOT SET');
-      
       if (licenseService.isConfigured()) {
-        console.log('[App] License configured, verifying...');
         const result = await licenseService.verifyLicense();
         setLicenseStatus(result);
         
@@ -39,7 +31,6 @@ function App() {
           console.log('[App] License verified successfully');
         }
       } else {
-        console.log('[App] License NOT configured');
         setLicenseStatus({
           valid: false,
           message: "License key or server URL not configured"

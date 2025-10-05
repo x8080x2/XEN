@@ -26,30 +26,21 @@ function createWindow() {
   // Load the React app
   const isDev = process.env.NODE_ENV === 'development';
   
-  // Always open DevTools for debugging
-  mainWindow.webContents.openDevTools();
+  // Open DevTools in development mode only
+  if (isDev) {
+    mainWindow.webContents.openDevTools();
+  }
   
   if (isDev) {
     // In development, load from Vite dev server
-    console.log('[Electron] Loading from dev server: http://localhost:5173');
     mainWindow.loadURL('http://localhost:5173');
   } else {
     // In production, load from built files
     const indexPath = path.join(__dirname, 'dist', 'index.html');
-    console.log('[Electron] Loading from file:', indexPath);
-    console.log('[Electron] File exists:', existsSync(indexPath));
-    
-    mainWindow.loadFile(indexPath).then(() => {
-      console.log('[Electron] File loaded successfully');
-    }).catch((error) => {
+    mainWindow.loadFile(indexPath).catch((error) => {
       console.error('[Electron] Failed to load file:', error);
     });
   }
-
-  // Log any console messages from renderer
-  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-    console.log(`[Renderer] ${message}`);
-  });
 
   // Catch any load failures
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -58,8 +49,6 @@ function createWindow() {
 
   // Pass environment variables to renderer process
   mainWindow.webContents.on('did-finish-load', () => {
-    console.log('[Electron] Page finished loading');
-    
     const serverUrl = process.env.REPLIT_SERVER_URL;
     const licenseKey = process.env.LICENSE_KEY;
     
@@ -68,8 +57,6 @@ function createWindow() {
         window.REPLIT_SERVER_URL = '${serverUrl}';
         console.log('[Electron] Server URL set to:', '${serverUrl}');
       `);
-    } else {
-      console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
     }
     
     if (licenseKey) {
@@ -77,8 +64,6 @@ function createWindow() {
         window.LICENSE_KEY = '${licenseKey}';
         console.log('[Electron] License key loaded from environment');
       `);
-    } else {
-      console.log('[Electron] No LICENSE_KEY environment variable set');
     }
   });
 
