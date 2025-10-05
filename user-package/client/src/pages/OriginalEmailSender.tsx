@@ -1119,7 +1119,7 @@ export default function OriginalEmailSender() {
                     {selectedAttachmentTemplate && selectedAttachmentTemplate !== 'off' ? (
                       <span>📄 Using attachment template: <strong className="text-white">{selectedAttachmentTemplate}</strong></span>
                     ) : (
-                      <span>Select Oner</span>
+                      <span>Select One</span>
                     )}
                   </div>
                 </div>
@@ -1129,7 +1129,7 @@ export default function OriginalEmailSender() {
               {(isLoading || emailLogs.length > 0) && (
                 <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
                   <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
-                    <span>{isLoading ? ' T 🚀 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
+                    <span>{isLoading ? '🚀 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded">
                       {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
                     </span>
@@ -1580,8 +1580,6 @@ export default function OriginalEmailSender() {
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
               {`
                   | _______________ |
-                   | |XXXXXXXXXXXXX| |
-                   | |XXXXXXXXXXXXX| |
                    | |XXXXXXXXXXXXX| |
                    | |XXXXXXXXXXXXX| |
                    | |XXXXXXXXXXXXX| |
