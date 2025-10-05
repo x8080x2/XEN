@@ -86,7 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Start email sending job (protected by license middleware)
   app.post("/api/emails/send", verifyLicenseMiddleware, upload.any(), async (req, res) => {
     try {
-      const { recipients, subject, htmlContent, settings } = req.body;
+      const { recipients, subject, htmlContent, settings, smtpHost, smtpPort, smtpUser, smtpPassword, senderName, replyTo } = req.body;
       const files = req.files as Express.Multer.File[];
 
       // Parse JSON fields
@@ -112,8 +112,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalRecipients: validatedData.recipients.length,
       });
 
-      // Start processing emails in background with job tracking
-      emailService.sendMail({
+      // Build email service args with SMTP config from request
+      const emailArgs: any = {
         recipients: validatedData.recipients,
         subject: validatedData.subject,
         html: validatedData.content,
@@ -123,7 +123,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           path: file.path,
           contentType: file.mimetype,
         })) || []
-      }, async (progress) => {
+      };
+
+      // Add SMTP config if provided (from user-package)
+      if (smtpHost) {
+        emailArgs.smtpHost = smtpHost;
+        emailArgs.smtpPort = smtpPort;
+        emailArgs.smtpUser = smtpUser;
+        emailArgs.smtpPass = smtpPassword;
+        emailArgs.senderEmail = smtpUser; // Use SMTP user as sender email
+        emailArgs.senderName = senderName || '';
+        console.log('[API] Using SMTP config from request:', { smtpHost, smtpPort, smtpUser });
+      }
+
+      // Start processing emails in background with job tracking
+      emailService.sendMail(emailArgs, async (progress) => {
         // Update job progress in database
         try {
           await storage.updateEmailJob(job.id, {
