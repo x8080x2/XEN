@@ -2085,7 +2085,7 @@ DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
 DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
-ORGANIZER;CN=${emailFromName}:MAILTO:${emailFromEmail}</old_str>
+ORGANIZER;CN=${emailFromName}:MAILTO:${emailFromEmail}
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
 SEQUENCE:0
