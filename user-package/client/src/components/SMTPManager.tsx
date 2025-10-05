@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, RotateCcw, Settings, Mail } from "lucide-react";
@@ -45,10 +47,17 @@ export function SMTPManager() {
 
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(data);
+      if (window.electronAPI) {
+        const data = await window.electronAPI.smtpList();
+        if (data.success) {
+          setSmtpData(data);
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Electron API not available",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       toast({
@@ -66,24 +75,18 @@ export function SMTPManager() {
   const toggleRotation = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+      const newRotationState = !smtpData.rotationEnabled;
+      setSmtpData(prev => ({
+        ...prev,
+        rotationEnabled: newRotationState,
+        currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
+          ? prev.smtpConfigs[0] 
+          : prev.currentSmtp
+      }));
+      toast({
+        title: "SMTP Rotation",
+        description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
       });
-      
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: data.rotationEnabled,
-          currentSmtp: data.currentSmtp
-        }));
-        toast({
-          title: "SMTP Rotation",
-          description: `SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`,
-        });
-      }
     } catch (error) {
       toast({
         title: "Error",
@@ -95,109 +98,43 @@ export function SMTPManager() {
   };
 
   const addSmtp = async () => {
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
-      toast({
-        title: "Error",
-        description: "All SMTP fields are required",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs
-        }));
-        setNewSmtp({
-          host: "",
-          port: "587",
-          user: "",
-          pass: "",
-          fromEmail: "",
-          fromName: ""
-        });
-        setDialogOpen(false);
-        toast({
-          title: "Success",
-          description: `SMTP configuration ${data.smtpId} added successfully`,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add SMTP configuration",
-        variant: "destructive"
-      });
-    }
-    setLoading(false);
+    toast({
+      title: "Manual Edit Required",
+      description: "Please edit config/smtp.ini directly to add new SMTP servers, then restart the app",
+      variant: "default"
+    });
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    if (smtpData.smtpConfigs.length <= 1) {
-      toast({
-        title: "Error",
-        description: "Cannot delete the last SMTP configuration",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/smtp/${smtpId}`, {
-        method: "DELETE"
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          smtpConfigs: data.smtpConfigs,
-          currentSmtp: data.currentSmtp
-        }));
-        toast({
-          title: "Success",
-          description: `SMTP configuration ${smtpId} deleted successfully`,
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete SMTP configuration",
-        variant: "destructive"
-      });
-    }
-    setLoading(false);
+    toast({
+      title: "Manual Edit Required",
+      description: "Please edit config/smtp.ini directly to remove SMTP servers, then restart the app",
+      variant: "default"
+    });
   };
 
   const rotateSmtp = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/smtp/rotate", {
-        method: "POST"
-      });
-      
-      const data = await response.json();
-      if (data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          currentSmtp: data.currentSmtp
-        }));
+      setSmtpData(prev => {
+        if (prev.smtpConfigs.length <= 1) return prev;
+        
+        const currentIndex = prev.smtpConfigs.findIndex(
+          smtp => smtp.id === prev.currentSmtp?.id
+        );
+        const nextIndex = (currentIndex + 1) % prev.smtpConfigs.length;
+        const nextSmtp = prev.smtpConfigs[nextIndex];
+        
         toast({
           title: "SMTP Rotated",
-          description: `Now using: ${data.currentSmtp?.fromEmail}`,
+          description: `Now using: ${nextSmtp.fromEmail}`,
         });
-      }
+        
+        return {
+          ...prev,
+          currentSmtp: nextSmtp
+        };
+      });
     } catch (error) {
       toast({
         title: "Error",
