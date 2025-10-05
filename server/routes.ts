@@ -369,7 +369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/license/verify", async (req, res) => {
     try {
       const { licenseKey } = req.body;
-      
+
       if (!licenseKey) {
         return res.status(400).json({ 
           success: false, 
@@ -379,7 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const result = await licenseService.verifyLicense(licenseKey);
-      
+
       res.json({
         success: true,
         valid: result.valid,
@@ -399,9 +399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/license/status/:licenseKey", async (req, res) => {
     try {
       const { licenseKey } = req.params;
-      
+
       const result = await licenseService.verifyLicense(licenseKey);
-      
+
       res.json({
         success: true,
         valid: result.valid,
