@@ -26,11 +26,6 @@ function createWindow() {
   // Load the React app
   const isDev = process.env.NODE_ENV === 'development';
   
-  // Open DevTools in development mode only
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
-  
   if (isDev) {
     // In development, load from Vite dev server
     mainWindow.loadURL('http://localhost:5173');
