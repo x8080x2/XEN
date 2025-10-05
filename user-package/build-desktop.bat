@@ -1,3 +1,0 @@
-@echo off
-echo Building application...
-npm run build && echo Starting Email Sender Desktop App... && npm run electron
