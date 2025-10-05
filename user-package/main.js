@@ -26,14 +26,24 @@ function createWindow() {
   // Load the React app
   const isDev = process.env.NODE_ENV === 'development';
   
+  // Always open DevTools for debugging
+  mainWindow.webContents.openDevTools();
+  
   if (isDev) {
     // In development, load from Vite dev server
+    console.log('[Electron] Loading from dev server: http://localhost:5173');
     mainWindow.loadURL('http://localhost:5173');
-    mainWindow.webContents.openDevTools();
   } else {
     // In production, load from built files
     const indexPath = path.join(__dirname, 'dist', 'index.html');
-    mainWindow.loadFile(indexPath);
+    console.log('[Electron] Loading from file:', indexPath);
+    console.log('[Electron] File exists:', existsSync(indexPath));
+    
+    mainWindow.loadFile(indexPath).then(() => {
+      console.log('[Electron] File loaded successfully');
+    }).catch((error) => {
+      console.error('[Electron] Failed to load file:', error);
+    });
   }
 
   // Pass environment variables to renderer process
