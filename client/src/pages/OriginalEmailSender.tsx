@@ -1444,7 +1444,7 @@ export default function OriginalEmailSender() {
             </div>
 
             {/* HTML Convert Settings - Moved to Front */}
-            <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
+            <div className="mt-4 mb-8 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
 ╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
@@ -1496,7 +1496,7 @@ export default function OriginalEmailSender() {
                     placeholder="Optional"
                   />
                 </div>
-                <div className="flex items-center gap-6">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
                     onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
@@ -1513,38 +1513,31 @@ export default function OriginalEmailSender() {
                     🌫️ HTML-TO-IMG
                     {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
                   </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                    className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                  >
+                    🫐 QR CODE
+                    {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                    className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                  >
+                    🍬 Random Metadata
+                    {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                    className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                  >
+                    📅 CALENDAR MODE
+                    {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
+                  </Button>
                 </div>
-              </div>
-            </div>
-
-            {/* Advanced Settings */}
-            <div className="mt-4 mb-8 bg-black rounded-xl p-4 border border-[#26262b]">
-              <div className="flex flex-wrap items-center gap-6">
-                <span className="text-sm text-[#a1a1aa] font-semibold">Quick Setup:</span>
-                <Button
-                  type="button"
-                  onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
-                  className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                >
-                  🫐 QR CODE
-                  {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
-                  className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                >
-                  🍬 Random Metadata
-                  {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
-                  className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                >
-                  📅 CALENDAR MODE
-                  {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
-                </Button>
               </div>
             </div>
           </div>
