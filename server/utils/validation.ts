@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Email validation schema
-export const emailSchema = z.string().email('Invalid email format');
+// Email validation schema - validation disabled
+export const emailSchema = z.string();
 
 // SMTP configuration schema
 export const smtpConfigSchema = z.object({
