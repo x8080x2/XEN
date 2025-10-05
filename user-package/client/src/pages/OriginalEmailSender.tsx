@@ -370,9 +370,34 @@ export default function OriginalEmailSender() {
   };
 
   const toggleSmtpRotation = async () => {
-    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
-    setStatusText('Mode 1: SMTP configs are managed via local config/smtp.ini file only');
-    setTimeout(() => setStatusText(""), 3000);
+    try {
+      const newRotationState = !smtpData.rotationEnabled;
+      
+      if (window.electronAPI?.smtpToggleRotation) {
+        const result = await window.electronAPI.smtpToggleRotation(newRotationState);
+        if (result.success) {
+          setSmtpData(prev => ({
+            ...prev,
+            rotationEnabled: newRotationState,
+            currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
+              ? prev.smtpConfigs[0] 
+              : prev.currentSmtp
+          }));
+          setStatusText(`SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`);
+          setTimeout(() => setStatusText(""), 3000);
+        } else {
+          throw new Error('Failed to save rotation state');
+        }
+      } else {
+        console.error('Electron API not available for SMTP rotation');
+        setStatusText('Error: Electron API not available');
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error) {
+      console.error('Failed to toggle SMTP rotation:', error);
+      setStatusText('Failed to toggle SMTP rotation');
+      setTimeout(() => setStatusText(""), 3000);
+    }
   };
 
   const addNewSmtp = async () => {
