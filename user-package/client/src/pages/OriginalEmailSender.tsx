@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
+import { ReplitServerConfig } from "@/components/ReplitServerConfig";
 
 interface EmailProgress {
   recipient: string;
@@ -1571,6 +1572,9 @@ export default function OriginalEmailSender() {
               `}
               </div>
               <div className="space-y-6">
+                {/* License Configuration Section */}
+                <ReplitServerConfig />
+                
                 {/* QR Code Settings Section */}
                 <div>
                   <h3 className="text-lg font-medium text-red mb-3">QR SETTINGS 🔲</h3>
