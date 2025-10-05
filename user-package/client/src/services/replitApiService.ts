@@ -112,10 +112,33 @@ class ElectronReplitApiService {
 
   // Send emails via job-based system
   async sendEmails(emailData: any, licenseKey?: string): Promise<{ jobId: string; totalRecipients: number }> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
+    const formData = new FormData();
+    
+    // Append form fields (matching backend expectations)
+    formData.append('recipients', JSON.stringify(emailData.recipients));
+    formData.append('subject', emailData.subject);
+    formData.append('htmlContent', emailData.htmlContent);
+    formData.append('settings', JSON.stringify(emailData.settings));
+    
+    // Append SMTP config if provided
+    if (emailData.smtpConfig) {
+      formData.append('smtpHost', emailData.smtpConfig.host);
+      formData.append('smtpPort', emailData.smtpConfig.port.toString());
+      formData.append('smtpUser', emailData.smtpConfig.user);
+      formData.append('smtpPassword', emailData.smtpConfig.password);
+      formData.append('senderName', emailData.smtpConfig.senderName);
+      formData.append('replyTo', emailData.smtpConfig.replyTo || '');
+    }
+    
+    // Append file attachments if any
+    if (emailData.attachments && Array.isArray(emailData.attachments)) {
+      emailData.attachments.forEach((file: File, index: number) => {
+        formData.append(`attachment_${index}`, file);
+      });
+    }
 
+    const headers: Record<string, string> = {};
+    
     if (licenseKey) {
       headers['X-License-Key'] = licenseKey;
     }
@@ -123,7 +146,7 @@ class ElectronReplitApiService {
     const response = await fetch(this.getApiEndpoint('api/emails/send'), {
       method: 'POST',
       headers,
-      body: JSON.stringify(emailData)
+      body: formData
     });
 
     if (!response.ok) {
