@@ -5,7 +5,14 @@ import { licenseVerifyRequestSchema, insertLicenseSchema } from "@shared/schema"
 export function setupLicenseRoutes(app: Express) {
   app.post("/api/license/verify", async (req, res) => {
     try {
-      const { licenseKey } = licenseVerifyRequestSchema.parse(req.body);
+      const licenseKey = req.headers['x-license-key'] as string;
+      
+      if (!licenseKey) {
+        return res.status(400).json({
+          valid: false,
+          message: "License key is required in X-License-Key header"
+        });
+      }
 
       const result = await licenseService.verifyLicense(licenseKey);
 
