@@ -110,20 +110,8 @@ class ElectronReplitApiService {
     }
   }
 
-  // Send emails via server-sent events (streaming)
-  async sendEmails(emailData: any): Promise<EventSource> {
-    const url = this.getEmailSendEndpoint();
-    const eventSource = new EventSource(url, {
-      // Note: EventSource doesn't support POST body directly
-      // The server endpoint should handle this appropriately
-    });
-
-    console.log(`[ReplitAPI] Starting email sending stream: ${url}`);
-    return eventSource;
-  }
-
-  // Send emails via job-based system (alternative)
-  async sendEmailsJob(emailData: any, licenseKey?: string): Promise<{ jobId: string }> {
+  // Send emails via job-based system
+  async sendEmails(emailData: any, licenseKey?: string): Promise<{ jobId: string; totalRecipients: number }> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json'
     };
@@ -147,8 +135,8 @@ class ElectronReplitApiService {
     return result;
   }
 
-  // Check job status
-  async checkJobStatus(jobId: string): Promise<any> {
+  // Get job status (alias for compatibility)
+  async getJobStatus(jobId: string): Promise<any> {
     const response = await fetch(this.getApiEndpoint(`api/emails/status/${jobId}`));
     
     if (!response.ok) {
