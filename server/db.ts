@@ -1,39 +1,17 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
-import * as schema from "./db/schema";
+import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as schema from '../shared/schema';
+import { existsSync, mkdirSync } from 'fs';
+import { dirname } from 'path';
 
-neonConfig.webSocketConstructor = ws;
+const dbPath = './data/local.db';
+const dbDir = dirname(dbPath);
 
-// Allow running without DATABASE_URL for local development
-let pool: Pool | null = null;
-let db: any = null;
-
-if (process.env.DATABASE_URL) {
-  pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  db = drizzle({ client: pool, schema });
-} else {
-  console.warn("⚠️  DATABASE_URL not set - running in local file mode");
-  // Create mock database functions for local development
-  db = {
-    select: () => ({
-      from: () => ({
-        where: () => []
-      })
-    }),
-    insert: () => ({
-      values: () => ({
-        returning: () => []
-      })
-    }),
-    update: () => ({
-      set: () => ({
-        where: () => ({
-          returning: () => []
-        })
-      })
-    })
-  };
+if (!existsSync(dbDir)) {
+  mkdirSync(dbDir, { recursive: true });
 }
 
-export { pool, db };
+const sqlite = new Database(dbPath);
+sqlite.pragma('journal_mode = WAL');
+
+export const db = drizzle(sqlite, { schema });

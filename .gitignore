@@ -7,4 +7,4 @@ vite.config.ts.*
 
 # Configuration files with secrets
 config/smtp.ini
-config/setup.ini
+config/setup.inidata/

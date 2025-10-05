@@ -237,12 +237,12 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    return user as User || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    return user as User || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -250,7 +250,7 @@ export class DatabaseStorage implements IStorage {
       .insert(users)
       .values(insertUser)
       .returning();
-    return user;
+    return user as User;
   }
 
   async getEmailConfig(id: string): Promise<EmailConfig | undefined> {
@@ -285,18 +285,21 @@ export class DatabaseStorage implements IStorage {
 
   async getEmailJob(id: string): Promise<EmailJob | undefined> {
     const [job] = await db.select().from(emailJobs).where(eq(emailJobs.id, id));
-    return job ? {
+    if (!job) return undefined;
+    return {
       ...job,
+      recipients: JSON.parse(job.recipients as string),
       status: job.status as 'pending' | 'running' | 'completed' | 'failed',
       startedAt: job.startedAt || undefined,
       completedAt: job.completedAt || undefined
-    } : undefined;
+    };
   }
 
   async getEmailJobsByUser(userId: string): Promise<EmailJob[]> {
     const jobs = await db.select().from(emailJobs).where(eq(emailJobs.userId, userId));
     return jobs.map(job => ({
       ...job,
+      recipients: JSON.parse(job.recipients as string),
       status: job.status as 'pending' | 'running' | 'completed' | 'failed',
       startedAt: job.startedAt || undefined,
       completedAt: job.completedAt || undefined
@@ -306,10 +309,14 @@ export class DatabaseStorage implements IStorage {
   async createEmailJob(insertJob: InsertEmailJob): Promise<EmailJob> {
     const [job] = await db
       .insert(emailJobs)
-      .values(insertJob)
+      .values({
+        ...insertJob,
+        recipients: JSON.stringify(insertJob.recipients)
+      } as any)
       .returning();
     return {
       ...job,
+      recipients: JSON.parse(job.recipients as string),
       status: job.status as 'pending' | 'running' | 'completed' | 'failed',
       startedAt: job.startedAt || undefined,
       completedAt: job.completedAt || undefined
@@ -317,13 +324,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateEmailJob(id: string, updates: Partial<EmailJob>): Promise<EmailJob> {
+    const updateData: any = { ...updates };
+    if (updates.recipients) {
+      updateData.recipients = JSON.stringify(updates.recipients);
+    }
     const [job] = await db
       .update(emailJobs)
-      .set(updates)
+      .set(updateData)
       .where(eq(emailJobs.id, id))
       .returning();
     return {
       ...job,
+      recipients: JSON.parse(job.recipients as string),
       status: job.status as 'pending' | 'running' | 'completed' | 'failed',
       startedAt: job.startedAt || undefined,
       completedAt: job.completedAt || undefined
@@ -356,7 +368,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(appSettings)
       .where(and(eq(appSettings.userId, userId), eq(appSettings.settingsType, settingsType)));
-    return settings || undefined;
+    if (!settings) return undefined;
+    return {
+      ...settings,
+      settings: JSON.parse(settings.settings as string)
+    };
   }
 
   async upsertAppSettings(insertSettings: InsertAppSettings): Promise<AppSettings> {
@@ -365,16 +381,28 @@ export class DatabaseStorage implements IStorage {
     if (existing) {
       const [updated] = await db
         .update(appSettings)
-        .set({ ...insertSettings, updatedAt: new Date() })
+        .set({ 
+          settings: JSON.stringify(insertSettings.settings),
+          updatedAt: new Date()
+        } as any)
         .where(eq(appSettings.id, existing.id))
         .returning();
-      return updated;
+      return {
+        ...updated,
+        settings: JSON.parse(updated.settings as string)
+      };
     } else {
       const [created] = await db
         .insert(appSettings)
-        .values(insertSettings)
+        .values({
+          ...insertSettings,
+          settings: JSON.stringify(insertSettings.settings)
+        } as any)
         .returning();
-      return created;
+      return {
+        ...created,
+        settings: JSON.parse(created.settings as string)
+      };
     }
   }
 
@@ -430,5 +458,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use memory storage for local development, database storage when DATABASE_URL is available
-export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
+// Always use database storage with SQLite
+export const storage = new DatabaseStorage();
