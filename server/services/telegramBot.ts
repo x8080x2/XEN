@@ -25,77 +25,55 @@ export class TelegramBotService {
   private setupCommands() {
     if (!this.bot) return;
 
-    // /start - Welcome message
+    // /start - Welcome message with buttons
     this.bot.onText(/\/start/, async (msg: Message) => {
-      const chatId = msg.chat.id;
-      const welcomeMessage = `
-🔐 *Email Sender License Bot*
-
-Welcome! I can help you generate license keys.
-
-*Available Commands:*
-/generate - Generate a new license key
-/generate30 - Generate a 30-day license
-/generate90 - Generate a 90-day license
-/generate365 - Generate a 1-year license
-/generatepermanent - Generate a permanent license
-/status <key> - Check license status
-/deactivate <key> - Deactivate a license
-/help - Show this message
-      `;
-
-      this.bot?.sendMessage(chatId, welcomeMessage, { parse_mode: 'Markdown' });
+      await this.showMainMenu(msg.chat.id);
     });
 
-    // /help - Show commands
+    // /help - Show main menu
     this.bot.onText(/\/help/, async (msg: Message) => {
-      const chatId = msg.chat.id;
-      const helpMessage = `
-*License Generation Commands:*
-
-/generate - Generate permanent license
-/generate30 - 30 days expiration
-/generate90 - 90 days expiration  
-/generate365 - 1 year expiration
-/generatepermanent - Never expires
-
-*License Management:*
-
-/status <key> - Check if license is valid
-/deactivate <key> - Deactivate a license
-
-*Examples:*
-\`/generate\` - Creates permanent license
-\`/generate30\` - Creates 30-day license
-\`/status abc123-xyz789\` - Checks license status
-      `;
-
-      this.bot?.sendMessage(chatId, helpMessage, { parse_mode: 'Markdown' });
+      await this.showMainMenu(msg.chat.id);
     });
 
-    // /generate - Generate permanent license
-    this.bot.onText(/\/generate$/, async (msg: Message) => {
-      await this.generateLicense(msg.chat.id);
+    // /menu - Show main menu
+    this.bot.onText(/\/menu/, async (msg: Message) => {
+      await this.showMainMenu(msg.chat.id);
     });
 
-    // /generatepermanent - Generate permanent license
-    this.bot.onText(/\/generatepermanent/, async (msg: Message) => {
-      await this.generateLicense(msg.chat.id);
-    });
+    // Handle callback queries from inline buttons
+    this.bot.on('callback_query', async (query) => {
+      const chatId = query.message?.chat.id;
+      const data = query.data;
 
-    // /generate30 - Generate 30-day license
-    this.bot.onText(/\/generate30/, async (msg: Message) => {
-      await this.generateLicense(msg.chat.id, 30);
-    });
+      if (!chatId || !data) return;
 
-    // /generate90 - Generate 90-day license
-    this.bot.onText(/\/generate90/, async (msg: Message) => {
-      await this.generateLicense(msg.chat.id, 90);
-    });
+      // Answer callback query to remove loading state
+      await this.bot?.answerCallbackQuery(query.id);
 
-    // /generate365 - Generate 1-year license
-    this.bot.onText(/\/generate365/, async (msg: Message) => {
-      await this.generateLicense(msg.chat.id, 365);
+      // Handle different callback actions
+      if (data === 'generate_menu') {
+        await this.showGenerateMenu(chatId);
+      } else if (data === 'manage_menu') {
+        await this.showManageMenu(chatId);
+      } else if (data === 'back_main') {
+        await this.showMainMenu(chatId);
+      } else if (data.startsWith('gen_')) {
+        // Generate license based on duration
+        const duration = data.replace('gen_', '');
+        if (duration === 'permanent') {
+          await this.generateLicense(chatId);
+        } else {
+          await this.generateLicense(chatId, parseInt(duration));
+        }
+        // Show main menu again after generation
+        setTimeout(() => this.showMainMenu(chatId), 2000);
+      } else if (data === 'check_status') {
+        await this.bot?.sendMessage(chatId, '📋 To check a license status, send:\n\n`/status YOUR-LICENSE-KEY`\n\nExample:\n`/status ABC123-XYZ789-DEF456`', { parse_mode: 'Markdown' });
+      } else if (data === 'deactivate_license') {
+        await this.bot?.sendMessage(chatId, '🔒 To deactivate a license, send:\n\n`/deactivate YOUR-LICENSE-KEY`\n\nExample:\n`/deactivate ABC123-XYZ789-DEF456`', { parse_mode: 'Markdown' });
+      } else if (data === 'help_info') {
+        await this.showHelpInfo(chatId);
+      }
     });
 
     // /status <key> - Check license status
@@ -163,7 +141,147 @@ ${lastValidatedText}
       }
     });
 
-    console.log('[TelegramBot] Commands registered');
+    console.log('[TelegramBot] Commands and callback handlers registered');
+  }
+
+  private async showMainMenu(chatId: number) {
+    const message = `
+🔐 *Email Sender License Bot*
+
+Welcome! Choose an option below to get started.
+
+*What would you like to do?*
+    `;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '✨ Generate New License', callback_data: 'generate_menu' }
+        ],
+        [
+          { text: '📋 Manage Licenses', callback_data: 'manage_menu' }
+        ],
+        [
+          { text: '❓ Help & Info', callback_data: 'help_info' }
+        ]
+      ]
+    };
+
+    await this.bot?.sendMessage(chatId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
+  }
+
+  private async showGenerateMenu(chatId: number) {
+    const message = `
+✨ *Generate New License*
+
+Select the duration for your license key:
+    `;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '🔹 7 Days', callback_data: 'gen_7' },
+          { text: '🔸 30 Days', callback_data: 'gen_30' }
+        ],
+        [
+          { text: '🔶 90 Days', callback_data: 'gen_90' },
+          { text: '🔷 180 Days', callback_data: 'gen_180' }
+        ],
+        [
+          { text: '💎 1 Year', callback_data: 'gen_365' },
+          { text: '♾️ Permanent', callback_data: 'gen_permanent' }
+        ],
+        [
+          { text: '⬅️ Back to Main Menu', callback_data: 'back_main' }
+        ]
+      ]
+    };
+
+    await this.bot?.sendMessage(chatId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
+  }
+
+  private async showManageMenu(chatId: number) {
+    const message = `
+📋 *Manage Licenses*
+
+What would you like to do?
+    `;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '🔍 Check License Status', callback_data: 'check_status' }
+        ],
+        [
+          { text: '🔒 Deactivate License', callback_data: 'deactivate_license' }
+        ],
+        [
+          { text: '⬅️ Back to Main Menu', callback_data: 'back_main' }
+        ]
+      ]
+    };
+
+    await this.bot?.sendMessage(chatId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
+  }
+
+  private async showHelpInfo(chatId: number) {
+    const message = `
+❓ *Help & Information*
+
+*📝 How to Use:*
+
+1️⃣ Click "Generate New License" to create a new license key
+2️⃣ Select the duration you need (7 days to permanent)
+3️⃣ Copy the license key you receive
+4️⃣ Add it to your desktop app's .env file
+
+*🔧 Setup Instructions:*
+
+In your Email Sender Desktop app:
+• Create/edit \`.env\` file
+• Add: \`LICENSE_KEY=YOUR-KEY-HERE\`
+• Run \`start-build.bat\`
+
+*📱 Available Commands:*
+
+\`/start\` - Main menu
+\`/menu\` - Show main menu
+\`/status <key>\` - Check license
+\`/deactivate <key>\` - Deactivate license
+
+*🎯 License Types:*
+
+🔹 7 Days - Trial/Testing
+🔸 30 Days - Monthly subscription
+🔶 90 Days - Quarterly
+🔷 180 Days - Semi-annual
+💎 1 Year - Annual subscription
+♾️ Permanent - Lifetime access
+
+Need help? Contact support! 💬
+    `;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '⬅️ Back to Main Menu', callback_data: 'back_main' }
+        ]
+      ]
+    };
+
+    await this.bot?.sendMessage(chatId, message, {
+      parse_mode: 'Markdown',
+      reply_markup: keyboard
+    });
   }
 
   private async generateLicense(chatId: number, expirationDays?: number) {
