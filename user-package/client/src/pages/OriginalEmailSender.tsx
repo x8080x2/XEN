@@ -1579,7 +1579,7 @@ export default function OriginalEmailSender() {
               </div>
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
               {`
-                  | _______________ |
+                   | _______________ |
                    | |XXXXXXXXXXXXX| |
                    | |XXXXXXXXXXXXX| |
                    | |XXXXXXXXXXXXX| |
@@ -1588,9 +1588,7 @@ export default function OriginalEmailSender() {
                    ___[___________]___
                   |         [_____] []|__
                   |         [_____] []|  \__
-                  L___________________J     \ \___\/
-                   ___________________      /\
-                  /###GET#CONNECTED###
+                  L___________________J     \ \___\/  /###GET#CONNECTED###
               `}
               </div>
               <div className="space-y-6">
