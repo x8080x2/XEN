@@ -101,6 +101,25 @@ export const insertAppSettingsSchema = appSettingsSchema.omit({
 export type AppSettings = z.infer<typeof appSettingsSchema>;
 export type InsertAppSettings = z.infer<typeof insertAppSettingsSchema>;
 
+// License Schema
+export const licenseSchema = z.object({
+  id: z.string(),
+  licenseKey: z.string(),
+  telegramUserId: z.string().optional(),
+  telegramUsername: z.string().optional(),
+  status: z.enum(['active', 'expired', 'revoked']),
+  expiresAt: z.date().optional(),
+  createdAt: z.date().default(() => new Date()),
+});
+
+export const insertLicenseSchema = licenseSchema.omit({ 
+  id: true, 
+  createdAt: true 
+});
+
+export type License = z.infer<typeof licenseSchema>;
+export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+
 // Email Send Request Schema
 export const emailSendRequestSchema = z.object({
   configId: z.string(),
@@ -164,6 +183,16 @@ export const appSettings = pgTable("app_settings", {
   settingsType: varchar("settings_type", { length: 255 }).notNull(),
   settings: jsonb("settings").notNull().$type<Record<string, any>>(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const licenses = pgTable("licenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  licenseKey: varchar("license_key", { length: 255 }).notNull().unique(),
+  telegramUserId: varchar("telegram_user_id", { length: 255 }),
+  telegramUsername: varchar("telegram_username", { length: 255 }),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
 // Relations

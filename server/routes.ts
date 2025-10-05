@@ -6,7 +6,8 @@ import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import { setupElectronRoutes } from "./routes/electronRoutes";
-import { setupAIRoutes } from "./routes/aiRoutes"; // Assuming setupAIRoutes will be defined here
+import { setupAIRoutes } from "./routes/aiRoutes";
+import { licenseService } from "./services/licenseService";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -362,6 +363,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.post("/api/license/verify", async (req, res) => {
+    try {
+      const { licenseKey } = req.body;
+      
+      if (!licenseKey) {
+        return res.status(400).json({ 
+          success: false, 
+          valid: false,
+          error: 'License key is required' 
+        });
+      }
+
+      const result = await licenseService.verifyLicense(licenseKey);
+      
+      res.json({
+        success: true,
+        valid: result.valid,
+        reason: result.reason,
+        license: result.license
+      });
+    } catch (error: any) {
+      console.error('License verification error:', error);
+      res.status(500).json({ 
+        success: false, 
+        valid: false,
+        error: 'Failed to verify license' 
+      });
+    }
+  });
+
+  app.get("/api/license/status/:licenseKey", async (req, res) => {
+    try {
+      const { licenseKey } = req.params;
+      
+      const result = await licenseService.verifyLicense(licenseKey);
+      
+      res.json({
+        success: true,
+        valid: result.valid,
+        reason: result.reason,
+        license: result.license
+      });
+    } catch (error: any) {
+      console.error('License status error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to check license status' 
+      });
     }
   });
 

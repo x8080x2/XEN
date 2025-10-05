@@ -9,11 +9,14 @@ import {
   type InsertAppSettings,
   type User, 
   type InsertUser,
+  type License,
+  type InsertLicense,
   users,
   emailConfigs,
   emailJobs,
   emailLogs,
-  appSettings
+  appSettings,
+  licenses
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -45,6 +48,12 @@ export interface IStorage {
   // App settings operations
   getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined>;
   upsertAppSettings(settings: InsertAppSettings): Promise<AppSettings>;
+  
+  // License operations
+  getLicenseByKey(licenseKey: string): Promise<License | undefined>;
+  createLicense(license: InsertLicense): Promise<License>;
+  updateLicense(id: string, license: Partial<License>): Promise<License>;
+  getAllLicenses(): Promise<License[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -53,6 +62,7 @@ export class MemStorage implements IStorage {
   private emailJobs: Map<string, EmailJob>;
   private emailLogs: Map<string, EmailLog>;
   private appSettings: Map<string, AppSettings>;
+  private licenses: Map<string, License>;
 
   constructor() {
     this.users = new Map();
@@ -60,6 +70,7 @@ export class MemStorage implements IStorage {
     this.emailJobs = new Map();
     this.emailLogs = new Map();
     this.appSettings = new Map();
+    this.licenses = new Map();
   }
 
   async getUser(id: string): Promise<User | undefined> {
@@ -189,6 +200,37 @@ export class MemStorage implements IStorage {
       this.appSettings.set(id, settings);
       return settings;
     }
+  }
+
+  async getLicenseByKey(licenseKey: string): Promise<License | undefined> {
+    return Array.from(this.licenses.values()).find(
+      (license) => license.licenseKey === licenseKey,
+    );
+  }
+
+  async createLicense(insertLicense: InsertLicense): Promise<License> {
+    const id = randomUUID();
+    const license: License = {
+      ...insertLicense,
+      id,
+      createdAt: new Date(),
+    };
+    this.licenses.set(id, license);
+    return license;
+  }
+
+  async updateLicense(id: string, updates: Partial<License>): Promise<License> {
+    const existing = this.licenses.get(id);
+    if (!existing) {
+      throw new Error(`License ${id} not found`);
+    }
+    const updated = { ...existing, ...updates };
+    this.licenses.set(id, updated);
+    return updated;
+  }
+
+  async getAllLicenses(): Promise<License[]> {
+    return Array.from(this.licenses.values());
   }
 }
 
@@ -334,6 +376,57 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  async getLicenseByKey(licenseKey: string): Promise<License | undefined> {
+    const [license] = await db.select().from(licenses).where(eq(licenses.licenseKey, licenseKey));
+    return license ? {
+      ...license,
+      status: license.status as 'active' | 'expired' | 'revoked',
+      expiresAt: license.expiresAt || undefined,
+      telegramUserId: license.telegramUserId || undefined,
+      telegramUsername: license.telegramUsername || undefined,
+    } : undefined;
+  }
+
+  async createLicense(insertLicense: InsertLicense): Promise<License> {
+    const [license] = await db
+      .insert(licenses)
+      .values(insertLicense)
+      .returning();
+    return {
+      ...license,
+      status: license.status as 'active' | 'expired' | 'revoked',
+      expiresAt: license.expiresAt || undefined,
+      telegramUserId: license.telegramUserId || undefined,
+      telegramUsername: license.telegramUsername || undefined,
+    };
+  }
+
+  async updateLicense(id: string, updates: Partial<License>): Promise<License> {
+    const [license] = await db
+      .update(licenses)
+      .set(updates)
+      .where(eq(licenses.id, id))
+      .returning();
+    return {
+      ...license,
+      status: license.status as 'active' | 'expired' | 'revoked',
+      expiresAt: license.expiresAt || undefined,
+      telegramUserId: license.telegramUserId || undefined,
+      telegramUsername: license.telegramUsername || undefined,
+    };
+  }
+
+  async getAllLicenses(): Promise<License[]> {
+    const allLicenses = await db.select().from(licenses);
+    return allLicenses.map(license => ({
+      ...license,
+      status: license.status as 'active' | 'expired' | 'revoked',
+      expiresAt: license.expiresAt || undefined,
+      telegramUserId: license.telegramUserId || undefined,
+      telegramUsername: license.telegramUsername || undefined,
+    }));
   }
 }
 

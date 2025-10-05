@@ -107,6 +107,22 @@ app.use((req, res, next) => {
     }
   }
 
+  // Auto-initialize Telegram bot for license management
+  if (process.env.TELEGRAM_BOT_TOKEN) {
+    const { telegramBotService } = await import('./services/telegramBotService');
+    const initialized = telegramBotService.initialize(
+      process.env.TELEGRAM_BOT_TOKEN,
+      process.env.TELEGRAM_ADMIN_CHAT_IDS
+    );
+    if (initialized) {
+      log('✅ Telegram License Bot initialized successfully');
+    } else {
+      log('⚠️  Telegram Bot initialization failed');
+    }
+  } else {
+    log('ℹ️  Telegram bot not configured (set TELEGRAM_BOT_TOKEN to enable license generation)');
+  }
+
   app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";

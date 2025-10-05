@@ -2,12 +2,111 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { existsSync } = require('fs');
+const https = require('https');
+const http = require('http');
 
 // Load environment variables
 require('dotenv').config();
 
 // Keep a global reference of the window object
 let mainWindow;
+
+async function verifyLicense() {
+  const licenseKey = process.env.LICENSE_KEY;
+  const serverUrl = process.env.REPLIT_SERVER_URL;
+
+  if (!licenseKey) {
+    console.error('[License] No LICENSE_KEY found in .env file');
+    return {
+      valid: false,
+      error: 'No license key found. Please add LICENSE_KEY to your .env file.'
+    };
+  }
+
+  if (!serverUrl) {
+    console.error('[License] No REPLIT_SERVER_URL found in .env file');
+    return {
+      valid: false,
+      error: 'No server URL configured. Please add REPLIT_SERVER_URL to your .env file.'
+    };
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const url = new URL('/api/license/verify', serverUrl);
+      const protocol = url.protocol === 'https:' ? https : http;
+      const postData = JSON.stringify({ licenseKey });
+
+      const options = {
+        hostname: url.hostname,
+        port: url.port,
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        },
+        timeout: 10000
+      };
+
+      const req = protocol.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.valid) {
+              console.log('[License] ✅ License verified successfully');
+              resolve({ valid: true });
+            } else {
+              console.error('[License] ❌ Invalid license:', result.reason);
+              resolve({
+                valid: false,
+                error: result.reason || 'Invalid license key'
+              });
+            }
+          } catch (error) {
+            console.error('[License] Failed to parse server response:', error);
+            resolve({
+              valid: false,
+              error: 'Failed to verify license with server'
+            });
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        console.error('[License] Network error:', error);
+        resolve({
+          valid: false,
+          error: `Cannot connect to server: ${error.message}`
+        });
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        console.error('[License] Request timeout');
+        resolve({
+          valid: false,
+          error: 'License verification timed out'
+        });
+      });
+
+      req.write(postData);
+      req.end();
+    } catch (error) {
+      console.error('[License] Verification error:', error);
+      resolve({
+        valid: false,
+        error: `License verification failed: ${error.message}`
+      });
+    }
+  });
+}
 
 function createWindow() {
   // Create the browser window
@@ -57,7 +156,30 @@ function createWindow() {
 }
 
 // This method will be called when Electron has finished initialization
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  console.log('[Electron] Starting Email Sender Desktop App...');
+  
+  const licenseResult = await verifyLicense();
+  
+  if (!licenseResult.valid) {
+    console.error('[Electron] ❌ License verification failed:', licenseResult.error);
+    
+    const { dialog } = require('electron');
+    await dialog.showMessageBox({
+      type: 'error',
+      title: 'License Verification Failed',
+      message: 'Invalid or Missing License',
+      detail: licenseResult.error + '\n\nPlease:\n1. Get a license key from the Telegram bot\n2. Add it to your .env file as LICENSE_KEY=your-key-here\n3. Restart the application',
+      buttons: ['Exit']
+    });
+    
+    app.quit();
+    return;
+  }
+  
+  console.log('[Electron] ✅ License verified - Starting application...');
+  createWindow();
+});
 
 // Quit when all windows are closed
 app.on('window-all-closed', function () {
