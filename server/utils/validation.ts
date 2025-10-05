@@ -118,6 +118,8 @@ export const sendMailRequestSchema = z.object({
   qrBorder: z.coerce.number().int().min(0).max(20).optional(),
   qrForegroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   qrBackgroundColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
+  qrBorderColor: z.string().optional(),
+  qrLink: z.string().optional(),
   hiddenImageFile: z.string().optional(),
   hiddenImageSize: z.coerce.number().int().min(10).max(200).optional(),
   hiddenText: z.string().optional(),
@@ -143,7 +145,8 @@ export const sendMailRequestSchema = z.object({
   proxyUser: z.string().optional(),
   proxyPass: z.string().optional(),
   useAI: z.coerce.boolean().optional(),
-  industry: z.string().optional()
+  industry: z.string().optional(),
+  calendarMode: z.coerce.boolean().optional()
 }).passthrough(); // Allow additional fields for settings
 
 // Content validation schema for file writing
