@@ -77,8 +77,10 @@ export function ReplitServerConfig() {
     try {
       const response = await fetch(`${currentServerUrl}/api/license/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ licenseKey: trimmedKey })
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-License-Key': trimmedKey
+        }
       });
 
       const result = await response.json();
