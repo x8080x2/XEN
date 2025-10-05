@@ -46,8 +46,20 @@ function createWindow() {
     });
   }
 
+  // Log any console messages from renderer
+  mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+    console.log(`[Renderer] ${message}`);
+  });
+
+  // Catch any load failures
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('[Electron] Failed to load:', errorCode, errorDescription);
+  });
+
   // Pass environment variables to renderer process
   mainWindow.webContents.on('did-finish-load', () => {
+    console.log('[Electron] Page finished loading');
+    
     const serverUrl = process.env.REPLIT_SERVER_URL;
     const licenseKey = process.env.LICENSE_KEY;
     
