@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { replitApiService } from "@/services/replitApiService";
 
 interface EmailFormData {
   smtpHost: string;
@@ -108,30 +109,30 @@ export function useEmailSender() {
   // Send emails mutation
   const sendEmailsMutation = useMutation({
     mutationFn: async (data: EmailSendRequest) => {
-      const formData = new FormData();
-      
-      // Append form fields
-      formData.append('recipients', JSON.stringify(data.recipients));
-      formData.append('subject', data.subject);
-      formData.append('htmlContent', data.htmlContent);
-      formData.append('settings', JSON.stringify(data.settings));
-      
-      // Append files
-      data.attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
+      // Extract SMTP configuration from form data
+      const smtpConfig = {
+        host: formData.smtpHost,
+        port: formData.smtpPort,
+        user: formData.smtpUser,
+        password: formData.smtpPassword,
+        senderName: formData.senderName,
+        replyTo: formData.replyTo
+      };
+
+      // Use the Replit API service to send emails via job system
+      const result = await replitApiService.sendEmailsJob({
+        recipients: data.recipients,
+        subject: data.subject,
+        htmlContent: data.htmlContent,
+        attachments: data.attachments,
+        settings: data.settings,
+        smtpConfig
       });
-
-      const response = await fetch('/api/emails/send', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to send emails');
-      }
-
-      return response.json();
+      
+      return {
+        jobId: result.jobId,
+        totalRecipients: data.recipients.length
+      };
     },
     onSuccess: (data) => {
       setCurrentJobId(data.jobId);
@@ -154,7 +155,11 @@ export function useEmailSender() {
 
   // Poll job status
   const { data: jobStatus } = useQuery<JobStatus>({
-    queryKey: ['/api/emails/status', currentJobId],
+    queryKey: ['replitJobStatus', currentJobId],
+    queryFn: async () => {
+      if (!currentJobId) return null;
+      return await replitApiService.checkJobStatus(currentJobId);
+    },
     enabled: !!currentJobId,
     refetchInterval: 1000, // Poll every second
   });
@@ -164,9 +169,9 @@ export function useEmailSender() {
     if (jobStatus) {
       const { sent, failed, total, status, logs: jobLogs } = jobStatus;
       const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
-      
+
       setProgress({ total, sent, failed, percentage });
-      
+
       // Add new logs
       if (jobLogs && jobLogs.length > logs.length) {
         const newLogs = jobLogs.slice(logs.length);
@@ -174,11 +179,11 @@ export function useEmailSender() {
           addLog(log.message, log.status);
         });
       }
-      
+
       // Check if job is complete
       if (status === 'completed' || status === 'failed') {
         setCurrentJobId(null);
-        queryClient.invalidateQueries({ queryKey: ['/api/emails/status'] });
+        queryClient.invalidateQueries({ queryKey: ['replitJobStatus'] });
       }
     }
   }, [jobStatus, logs.length, addLog, queryClient]);

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ReplitServerConfig } from "./ReplitServerConfig";
 
 interface SettingsOverlayProps {
   onClose: () => void;
@@ -51,6 +52,9 @@ export default function SettingsOverlay({ onClose, currentSettings, onSettingsCh
         </div>
 
         <div className="space-y-8">
+          {/* Replit Server Configuration */}
+          <ReplitServerConfig />
+
           {/* Email Validation */}
           <div className="settings-section">
             <h3 className="text-sm font-semibold text-[#ef4444] mb-4 pb-2 border-b border-[#26262b]">
