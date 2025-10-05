@@ -31,9 +31,9 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, load from built files with hash routing
-    const indexPath = path.join(__dirname, 'dist/index.html');
-    mainWindow.loadURL(`file://${indexPath}#/`);
+    // In production, load from built files
+    const indexPath = path.join(__dirname, 'dist', 'index.html');
+    mainWindow.loadFile(indexPath);
   }
 
   // Pass environment variables to renderer process
