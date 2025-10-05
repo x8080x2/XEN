@@ -7,22 +7,29 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Electron-only mode - no web API fallback
-export async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  throw new Error('Web API requests are disabled - this app requires Electron desktop environment');
+export async function apiRequest(
+  method: string,
+  url: string,
+  data?: unknown | undefined,
+): Promise<Response> {
+  const res = await fetch(url, {
+    method,
+    headers: data ? { "Content-Type": "application/json" } : {},
+    body: data ? JSON.stringify(data) : undefined,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res;
 }
 
+type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const fullUrl = `${API_BASE_URL}/${queryKey.join("/")}`;
-
-    const res = await fetch(fullUrl, {
+    const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
     });
 
