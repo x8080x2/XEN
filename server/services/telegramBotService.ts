@@ -1,10 +1,15 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { licenseService } from './licenseService';
 
+interface UserState {
+  action?: 'awaiting_status_key' | 'awaiting_revoke_key';
+}
+
 class TelegramBotService {
   private bot: TelegramBot | null = null;
   private isInitialized = false;
   private adminChatIds: Set<number> = new Set();
+  private userStates: Map<number, UserState> = new Map();
 
   initialize(token: string, adminChatIds?: string): boolean {
     try {
@@ -40,26 +45,74 @@ class TelegramBotService {
     return this.adminChatIds.has(userId);
   }
 
-  private async checkAdminAccess(msg: TelegramBot.Message): Promise<boolean> {
-    const userId = msg.from?.id;
-    
+  private async checkAdminAccess(userId: number, chatId: number): Promise<boolean> {
     if (!userId) {
       return false;
     }
 
     if (!this.isAdmin(userId)) {
       await this.bot?.sendMessage(
-        msg.chat.id,
-        '❌ Access Denied\n\n' +
+        chatId,
+        '❌ *Access Denied*\n\n' +
         'You are not authorized to use this bot.\n\n' +
-        `Your Telegram ID: ${userId}\n\n` +
-        'Please contact the administrator to request access.'
+        `Your Telegram ID: \`${userId}\`\n\n` +
+        'Please contact the administrator to request access.',
+        { parse_mode: 'Markdown' }
       );
-      console.log(`[Telegram Bot] Unauthorized access attempt from user ${userId} (@${msg.from?.username || 'unknown'})`);
+      console.log(`[Telegram Bot] Unauthorized access attempt from user ${userId}`);
       return false;
     }
 
     return true;
+  }
+
+  private getMainMenu(): TelegramBot.InlineKeyboardMarkup {
+    return {
+      inline_keyboard: [
+        [
+          { text: '🆕 Generate License', callback_data: 'menu_generate' }
+        ],
+        [
+          { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
+        ],
+        [
+          { text: '🔍 Check Status', callback_data: 'menu_status' },
+          { text: '❌ Revoke License', callback_data: 'menu_revoke' }
+        ],
+        [
+          { text: '❓ Help', callback_data: 'menu_help' }
+        ]
+      ]
+    };
+  }
+
+  private getGenerateDurationMenu(): TelegramBot.InlineKeyboardMarkup {
+    return {
+      inline_keyboard: [
+        [
+          { text: '7 Days', callback_data: 'gen_7' },
+          { text: '30 Days', callback_data: 'gen_30' }
+        ],
+        [
+          { text: '90 Days', callback_data: 'gen_90' },
+          { text: '365 Days (1 Year)', callback_data: 'gen_365' }
+        ],
+        [
+          { text: '♾️ Lifetime', callback_data: 'gen_lifetime' }
+        ],
+        [
+          { text: '« Back to Menu', callback_data: 'menu_main' }
+        ]
+      ]
+    };
+  }
+
+  private getBackButton(): TelegramBot.InlineKeyboardMarkup {
+    return {
+      inline_keyboard: [
+        [{ text: '« Back to Menu', callback_data: 'menu_main' }]
+      ]
+    };
   }
 
   private setupCommands() {
@@ -67,226 +120,391 @@ class TelegramBotService {
 
     this.bot.onText(/\/start/, async (msg) => {
       const chatId = msg.chat.id;
-      const username = msg.from?.username || 'Unknown';
+      const userId = msg.from?.id;
+      const username = msg.from?.username || msg.from?.first_name || 'User';
+
+      if (!userId || !await this.checkAdminAccess(userId, chatId)) {
+        return;
+      }
       
       await this.bot?.sendMessage(
         chatId,
-        `👋 Welcome to the Email Sender License Bot!\n\n` +
-        `Available commands:\n` +
-        `/generate <days> - Generate a new license (e.g., /generate 30 for 30 days, or /generate for lifetime)\n` +
-        `/status <key> - Check license status\n` +
-        `/revoke <key> - Revoke a license\n` +
-        `/mykeys - List all your license keys\n` +
-        `/help - Show this help message`
+        `👋 *Welcome ${username}!*\n\n` +
+        `🔐 Email Sender License Management Bot\n\n` +
+        `Use the buttons below to manage licenses:`,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
       );
     });
 
-    this.bot.onText(/\/help/, async (msg) => {
+    this.bot.onText(/\/menu/, async (msg) => {
       const chatId = msg.chat.id;
+      const userId = msg.from?.id;
+
+      if (!userId || !await this.checkAdminAccess(userId, chatId)) {
+        return;
+      }
       
       await this.bot?.sendMessage(
         chatId,
-        `📖 Help - Available Commands:\n\n` +
-        `🔑 /generate <days> - Generate a new license\n` +
-        `   Examples:\n` +
-        `   • /generate - Create a lifetime license\n` +
-        `   • /generate 7 - Create a 7-day license\n` +
-        `   • /generate 30 - Create a 30-day license\n\n` +
-        `📊 /status <key> - Check license status\n` +
-        `   Example: /status ABC123DEF456\n\n` +
-        `❌ /revoke <key> - Revoke a license\n` +
-        `   Example: /revoke ABC123DEF456\n\n` +
-        `📋 /mykeys - List all your generated licenses`
+        '🔐 *License Management*\n\nSelect an option:',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
       );
     });
 
-    this.bot.onText(/\/generate(.*)/, async (msg, match) => {
-      if (!await this.checkAdminAccess(msg)) return;
+    this.bot.on('callback_query', async (query) => {
+      const chatId = query.message?.chat.id;
+      const userId = query.from.id;
+      const messageId = query.message?.message_id;
+      const data = query.data;
 
-      const chatId = msg.chat.id;
-      const userId = msg.from?.id.toString() || '';
-      const username = msg.from?.username || 'Unknown';
-      
-      const args = match?.[1]?.trim();
-      const durationDays = args ? parseInt(args) : undefined;
+      if (!chatId || !userId || !data) return;
 
-      if (args && (isNaN(durationDays!) || durationDays! <= 0)) {
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Invalid duration. Please provide a positive number of days or leave empty for a lifetime license.\n\n' +
-          'Examples:\n' +
-          '• /generate - Lifetime license\n' +
-          '• /generate 7 - 7 days\n' +
-          '• /generate 30 - 30 days'
-        );
+      if (!await this.checkAdminAccess(userId, chatId)) {
+        await this.bot?.answerCallbackQuery(query.id, {
+          text: '❌ Access denied',
+          show_alert: true
+        });
         return;
       }
 
-      try {
-        const license = await licenseService.createLicense(userId, username, durationDays);
-        
-        const expiryText = license.expiresAt 
-          ? `Expires: ${license.expiresAt.toLocaleDateString()}`
-          : 'Lifetime license';
+      await this.bot?.answerCallbackQuery(query.id);
 
-        await this.bot?.sendMessage(
-          chatId,
-          `✅ License Generated Successfully!\n\n` +
-          `🔑 License Key: \`${license.licenseKey}\`\n` +
-          `👤 User: @${username}\n` +
-          `📅 ${expiryText}\n\n` +
-          `⚠️ Important:\n` +
-          `1. Save this license key securely\n` +
-          `2. Add it to your .env file as: LICENSE_KEY=${license.licenseKey}\n` +
-          `3. Restart your desktop app after adding the key`,
-          { parse_mode: 'Markdown' }
-        );
-      } catch (error) {
-        console.error('Error generating license:', error);
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Failed to generate license. Please try again later.'
-        );
+      switch (data) {
+        case 'menu_main':
+          await this.bot?.editMessageText(
+            '🔐 *License Management*\n\nSelect an option:',
+            {
+              chat_id: chatId,
+              message_id: messageId,
+              parse_mode: 'Markdown',
+              reply_markup: this.getMainMenu()
+            }
+          );
+          break;
+
+        case 'menu_generate':
+          await this.bot?.editMessageText(
+            '🆕 *Generate New License*\n\n' +
+            'Select the license duration:',
+            {
+              chat_id: chatId,
+              message_id: messageId,
+              parse_mode: 'Markdown',
+              reply_markup: this.getGenerateDurationMenu()
+            }
+          );
+          break;
+
+        case 'gen_7':
+        case 'gen_30':
+        case 'gen_90':
+        case 'gen_365':
+        case 'gen_lifetime':
+          await this.handleGenerateLicense(chatId, userId, query.from.username || 'Unknown', data);
+          break;
+
+        case 'menu_mykeys':
+          await this.handleMyKeys(chatId, userId);
+          break;
+
+        case 'menu_status':
+          this.userStates.set(userId, { action: 'awaiting_status_key' });
+          await this.bot?.sendMessage(
+            chatId,
+            '🔍 *Check License Status*\n\n' +
+            'Please send the license key you want to check:',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
+
+        case 'menu_revoke':
+          this.userStates.set(userId, { action: 'awaiting_revoke_key' });
+          await this.bot?.sendMessage(
+            chatId,
+            '❌ *Revoke License*\n\n' +
+            'Please send the license key you want to revoke:',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
+
+        case 'menu_help':
+          await this.bot?.editMessageText(
+            '📖 *Help & Information*\n\n' +
+            '*🆕 Generate License:* Create new licenses with various durations\n\n' +
+            '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
+            '*🔍 Check Status:* Verify if a license key is valid\n\n' +
+            '*❌ Revoke License:* Deactivate a license key\n\n' +
+            '*Usage Instructions:*\n' +
+            '1. Generate a license with desired duration\n' +
+            '2. Copy the license key\n' +
+            '3. Add to desktop app .env file\n' +
+            '4. Restart the desktop application',
+            {
+              chat_id: chatId,
+              message_id: messageId,
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
       }
     });
 
-    this.bot.onText(/\/status(.*)/, async (msg, match) => {
-      const chatId = msg.chat.id;
-      const licenseKey = match?.[1]?.trim();
+    this.bot.on('message', async (msg) => {
+      if (msg.text?.startsWith('/')) return;
 
-      if (!licenseKey) {
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Please provide a license key.\n\nExample: /status ABC123DEF456'
-        );
+      const chatId = msg.chat.id;
+      const userId = msg.from?.id;
+      const text = msg.text?.trim();
+
+      if (!userId || !text) return;
+
+      if (!await this.checkAdminAccess(userId, chatId)) {
         return;
       }
 
-      try {
-        const result = await licenseService.verifyLicense(licenseKey);
-        
-        if (!result.valid) {
-          await this.bot?.sendMessage(
-            chatId,
-            `❌ License Status: Invalid\n\n` +
-            `Reason: ${result.reason}\n\n` +
-            `License Key: \`${licenseKey}\``,
-            { parse_mode: 'Markdown' }
-          );
-          return;
-        }
+      const state = this.userStates.get(userId);
 
-        const license = result.license!;
-        const expiryText = license.expiresAt 
-          ? `Expires: ${license.expiresAt.toLocaleDateString()}`
-          : 'Lifetime license';
-
-        await this.bot?.sendMessage(
-          chatId,
-          `✅ License Status: Valid\n\n` +
-          `🔑 Key: \`${license.licenseKey}\`\n` +
-          `👤 User: @${license.telegramUsername || 'Unknown'}\n` +
-          `📅 ${expiryText}\n` +
-          `🟢 Status: ${license.status}\n` +
-          `📆 Created: ${license.createdAt.toLocaleDateString()}`,
-          { parse_mode: 'Markdown' }
-        );
-      } catch (error) {
-        console.error('Error checking license status:', error);
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Failed to check license status. Please try again later.'
-        );
-      }
-    });
-
-    this.bot.onText(/\/revoke(.*)/, async (msg, match) => {
-      if (!await this.checkAdminAccess(msg)) return;
-
-      const chatId = msg.chat.id;
-      const licenseKey = match?.[1]?.trim();
-
-      if (!licenseKey) {
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Please provide a license key.\n\nExample: /revoke ABC123DEF456'
-        );
-        return;
-      }
-
-      try {
-        const license = await licenseService.revokeLicense(licenseKey);
-        
-        if (!license) {
-          await this.bot?.sendMessage(
-            chatId,
-            `❌ License not found.\n\nLicense Key: \`${licenseKey}\``,
-            { parse_mode: 'Markdown' }
-          );
-          return;
-        }
-
-        await this.bot?.sendMessage(
-          chatId,
-          `✅ License Revoked Successfully\n\n` +
-          `🔑 Key: \`${license.licenseKey}\`\n` +
-          `👤 User: @${license.telegramUsername || 'Unknown'}\n\n` +
-          `This license can no longer be used.`,
-          { parse_mode: 'Markdown' }
-        );
-      } catch (error) {
-        console.error('Error revoking license:', error);
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Failed to revoke license. Please try again later.'
-        );
-      }
-    });
-
-    this.bot.onText(/\/mykeys/, async (msg) => {
-      if (!await this.checkAdminAccess(msg)) return;
-
-      const chatId = msg.chat.id;
-      const userId = msg.from?.id.toString() || '';
-
-      try {
-        const allLicenses = await licenseService.getAllLicenses();
-        const userLicenses = allLicenses.filter(l => l.telegramUserId === userId);
-
-        if (userLicenses.length === 0) {
-          await this.bot?.sendMessage(
-            chatId,
-            '📋 You have no generated licenses yet.\n\nUse /generate to create a new license.'
-          );
-          return;
-        }
-
-        const licenseList = userLicenses.map((license, index) => {
-          const expiryText = license.expiresAt 
-            ? `Expires: ${license.expiresAt.toLocaleDateString()}`
-            : 'Lifetime';
-          const statusIcon = license.status === 'active' ? '🟢' : license.status === 'expired' ? '🟡' : '🔴';
-          
-          return `${index + 1}. ${statusIcon} \`${license.licenseKey}\`\n   ${expiryText} | Status: ${license.status}`;
-        }).join('\n\n');
-
-        await this.bot?.sendMessage(
-          chatId,
-          `📋 Your Licenses (${userLicenses.length}):\n\n${licenseList}`,
-          { parse_mode: 'Markdown' }
-        );
-      } catch (error) {
-        console.error('Error fetching user licenses:', error);
-        await this.bot?.sendMessage(
-          chatId,
-          '❌ Failed to fetch your licenses. Please try again later.'
-        );
+      if (state?.action === 'awaiting_status_key') {
+        this.userStates.delete(userId);
+        await this.handleCheckStatus(chatId, text);
+      } else if (state?.action === 'awaiting_revoke_key') {
+        this.userStates.delete(userId);
+        await this.handleRevokeLicense(chatId, text);
       }
     });
 
     this.bot.on('polling_error', (error) => {
       console.error('Telegram polling error:', error);
     });
+  }
+
+  private async handleGenerateLicense(
+    chatId: number,
+    userId: number,
+    username: string,
+    action: string
+  ) {
+    try {
+      let durationDays: number | undefined;
+
+      switch (action) {
+        case 'gen_7': durationDays = 7; break;
+        case 'gen_30': durationDays = 30; break;
+        case 'gen_90': durationDays = 90; break;
+        case 'gen_365': durationDays = 365; break;
+        case 'gen_lifetime': durationDays = undefined; break;
+      }
+
+      const license = await licenseService.createLicense(
+        userId.toString(),
+        username,
+        durationDays
+      );
+
+      const durationText = durationDays 
+        ? `${durationDays} days`
+        : 'Lifetime';
+
+      const expiryText = license.expiresAt
+        ? `📅 Expires: ${license.expiresAt.toLocaleDateString()}`
+        : '♾️ Never expires';
+
+      await this.bot?.sendMessage(
+        chatId,
+        `✅ *License Generated Successfully!*\n\n` +
+        `🔑 License Key:\n\`${license.licenseKey}\`\n\n` +
+        `⏱️ Duration: ${durationText}\n` +
+        `${expiryText}\n` +
+        `👤 Generated for: @${username}\n\n` +
+        `*Setup Instructions:*\n` +
+        `1. Copy the license key above\n` +
+        `2. Add to .env file:\n` +
+        `   \`LICENSE_KEY=${license.licenseKey}\`\n` +
+        `3. Restart your desktop app`,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    } catch (error) {
+      console.error('Error generating license:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ *Failed to generate license*\n\n' +
+        'Please try again later.',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    }
+  }
+
+  private async handleMyKeys(chatId: number, userId: number) {
+    try {
+      const allLicenses = await licenseService.getAllLicenses();
+      const userLicenses = allLicenses.filter(l => l.telegramUserId === userId.toString());
+
+      if (userLicenses.length === 0) {
+        await this.bot?.sendMessage(
+          chatId,
+          '📋 *My Licenses*\n\n' +
+          'You have no generated licenses yet.\n\n' +
+          'Use *Generate License* to create a new one.',
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu()
+          }
+        );
+        return;
+      }
+
+      const licenseList = userLicenses.map((license, index) => {
+        const expiryText = license.expiresAt 
+          ? `Expires: ${license.expiresAt.toLocaleDateString()}`
+          : 'Lifetime';
+        
+        let statusIcon = '🟢';
+        let statusText = 'Active';
+        
+        if (license.status === 'expired') {
+          statusIcon = '🟡';
+          statusText = 'Expired';
+        } else if (license.status === 'revoked') {
+          statusIcon = '🔴';
+          statusText = 'Revoked';
+        }
+        
+        return `${index + 1}. ${statusIcon} *${statusText}*\n` +
+               `   Key: \`${license.licenseKey}\`\n` +
+               `   ${expiryText}`;
+      }).join('\n\n');
+
+      const activeLicenses = userLicenses.filter(l => l.status === 'active').length;
+
+      await this.bot?.sendMessage(
+        chatId,
+        `📋 *My Licenses* (${userLicenses.length} total, ${activeLicenses} active)\n\n` +
+        licenseList,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    } catch (error) {
+      console.error('Error fetching licenses:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Failed to fetch licenses.\n\nPlease try again later.',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    }
+  }
+
+  private async handleCheckStatus(chatId: number, licenseKey: string) {
+    try {
+      const result = await licenseService.verifyLicense(licenseKey);
+      
+      if (!result.valid) {
+        await this.bot?.sendMessage(
+          chatId,
+          `🔍 *License Status: Invalid*\n\n` +
+          `❌ Reason: ${result.reason}\n\n` +
+          `Key: \`${licenseKey}\``,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu()
+          }
+        );
+        return;
+      }
+
+      const license = result.license!;
+      const expiryText = license.expiresAt 
+        ? `📅 Expires: ${license.expiresAt.toLocaleDateString()}`
+        : '♾️ Never expires';
+
+      await this.bot?.sendMessage(
+        chatId,
+        `🔍 *License Status: Valid* ✅\n\n` +
+        `🔑 Key: \`${license.licenseKey}\`\n\n` +
+        `👤 User: @${license.telegramUsername || 'Unknown'}\n` +
+        `${expiryText}\n` +
+        `🟢 Status: ${license.status}\n` +
+        `📆 Created: ${license.createdAt.toLocaleDateString()}`,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    } catch (error) {
+      console.error('Error checking license status:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Failed to check license status.\n\nPlease try again later.',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    }
+  }
+
+  private async handleRevokeLicense(chatId: number, licenseKey: string) {
+    try {
+      const license = await licenseService.revokeLicense(licenseKey);
+      
+      if (!license) {
+        await this.bot?.sendMessage(
+          chatId,
+          `❌ *License Not Found*\n\n` +
+          `Key: \`${licenseKey}\``,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu()
+          }
+        );
+        return;
+      }
+
+      await this.bot?.sendMessage(
+        chatId,
+        `✅ *License Revoked Successfully*\n\n` +
+        `🔑 Key: \`${license.licenseKey}\`\n` +
+        `👤 User: @${license.telegramUsername || 'Unknown'}\n\n` +
+        `⚠️ This license can no longer be used.`,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    } catch (error) {
+      console.error('Error revoking license:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Failed to revoke license.\n\nPlease try again later.',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    }
   }
 
   isRunning(): boolean {
@@ -298,6 +516,7 @@ class TelegramBotService {
       this.bot.stopPolling();
       this.bot = null;
       this.isInitialized = false;
+      this.userStates.clear();
       console.log('Telegram bot stopped');
     }
   }
