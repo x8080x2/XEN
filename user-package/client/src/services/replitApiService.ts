@@ -189,6 +189,60 @@ class ElectronReplitApiService {
 
     return response.json();
   }
+
+  // AI Service Methods
+  async checkAIStatus(): Promise<{ initialized: boolean; hasApiKey: boolean; provider: string }> {
+    try {
+      const response = await fetch(this.getApiEndpoint('api/ai/status'));
+      
+      if (!response.ok) {
+        throw new Error(`Failed to check AI status: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('[ReplitAPI] AI status check failed:', error);
+      return { initialized: false, hasApiKey: false, provider: 'none' };
+    }
+  }
+
+  async initializeAI(apiKey: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(this.getApiEndpoint('api/ai/initialize'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to initialize AI: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('[ReplitAPI] AI initialization failed:', error);
+      return { success: false, message: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  async testAIGeneration(type: 'subject' | 'senderName' | 'html', context: any): Promise<{ success: boolean; result?: string; error?: string }> {
+    try {
+      const response = await fetch(this.getApiEndpoint('api/ai/test'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, context })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI test failed: ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      console.error('[ReplitAPI] AI test failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
 }
 
 // Export singleton instance

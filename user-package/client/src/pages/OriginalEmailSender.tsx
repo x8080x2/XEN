@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
+import { replitApiService } from "@/services/replitApiService";
 
 interface EmailProgress {
   recipient: string;
@@ -148,6 +149,9 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
+  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
@@ -242,6 +246,50 @@ export default function OriginalEmailSender() {
       setLogoFiles([]);
     }
   };
+
+  // AI Service Functions - Connected to remote server
+  const checkAIStatus = async () => {
+    try {
+      const data = await replitApiService.checkAIStatus();
+      setAiStatus(data);
+      setAiEnabled(data.initialized);
+      console.log('[AI] Status checked:', data);
+    } catch (error) {
+      console.error('Failed to check AI status:', error);
+    }
+  };
+
+  const initializeAI = async () => {
+    if (!aiApiKey) {
+      setStatusText('Please enter Google AI API key');
+      return;
+    }
+
+    try {
+      const data = await replitApiService.initializeAI(aiApiKey);
+      
+      if (data.success) {
+        localStorage.setItem('google_ai_key', aiApiKey);
+        setAiEnabled(true);
+        setStatusText('AI initialized successfully');
+        await checkAIStatus();
+        console.log('[AI] Initialized successfully');
+      } else {
+        setStatusText('AI initialization failed');
+        console.error('[AI] Initialization failed:', data.message);
+      }
+    } catch (error) {
+      setStatusText('Failed to initialize AI');
+      console.error('[AI] Error:', error);
+    }
+  };
+
+  // Load AI status on mount
+  useEffect(() => {
+    loadTemplates();
+    loadLogoFiles();
+    checkAIStatus();
+  }, []);
 
   const handleFileSelect = () => {
     fileInputRef.current?.click();
@@ -636,6 +684,10 @@ export default function OriginalEmailSender() {
       Object.entries(advancedSettings).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
+
+      // AI settings - connected to remote server
+      formData.append('useAI', String(aiEnabled));
+      console.log('[Desktop] AI Setting:', aiEnabled ? 'Enabled' : 'Disabled');
 
       // Add files
       if (selectedFiles) {
@@ -1822,6 +1874,63 @@ export default function OriginalEmailSender() {
                       onChange={(e) => setAdvancedSettings({...advancedSettings, proxyPass: e.target.value})}
                       className="bg-[#0f0f12] border-[#26262b] text-white"
                     />
+                  </div>
+                </div>
+
+                {/* AI Settings Section */}
+                <div className="border-t border-[#26262b] pt-6 mt-6">
+                  <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
+                  <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
+                    <p className="text-sm text-[#a1a1aa] mb-3">
+                      Use Google Gemini AI to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters. Connected to remote server.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-[red]">Google AI API Key</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            value={aiApiKey}
+                            onChange={(e) => setAiApiKey(e.target.value)}
+                            className="bg-[#0f0f12] border-[#26262b] text-white"
+                            placeholder="AIzaSy..."
+                            data-testid="input-ai-key"
+                          />
+                          <Button
+                            onClick={initializeAI}
+                            className="bg-[#ef4444] hover:bg-[#dc2626] text-white px-4"
+                            data-testid="button-initialize-ai"
+                          >
+                            Initialize AI
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-[#0f0f12] rounded border border-[#26262b]">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-2 w-2 rounded-full ${aiStatus.initialized ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="text-sm text-[#a1a1aa]">
+                            Status: {aiStatus.initialized ? 'Connected & Ready' : 'Not Connected'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            checked={aiEnabled}
+                            onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                            disabled={!aiStatus.initialized}
+                            data-testid="checkbox-enable-ai"
+                          />
+                          <Label className="text-sm text-[red]">Enable AI for emails</Label>
+                        </div>
+                      </div>
+
+                      {aiStatus.initialized && (
+                        <div className="text-xs text-[#a1a1aa] bg-[#0f0f12] p-2 rounded border border-[#26262b]">
+                          ✓ AI will generate unique subjects and sender names for each recipient
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
