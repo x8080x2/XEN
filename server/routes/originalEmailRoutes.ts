@@ -5,12 +5,33 @@ import multer from "multer";
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
-  // Use the singleton instance instead of creating a new one
 
   // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
-      console.log('Original sendMail endpoint called with:', req.body);
+      console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
+      console.log('SMTP Settings received:', {
+        smtpHost: req.body.smtpHost,
+        smtpPort: req.body.smtpPort,
+        smtpUser: req.body.smtpUser,
+        hasSmtpPass: !!req.body.smtpPass,
+        senderEmail: req.body.senderEmail
+      });
+
+      // Validate SMTP settings early
+      if (!req.body.smtpHost || !req.body.smtpUser || !req.body.smtpPass) {
+        const missingFields = [];
+        if (!req.body.smtpHost) missingFields.push('Host');
+        if (!req.body.smtpUser) missingFields.push('User');
+        if (!req.body.smtpPass) missingFields.push('Password');
+        
+        res.write(`data: ${JSON.stringify({
+          type: 'error',
+          error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
+        })}\n\n`);
+        res.end();
+        return;
+      }
 
       const files = req.files as Express.Multer.File[];
       const attachments = files?.map(file => file.path) || [];
@@ -45,11 +66,11 @@ export function setupOriginalEmailRoutes(app: Express) {
         subject: req.body.subject,
         html: req.body.html || req.body.emailContent,
         attachmentHtml: req.body.attachmentHtml,
-        // SMTP settings
-        smtpHost: req.body.smtpHost,
-        smtpPort: req.body.smtpPort,
-        smtpUser: req.body.smtpUser,
-        smtpPass: req.body.smtpPass,
+        // SMTP settings - with validation
+        smtpHost: req.body.smtpHost || '',
+        smtpPort: req.body.smtpPort || '587',
+        smtpUser: req.body.smtpUser || '',
+        smtpPass: req.body.smtpPass || '',
         // Advanced settings
         sleep: req.body.sleep,
         qrSize: parseInt(req.body.qrSize) || 200,
@@ -112,17 +133,18 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalFailed++;
           }
 
-          // Send progress update
+          // Send progress update with proper data validation
           res.write(`data: ${JSON.stringify({
             type: 'progress',
-            recipient: progress.recipient,
-            subject: progress.subject,
+            recipient: progress.recipient || 'Unknown',
+            subject: progress.subject || args.subject || 'No Subject',
             status: progress.status,
-            error: progress.error,
-            timestamp: progress.timestamp,
+            error: progress.error || null,
+            timestamp: progress.timestamp || new Date().toISOString(),
             totalSent,
             totalFailed,
-            totalRecipients: recipients.length
+            totalRecipients: recipients.length,
+            smtp: progress.smtp || null
           })}\n\n`);
           
           // Force flush to prevent buffering - use Node.js HTTP response method
@@ -197,17 +219,5 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
 
-  // Clear caches endpoint for testing new logo sources
-  app.post("/api/original/clear-caches", async (req, res) => {
-    try {
-      advancedEmailService.clearCaches();
-      res.json({ success: true, message: 'Caches cleared successfully' });
-    } catch (error) {
-      console.error('Error clearing caches:', error);
-      res.status(500).json({ success: false, error: 'Failed to clear caches' });
-    }
-  });
-
-  // Note: Cleanup handlers should be registered once in the main server file
-  // Removed duplicate process handlers to prevent conflicts
+  
 }

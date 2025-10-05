@@ -5,13 +5,15 @@ import { emailSendRequestSchema } from "../shared/schema";
 import { advancedEmailService } from "./services/advancedEmailService";
 import { FileService } from "./services/fileService";
 import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
+import { setupElectronRoutes } from "./routes/electronRoutes";
+import { setupAIRoutes } from "./routes/aiRoutes"; // Assuming setupAIRoutes will be defined here
 
 import { configService } from "./services/configService";
 import multer from "multer";
 import { join } from "path";
 import { readFileSync, existsSync } from "fs";
 
-const upload = multer({ 
+const upload = multer({
   dest: 'uploads/',
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB per file
@@ -26,6 +28,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup original email routes (exact clone functionality)
   setupOriginalEmailRoutes(app);
+
+  // Setup electron-compatible routes for user-package integration
+  setupElectronRoutes(app);
+
+  // Setup AI routes
+  setupAIRoutes(app);
 
 
   // Config loading routes - exact clone from main.js
@@ -51,20 +59,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Load leads/maillist from files/leads.txt - exact clone from main.js line 562
+  // Load leads/maillist from files/leads.txt
   app.get('/api/config/loadLeads', (req, res) => {
     try {
       const leadsPath = join(process.cwd(), 'files', 'leads.txt');
       if (existsSync(leadsPath)) {
         const leadsContent = readFileSync(leadsPath, 'utf-8');
-        const leads = Array.from(new Set(
-          leadsContent
-            .split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(Boolean)
-        ));
-        console.log(`[ConfigService] Loaded ${leads.length} leads from leads.txt`);
-        res.json({ success: true, leads: leads.join('\n') });
+        const leads = leadsContent.trim();
+        console.log(`[ConfigService] Loaded leads from leads.txt`);
+        res.json({ success: true, leads });
       } else {
         console.log('[ConfigService] No leads.txt found, returning empty');
         res.json({ success: true, leads: '' });
@@ -123,7 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sentCount: progress.sent || 0,
             failedCount: progress.failed || 0
           });
-          
+
           // Log individual email results
           if (progress.recipient && progress.status) {
             await storage.createEmailLog({
@@ -156,8 +159,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error starting email job:", error);
-      res.status(400).json({ 
-        error: error instanceof Error ? error.message : "Invalid request" 
+      res.status(400).json({
+        error: error instanceof Error ? error.message : "Invalid request"
       });
     }
   });
@@ -183,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logs: logs.map(log => ({
           recipient: log.recipient,
           status: log.status,
-          message: log.status === 'success' 
+          message: log.status === 'success'
             ? `Successfully sent to ${log.recipient}`
             : `Failed to send to ${log.recipient}: ${log.error}`,
           timestamp: log.sentAt,
@@ -215,15 +218,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Process placeholders using AdvancedEmailService logic
       const advancedEmailService = (await import('./services/advancedEmailService')).advancedEmailService;
-      
+
       // Use the same placeholder processing as the email service
       const dateStr = new Date().toLocaleDateString();
       const timeStr = new Date().toLocaleTimeString();
       const senderEmail = settings?.senderEmail || 'sender@example.com';
-      
+
       // Import the placeholder processing functions
       const { injectDynamicPlaceholders, replacePlaceholders } = await import('./services/advancedEmailService');
-      
+
       let processedHtml = htmlContent;
       processedHtml = injectDynamicPlaceholders(processedHtml, recipient, senderEmail, dateStr, timeStr);
       processedHtml = replacePlaceholders(processedHtml);
@@ -280,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const smtpConfigs = configService.getAllSmtpConfigs();
       const currentSmtp = configService.getCurrentSmtpConfig();
       const rotationEnabled = configService.isSmtpRotationEnabled();
-      
+
       res.json({
         success: true,
         smtpConfigs: smtpConfigs,
@@ -296,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { enabled } = req.body;
       configService.setSmtpRotation(enabled);
-      
+
       res.json({
         success: true,
         rotationEnabled: configService.isSmtpRotationEnabled(),
@@ -310,15 +313,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/smtp/add", (req, res) => {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;
-      
+
       if (!host || !port || !user || !pass || !fromEmail) {
         return res.status(400).json({ success: false, error: "All SMTP fields are required" });
       }
-      
+
       const smtpId = configService.addSmtpConfig({
         host, port, user, pass, fromEmail, fromName
       });
-      
+
       res.json({
         success: true,
         smtpId: smtpId,
@@ -333,7 +336,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { smtpId } = req.params;
       const deleted = configService.deleteSmtpConfig(smtpId);
-      
+
       if (deleted) {
         res.json({
           success: true,
@@ -351,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/smtp/rotate", (req, res) => {
     try {
       const nextSmtp = configService.rotateToNextSmtp();
-      
+
       res.json({
         success: true,
         currentSmtp: nextSmtp,

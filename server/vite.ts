@@ -61,8 +61,26 @@ export async function setupVite(app: Express, server: Server) {
       const page = await vite.transformIndexHtml(url, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
-      vite.ssrFixStacktrace(e as Error);
-      next(e);
+      const error = e as Error;
+      vite.ssrFixStacktrace(error);
+      console.error('Vite HTML transform error:', {
+        message: error.message,
+        stack: error.stack,
+        url
+      });
+      
+      // Send a more helpful error response
+      if (!res.headersSent) {
+        res.status(500).set({ "Content-Type": "text/html" }).end(`
+          <!DOCTYPE html>
+          <html><head><title>Server Error</title></head>
+          <body>
+            <h1>Development Server Error</h1>
+            <p>Failed to transform HTML template</p>
+            <pre>${error.message}</pre>
+          </body></html>
+        `);
+      }
     }
   });
 }

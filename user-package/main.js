@@ -29,37 +29,25 @@ function createWindow() {
   if (isDev) {
     // In development, load from Vite dev server
     mainWindow.loadURL('http://localhost:5173');
+    mainWindow.webContents.openDevTools();
   } else {
-    // In production, load from built files
-    const indexPath = path.join(__dirname, 'dist', 'index.html');
-    mainWindow.loadFile(indexPath).catch((error) => {
-      console.error('[Electron] Failed to load file:', error);
-    });
+    // In production, load from built files with hash routing
+    const indexPath = path.join(__dirname, 'dist/index.html');
+    mainWindow.loadURL(`file://${indexPath}#/`);
   }
 
-  // Catch any load failures
-  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('[Electron] Failed to load:', errorCode, errorDescription);
-  });
-
-  // Pass environment variables to renderer process
+  // Pass server URL to renderer process
   mainWindow.webContents.on('did-finish-load', () => {
     const serverUrl = process.env.REPLIT_SERVER_URL;
-    const licenseKey = process.env.LICENSE_KEY;
-    
     if (serverUrl) {
       mainWindow.webContents.executeJavaScript(`
         window.REPLIT_SERVER_URL = '${serverUrl}';
         console.log('[Electron] Server URL set to:', '${serverUrl}');
       `);
+    } else {
+      console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
     }
     
-    if (licenseKey) {
-      mainWindow.webContents.executeJavaScript(`
-        window.LICENSE_KEY = '${licenseKey}';
-        console.log('[Electron] License key loaded from environment');
-      `);
-    }
   });
 
   // Emitted when the window is closed

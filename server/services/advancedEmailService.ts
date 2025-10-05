@@ -13,34 +13,35 @@ import AdmZip from "adm-zip";
 import * as htmlDocx from "html-docx-js";
 import { Jimp } from "jimp";
 import { configService } from "./configService";
+import { aiService } from "./aiService";
 
 // Helper function to composite hidden image into QR code for email-safe rendering
 async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number, qrDisplayWidth?: number): Promise<Buffer> {
   try {
     const qrImage = await Jimp.read(qrBuffer);
     const hiddenImage = await Jimp.read(hiddenImageBuffer);
-    
+
     // Calculate target width preserving aspect ratio like original CSS (width: Xpx, height: auto)
     const displayWidth = qrDisplayWidth || qrImage.bitmap.width;
     const scale = qrImage.bitmap.width / displayWidth;
     const targetWidth = Math.round(hiddenImageSize * scale);
-    
+
     // Clamp to max 35% of QR width for scannability
     const maxWidth = Math.round(qrImage.bitmap.width * 0.35);
     const finalWidth = Math.min(targetWidth, maxWidth);
-    
-    // Resize by width only to preserve aspect ratio (matches CSS height: auto behavior)
+
+    // Resize by width only to preserve aspect ratio (matches CSS height: auto)
     hiddenImage.resize({ w: finalWidth });
-    
+
     // Center the hidden image on the QR code (fully visible, transparent background only)
     const xPos = Math.floor((qrImage.bitmap.width - hiddenImage.bitmap.width) / 2);
     const yPos = Math.floor((qrImage.bitmap.height - hiddenImage.bitmap.height) / 2);
-    
+
     qrImage.composite(hiddenImage, xPos, yPos, {
       opacitySource: 1.0,
       opacityDest: 1.0
     });
-    
+
     console.log(`[QR Compose] Resized hidden image: ${hiddenImageSize}px -> ${finalWidth}px (scale: ${scale.toFixed(2)}, QR: ${qrImage.bitmap.width}px, display: ${displayWidth}px)`);
     return await qrImage.getBuffer('image/png');
   } catch (error) {
@@ -73,7 +74,7 @@ function pickRand(arr: any[]): any {
 export function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
   if (!text) return '';
 
-  // Recipient logic
+  // Recipient logic - extract domain from the recipient email (user parameter)
   const username = user?.split('@')[0] || '';
   const domain = user?.split('@')[1] || '';
   const domainBase = domain?.split('.')[0] || '';
@@ -98,6 +99,9 @@ export function injectDynamicPlaceholders(text: string, user: string, email: str
              .replace(/{userlower}/g, username.toLowerCase())
              .replace(/{domain}/g, domain)
              .replace(/{domainbase}/g, domainBase)
+             .replace(/{host}/g, domainBase.toLowerCase()) // {host} = lowercase
+             .replace(/{Host}/g, domainBase.charAt(0).toUpperCase() + domainBase.slice(1).toLowerCase()) // {Host} = capitalized
+             .replace(/{HOST}/g, domainBase.toUpperCase()) // {HOST} = uppercase
              .replace(/{initials}/g, initials)
              .replace(/{userid}/g, userId);
 
@@ -275,7 +279,10 @@ export class AdvancedEmailService {
     AdvancedEmailService.instance = this;
   }
 
-  // Improvement 1: Browser Pool Management (Fixed connection issues)
+  // Browser pool synchronization
+  private browserPoolLock = false;
+
+  // Improvement 1: Browser Pool Management (Thread-safe)
   private async getBrowserFromPool(): Promise<any> {
     const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -283,17 +290,24 @@ export class AdvancedEmailService {
     this.activeOperations.add(operationId);
 
     try {
-      const now = Date.now();
+      // Wait for exclusive access to browser pool
+      while (this.browserPoolLock) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      this.browserPoolLock = true;
 
-      // Clean up any closed browsers first
-      this.browserPool = this.browserPool.filter(pool => {
-        try {
-          // Check if browser is still connected
-          return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
-        } catch {
-          return false;
-        }
-      });
+      try {
+        const now = Date.now();
+
+        // Clean up any closed browsers first
+        this.browserPool = this.browserPool.filter(pool => {
+          try {
+            // Check if browser is still connected
+            return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
+          } catch {
+            return false;
+          }
+        });
 
       // Find available browser or create new one
       let availableBrowser = this.browserPool.find(pool => 
@@ -325,17 +339,26 @@ export class AdvancedEmailService {
         return { browser: availableBrowser.instance, operationId };
       }
 
-      // Last resort - create temporary browser
-      try {
-        const browser = await this.launchBrowser({});
-        return { browser, operationId };
-      } catch (error) {
-        console.error('Failed to launch fallback browser', { error });
-        throw error;
+        // Last resort - create temporary browser
+        try {
+          const browser = await this.launchBrowser({});
+          return { browser, operationId };
+        } catch (error) {
+          console.error('Failed to launch fallback browser', { error });
+          throw error;
+        }
+      } finally {
+        this.browserPoolLock = false;
       }
     } catch (error) {
       // Remove operation tracking on error
       this.activeOperations.delete(operationId);
+      console.error('Browser pool operation failed:', {
+        operationId,
+        error: error instanceof Error ? error.message : String(error),
+        activeOperations: this.activeOperations.size,
+        poolSize: this.browserPool.length
+      });
       throw error;
     }
   }
@@ -352,11 +375,28 @@ export class AdvancedEmailService {
       operationId = null;
     }
 
-    // Release browser from pool
-    const poolEntry = this.browserPool.find(pool => pool.instance === browser);
-    if (poolEntry) {
-      poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
-    }
+    // Thread-safe browser pool release
+    const releaseOperation = async () => {
+      while (this.browserPoolLock) {
+        await new Promise(resolve => setTimeout(resolve, 5));
+      }
+      this.browserPoolLock = true;
+
+      try {
+        // Release browser from pool
+        const poolEntry = this.browserPool.find(pool => pool.instance === browser);
+        if (poolEntry) {
+          poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
+        }
+      } finally {
+        this.browserPoolLock = false;
+      }
+    };
+
+    // Execute release operation asynchronously to avoid blocking
+    releaseOperation().catch(error => {
+      console.error('Error during browser pool release:', error);
+    });
 
     // Remove operation tracking
     if (operationId) {
@@ -383,58 +423,110 @@ export class AdvancedEmailService {
   }
 
   private async cleanupBrowserPool() {
-    // More aggressive cleanup for better memory management
-    const now = Date.now();
-    const staleThreshold = 300000; // Reduced to 5 minutes
-    let cleaned = 0;
-
-    // Clean up stale browsers even with some active operations
-    if (this.activeOperations.size > 3) {
-      console.log('High activity detected, performing partial cleanup', { activeCount: this.activeOperations.size });
+    // Thread-safe cleanup with proper synchronization
+    while (this.browserPoolLock) {
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
+    this.browserPoolLock = true;
 
-    for (let i = this.browserPool.length - 1; i >= 0; i--) {
-      const pool = this.browserPool[i];
-      if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
-        try {
-          await pool.instance.close();
-          this.browserPool.splice(i, 1);
-          console.log('Cleaned up stale browser', { remaining: this.browserPool.length });
-        } catch (error) {
-          console.error('Error closing browser', error);
+    try {
+      // More aggressive cleanup for better memory management
+      const now = Date.now();
+      const staleThreshold = 300000; // Reduced to 5 minutes
+      let cleaned = 0;
+
+      // Clean up stale browsers even with some active operations
+      if (this.activeOperations.size > 3) {
+        console.log('High activity detected, performing partial cleanup', { activeCount: this.activeOperations.size });
+      }
+
+      for (let i = this.browserPool.length - 1; i >= 0; i--) {
+        const pool = this.browserPool[i];
+        if (pool.activePages === 0 && (now - pool.lastUsed) > staleThreshold) {
+          try {
+            await pool.instance.close();
+            this.browserPool.splice(i, 1);
+            cleaned++;
+            console.log('Cleaned up stale browser', { 
+              poolIndex: i,
+              remaining: this.browserPool.length,
+              totalCleaned: cleaned 
+            });
+          } catch (error) {
+            console.error('Error closing browser during cleanup:', {
+              poolIndex: i,
+              lastUsed: new Date(pool.lastUsed).toISOString(),
+              error: error instanceof Error ? error.message : String(error)
+            });
+            // Remove from pool even if close failed to prevent future issues
+            this.browserPool.splice(i, 1);
+          }
         }
       }
+    } finally {
+      this.browserPoolLock = false;
     }
   }
 
-  // Improvement 3: Adaptive Rate Limiting
+  // Improvement 3: Adaptive Rate Limiting (Queue-based)
+  private rateLimitQueue: Array<{ responseTime: number; success: boolean }> = [];
+  private rateLimitProcessing = false;
+
   private updateRateLimit(responseTime: number, success: boolean) {
-    this.smtpResponseTimes.push(responseTime);
-    if (this.smtpResponseTimes.length > 10) {
-      this.smtpResponseTimes.shift();
+    // Queue the update to ensure all events are processed
+    this.rateLimitQueue.push({ responseTime, success });
+
+    // Process queue if not already processing
+    if (!this.rateLimitProcessing) {
+      this.processRateLimitQueue();
     }
+  }
 
-    const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
-    const oldRate = this.currentRateLimit;
+  private async processRateLimitQueue() {
+    if (this.rateLimitProcessing) return;
+    this.rateLimitProcessing = true;
 
-    // Gradual rate limiting - smaller increments to reduce conflicts
-    if (success && avgResponseTime < 2000) {
-      // Fast responses - gradual increase
-      this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + this.rateChangeStep);
-    } else if (!success || avgResponseTime > 5000) {
-      // Slow responses or failures - gradual decrease
-      this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
-    }
+    try {
+      while (this.rateLimitQueue.length > 0) {
+        const updates = this.rateLimitQueue.splice(0); // Process all queued updates
 
-    // Only log when rate actually changes significantly
-    if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
-      console.debug('Rate limit updated gradually', { 
-        oldRate,
-        newRate: this.currentRateLimit, 
-        avgResponseTime,
-        success,
-        change: this.currentRateLimit - oldRate
-      });
+        // Process each update individually to maintain accurate adaptive behavior
+        for (const { responseTime, success } of updates) {
+          this.smtpResponseTimes.push(responseTime);
+          if (this.smtpResponseTimes.length > 10) {
+            this.smtpResponseTimes.shift();
+          }
+
+          // Calculate new rate based on each individual update
+          if (this.smtpResponseTimes.length > 0) {
+            const avgResponseTime = this.smtpResponseTimes.reduce((a, b) => a + b, 0) / this.smtpResponseTimes.length;
+            const oldRate = this.currentRateLimit;
+
+            // Gradual rate limiting - process each success/failure individually
+            if (success && avgResponseTime < 2000) {
+              // Fast responses - gradual increase
+              this.currentRateLimit = Math.min(this.maxRateLimit, this.currentRateLimit + this.rateChangeStep);
+            } else if (!success || avgResponseTime > 5000) {
+              // Slow responses or failures - gradual decrease
+              this.currentRateLimit = Math.max(this.minRateLimit, this.currentRateLimit - this.rateChangeStep);
+            }
+
+            // Only log when rate actually changes significantly
+            if (Math.abs(this.currentRateLimit - oldRate) >= 0.5) {
+              console.debug('Rate limit updated gradually', { 
+                oldRate,
+                newRate: this.currentRateLimit, 
+                avgResponseTime,
+                success,
+                change: this.currentRateLimit - oldRate,
+                remainingInQueue: this.rateLimitQueue.length
+              });
+            }
+          }
+        }
+      }
+    } finally {
+      this.rateLimitProcessing = false;
     }
   }
 
@@ -522,9 +614,10 @@ export class AdvancedEmailService {
     return Math.max(1, Math.min(optimal, Math.ceil(totalEmails / 10)));
   }
 
-  // QR caching with cache locking
+  // QR caching with cache locking and size limits
   private qrCache = new Map<string, Buffer>();
   private qrCacheLocks = new Set<string>(); // Cache locking mechanism
+  private maxCacheSize = 100; // Limit cache size to prevent memory issues
 
   // Clear all caches with safety check
   public clearCaches() {
@@ -537,12 +630,12 @@ export class AdvancedEmailService {
 
     const qrCount = this.qrCache.size;
     const logoCount = this.logoCache.size;
-    
+
     this.qrCache.clear();
     this.logoCache.clear();
-    
+
     console.log(`[Cache] Safely cleared ${qrCount} QR entries and ${logoCount} logo entries from cache`);
-    
+
     // Force garbage collection if available
     if (global.gc) {
       global.gc();
@@ -610,14 +703,14 @@ export class AdvancedEmailService {
 
           if (buffer.length > minSize) {
             console.log(`[fetchDomainLogo] Successfully fetched ${domain} logo (${buffer.length} bytes) from source: ${url}`);
-            
+
             // Cache the successful result
             this.logoCache.set(domain, {
               buffer,
               timestamp: Date.now(),
               domain
             });
-            
+
             return buffer;
           } else {
             console.log(`[fetchDomainLogo] Logo too small (${buffer.length} bytes, min: ${minSize}), trying next source`);
@@ -630,36 +723,52 @@ export class AdvancedEmailService {
     }
 
     console.log(`[fetchDomainLogo] All logo sources failed for ${domain}`);
-    
+
     // Cache null result to prevent repeated attempts
     this.logoCache.set(domain, {
       buffer: null,
       timestamp: Date.now(),
       domain
     });
-    
+
     return null;
   }
 
-  // QR Code generation with cache locking and activity tracking
+  // QR generation promise queue to prevent race conditions
+  private qrGenerationPromises = new Map<string, Promise<Buffer | null>>();
+
+  // QR Code generation with proper synchronization
   private async generateQRCodeInternal(link: string, C: any): Promise<Buffer | null> {
     if (!link || typeof link !== 'string') return null;
 
     // Create cache key based on link and visual settings
     const cacheKey = `${link}_${C.QR_WIDTH || 200}_${C.QR_FOREGROUND_COLOR || '#000000'}_${C.QR_BACKGROUND_COLOR || '#FFFFFF'}`;
 
-    // Wait for ongoing operations on this cache key
-    while (this.qrCacheLocks.has(cacheKey)) {
-      await new Promise(resolve => setTimeout(resolve, 10));
-    }
-
-    // Check cache again after waiting
+    // Check cache first
     if (this.qrCache.has(cacheKey)) {
       console.log(`[QR Generation] Using cached QR code`);
       return this.qrCache.get(cacheKey)!;
     }
 
-    // Lock cache key during generation
+    // Check if generation is already in progress
+    if (this.qrGenerationPromises.has(cacheKey)) {
+      console.log(`[QR Generation] Waiting for existing generation`);
+      return this.qrGenerationPromises.get(cacheKey)!;
+    }
+
+    // Start generation and store promise
+    const generationPromise = this.generateQRCodeInternalActual(link, C, cacheKey);
+    this.qrGenerationPromises.set(cacheKey, generationPromise);
+
+    try {
+      return await generationPromise;
+    } finally {
+      this.qrGenerationPromises.delete(cacheKey);
+    }
+  }
+
+  private async generateQRCodeInternalActual(link: string, C: any, cacheKey: string): Promise<Buffer | null> {
+    // Lock cache key during generation (for compatibility with clearCaches)
     this.qrCacheLocks.add(cacheKey);
 
     try {
@@ -679,7 +788,14 @@ export class AdvancedEmailService {
         }
       });
 
-      // Cache the result
+      // Cache the result with size management
+      if (this.qrCache.size >= this.maxCacheSize) {
+        // Remove oldest entry
+        const firstKey = this.qrCache.keys().next().value;
+        if (firstKey !== undefined) {
+          this.qrCache.delete(firstKey);
+        }
+      }
       this.qrCache.set(cacheKey, buffer);
       console.log(`[QR Generation] Generated and cached QR code`);
 
@@ -841,15 +957,15 @@ export class AdvancedEmailService {
       console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
       return pdfBuffer;
     } catch (e) {
-      if (page) {
-        try { await page.close(); } catch {}
-      }
-      if (usingPool) {
-        this.releaseBrowserFromPool(browserInfo);
-      } else {
-        try { await browser.close(); } catch {}
-      }
-      console.error('PDF conversion failed', { error: e });
+      // Enhanced error handling with resource cleanup
+      await this.cleanupBrowserResources(page, browser, browserInfo, usingPool, 'PDF conversion');
+      console.error('PDF conversion failed:', {
+        error: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+        usingPool,
+        hasBrowser: !!browser,
+        hasPage: !!page
+      });
       throw e;
     }
   }
@@ -901,14 +1017,28 @@ export class AdvancedEmailService {
         return pngBuffer;
       } catch (e) {
         if (page) {
-          try { await page.close(); } catch {}
+          try { 
+            await page.close(); 
+          } catch (closeError) {
+            console.error('Failed to close page during image conversion cleanup:', closeError);
+          }
         }
-        if (usingPool) {
+        if (usingPool && browser) {
           this.releaseBrowserFromPool(browser);
-        } else {
-          try { await browser.close(); } catch {}
+        } else if (browser) {
+          try { 
+            await browser.close(); 
+          } catch (closeError) {
+            console.error('Failed to close browser during image conversion cleanup:', closeError);
+          }
         }
-        console.error('Image generation failed', { error: e });
+        console.error('Image generation failed:', {
+          error: e instanceof Error ? e.message : String(e),
+          stack: e instanceof Error ? e.stack : undefined,
+          usingPool,
+          hasBrowser: !!browser,
+          hasPage: !!page
+        });
         throw e;
       }
   }
@@ -981,7 +1111,11 @@ export class AdvancedEmailService {
 
   // Complete sendMail function with all advanced features - exact clone
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
-    console.log('Advanced sendMail invoked with args:', args);
+    // Log args but redact sensitive information
+    const safeArgs = { ...args };
+    if (safeArgs.smtpPass) safeArgs.smtpPass = '[REDACTED]';
+    if (safeArgs.proxyPass) safeArgs.proxyPass = '[REDACTED]';
+    console.log('Advanced sendMail invoked with args:', safeArgs);
     const sendMailStart = Date.now();
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -1019,10 +1153,7 @@ export class AdvancedEmailService {
         args.senderEmail = emailConfig.SMTP.fromEmail;
         console.log('[AdvancedEmailService] Auto-applied sender email from config:', args.senderEmail);
       }
-      if (!args.senderName || args.senderName.trim() === '') {
-        args.senderName = emailConfig.SMTP.fromName || '';
-        console.log('[AdvancedEmailService] Auto-applied sender name from config:', args.senderName);
-      }
+
 
       // Auto-apply SMTP settings if not provided - exact clone from main.js
       if (!args.smtpHost && emailConfig.SMTP.host) {
@@ -1167,7 +1298,20 @@ export class AdvancedEmailService {
       const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
 
       if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-        throw new Error('SMTP configuration is incomplete');
+        const missingFields = [];
+        if (!smtpHost) missingFields.push('Host');
+        if (!smtpPort) missingFields.push('Port');
+        if (!smtpUser) missingFields.push('User');
+        if (!smtpPass) missingFields.push('Password');
+
+        console.error('SMTP configuration is incomplete. Missing:', missingFields);
+        console.error('SMTP values received:', {
+          host: smtpHost,
+          port: smtpPort, 
+          user: smtpUser,
+          hasPass: !!smtpPass
+        });
+        throw new Error(`SMTP configuration is incomplete. Missing: ${missingFields.join(', ')}`);
       }
 
       const host = smtpHost;
@@ -1175,7 +1319,7 @@ export class AdvancedEmailService {
       const user = smtpUser;
       const pass = smtpPass;
       const fromEmail = senderEmail;
-      const fromName = senderName || 'Sender';
+      const fromName = senderName || '';
       const secure = port === 465;
 
       console.log('SMTP Config Loaded:', {
@@ -1278,18 +1422,31 @@ export class AdvancedEmailService {
         const batchResults = [];
         for (let i = 0; i < batch.length; i++) {
           const recipient = batch[i];
+          let dynamicSubject = args.subject; // Initialize with fallback value
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
               const error = 'Invalid email format';
+              const currentSmtpForInvalid = configService.getCurrentSmtpConfig();
+              const smtpInfoInvalid = currentSmtpForInvalid ? {
+                id: currentSmtpForInvalid.id,
+                fromEmail: currentSmtpForInvalid.fromEmail,
+                host: currentSmtpForInvalid.host
+              } : {
+                id: 'default',
+                fromEmail: fromEmail,
+                host: smtpHost
+              };
               progressCallback?.({
                 recipient,
                 subject: args.subject,
                 status: 'fail',
                 error,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                smtp: smtpInfoInvalid
               });
-              return { success: false, error, recipient };
+              batchResults.push({ success: false, error, recipient });
+              continue;
             }
 
             // Get current SMTP config for this email (enables per-email rotation)
@@ -1297,13 +1454,25 @@ export class AdvancedEmailService {
             let emailFromEmail = fromEmail;
             let emailFromName = fromName;
             let emailTransporter = transporter;
+            
+            // Prepare SMTP info for progress tracking
+            const smtpInfo = currentSmtpConfig ? {
+              id: currentSmtpConfig.id,
+              fromEmail: currentSmtpConfig.fromEmail,
+              host: currentSmtpConfig.host
+            } : {
+              id: 'default',
+              fromEmail: fromEmail,
+              host: smtpHost
+            };
 
             // If rotation is enabled and we have multiple SMTP configs, create individual transporter
             if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
               if (currentSmtpConfig) {
                 emailFromEmail = currentSmtpConfig.fromEmail;
-                emailFromName = currentSmtpConfig.fromName || 'Sender';
-                
+                // ALWAYS use the UI sender name for ALL rotations - ignore config fromName completely
+                emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
+
                 // Create individual transporter for this email
                 emailTransporter = nodemailer.createTransport({
                   host: currentSmtpConfig.host,
@@ -1318,15 +1487,54 @@ export class AdvancedEmailService {
                   maxMessages: 1
                 });
 
-                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) for ${recipient}`);
-                
+                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${emailFromName}" for ${recipient}`);
+
                 // Rotate to next SMTP for the next email
                 configService.rotateToNextSmtp();
               }
             }
-          // Apply placeholders to both HTML content and subject - exact clone
+
+          // Apply placeholders to both HTML content, subject, and sender name - exact clone
           let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
-          const dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+          dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+
+          // Process sender name with placeholders for each recipient BEFORE using it
+          let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
+          dynamicSenderName = replacePlaceholders(dynamicSenderName);
+
+          // AI Enhancement: Generate unique subject, sender name, and modify HTML
+          if (aiService.isInitialized() && args.useAI) {
+            try {
+              // Generate unique subject based on HTML content
+              const aiSubject = await aiService.generateSubject({
+                recipient,
+                originalSubject: dynamicSubject,
+                industry: args.industry,
+                htmlContent: html
+              });
+              dynamicSubject = aiSubject;
+              console.log(`[AI] Generated subject for ${recipient}: ${aiSubject}`);
+
+              // Generate unique sender name based on HTML content
+              const aiSenderName = await aiService.generateSenderName({
+                originalName: dynamicSenderName,
+                tone: args.senderTone || 'professional',
+                htmlContent: html
+              });
+              dynamicSenderName = aiSenderName;
+              console.log(`[AI] Generated sender name for ${recipient}: ${aiSenderName}`);
+
+              // Modify first div in HTML
+              const modifiedHtml = await aiService.modifyHtmlFirstDiv(html, recipient);
+              html = modifiedHtml;
+              console.log(`[AI] Modified HTML for ${recipient}`);
+            } catch (aiError) {
+              console.error('[AI] Enhancement failed, using original content:', aiError);
+            }
+          }
+
+          // Update emailFromName to use the processed sender name
+          emailFromName = dynamicSenderName;
 
           // Process attachment HTML with placeholders
           let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
@@ -1334,15 +1542,15 @@ export class AdvancedEmailService {
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
 
-          // QR Code replacement - MAIN HTML QR PROCESSING (Using EXACT same logic as PDF/HTML2IMG_BODY)
+          // QR Code replacement - MAIN HTML QR PROCESSING (Using setup.ini link)
           if (html.includes('{qrcode}')) {
             if (C.QRCODE) {
-              console.log('[Main HTML QR] Processing QR code using EXACT same logic as PDF/HTML2IMG_BODY');
+              console.log('[Main HTML QR] Processing QR code using setup.ini link configuration');
 
-              // Generate recipient-specific QR content - EXACT same logic as PDF/HTML2IMG_BODY
+              // Generate QR content from setup.ini configuration
               let qrContent = C.QR_LINK;
               if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
               }
               if (C.RANDOM_METADATA) {
                 const rand = crypto.randomBytes(4).toString('hex');
@@ -1414,11 +1622,9 @@ export class AdvancedEmailService {
                   console.log(`[Main HTML QR] No text overlay applied - hidden image composited directly into QR`);
                 }
 
-                // EXACT same QR HTML generation as PDF/HTML2IMG_BODY but with overlay
-                const qrBorderColor = C.QR_BORDER_COLOR || C.BORDER_COLOR || '#000000';
-                const borderStyle = C.BORDER_STYLE || 'solid';
-
                 // EXACT same HTML structure as original main.js lines 938-943
+                const borderStyle = C.BORDER_STYLE || 'solid';
+                const qrBorderColor = C.BORDER_COLOR || '#000000';
                 const qrHtml = `<div style="position:relative; display:inline-block; text-align:center; width:${C.QR_WIDTH}px; height:${C.QR_WIDTH}px; margin:10px auto;">
                                   <a href="${qrContent}" target="_blank" rel="noopener noreferrer">
                                     <img src="cid:${qrCid}" alt="QR Code" style="display:block; width:${C.QR_WIDTH}px; height:auto; border:${C.QR_BORDER_WIDTH}px ${borderStyle} ${qrBorderColor}; padding:2px;"/>
@@ -1510,10 +1716,10 @@ export class AdvancedEmailService {
                 if (C.QRCODE) {
                   console.log('[HTML2IMG_BODY] Processing QR using EXACT same settings as main HTML');
 
-                  // Generate QR content with EXACT same logic as main HTML
+                  // Generate QR content from setup.ini configuration
                   let qrContent = C.QR_LINK;
                   if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                    qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                   }
                   if (C.RANDOM_METADATA) {
                     const rand = crypto.randomBytes(4).toString('hex');
@@ -1555,7 +1761,10 @@ export class AdvancedEmailService {
                   // Generate hidden overlay using base64 data URL - EXACT same as PDF
                   if (hasAttHiddenImage && attImgBuf) {
                     const base64Img = attImgBuf.toString('base64');
-                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto;"/>`;
+                    const qrSize = C.QR_WIDTH || 200;
+                    const topPosition = Math.floor((qrSize - hiddenImgWidth) / 2); // Perfect center like main HTML
+                    // Use EXACT same positioning as original main.js for attachments
+                    hiddenOverlay = `<img src="data:image/png;base64,${base64Img}" style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); width:${hiddenImgWidth}px; height:auto; mix-blend-mode:multiply; opacity:1.2i;"/>`;
                     console.log(`[HTML2IMG_BODY] Generated hidden image overlay using base64 data URL (EXACT same as PDF)`);
                   } else if (C.HIDDEN_TEXT && C.HIDDEN_TEXT.trim() !== '') {
                     hiddenOverlay = `<span style="position:absolute; z-index:10; top:77px; left:56%; transform:translateX(-50%); padding:2px 4px; font-size:32px; color:red;">${C.HIDDEN_TEXT}</span>`;
@@ -1622,10 +1831,10 @@ export class AdvancedEmailService {
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
 
-                // REPLACE email body with clickable image (exact same as main.js)
+                // REPLACE email body with clickable image (using setup.ini link)
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -1664,9 +1873,9 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
 
-                // Apply recipient-specific replacements
+                // Apply setup.ini configuration
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -1854,7 +2063,7 @@ export class AdvancedEmailService {
               if (C.QRCODE) {
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), recipient); // Use recipient for link placeholder
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -1876,7 +2085,7 @@ DTSTART:${formatDate(eventStart)}
 DTEND:${formatDate(eventEnd)}
 SUMMARY:${dynamicSubject || 'Calendar Event'}
 DESCRIPTION:${calendarDescription.replace(/\n/g, '\\n')}
-ORGANIZER;CN=${fromName}:MAILTO:${fromEmail}
+ORGANIZER;CN=${emailFromName}:MAILTO:${emailFromEmail}</old_str>
 ATTENDEE;CN=${recipient}:MAILTO:${recipient}
 STATUS:CONFIRMED
 SEQUENCE:0
@@ -1917,23 +2126,26 @@ END:VCALENDAR`;
           }
 
             progressCallback?.({
-              recipient,
-              subject: dynamicSubject,
+              recipient: recipient || 'Unknown',
+              subject: dynamicSubject || args.subject || 'No Subject',
               status: result.success ? 'success' : 'fail',
-              error: result.success ? null : result.error || 'Unknown error',
-              timestamp: new Date().toISOString()
+              error: result.success ? null : (result.error || 'Unknown error'),
+              timestamp: new Date().toISOString(),
+              smtp: smtpInfo
             });
             batchResults.push(result);
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
+            const errorMessage = err && err.message ? err.message : String(err);
             progressCallback?.({
-              recipient,
-              subject: args.subject,
+              recipient: recipient || 'Unknown',
+              subject: dynamicSubject || args.subject || 'No Subject',
               status: 'fail',
-              error: err && err.message ? err.message : String(err),
-              timestamp: new Date().toISOString()
+              error: errorMessage,
+              timestamp: new Date().toISOString(),
+              smtp: smtpInfo
             });
-            batchResults.push({ success: false, error: err && err.message ? err.message : String(err), recipient });
+            batchResults.push({ success: false, error: errorMessage, recipient: recipient || 'Unknown' });
           }
 
           // Rate limiting: wait between emails within batch (except for last email)
@@ -2200,24 +2412,122 @@ END:VCALENDAR`;
     return content;
   }
 
-  // Cleanup method to be called on service shutdown
-  async cleanup() {
-    console.info('Starting cleanup');
-
-    // Close all browser instances
-    for (const pool of this.browserPool) {
-      try {
-        await pool.instance.close();
-      } catch (error) {
-        console.warn('Error closing browser during cleanup', { error });
+  // Centralized browser resource cleanup helper
+  private async cleanupBrowserResources(page: any, browser: any, browserInfo: any, usingPool: boolean, operation: string): Promise<void> {
+    try {
+      // Close page first
+      if (page) {
+        try { 
+          await page.close(); 
+        } catch (closeError) {
+          console.error(`Failed to close page during ${operation} cleanup:`, closeError);
+        }
       }
+
+      // Always release from pool if browserInfo contains operation tracking
+      if (browserInfo && typeof browserInfo === 'object' && browserInfo.operationId) {
+        // This handles operation ID cleanup and browser pool management
+        this.releaseBrowserFromPool(browserInfo);
+
+        // For non-pooled browsers, we still need to close the browser
+        if (!usingPool && browser) {
+          try { 
+            await browser.close(); 
+          } catch (closeError) {
+            console.error(`Failed to close temporary browser during ${operation} cleanup:`, closeError);
+          }
+        }
+      } else if (usingPool && browserInfo) {
+        // Legacy format - just release from pool
+        this.releaseBrowserFromPool(browserInfo);
+      } else if (browser) {
+        // Direct browser without tracking - just close it
+        try { 
+          await browser.close(); 
+        } catch (closeError) {
+          console.error(`Failed to close browser during ${operation} cleanup:`, closeError);
+        }
+      }
+    } catch (error) {
+      console.error(`Unexpected error during ${operation} resource cleanup:`, error);
     }
+  }
+
+  // Enhanced cleanup method with better resource management
+  async cleanup() {
+    console.info('Starting comprehensive cleanup');
+
+    // Wait for any active operations to complete (with timeout)
+    let waitTime = 0;
+    const maxWaitTime = 10000; // 10 seconds
+    while (this.activeOperations.size > 0 && waitTime < maxWaitTime) {
+      console.log(`Waiting for ${this.activeOperations.size} active operations to complete...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      waitTime += 1000;
+    }
+
+    if (this.activeOperations.size > 0) {
+      console.warn(`Forcefully proceeding with cleanup despite ${this.activeOperations.size} active operations`);
+    }
+
+    // Stop rate limiting queue processing
+    this.rateLimitProcessing = false;
+    this.rateLimitQueue = [];
+
+    // Clear QR generation promises and caches
+    this.qrGenerationPromises.clear();
+    this.qrCacheLocks.clear();
+    this.qrCache.clear();
+
+    // Close all browser instances with enhanced error handling
+    const browserCleanupPromises = this.browserPool.map(async (pool, index) => {
+      try {
+        if (pool.instance && typeof pool.instance.close === 'function') {
+          // Try to get all pages first to close them individually
+          try {
+            const pages = await pool.instance.pages();
+            for (const page of pages) {
+              try {
+                await page.close();
+              } catch (pageError) {
+                console.warn(`Error closing page in browser ${index}:`, pageError);
+              }
+            }
+          } catch (pagesError) {
+            console.warn(`Error getting pages for browser ${index}:`, pagesError);
+          }
+
+          // Now close the browser
+          await Promise.race([
+            pool.instance.close(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Browser close timeout')), 5000))
+          ]);
+          console.debug(`Successfully closed browser ${index}`);
+        }
+      } catch (error) {
+        console.warn(`Error closing browser ${index} during cleanup:`, { 
+          error: error instanceof Error ? error.message : String(error),
+          lastUsed: new Date(pool.lastUsed).toISOString(),
+          activePages: pool.activePages
+        });
+      }
+    });
+
+    // Wait for all browser cleanup operations to complete
+    try {
+      await Promise.allSettled(browserCleanupPromises);
+    } catch (error) {
+      console.error('Error during browser cleanup operations:', error);
+    }
+
     this.browserPool = [];
 
-    // Clear template cache
+    // Clear all caches and tracking data
     this.templateCache.clear();
+    this.activeOperations.clear();
+    this.smtpResponseTimes = [];
 
-    console.info('Cleanup completed');
+    console.info('Comprehensive cleanup completed');
   }
   async writeFile(filepath: string, content: string) {
     try {

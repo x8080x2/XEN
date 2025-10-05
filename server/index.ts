@@ -96,12 +96,39 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Auto-initialize AI service with Google Gemini
+  if (process.env.GOOGLE_AI_KEY) {
+    const { aiService } = await import('./services/aiService');
+    const initialized = aiService.initialize(process.env.GOOGLE_AI_KEY);
+    if (initialized) {
+      log('✅ AI Service auto-initialized with Google Gemini (15 RPM, 1M/day limit)');
+    } else {
+      log('⚠️  AI Service initialization failed');
+    }
+  }
+
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Log the error with context
+    console.error(`Error handling request ${req.method} ${req.path}:`, {
+      error: err.message || err,
+      stack: err.stack,
+      status,
+      path: req.path,
+      method: req.method
+    });
+
+    // Only send response if not already sent
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
+    
+    // Don't re-throw in production to prevent crashes
+    if (process.env.NODE_ENV !== 'production') {
+      throw err;
+    }
   });
 
   // importantly only setup vite in development and after
@@ -122,8 +149,8 @@ app.use((req, res, next) => {
   const port = parseInt(process.env.PORT || '5000', 10);
 
 
-  // Use different binding for local development vs production  
-  const host = isDevelopment ? "localhost" : "0.0.0.0";
+  // Always bind to 0.0.0.0 for Replit compatibility
+  const host = "0.0.0.0";
   
   server.listen(port, host, () => {
     log(`serving on ${host}:${port}`);
@@ -133,14 +160,20 @@ app.use((req, res, next) => {
       log(`Development mode - using Vite middleware`);
     }
 
-    // Auto-open browser on Windows in development mode
-    if (process.platform === 'win32' && isDevelopment) {
+    // Auto-open browser on Windows
+    if (process.platform === 'win32') {
       const url = `http://localhost:${port}`;
       log(`Opening browser at ${url}`);
       try {
-        execSync(`start ${url}`, { stdio: 'ignore' });
+        execSync(`start "" "${url}"`, { stdio: 'ignore' });
       } catch (error) {
         log(`Failed to open browser automatically. Please visit: ${url}`);
+        // Try alternative method
+        try {
+          execSync(`rundll32 url.dll,FileProtocolHandler "${url}"`, { stdio: 'ignore' });
+        } catch (altError) {
+          log(`All auto-open methods failed. Please manually visit: ${url}`);
+        }
       }
     }
   });

@@ -1,0 +1,103 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+class AIService {
+  private geminiClient: any = null;
+  private apiKey: string = '';
+
+  initialize(apiKey: string) {
+    try {
+      if (!apiKey || !apiKey.startsWith('AIzaSy')) {
+        console.warn('[AIService] Invalid Google AI API key provided');
+        return false;
+      }
+
+      this.apiKey = apiKey;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      this.geminiClient = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+      console.log('[AIService] Initialized with Google Gemini, key:', apiKey.substring(0, 10) + '...');
+      
+      return true;
+    } catch (error) {
+      console.error('[AIService] Initialization failed:', error);
+      return false;
+    }
+  }
+
+  async generateSubject(context: { recipient: string; originalSubject?: string; industry?: string; htmlContent?: string }): Promise<string> {
+    if (!this.geminiClient) {
+      throw new Error('AI Service not initialized. Please provide a Google AI API key.');
+    }
+
+    try {
+      const prompt = `Analyze this email HTML content and generate a matching subject line for ${context.recipient}:
+
+EMAIL CONTENT:
+${context.htmlContent || 'No content provided'}
+
+${context.originalSubject ? `Original subject: "${context.originalSubject}"` : ''}
+${context.industry ? `Industry: ${context.industry}` : ''}
+
+IMPORTANT RULES:
+- Subject MUST match the content and tone of the HTML
+- Do NOT use placeholder text like [Your Name], [City], [Region], etc.
+- Use only concrete, specific values that align with the email content
+- Keep any actual values from the original subject
+- Make it personalized, professional, and attention-grabbing
+- Return ONLY the subject line, nothing else`;
+
+      const result = await this.geminiClient.generateContent(prompt);
+      return result.response.text().trim() || context.originalSubject || 'Important Message';
+    } catch (error) {
+      console.error('[AIService] Subject generation failed:', error);
+      return context.originalSubject || 'Important Message';
+    }
+  }
+
+  async generateSenderName(context: { originalName?: string; tone?: string; htmlContent?: string }): Promise<string> {
+    if (!this.geminiClient) {
+      throw new Error('AI Service not initialized. Please provide a Google AI API key.');
+    }
+
+    try {
+      const prompt = `Analyze this email HTML content and generate a sender name that matches the content:
+
+EMAIL CONTENT:
+${context.htmlContent || 'No content provided'}
+
+${context.originalName ? `Original name: "${context.originalName}"` : ''}
+${context.tone ? `Tone: ${context.tone}` : 'Professional and trustworthy'}
+
+IMPORTANT RULES:
+- Sender name MUST match the email content and industry/context
+- Return ONLY an actual full name (First Last)
+- Do NOT use placeholder text like [Name], [Your Name], etc.
+- Use a real-sounding name that fits the email's purpose
+- No brackets, no placeholders, just a clean name`;
+
+      const result = await this.geminiClient.generateContent(prompt);
+      return result.response.text().trim() || context.originalName || 'Alex Morgan';
+    } catch (error) {
+      console.error('[AIService] Sender name generation failed:', error);
+      return context.originalName || 'Alex Morgan';
+    }
+  }
+
+  async modifyHtmlFirstDiv(html: string, recipient: string): Promise<string> {
+    // Return original HTML without modifications to preserve div structure
+    return html;
+  }
+
+  isInitialized(): boolean {
+    return this.geminiClient !== null;
+  }
+
+  getStatus(): { initialized: boolean; hasApiKey: boolean; provider: string } {
+    return {
+      initialized: this.geminiClient !== null,
+      hasApiKey: this.apiKey.length > 0,
+      provider: 'gemini'
+    };
+  }
+}
+
+export const aiService = new AIService();

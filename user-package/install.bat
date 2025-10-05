@@ -1,3 +1,0 @@
-@echo off
-echo Installing dotenv, electron, react, and all dependencies from package.json...
-npm install && pause

@@ -26,8 +26,6 @@ interface EmailProgress {
     fromEmail: string;
     host: string;
   };
-  sent?: number; // For 'complete' type messages
-  success?: boolean; // For 'complete' type messages
 }
 
 interface SMTPSettings {
