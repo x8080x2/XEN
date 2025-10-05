@@ -1,123 +1,92 @@
 import type { Express } from "express";
 import { advancedEmailService } from "../services/advancedEmailService";
-import { sendMailRequestSchema, validateRequest, formatValidationError } from "../utils/validation";
-import { verifyLicenseMiddleware } from "../middleware/licenseMiddleware";
 import multer from "multer";
 
 const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
+  // Use the singleton instance instead of creating a new one
 
-  // Main sendMail endpoint - with comprehensive validation
+  // Main sendMail endpoint - exact clone functionality
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
-      console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
-      
+      console.log('Original sendMail endpoint called with:', req.body);
+
       const files = req.files as Express.Multer.File[];
       const attachments = files?.map(file => file.path) || [];
 
-      // Parse recipients if it's a string (for validation)
-      let recipientsForValidation = req.body.recipients;
-      if (typeof recipientsForValidation === 'string') {
+      // Parse recipients if it's a string
+      let recipients = req.body.recipients;
+      if (typeof recipients === 'string') {
         try {
-          recipientsForValidation = JSON.parse(recipientsForValidation);
+          recipients = JSON.parse(recipients);
         } catch {
-          recipientsForValidation = recipientsForValidation.split('\n').filter((r: string) => r.trim());
+          recipients = recipients.split('\n').filter((r: string) => r.trim());
         }
       }
 
-      // Parse settings if it's a string (for validation)
-      let settingsForValidation = req.body.settings;
-      if (typeof settingsForValidation === 'string') {
+      // Parse settings if it's a string
+      let settings = req.body.settings;
+      if (typeof settings === 'string') {
         try {
-          settingsForValidation = JSON.parse(settingsForValidation);
+          settings = JSON.parse(settings);
         } catch {
-          settingsForValidation = {};
+          settings = {};
         }
       }
 
-      // Build validation payload from ONLY the fields we trust - no blanket spreading
-      const requestData = {
-        // Required fields
+      const args = {
+        ...req.body,
+        ...settings,
+        recipients,
+        attachments,
+        senderEmail: req.body.senderEmail,
+        senderName: req.body.senderName,
+        subject: req.body.subject,
+        html: req.body.html || req.body.emailContent,
+        attachmentHtml: req.body.attachmentHtml,
+        // SMTP settings
         smtpHost: req.body.smtpHost,
         smtpPort: req.body.smtpPort,
         smtpUser: req.body.smtpUser,
         smtpPass: req.body.smtpPass,
-        senderEmail: req.body.senderEmail,
-        senderName: req.body.senderName,
-        subject: req.body.subject,
-        recipients: recipientsForValidation,
-        html: req.body.html || req.body.emailContent,
-        
-        // Optional fields from body
-        attachmentHtml: req.body.attachmentHtml,
+        // Advanced settings
         sleep: req.body.sleep,
-        qrSize: req.body.qrSize,
-        qrBorder: req.body.qrBorder,
-        qrForegroundColor: req.body.qrForegroundColor,
-        qrBackgroundColor: req.body.qrBackgroundColor,
-        hiddenImageFile: req.body.hiddenImageFile,
-        hiddenImageSize: req.body.hiddenImageSize,
-        hiddenText: req.body.hiddenText,
-        qrcode: req.body.qrcode,
+        qrSize: parseInt(req.body.qrSize) || 200,
+        qrBorder: parseInt(req.body.qrBorder) || 2,
+        qrForegroundColor: req.body.qrForegroundColor || '#000000',
+        qrBackgroundColor: req.body.qrBackgroundColor || '#FFFFFF',
+        // Hidden image overlay settings
+        hiddenImageFile: req.body.hiddenImageFile || '',
+        hiddenImageSize: parseInt(req.body.hiddenImageSize) || 50,
+        hiddenText: req.body.hiddenText || '',
+        // QR Code boolean
+        qrcode: req.body.qrcode === 'true' || req.body.qrcode === true,
         linkPlaceholder: req.body.linkPlaceholder,
-        htmlImgBody: req.body.htmlImgBody,
-        randomMetadata: req.body.randomMetadata,
-        minifyHtml: req.body.minifyHtml,
-        emailPerSecond: req.body.emailPerSecond,
-        zipUse: req.body.zipUse,
+        htmlImgBody: req.body.htmlImgBody === 'true' || req.body.htmlImgBody === true,
+        randomMetadata: req.body.randomMetadata === 'true' || req.body.randomMetadata === true,
+        minifyHtml: req.body.minifyHtml === 'true' || req.body.minifyHtml === true,
+
+        emailPerSecond: parseInt(req.body.emailPerSecond) || 5,
+        zipUse: req.body.zipUse === 'true' || req.body.zipUse === true,
         zipPassword: req.body.zipPassword,
         fileName: req.body.fileName,
         htmlConvert: req.body.htmlConvert,
-        retry: req.body.retry,
-        priority: req.body.priority,
-        domainLogoSize: req.body.domainLogoSize,
-        borderStyle: req.body.borderStyle,
-        borderColor: req.body.borderColor,
-        proxyUse: req.body.proxyUse,
-        proxyType: req.body.proxyType,
-        proxyHost: req.body.proxyHost,
-        proxyPort: req.body.proxyPort,
-        proxyUser: req.body.proxyUser,
-        proxyPass: req.body.proxyPass,
-        useAI: req.body.useAI,
-        industry: req.body.industry,
-        
-        // Optional fields from parsed settings
-        ...settingsForValidation
-      };
 
-      // Validate request with comprehensive schema
-      const validation = validateRequest(sendMailRequestSchema, requestData);
-      
-      if (!validation.success) {
-        console.error('Validation failed:', validation.errors);
-        // Setup SSE for error response - MUST use 200 to keep stream open for client
-        res.writeHead(200, {
-          'Content-Type': 'text/event-stream',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0',
-          'Connection': 'keep-alive',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Cache-Control',
-          'X-Accel-Buffering': 'no'
-        });
-        
-        res.write(`data: ${JSON.stringify({
-          type: 'error',
-          error: 'Validation failed',
-          details: validation.errors
-        })}\n\n`);
-        res.end();
-        return;
-      }
+        // Additional missing parameters with proper conversion
+        retry: parseInt(req.body.retry) || 0,
+        priority: req.body.priority || '2',
+        domainLogoSize: req.body.domainLogoSize || '70%',
+        borderStyle: req.body.borderStyle || 'solid',
+        borderColor: req.body.borderColor || '#000000',
 
-      // Use validated data and add attachments
-      // The schema uses .passthrough() so all fields are already in validation.data
-      const args = {
-        ...validation.data,
-        attachments
+        // Proxy settings
+        proxyUse: req.body.proxyUse === 'true' || req.body.proxyUse === true,
+        proxyType: req.body.proxyType || 'socks5',
+        proxyHost: req.body.proxyHost || '',
+        proxyPort: req.body.proxyPort || '',
+        proxyUser: req.body.proxyUser || '',
+        proxyPass: req.body.proxyPass || '',
       };
 
       // Send progress updates via Server-Sent Events
@@ -143,18 +112,17 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalFailed++;
           }
 
-          // Send progress update with validated data
+          // Send progress update
           res.write(`data: ${JSON.stringify({
             type: 'progress',
-            recipient: progress.recipient || 'Unknown',
-            subject: progress.subject || args.subject || 'No Subject',
+            recipient: progress.recipient,
+            subject: progress.subject,
             status: progress.status,
-            error: progress.error || null,
-            timestamp: progress.timestamp || new Date().toISOString(),
+            error: progress.error,
+            timestamp: progress.timestamp,
             totalSent,
             totalFailed,
-            totalRecipients: args.recipients.length, // Use validated recipients
-            smtp: progress.smtp || null
+            totalRecipients: recipients.length
           })}\n\n`);
           
           // Force flush to prevent buffering - use Node.js HTTP response method
@@ -229,5 +197,17 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
 
-  
+  // Clear caches endpoint for testing new logo sources
+  app.post("/api/original/clear-caches", async (req, res) => {
+    try {
+      advancedEmailService.clearCaches();
+      res.json({ success: true, message: 'Caches cleared successfully' });
+    } catch (error) {
+      console.error('Error clearing caches:', error);
+      res.status(500).json({ success: false, error: 'Failed to clear caches' });
+    }
+  });
+
+  // Note: Cleanup handlers should be registered once in the main server file
+  // Removed duplicate process handlers to prevent conflicts
 }
