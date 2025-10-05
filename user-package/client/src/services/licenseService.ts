@@ -18,15 +18,17 @@ class LicenseService {
   }
 
   private loadFromStorage(): void {
-    this.licenseKey = localStorage.getItem('license_key');
-    this.serverUrl = localStorage.getItem('replit_server_url');
+    // Priority: Environment variables (from .env) > localStorage (UI fallback)
+    this.licenseKey = (window as any).LICENSE_KEY || localStorage.getItem('license_key');
+    this.serverUrl = (window as any).REPLIT_SERVER_URL || localStorage.getItem('replit_server_url');
   }
 
   getLicenseKey(): string | null {
     if (!this.licenseKey) {
       this.loadFromStorage();
     }
-    return this.licenseKey;
+    // Always check environment variable first
+    return (window as any).LICENSE_KEY || this.licenseKey;
   }
 
   setLicenseKey(key: string): void {
@@ -38,7 +40,8 @@ class LicenseService {
     if (!this.serverUrl) {
       this.loadFromStorage();
     }
-    return this.serverUrl;
+    // Always check environment variable first
+    return (window as any).REPLIT_SERVER_URL || this.serverUrl;
   }
 
   hasLicense(): boolean {

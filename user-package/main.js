@@ -36,9 +36,11 @@ function createWindow() {
     mainWindow.loadURL(`file://${indexPath}#/`);
   }
 
-  // Pass server URL to renderer process
+  // Pass environment variables to renderer process
   mainWindow.webContents.on('did-finish-load', () => {
     const serverUrl = process.env.REPLIT_SERVER_URL;
+    const licenseKey = process.env.LICENSE_KEY;
+    
     if (serverUrl) {
       mainWindow.webContents.executeJavaScript(`
         window.REPLIT_SERVER_URL = '${serverUrl}';
@@ -48,6 +50,14 @@ function createWindow() {
       console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
     }
     
+    if (licenseKey) {
+      mainWindow.webContents.executeJavaScript(`
+        window.LICENSE_KEY = '${licenseKey}';
+        console.log('[Electron] License key loaded from environment');
+      `);
+    } else {
+      console.log('[Electron] No LICENSE_KEY environment variable set');
+    }
   });
 
   // Emitted when the window is closed
