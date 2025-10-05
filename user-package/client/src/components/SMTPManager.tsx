@@ -76,17 +76,37 @@ export function SMTPManager() {
     setLoading(true);
     try {
       const newRotationState = !smtpData.rotationEnabled;
-      setSmtpData(prev => ({
-        ...prev,
-        rotationEnabled: newRotationState,
-        currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
-          ? prev.smtpConfigs[0] 
-          : prev.currentSmtp
-      }));
-      toast({
-        title: "SMTP Rotation",
-        description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
-      });
+      
+      if (window.electronAPI?.smtpToggleRotation) {
+        const result = await window.electronAPI.smtpToggleRotation(newRotationState);
+        if (result.success) {
+          setSmtpData(prev => ({
+            ...prev,
+            rotationEnabled: newRotationState,
+            currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
+              ? prev.smtpConfigs[0] 
+              : prev.currentSmtp
+          }));
+          toast({
+            title: "SMTP Rotation",
+            description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
+          });
+        } else {
+          throw new Error('Failed to save rotation state');
+        }
+      } else {
+        setSmtpData(prev => ({
+          ...prev,
+          rotationEnabled: newRotationState,
+          currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
+            ? prev.smtpConfigs[0] 
+            : prev.currentSmtp
+        }));
+        toast({
+          title: "SMTP Rotation",
+          description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
+        });
+      }
     } catch (error) {
       toast({
         title: "Error",

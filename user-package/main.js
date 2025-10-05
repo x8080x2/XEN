@@ -408,6 +408,27 @@ ipcMain.handle('load-leads', async () => {
   }
 });
 
+// SMTP rotation state storage
+let smtpRotationEnabled = false;
+
+// SMTP toggle rotation handler
+ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
+  try {
+    console.log(`[Electron] Toggling SMTP rotation to: ${enabled}`);
+    smtpRotationEnabled = enabled;
+    
+    const statePath = path.resolve(__dirname, 'config', 'smtp-rotation.json');
+    await fs.mkdir(path.dirname(statePath), { recursive: true });
+    await fs.writeFile(statePath, JSON.stringify({ rotationEnabled: enabled }), 'utf-8');
+    
+    console.log(`[Electron] SMTP rotation state saved: ${enabled}`);
+    return { success: true, rotationEnabled: enabled };
+  } catch (error) {
+    console.error(`[Electron] Failed to save rotation state:`, error);
+    return { success: false, rotationEnabled: smtpRotationEnabled };
+  }
+});
+
 // SMTP list handler
 ipcMain.handle('smtp-list', async () => {
   try {
@@ -419,10 +440,25 @@ ipcMain.handle('smtp-list', async () => {
       path.resolve(__dirname, '..'), // parent directory
     ];
 
+    let rotationEnabled = false;
+    
     for (const basePath of basePaths) {
       const smtpPath = path.resolve(basePath, 'config', 'smtp.ini');
+      const statePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
 
       console.log(`[Electron] Checking SMTP path: ${smtpPath}`);
+
+      if (existsSync(statePath)) {
+        try {
+          const stateContent = await fs.readFile(statePath, 'utf-8');
+          const state = JSON.parse(stateContent);
+          rotationEnabled = state.rotationEnabled || false;
+          smtpRotationEnabled = rotationEnabled;
+          console.log(`[Electron] Loaded rotation state: ${rotationEnabled}`);
+        } catch (error) {
+          console.error(`[Electron] Failed to parse rotation state:`, error);
+        }
+      }
 
       if (existsSync(smtpPath)) {
         const content = await fs.readFile(smtpPath, 'utf-8');
@@ -435,7 +471,7 @@ ipcMain.handle('smtp-list', async () => {
           success: true,
           smtpConfigs,
           currentSmtp: smtpConfigs.length > 0 ? smtpConfigs[0] : null,
-          rotationEnabled: false
+          rotationEnabled: rotationEnabled
         };
 
         console.log(`[Electron] Loaded ${smtpConfigs.length} SMTP configs from ${smtpPath}`);
@@ -444,7 +480,7 @@ ipcMain.handle('smtp-list', async () => {
     }
 
     console.log(`[Electron] No SMTP config found`);
-    return { success: true, smtpConfigs: [], currentSmtp: null, rotationEnabled: false };
+    return { success: true, smtpConfigs: [], currentSmtp: null, rotationEnabled: rotationEnabled };
   } catch (error) {
     console.error(`[Electron] Failed to load SMTP configs:`, error);
     return { success: false, smtpConfigs: [], currentSmtp: null, rotationEnabled: false };

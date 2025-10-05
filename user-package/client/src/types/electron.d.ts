@@ -12,6 +12,7 @@ declare global {
       loadConfig: () => Promise<any>;
       loadLeads: () => Promise<any>;
       smtpList: () => Promise<any>;
+      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean }>;
     };
   }
 }
