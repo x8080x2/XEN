@@ -104,6 +104,7 @@ export class ConfigService {
       EMAILPERSECOND: config.EMAILPERSECOND || 15, // Increased default for better performance
       SLEEP: config.SLEEP || 1,
       FILE_NAME: config.FILE_NAME || 'attachment',
+      GOOGLE_AI_KEY: config.GOOGLE_AI_KEY || '',
 
       // HTML settings
       HTML_CONVERT: config.HTML_CONVERT || '',

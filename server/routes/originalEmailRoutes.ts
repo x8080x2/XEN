@@ -1,6 +1,9 @@
 import type { Express } from "express";
 import { advancedEmailService } from "../services/advancedEmailService";
 import multer from "multer";
+import { configService } from "../services/configService";
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
 const upload = multer({ dest: 'uploads/' });
 
@@ -24,7 +27,7 @@ export function setupOriginalEmailRoutes(app: Express) {
         if (!req.body.smtpHost) missingFields.push('Host');
         if (!req.body.smtpUser) missingFields.push('User');
         if (!req.body.smtpPass) missingFields.push('Password');
-        
+
         res.write(`data: ${JSON.stringify({
           type: 'error',
           error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
@@ -146,7 +149,7 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalRecipients: recipients.length,
             smtp: progress.smtp || null
           })}\n\n`);
-          
+
           // Force flush to prevent buffering - use Node.js HTTP response method
           (res as any).flush?.();
         });
@@ -219,5 +222,42 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
 
-  
+  // Load configuration from files
+  app.get("/api/config/load", async (_req, res) => {
+    try {
+      configService.loadConfig();
+      const config = configService.getEmailConfig();
+      res.json({ success: true, config });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Save configuration to setup.ini
+  app.post("/api/config/save", async (req, res) => {
+    try {
+      const updates = req.body;
+      const configPath = join(process.cwd(), 'config', 'setup.ini');
+      let content = readFileSync(configPath, 'utf8');
+
+      // Update each key in the CONFIG section
+      for (const [key, value] of Object.entries(updates)) {
+        const regex = new RegExp(`^${key}=.*$`, 'm');
+        if (content.match(regex)) {
+          content = content.replace(regex, `${key}=${value}`);
+        } else {
+          // Add new key after CONFIG section header
+          content = content.replace('[CONFIG]', `[CONFIG]\n${key}=${value}`);
+        }
+      }
+
+      writeFileSync(configPath, content, 'utf8');
+      configService.loadConfig(); // Reload config
+      res.json({ success: true, message: 'Configuration saved' });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+
 }

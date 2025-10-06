@@ -96,10 +96,15 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  // Auto-initialize AI service with Google Gemini
-  if (process.env.GOOGLE_AI_KEY) {
+  // Auto-initialize AI service with Google Gemini from config or env
+  const { configService } = await import('./services/configService');
+  configService.loadConfig();
+  const config = configService.getEmailConfig();
+  const apiKey = config.GOOGLE_AI_KEY || process.env.GOOGLE_AI_KEY;
+  
+  if (apiKey) {
     const { aiService } = await import('./services/aiService');
-    const initialized = aiService.initialize(process.env.GOOGLE_AI_KEY);
+    const initialized = aiService.initialize(apiKey);
     if (initialized) {
       log('✅ AI Service auto-initialized with Google Gemini (15 RPM, 1M/day limit)');
     } else {

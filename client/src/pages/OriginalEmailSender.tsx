@@ -289,6 +289,26 @@ export default function OriginalEmailSender() {
     checkAIStatus();
   }, []); // Run once on component mount
 
+  // Auto-load AI key from config
+  useEffect(() => {
+    const loadAIKeyFromConfig = async () => {
+      try {
+        const response = await fetch('/api/config/load');
+        const data = await response.json();
+        if (data.success && data.config.GOOGLE_AI_KEY) {
+          setAiApiKey(data.config.GOOGLE_AI_KEY);
+          // Auto-initialize if key is present
+          if (data.config.GOOGLE_AI_KEY.startsWith('AIzaSy')) {
+            await initializeAI();
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load AI key from config:', error);
+      }
+    };
+    loadAIKeyFromConfig();
+  }, []);
+
   const checkAIStatus = async () => {
     try {
       const response = await fetch('/api/ai/status');
@@ -315,9 +335,18 @@ export default function OriginalEmailSender() {
       const data = await response.json();
       
       if (data.success) {
+        // Save to localStorage and config file
         localStorage.setItem('google_ai_key', aiApiKey);
+        
+        // Save to setup.ini
+        await fetch('/api/config/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
+        });
+        
         setAiEnabled(true);
-        setStatusText('AI initialized successfully');
+        setStatusText('AI initialized successfully and saved to config');
         await checkAIStatus();
       } else {
         setStatusText('AI initialization failed');
