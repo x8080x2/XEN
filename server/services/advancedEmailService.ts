@@ -59,19 +59,57 @@ function randomHex(len: number) {
   return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
-// Dynamic Placeholder Arrays - exact clone from main.js
-const randFirstNames = ['Daniel', 'Sophia', 'Liam', 'Ava', 'Ethan', 'Olivia', 'Noah', 'Emma'];
-const randLastNames = ['Nguyen', 'Smith', 'Johnson', 'Lee', 'Brown', 'Garcia', 'Williams', 'Davis'];
-const randCompanies = ['Vertex Dynamics', 'Blue Ocean Ltd', 'Nexora Corp', 'Lumos Global', 'Skybridge Systems'];
-const randDomains = ['neoatlas.io', 'quantify.dev', 'mailflux.net', 'zenbyte.org', 'dataspike.com'];
-const randTitles = ['Account Manager', 'Product Lead', 'CTO', 'Sales Director', 'HR Coordinator'];
+// AI-generated dynamic placeholders - no hardcoded values
+async function getAIGeneratedValue(type: 'firstname' | 'lastname' | 'company' | 'domain' | 'title', context?: string): Promise<string> {
+  if (!aiService.isInitialized()) {
+    // Fallback to generic placeholders if AI not available
+    const fallbacks = {
+      firstname: 'User',
+      lastname: 'Name',
+      company: 'Company',
+      domain: 'example.com',
+      title: 'Professional'
+    };
+    return fallbacks[type];
+  }
 
-function pickRand(arr: any[]): any {
-  return arr[Math.floor(Math.random() * arr.length)];
+  try {
+    const prompts = {
+      firstname: 'Generate a realistic first name. Return ONLY the name, nothing else.',
+      lastname: 'Generate a realistic last name. Return ONLY the name, nothing else.',
+      company: 'Generate a realistic company name. Return ONLY the company name, nothing else.',
+      domain: 'Generate a realistic domain name (format: example.com). Return ONLY the domain, nothing else.',
+      title: 'Generate a realistic job title. Return ONLY the title, nothing else.'
+    };
+
+    const result = await aiService.generateContent(prompts[type]);
+    return result.trim() || getAIGeneratedValue(type); // Recursive fallback
+  } catch (error) {
+    console.error(`AI generation failed for ${type}:`, error);
+    return getAIGeneratedValue(type);
+  }
 }
 
-// Complete placeholder replacement - exact clone from main.js
-export function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): string {
+// Cache for AI-generated values per email session
+const aiGeneratedCache = new Map<string, Map<string, string>>();
+
+async function pickRand(type: string, emailKey: string): Promise<string> {
+  if (!aiGeneratedCache.has(emailKey)) {
+    aiGeneratedCache.set(emailKey, new Map());
+  }
+  
+  const cache = aiGeneratedCache.get(emailKey)!;
+  
+  if (!cache.has(type)) {
+    const value = await getAIGeneratedValue(type as any);
+    cache.set(type, value);
+  }
+  
+  return cache.get(type)!;
+}
+
+// Complete placeholder replacement with AI-generated content
+export async function injectDynamicPlaceholders(text: string, user: string, email: string, dateStr: string, timeStr: string): Promise<string> {
   if (!text) return '';
 
   // Recipient logic - extract domain from the recipient email (user parameter)
@@ -81,13 +119,14 @@ export function injectDynamicPlaceholders(text: string, user: string, email: str
   const initials = username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).join('');
   const userId = Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6);
 
-  // Generate random values for placeholders
-  const randfirst = pickRand(randFirstNames);
-  const randlast = pickRand(randLastNames);
+  // Generate AI-powered random values for placeholders
+  const emailKey = `${user}_${Date.now()}`;
+  const randfirst = await pickRand('firstname', emailKey);
+  const randlast = await pickRand('lastname', emailKey);
   const randname = `${randfirst} ${randlast}`;
-  const randcompany = pickRand(randCompanies);
-  const randdomain = pickRand(randDomains);
-  const randtitle = pickRand(randTitles);
+  const randcompany = await pickRand('company', emailKey);
+  const randdomain = await pickRand('domain', emailKey);
+  const randtitle = await pickRand('title', emailKey);
 
   text = text.replace(/{user}/g, user)
              .replace(/{email}/g, user) // {email} = recipient
@@ -121,9 +160,10 @@ export function injectDynamicPlaceholders(text: string, user: string, email: str
   text = text.replace(/\{emailb64\}/g, Buffer.from(user).toString('base64'));
   // {xemail}
   text = text.replace(/\{xemail\}/g, username.charAt(0) + '***@' + domain);
-  // {randomname}
-  const names = ['John Smith','Jane Doe','Alex Johnson','Chris Lee','Pat Morgan','Kim Davis','Sam Carter'];
-  text = text.replace(/\{randomname\}/g, names[Math.floor(Math.random() * names.length)]);
+  // {randomname} - AI generated
+  const emailKey = `${user}_${Date.now()}`;
+  const aiRandomName = await pickRand('firstname', emailKey) + ' ' + await pickRand('lastname', emailKey);
+  text = text.replace(/\{randomname\}/g, aiRandomName);
 
   // NOTE: hashN and randnumN are handled by replacePlaceholders() function later
 
@@ -1382,9 +1422,12 @@ export class AdvancedEmailService {
         .replace(/\{time\}/g, timeStr);
       processedAttachmentHtml = processedAttachmentHtml.replace(/\{link\}/g, C.LINK_PLACEHOLDER || C.QR_LINK || '');
 
-      // Additional placeholder replacement
+      // Additional placeholder replacement with AI support
       processedAttachmentHtml = replacePlaceholders(processedAttachmentHtml);
       processedBodyHtml = replacePlaceholders(processedBodyHtml);
+      
+      // Clear AI cache for new batch
+      aiGeneratedCache.clear();
 
       // Recreate render concurrency limiter with higher performance defaults
       this.concurrencyLimit = C.EMAIL_PER_SECOND || 15; // Increased default from 5 to 15
@@ -1494,12 +1537,12 @@ export class AdvancedEmailService {
               }
             }
 
-          // Apply placeholders to both HTML content, subject, and sender name - exact clone
-          let html = injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
-          dynamicSubject = injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
+          // Apply placeholders to both HTML content, subject, and sender name - with AI generation
+          let html = await injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
+          dynamicSubject = await injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
 
           // Process sender name with placeholders for each recipient BEFORE using it
-          let dynamicSenderName = injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
+          let dynamicSenderName = await injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
           dynamicSenderName = replacePlaceholders(dynamicSenderName);
 
           // AI Enhancement: Generate unique subject, sender name, and modify HTML
@@ -1537,7 +1580,7 @@ export class AdvancedEmailService {
           emailFromName = dynamicSenderName;
 
           // Process attachment HTML with placeholders
-          let attHtml = attachmentHtmlBase ? injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
+          let attHtml = attachmentHtmlBase ? await injectDynamicPlaceholders(attachmentHtmlBase, recipient, fromEmail, dateStr, timeStr) : '';
 
           // Initialize email attachments array early for QR processing
           const emailAttachments: any[] = [];
@@ -1824,9 +1867,9 @@ export class AdvancedEmailService {
               console.log(`[HTML2IMG_BODY] PNG conversion completed in ${imgEndTime - imgStartTime}ms`);
               if (result) {
                 const cid = 'htmlimgbody';
-                // Process placeholders in filename - exact clone fix
+                // Process placeholders in filename with AI generation
                 const rawFileName = C.FILE_NAME || cid;
-                let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = `${processedFileName}.png`;
                 emailAttachments.push({ content: result, filename, cid });
@@ -1984,9 +2027,9 @@ export class AdvancedEmailService {
                 console.log(`[HTML_CONVERT] Converting to ${format.toUpperCase()}...`);
                 const buffer = await this.renderHtml(format, processedAttHtml, C);
                 if (buffer) {
-                  // Process placeholders in filename - exact clone fix
+                  // Process placeholders in filename with AI generation
                   const rawFileName = C.FILE_NAME || 'attachment';
-                  let processedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                  let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                   processedFileName = replacePlaceholders(processedFileName);
                   const filename = `${processedFileName}.${format}`;
                   convertFiles.push({ name: filename, buffer });
@@ -2005,7 +2048,7 @@ export class AdvancedEmailService {
                 try {
                   const zipBuffer = await this.createZipBuffer(convertFiles, C.ZIP_PASSWORD);
                   const rawFileName = C.FILE_NAME || 'attachments';
-                  let replacedFileName = injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                  let replacedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                   replacedFileName = replacePlaceholders(replacedFileName);
                   emailAttachments.push({
                     filename: `${replacedFileName}.zip`,

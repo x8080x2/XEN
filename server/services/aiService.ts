@@ -82,6 +82,20 @@ IMPORTANT RULES:
     }
   }
 
+  async generateContent(prompt: string): Promise<string> {
+    if (!this.geminiClient) {
+      throw new Error('AI Service not initialized. Please provide a Google AI API key.');
+    }
+
+    try {
+      const result = await this.geminiClient.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (error) {
+      console.error('[AIService] Content generation failed:', error);
+      throw error;
+    }
+  }
+
   async modifyHtmlFirstDiv(html: string, recipient: string): Promise<string> {
     // Return original HTML without modifications to preserve div structure
     return html;
