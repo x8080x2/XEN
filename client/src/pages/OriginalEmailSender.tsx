@@ -1589,6 +1589,51 @@ export default function OriginalEmailSender() {
               `}
               </div>
               <div className="space-y-6">
+                {/* AI Settings Section - Moved to front */}
+                <div className="border-b border-[#26262b] pb-6">
+                  <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
+                  <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
+                    <p className="text-sm text-[#a1a1aa] mb-3">
+                      Use Google Gemini to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="text-sm text-[red]">Google AI API Key</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="password"
+                            value={aiApiKey}
+                            onChange={(e) => setAiApiKey(e.target.value)}
+                            placeholder="AIzaSy..."
+                            className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
+                          />
+                          <Button
+                            onClick={initializeAI}
+                            className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                          >
+                            {aiStatus.initialized ? 'Update' : 'Initialize'}
+                          </Button>
+                        </div>
+                        {aiStatus.initialized && (
+                          <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={aiEnabled}
+                          onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                          disabled={!aiStatus.initialized}
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          Enable AI for email campaigns
+                        </Label>
+                      </div>              
+                    </div>
+                  </div>
+                </div>
+
                 {/* QR Code Settings Section */}
                 <div>
                   <h3 className="text-lg font-medium text-red mb-3">QR SETTINGS 🔲</h3>
@@ -1868,51 +1913,6 @@ export default function OriginalEmailSender() {
                 </div>
 
 
-
-                {/* AI Settings Section */}
-                <div className="border-t border-[#26262b] pt-6">
-                  <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
-                  <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
-                    <p className="text-sm text-[#a1a1aa] mb-3">
-                      Use Google Gemini to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm text-[red]">Google AI API Key</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="password"
-                            value={aiApiKey}
-                            onChange={(e) => setAiApiKey(e.target.value)}
-                            placeholder="AIzaSy..."
-                            className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
-                          />
-                          <Button
-                            onClick={initializeAI}
-                            className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
-                          >
-                            {aiStatus.initialized ? 'Update' : 'Initialize'}
-                          </Button>
-                        </div>
-                        {aiStatus.initialized && (
-                          <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={aiEnabled}
-                          onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                          disabled={!aiStatus.initialized}
-                        />
-                        <Label className="text-sm text-[#a1a1aa]">
-                          Enable AI for email campaigns
-                        </Label>
-                      </div>              
-                    </div>
-                  </div>
-                </div>
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
