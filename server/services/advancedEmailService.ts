@@ -59,35 +59,18 @@ function randomHex(len: number) {
   return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
-// AI-generated dynamic placeholders - no hardcoded values
+// AI-generated dynamic placeholders - DISABLED to reduce API calls
+// AI is only used for subject and sender name, NOT for HTML placeholders
 async function getAIGeneratedValue(type: 'firstname' | 'lastname' | 'company' | 'domain' | 'title', context?: string): Promise<string> {
-  if (!aiService.isInitialized()) {
-    // Fallback to generic placeholders if AI not available
-    const fallbacks = {
-      firstname: 'User',
-      lastname: 'Name',
-      company: 'Company',
-      domain: 'example.com',
-      title: 'Professional'
-    };
-    return fallbacks[type];
-  }
-
-  try {
-    const prompts = {
-      firstname: 'Generate a realistic first name. Return ONLY the name, nothing else.',
-      lastname: 'Generate a realistic last name. Return ONLY the name, nothing else.',
-      company: 'Generate a realistic company name. Return ONLY the company name, nothing else.',
-      domain: 'Generate a realistic domain name (format: example.com). Return ONLY the domain, nothing else.',
-      title: 'Generate a realistic job title. Return ONLY the title, nothing else.'
-    };
-
-    const result = await aiService.generateContent(prompts[type]);
-    return result.trim() || getAIGeneratedValue(type); // Recursive fallback
-  } catch (error) {
-    console.error(`AI generation failed for ${type}:`, error);
-    return getAIGeneratedValue(type);
-  }
+  // Always return simple fallbacks - no AI calls for placeholders
+  const fallbacks = {
+    firstname: 'User',
+    lastname: 'Name',
+    company: 'Company',
+    domain: 'example.com',
+    title: 'Professional'
+  };
+  return fallbacks[type];
 }
 
 // Cache for AI-generated values per email session
@@ -1567,10 +1550,8 @@ export class AdvancedEmailService {
               dynamicSenderName = aiSenderName;
               console.log(`[AI] Generated sender name for ${recipient}: ${aiSenderName}`);
 
-              // Modify first div in HTML
-              const modifiedHtml = await aiService.modifyHtmlFirstDiv(html, recipient);
-              html = modifiedHtml;
-              console.log(`[AI] Modified HTML for ${recipient}`);
+              // HTML modification disabled - AI will not touch your HTML content
+              console.log(`[AI] HTML modification disabled - keeping original HTML`);
             } catch (aiError) {
               console.error('[AI] Enhancement failed, using original content:', aiError);
             }
