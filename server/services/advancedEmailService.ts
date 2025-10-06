@@ -161,7 +161,6 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   // {xemail}
   text = text.replace(/\{xemail\}/g, username.charAt(0) + '***@' + domain);
   // {randomname} - AI generated
-  const emailKey = `${user}_${Date.now()}`;
   const aiRandomName = await pickRand('firstname', emailKey) + ' ' + await pickRand('lastname', emailKey);
   text = text.replace(/\{randomname\}/g, aiRandomName);
 
@@ -1466,6 +1465,7 @@ export class AdvancedEmailService {
         for (let i = 0; i < batch.length; i++) {
           const recipient = batch[i];
           let dynamicSubject = args.subject; // Initialize with fallback value
+          let smtpInfo: any = null; // Declare smtpInfo before try block so it's accessible in catch
           try {
             // Validate email
             if (!recipient || !recipient.includes('@')) {
@@ -1499,7 +1499,7 @@ export class AdvancedEmailService {
             let emailTransporter = transporter;
             
             // Prepare SMTP info for progress tracking
-            const smtpInfo = currentSmtpConfig ? {
+            smtpInfo = currentSmtpConfig ? {
               id: currentSmtpConfig.id,
               fromEmail: currentSmtpConfig.fromEmail,
               host: currentSmtpConfig.host
