@@ -75,10 +75,10 @@ IMPORTANT RULES:
 - No brackets, no placeholders, just a clean name`;
 
       const result = await this.geminiClient.generateContent(prompt);
-      return result.response.text().trim() || context.originalName || 'Alex Morgan';
+      return result.response.text().trim() || context.originalName || '';
     } catch (error) {
       console.error('[AIService] Sender name generation failed:', error);
-      return context.originalName || 'Alex Morgan';
+      return context.originalName || '';
     }
   }
 
