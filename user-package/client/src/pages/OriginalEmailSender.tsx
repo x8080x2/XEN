@@ -990,11 +990,11 @@ export default function OriginalEmailSender() {
                       </SelectContent>
                     </Select>
                     {/* Display which template is currently active - exact clone from sender.html */}
-                    <div className="text-xs text-[#a1a1aa] mt-1">
+                    <div className="text-xl text-[purple] mt-1">
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span>✏️ Put Off To Use TxT</span>
+                        <span>✏️ OFF TO USE TXT</span>
                       )}
                     </div>
                   </div>
@@ -1905,9 +1905,7 @@ export default function OriginalEmailSender() {
                 <div className="border-t border-[#26262b] pt-6">
                   <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
                   <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
-                    <p className="text-sm text-[#a1a1aa] mb-3">
-                      Use Google Gemini to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
-                    </p>
+                     
                     
                     <div className="space-y-4">
                       <div>
@@ -1939,7 +1937,7 @@ export default function OriginalEmailSender() {
                           disabled={!aiStatus.initialized}
                         />
                         <Label className="text-sm text-[#a1a1aa]">
-                          Enable AI for email campaigns
+                          Enable AI  
                         </Label>
                       </div>              
                     </div>

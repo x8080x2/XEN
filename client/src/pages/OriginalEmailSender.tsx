@@ -924,11 +924,11 @@ export default function OriginalEmailSender() {
                       </SelectContent>
                     </Select>
                     {/* Display which template is currently active - exact clone from sender.html */}
-                    <div className="text-xs text-[#a1a1aa] mt-1">
+                    <div className="text-xl text-[purple] mt-1">
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span>✏️ Put Off To Use TxT</span>
+                        <span>✏️ OFF TO USE TXT </span>
                       )}
                     </div>
                   </div>
@@ -1448,9 +1448,7 @@ export default function OriginalEmailSender() {
                   🤖 AI CONTENT GENERATION
                 </h3>
                 <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b]">
-                  <p className="text-sm text-[#a1a1aa] mb-3">
-                    Use Google Gemini to generate unique subjects, sender names, and modify HTML for each email to avoid spam filters.
-                  </p>
+                 
                   
                   <div className="space-y-4">
                     <div>
@@ -1482,7 +1480,7 @@ export default function OriginalEmailSender() {
                         disabled={!aiStatus.initialized}
                       />
                       <Label className="text-sm text-[#a1a1aa]">
-                        Enable AI for email campaigns
+                        Enable AI  
                       </Label>
                     </div>
                   </div>
@@ -1499,50 +1497,6 @@ export default function OriginalEmailSender() {
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
               </div>
               <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
-                  <div className="flex flex-wrap gap-3">
-                    {[
-                      { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
-                      { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
-                      { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
-                      { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
-                    ].map(({ format, label, color }) => {
-                      const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
-
-                      return (
-                        <Button
-                          key={format}
-                          type="button"
-                          onClick={() => {
-                            const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
-                            const newFormats = isActive
-                              ? formats.filter((f: string) => f !== format)
-                              : [...formats, format];
-                            setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
-                          }}
-                          className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                        >
-                          {label}
-                          {isActive && <span className="ml-1 text-xs">✓</span>}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-[red] mt-2">
-                    Click to generate as attachments.
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
-                  <Input
-                    type="password"
-                    value={advancedSettings.zipPassword}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="Optional"
-                  />
-                </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
@@ -1584,6 +1538,42 @@ export default function OriginalEmailSender() {
                     📅 CALENDAR MODE
                     {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
                   </Button>
+                  {[
+                    { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
+                    { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
+                    { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
+                    { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
+                  ].map(({ format, label, color }) => {
+                    const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
+
+                    return (
+                      <Button
+                        key={format}
+                        type="button"
+                        onClick={() => {
+                          const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
+                          const newFormats = isActive
+                            ? formats.filter((f: string) => f !== format)
+                            : [...formats, format];
+                          setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
+                        }}
+                        className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        {label}
+                        {isActive && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <div>
+                  <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
+                  <Input
+                    type="password"
+                    value={advancedSettings.zipPassword}
+                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    placeholder="Optional"
+                  />
                 </div>
               </div>
             </div>
