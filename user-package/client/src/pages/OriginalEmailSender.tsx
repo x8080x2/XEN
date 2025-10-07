@@ -1473,6 +1473,51 @@ export default function OriginalEmailSender() {
               </div>
             </div>
 
+
+            {/* AI Settings Section */}
+            <div className="border-t border-[#26262b] pt-6">
+              <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
+              <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
+
+
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm text-[red]">Google AI API Key</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="password"
+                        value={aiApiKey}
+                        onChange={(e) => setAiApiKey(e.target.value)}
+                        placeholder="AIzaSy..."
+                        className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
+                      />
+                      <Button
+                        onClick={initializeAI}
+                        className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                      >
+                        {aiStatus.initialized ? 'Update' : 'Initialize'}
+                      </Button>
+                    </div>
+                    {aiStatus.initialized && (
+                      <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={aiEnabled}
+                      onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                      disabled={!aiStatus.initialized}
+                    />
+                    <Label className="text-sm text-[#a1a1aa]">
+                      Enable AI  
+                    </Label>
+                  </div>              
+                </div>
+              </div>
+            </div>
+            
+
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
@@ -1485,6 +1530,53 @@ export default function OriginalEmailSender() {
                 <div>
                   <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
                   <div className="flex flex-wrap gap-3">
+                    {/* Feature Toggle Buttons - All 5 Together */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
+                        className={`${advancedSettings.zipUse ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
+                        data-testid="toggle-zip-attachment"
+                      >
+                        📦 ZIP ATTACHMENT
+                        {advancedSettings.zipUse && <span className="ml-2 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
+                        className={`${advancedSettings.htmlImgBody ? 'bg-slate-600 hover:bg-slate-700 border-slate-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
+                        data-testid="toggle-html-to-img"
+                      >
+                        🖼️ HTML-TO-IMG
+                        {advancedSettings.htmlImgBody && <span className="ml-2 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                        className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700 border-red-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
+                        data-testid="toggle-qr-code"
+                      >
+                        🔲 QR CODE
+                        {advancedSettings.qrcode && <span className="ml-2 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                        className={`${advancedSettings.randomMetadata ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
+                        data-testid="toggle-random-metadata"
+                      >
+                        🎲 Random Metadata
+                        {advancedSettings.randomMetadata && <span className="ml-2 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                        className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700 border-purple-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
+                        data-testid="toggle-calendar-mode"
+                      >
+                        📅 CALENDAR MODE
+                        {advancedSettings.calendarMode && <span className="ml-2 text-xs">✓</span>}
+                      </Button>
                     {[
                       { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
                       { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
@@ -1525,54 +1617,7 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white"
                     placeholder="Optional"
                   />
-                </div>
-                {/* Feature Toggle Buttons - All 5 Together */}
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
-                    className={`${advancedSettings.zipUse ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                    data-testid="toggle-zip-attachment"
-                  >
-                    📦 ZIP ATTACHMENT
-                    {advancedSettings.zipUse && <span className="ml-2 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
-                    className={`${advancedSettings.htmlImgBody ? 'bg-slate-600 hover:bg-slate-700 border-slate-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                    data-testid="toggle-html-to-img"
-                  >
-                    🖼️ HTML-TO-IMG
-                    {advancedSettings.htmlImgBody && <span className="ml-2 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
-                    className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700 border-red-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                    data-testid="toggle-qr-code"
-                  >
-                    🔲 QR CODE
-                    {advancedSettings.qrcode && <span className="ml-2 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
-                    className={`${advancedSettings.randomMetadata ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                    data-testid="toggle-random-metadata"
-                  >
-                    🎲 Random Metadata
-                    {advancedSettings.randomMetadata && <span className="ml-2 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
-                    className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700 border-purple-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                    data-testid="toggle-calendar-mode"
-                  >
-                    📅 CALENDAR MODE
-                    {advancedSettings.calendarMode && <span className="ml-2 text-xs">✓</span>}
-                  </Button>
+                </div>               
                 </div>
               </div>
             </div>
@@ -1901,48 +1946,7 @@ export default function OriginalEmailSender() {
 
 
 
-                {/* AI Settings Section */}
-                <div className="border-t border-[#26262b] pt-6">
-                  <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
-                  <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
-                     
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-sm text-[red]">Google AI API Key</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            type="password"
-                            value={aiApiKey}
-                            onChange={(e) => setAiApiKey(e.target.value)}
-                            placeholder="AIzaSy..."
-                            className="bg-[#0f0f12] border-[#26262b] text-white flex-1"
-                          />
-                          <Button
-                            onClick={initializeAI}
-                            className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
-                          >
-                            {aiStatus.initialized ? 'Update' : 'Initialize'}
-                          </Button>
-                        </div>
-                        {aiStatus.initialized && (
-                          <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={aiEnabled}
-                          onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                          disabled={!aiStatus.initialized}
-                        />
-                        <Label className="text-sm text-[#a1a1aa]">
-                          Enable AI  
-                        </Label>
-                      </div>              
-                    </div>
-                  </div>
-                </div>
+               
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
