@@ -50,6 +50,7 @@ export function SMTPManager() {
       if (window.electronAPI) {
         const data = await window.electronAPI.smtpList();
         if (data.success) {
+          console.log('[SMTPManager] Loaded SMTP data:', data);
           setSmtpData({
             smtpConfigs: data.smtpConfigs || [],
             currentSmtp: data.currentSmtp || null,
@@ -64,6 +65,7 @@ export function SMTPManager() {
         });
       }
     } catch (error) {
+      console.error('[SMTPManager] Error fetching SMTP data:', error);
       toast({
         title: "Error",
         description: "Failed to fetch SMTP configurations",
@@ -122,11 +124,21 @@ export function SMTPManager() {
   };
 
   const addSmtp = async () => {
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
     toast({
       title: "Manual Edit Required",
-      description: "Please edit config/smtp.ini directly to add new SMTP servers, then restart the app",
+      description: "Please edit config/smtp.ini directly to add SMTP servers, then restart the app",
       variant: "default"
     });
+    setDialogOpen(false);
   };
 
   const deleteSmtp = async (smtpId: string) => {
