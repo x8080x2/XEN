@@ -1,30 +1,20 @@
 
-export {};
-
 declare global {
   interface Window {
-    electron?: {
+    electronAPI?: {
       readFile: (filepath: string) => Promise<string>;
       writeFile: (filepath: string, content: string) => Promise<boolean>;
       listFiles: (dirpath: string) => Promise<string[]>;
-      readConfig: (configDir: string) => Promise<{ setup?: string; smtp?: string }>;
+      readConfig: (configDir: string) => Promise<any>;
       selectFile: () => Promise<string | null>;
       selectFiles: () => Promise<string[] | null>;
-      loadConfig: () => Promise<{ success: boolean; config: any }>;
-      loadLeads: () => Promise<{ success: boolean; leads: string }>;
-      smtpList: () => Promise<{
-        success: boolean;
-        smtpConfigs: any[];
-        currentSmtp: any;
-        rotationEnabled: boolean;
-      }>;
-      smtpToggleRotation: (enabled: boolean) => Promise<{
-        success: boolean;
-        rotationEnabled: boolean;
-      }>;
-      minimize: () => void;
-      close: () => void;
+      // Mode 1 - Local file access methods
+      loadConfig: () => Promise<any>;
+      loadLeads: () => Promise<any>;
+      smtpList: () => Promise<any>;
+      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean }>;
     };
-    REPLIT_SERVER_URL?: string;
   }
 }
+
+export {};

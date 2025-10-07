@@ -1,19 +1,26 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose Electron APIs to the renderer process
-contextBridge.exposeInMainWorld('electron', {
+// Expose protected methods that allow the renderer process to use
+// the ipcRenderer without exposing the entire object
+contextBridge.exposeInMainWorld('electronAPI', {
+  // File operations
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),
   writeFile: (filepath, content) => ipcRenderer.invoke('write-file', filepath, content),
   listFiles: (dirpath) => ipcRenderer.invoke('list-files', dirpath),
   readConfig: (configDir) => ipcRenderer.invoke('read-config', configDir),
+
+  // File selection dialogs
   selectFile: () => ipcRenderer.invoke('select-file'),
   selectFiles: () => ipcRenderer.invoke('select-files'),
+
+  // Config and SMTP operations
   loadConfig: () => ipcRenderer.invoke('load-config'),
   loadLeads: () => ipcRenderer.invoke('load-leads'),
   smtpList: () => ipcRenderer.invoke('smtp-list'),
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp-toggle-rotation', enabled),
-  minimize: () => ipcRenderer.send('window-minimize'),
-  close: () => ipcRenderer.send('window-close'),
+  
+  // Server configuration
+  getServerUrl: () => process.env.REPLIT_SERVER_URL
 });
 
 // Log that preload script has loaded

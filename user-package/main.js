@@ -555,19 +555,6 @@ function parseValue(value) {
   return value;
 }
 
-// Window control handlers
-ipcMain.on('window-minimize', () => {
-  if (mainWindow) {
-    mainWindow.minimize();
-  }
-});
-
-ipcMain.on('window-close', () => {
-  if (mainWindow) {
-    mainWindow.close();
-  }
-});
-
 // Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {
   contents.on('new-window', (event, navigationUrl) => {

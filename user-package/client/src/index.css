@@ -1,6 +1,3 @@
 /* Import all styles from the web app */
 /* This file is auto-synced from the main web app - copy web-app-styles.css from client/src/index.css before building */
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import './web-app-styles.css';
