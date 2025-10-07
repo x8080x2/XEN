@@ -10,7 +10,9 @@
     "build": "vite build",
     "build-electron": "npm run build && electron-builder",
     "dist": "npm run build && electron-builder --publish=never",
-    "preview": "vite preview --host localhost --port 4173"
+    "preview": "vite preview --host localhost --port 4173",
+    "sync-styles": "node sync-styles.js",
+    "sync-and-build": "node sync-styles.js && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
