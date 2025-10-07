@@ -352,7 +352,7 @@ ipcMain.handle('load-config', async () => {
 
       // Read smtp.ini if it exists
       if (existsSync(smtpPath)) {
-        smtpContent = await fs.readFile(smtpPath, 'utf-8');
+        const smtpContent = await fs.readFile(smtpPath, 'utf-8');
         console.log(`[Electron] Found smtp.ini at ${smtpPath}`);
         const smtpConfig = parseIniFile(smtpContent);
 
@@ -416,11 +416,11 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
   try {
     console.log(`[Electron] Toggling SMTP rotation to: ${enabled}`);
     smtpRotationEnabled = enabled;
-    
+
     const statePath = path.resolve(__dirname, 'config', 'smtp-rotation.json');
     await fs.mkdir(path.dirname(statePath), { recursive: true });
     await fs.writeFile(statePath, JSON.stringify({ rotationEnabled: enabled }), 'utf-8');
-    
+
     console.log(`[Electron] SMTP rotation state saved: ${enabled}`);
     return { success: true, rotationEnabled: enabled };
   } catch (error) {
@@ -441,7 +441,7 @@ ipcMain.handle('smtp-list', async () => {
     ];
 
     let rotationEnabled = false;
-    
+
     for (const basePath of basePaths) {
       const smtpPath = path.resolve(basePath, 'config', 'smtp.ini');
       const statePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
@@ -461,21 +461,16 @@ ipcMain.handle('smtp-list', async () => {
       }
 
       if (existsSync(smtpPath)) {
-        const content = await fs.readFile(smtpPath, 'utf-8');
-        const smtpConfig = parseIniFile(content);
+        console.log(`[Electron] Found SMTP config at: ${smtpPath}`);
+        const smtpContent = await fs.readFile(smtpPath, 'utf-8');
+        const smtpConfigs = parseSmtpIni(smtpContent);
 
-        const smtpKeys = Object.keys(smtpConfig).filter(key => key.startsWith('smtp'));
-        const smtpConfigs = smtpKeys.map(key => ({ id: key, ...smtpConfig[key] }));
-
-        const result = {
+        return {
           success: true,
           smtpConfigs,
-          currentSmtp: smtpConfigs.length > 0 ? smtpConfigs[0] : null,
+          currentSmtp: smtpConfigs[0] || null,
           rotationEnabled: rotationEnabled
         };
-
-        console.log(`[Electron] Loaded ${smtpConfigs.length} SMTP configs from ${smtpPath}`);
-        return result;
       }
     }
 
@@ -522,6 +517,12 @@ function parseIniFile(content) {
 
   return result;
 }
+
+// Parse SMTP INI file format (assuming it's similar to general INI)
+function parseSmtpIni(content) {
+  return parseIniFile(content); // Reusing the general parser for simplicity
+}
+
 
 // Parse config values
 function parseValue(value) {

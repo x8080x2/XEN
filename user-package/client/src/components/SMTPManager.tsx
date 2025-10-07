@@ -50,7 +50,11 @@ export function SMTPManager() {
       if (window.electronAPI) {
         const data = await window.electronAPI.smtpList();
         if (data.success) {
-          setSmtpData(data);
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: data.rotationEnabled || false
+          });
         }
       } else {
         toast({
