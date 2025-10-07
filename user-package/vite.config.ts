@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client/src"),
+      "@shared-styles": path.resolve(__dirname, "../client/src"),
     },
   },
   root: "client",
