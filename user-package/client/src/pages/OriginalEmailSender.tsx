@@ -1607,7 +1607,7 @@ export default function OriginalEmailSender() {
                   
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
+                  <Label className="text-sm text-[red] mb-2 mt-4 block">ZIP PASSWORD FOR ATTACHMENT</Label>
                   <Input
                     type="password"
                     value={advancedSettings.zipPassword}
