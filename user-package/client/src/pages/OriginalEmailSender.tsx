@@ -1476,13 +1476,13 @@ export default function OriginalEmailSender() {
 
             {/* AI Settings Section */}
             <div className="border-t border-[#26262b] pt-6">
-              <h3 className="text-lg font-medium text-red mb-4">🤖 AI CONTENT GENERATION</h3>
+              <h3 className="text-lg font-medium text-red mb-4">🤖 AI SENDER NAME- SUBJECT GENERATION</h3>
               <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
 
 
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm text-[red]">Google AI API Key</Label>
+                    <Label className="text-sm text-[red]">Google AI API Key </Label>
                     <div className="flex gap-2">
                       <Input
                         type="password"
@@ -1528,7 +1528,7 @@ export default function OriginalEmailSender() {
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
+                  <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS | Click to generate as attachments.</Label>
                   <div className="flex flex-wrap gap-3">
                     {/* Feature Toggle Buttons - All 5 Together */}
                     <div className="flex items-center gap-3 flex-wrap">
@@ -1604,9 +1604,7 @@ export default function OriginalEmailSender() {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-[red] mt-2">
-                    Click to generate as attachments.
-                  </p>
+                  
                 </div>
                 <div>
                   <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
