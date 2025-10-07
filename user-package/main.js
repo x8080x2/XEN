@@ -518,9 +518,30 @@ function parseIniFile(content) {
   return result;
 }
 
-// Parse SMTP INI file format (assuming it's similar to general INI)
+// Parse SMTP INI file format and convert to array
 function parseSmtpIni(content) {
-  return parseIniFile(content); // Reusing the general parser for simplicity
+  const parsed = parseIniFile(content);
+  const smtpConfigs = [];
+
+  // Convert INI sections to array format
+  for (const key in parsed) {
+    if (key.startsWith('smtp')) {
+      const smtpConfig = {
+        id: key,
+        host: parsed[key].host || '',
+        port: parsed[key].port || '587',
+        user: parsed[key].user || '',
+        pass: parsed[key].pass || '',
+        fromEmail: parsed[key].fromEmail || '',
+        fromName: parsed[key].fromName || ''
+      };
+      smtpConfigs.push(smtpConfig);
+      console.log(`[Electron] Parsed SMTP config ${key}:`, smtpConfig);
+    }
+  }
+
+  console.log(`[Electron] Total SMTP configs parsed: ${smtpConfigs.length}`);
+  return smtpConfigs;
 }
 
 
