@@ -156,9 +156,10 @@ export default function OriginalEmailSender() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
+  const [aiEnabled, setAiEnabled] = useState(false);
   const [aiEnabledSubject, setAiEnabledSubject] = useState(false);
   const [aiEnabledSenderName, setAiEnabledSenderName] = useState(false);
-  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
+  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false, provider: 'gemini' });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
@@ -301,6 +302,7 @@ export default function OriginalEmailSender() {
           // Auto-initialize if key is present
           if (data.config.GOOGLE_AI_KEY.startsWith('AIzaSy')) {
             await initializeAI();
+            setAiEnabled(true); // Enable AI if key is found and initialized
           }
         }
       } catch (error) {
@@ -334,21 +336,22 @@ export default function OriginalEmailSender() {
         body: JSON.stringify({ apiKey: aiApiKey })
       });
       const data = await response.json();
-      
+
       if (data.success) {
         // Save to localStorage and config file
         localStorage.setItem('google_ai_key', aiApiKey);
-        
+
         // Save to setup.ini
         await fetch('/api/config/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
         });
-        
+
         // Let user control AI enabled state via checkbox
         setStatusText('AI initialized successfully and saved to config');
         await checkAIStatus();
+        setAiEnabled(true); // Enable AI after successful initialization
       } else {
         setStatusText('AI initialization failed');
       }
@@ -686,6 +689,7 @@ export default function OriginalEmailSender() {
       // AI settings - separate controls
       formData.append('useAISubject', String(aiEnabledSubject));
       formData.append('useAISenderName', String(aiEnabledSenderName));
+      formData.append('useAIEnabled', String(aiEnabled)); // Send the main AI enabled flag
 
       // Add files
       if (selectedFiles) {
@@ -1142,7 +1146,7 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
-                  
+
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
@@ -1479,8 +1483,8 @@ export default function OriginalEmailSender() {
                   🤖 AI CONTENT GENERATION
                 </h3>
                 <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b]">
-                 
-                  
+
+
                   <div className="space-y-4">
                     <div>
                       <Label className="text-sm text-[red]">Google AI API Key</Label>
@@ -1507,9 +1511,20 @@ export default function OriginalEmailSender() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Checkbox
+                          checked={aiEnabled}
+                          onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                          disabled={!aiStatus.initialized}
+                          data-testid="checkbox-ai-enabled"
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          Enable AI Features
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
                           checked={aiEnabledSubject}
                           onCheckedChange={(checked: boolean) => setAiEnabledSubject(!!checked)}
-                          disabled={!aiStatus.initialized}
+                          disabled={!aiEnabled}
                           data-testid="checkbox-ai-subject"
                         />
                         <Label className="text-sm text-[#a1a1aa]">
@@ -1520,7 +1535,7 @@ export default function OriginalEmailSender() {
                         <Checkbox
                           checked={aiEnabledSenderName}
                           onCheckedChange={(checked: boolean) => setAiEnabledSenderName(!!checked)}
-                          disabled={!aiStatus.initialized}
+                          disabled={!aiEnabled}
                           data-testid="checkbox-ai-sendername"
                         />
                         <Label className="text-sm text-[#a1a1aa]">
@@ -1538,7 +1553,7 @@ export default function OriginalEmailSender() {
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
 ╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
-║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║  
+║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║║  
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
               </div>
               <div className="grid grid-cols-1 gap-4">
