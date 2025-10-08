@@ -314,7 +314,7 @@ export default function OriginalEmailSender() {
       const response = await fetch('/api/ai/status');
       const data = await response.json();
       setAiStatus(data);
-      setAiEnabled(data.initialized);
+      // Don't automatically enable AI, let user control it with checkbox
     } catch (error) {
       console.error('Failed to check AI status:', error);
     }
@@ -345,7 +345,7 @@ export default function OriginalEmailSender() {
           body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
         });
         
-        setAiEnabled(true);
+        // Let user control AI enabled state via checkbox
         setStatusText('AI initialized successfully and saved to config');
         await checkAIStatus();
       } else {
