@@ -1,0 +1,79 @@
+
+> rest-express@1.0.0 dev
+AdvancedEmailService initializedr/index.ts
+[ElectronAPI] Electron-compatible routes registered
+[ConfigService] Configuration loaded: [
+  'EMAILPERSECOND',      'FILE_NAME',
+  'HTML_CONVERT',        'HTML2IMG_BODY',
+  'GOOGLE_AI_KEY',       'LINK_PLACEHOLDER',
+  'MINIFY_HTML',         'PRIORITY',
+  'QRCODE',              'QR_WIDTH',
+  'QR_BORDER_WIDTH',     'QR_LINK',
+  'QR_BORDER_COLOR',     'QR_FOREGROUND_COLOR',
+  'QR_BACKGROUND_COLOR', 'RANDOM_METADATA',
+  'RETRY',               'SLEEP',
+  'ZIP_PASSWORD',        'ZIP_USE',
+  'DOMAIN_LOGO_SIZE',    'BORDER_STYLE',
+  'BORDER_COLOR',        'HIDDEN_IMAGE_FILE',
+  'HIDDEN_IMAGE_SIZE',   'HIDDEN_TEXT',
+  'PROXY_USE',           'TYPE',
+  'HOST',                'PORT',
+  'USER',                'PASS',
+  'SMTP'
+]
+[AIService] Initialized with Google Gemini, key: AIzaSyBCwM...
+3:44:53 PM [express] ✅ AI Service auto-initialized with Google Gemini (15 RPM, 1M/day limit)
+3:44:53 PM [express] ℹ️  Telegram bot not configured (set TELEGRAM_BOT_TOKEN to enable license generation)
+3:44:53 PM [express] serving on 0.0.0.0:5000
+3:44:53 PM [express] Development mode - using Vite middleware
+3:44:55 PM [express] 🔧 Performing background cleanup...
+3:44:55 PM [express] Current process count: 7
+3:44:55 PM [express] ✅ Background cleanup check completed
+3:45:00 PM [express] GET /api/original/listFiles 304 in 2ms :: {"files":["2222.html","ok.html","samp…
+[ConfigService] Configuration loaded: [
+  'EMAILPERSECOND',      'FILE_NAME',
+  'HTML_CONVERT',        'HTML2IMG_BODY',
+  'GOOGLE_AI_KEY',       'LINK_PLACEHOLDER',
+  'MINIFY_HTML',         'PRIORITY',
+  'QRCODE',              'QR_WIDTH',
+  'QR_BORDER_WIDTH',     'QR_LINK',
+  'QR_BORDER_COLOR',     'QR_FOREGROUND_COLOR',
+  'QR_BACKGROUND_COLOR', 'RANDOM_METADATA',
+  'RETRY',               'SLEEP',
+  'ZIP_PASSWORD',        'ZIP_USE',
+  'DOMAIN_LOGO_SIZE',    'BORDER_STYLE',
+  'BORDER_COLOR',        'HIDDEN_IMAGE_FILE',
+  'HIDDEN_IMAGE_SIZE',   'HIDDEN_TEXT',
+  'PROXY_USE',           'TYPE',
+  'HOST',                'PORT',
+  'USER',                'PASS',
+  'SMTP'
+]
+3:45:00 PM [express] GET /api/config/load 304 in 1ms :: {"success":true,"config":{"EMAILPERSECOND":5…
+3:45:00 PM [express] GET /api/original/listLogoFiles 304 in 1ms :: {"files":["L1.png","Screenshot 20…
+[ConfigService] Configuration loaded: [
+  'EMAILPERSECOND',      'FILE_NAME',
+  'HTML_CONVERT',        'HTML2IMG_BODY',
+  'GOOGLE_AI_KEY',       'LINK_PLACEHOLDER',
+  'MINIFY_HTML',         'PRIORITY',
+  'QRCODE',              'QR_WIDTH',
+  'QR_BORDER_WIDTH',     'QR_LINK',
+  'QR_BORDER_COLOR',     'QR_FOREGROUND_COLOR',
+  'QR_BACKGROUND_COLOR', 'RANDOM_METADATA',
+  'RETRY',               'SLEEP',
+  'ZIP_PASSWORD',        'ZIP_USE',
+  'DOMAIN_LOGO_SIZE',    'BORDER_STYLE',
+  'BORDER_COLOR',        'HIDDEN_IMAGE_FILE',
+  'HIDDEN_IMAGE_SIZE',   'HIDDEN_TEXT',
+  'PROXY_USE',           'TYPE',
+  'HOST',                'PORT',
+  'USER',                'PASS',
+  'SMTP'
+]
+3:45:00 PM [express] GET /api/config/load 304 in 1ms :: {"success":true,"config":{"EMAILPERSECOND":5…
+3:45:00 PM [express] GET /api/smtp/list 304 in 1ms :: {"success":true,"smtpConfigs":[{"id":"smtp0","…
+3:45:00 PM [express] GET /api/ai/status 304 in 1ms :: {"initialized":true,"hasApiKey":true,"provider…
+[ConfigService] Loaded leads from leads.txt
+3:45:00 PM [express] GET /api/config/loadLeads 304 in 1ms :: {"success":true,"leads":"jaco@smei.co.z…
+^A{"timestamp":"2025-10-08T15:45:23.597Z","level":"info","message":"Memory status","data":{"memUsage":{"rss":305782784,"heapTotal":162009088,"heapUsed":122543272,"external":12602403,"arrayBuffers":2137924},"browserPoolSize":0},"memory":{"rss":305782784,"heapTotal":162009088,"heapUsed":122543272,"external":12602403,"arrayBuffers":2137924},"pid":6367}
+^A
