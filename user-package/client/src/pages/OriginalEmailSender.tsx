@@ -153,9 +153,12 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
+  // AI Feature States
   const [aiEnabled, setAiEnabled] = useState(false);
-  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
+  const [aiApiKey, setAiApiKey] = useState('');
+  const [aiSubject, setAiSubject] = useState(false);
+  const [aiSenderName, setAiSenderName] = useState(false);
+  const [aiInitialized, setAiInitialized] = useState(false);
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
@@ -294,7 +297,7 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Auto-load configuration on startup - exact clone from main.js line 308
+  // Auto-load configuration on startup
   useEffect(() => {
     loadConfigFromFiles();
     loadLeadsFromFile(); // Load leads separately to avoid duplication
@@ -302,51 +305,56 @@ export default function OriginalEmailSender() {
     checkAIStatus(); // Check AI status
   }, []); // Run once on component mount
 
+  // Check AI status from Replit server
   const checkAIStatus = async () => {
     try {
-      // Use the Replit API service to get the correct endpoint
       const { replitApiService } = await import('../services/replitApiService');
-      const apiEndpoint = replitApiService.getApiEndpoint('/api/ai/status');
-      
-      const response = await fetch(apiEndpoint);
-      const data = await response.json();
-      setAiStatus(data);
-      setAiEnabled(data.initialized);
+      const response = await fetch(replitApiService.getApiEndpoint('/api/ai/status'));
+      if (response.ok) {
+        const data = await response.json();
+        setAiInitialized(data.initialized);
+        if (data.initialized) {
+          setAiEnabled(true);
+        }
+      }
     } catch (error) {
-      console.error('Failed to check AI status:', error);
+      console.error('[AI] Failed to check status:', error);
     }
   };
 
+  // Initialize AI with API key
   const initializeAI = async () => {
     if (!aiApiKey) {
-      setStatusText('Please enter Google AI API key');
+      setStatusText('Please enter AI API key'); // Use statusText for feedback
       return;
     }
 
     try {
-      // Use the Replit API service to get the correct endpoint
       const { replitApiService } = await import('../services/replitApiService');
-      const apiEndpoint = replitApiService.getApiEndpoint('/api/ai/initialize');
-      
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch(replitApiService.getApiEndpoint('/api/ai/initialize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: aiApiKey })
       });
-      const data = await response.json();
-      
-      if (data.success) {
-        localStorage.setItem('google_ai_key', aiApiKey);
-        setAiEnabled(true);
-        setStatusText('AI initialized successfully');
-        await checkAIStatus();
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAiInitialized(true);
+          setStatusText('AI initialized successfully'); // Use statusText for feedback
+          await checkAIStatus(); // Re-check status to ensure aiEnabled is set correctly
+        } else {
+          setStatusText('AI initialization failed'); // Use statusText for feedback
+        }
       } else {
-        setStatusText('AI initialization failed');
+        setStatusText('AI initialization failed: Server error'); // Use statusText for feedback
       }
     } catch (error) {
-      setStatusText('Failed to initialize AI');
+      console.error('[AI] Initialization failed:', error);
+      setStatusText('Failed to initialize AI'); // Use statusText for feedback
     }
   };
+
 
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
@@ -372,15 +380,15 @@ export default function OriginalEmailSender() {
   const toggleSmtpRotation = async () => {
     try {
       const newRotationState = !smtpData.rotationEnabled;
-      
+
       if (window.electronAPI?.smtpToggleRotation) {
         const result = await window.electronAPI.smtpToggleRotation(newRotationState);
         if (result.success) {
           setSmtpData(prev => ({
             ...prev,
             rotationEnabled: newRotationState,
-            currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
-              ? prev.smtpConfigs[0] 
+            currentSmtp: newRotationState && prev.smtpConfigs.length > 0
+              ? prev.smtpConfigs[0]
               : prev.currentSmtp
           }));
           setStatusText(`SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`);
@@ -1177,7 +1185,7 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
-                   
+
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (
@@ -1360,24 +1368,6 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
-                {/* Current SMTP Display */}
-                {smtpData.currentSmtp && (
-                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">Current:</span>
-                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
-                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
-                        </div>
-                        <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* SMTP Management Panel */}
                 {showSmtpManager && (
                   <div className="border-t border-[#26262b] pt-4">
@@ -1495,10 +1485,10 @@ export default function OriginalEmailSender() {
                         onClick={initializeAI}
                         className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
                       >
-                        {aiStatus.initialized ? 'Update' : 'Initialize'}
+                        {aiInitialized ? 'Update' : 'Initialize'}
                       </Button>
                     </div>
-                    {aiStatus.initialized && (
+                    {aiInitialized && (
                       <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
                     )}
                   </div>
@@ -1507,7 +1497,7 @@ export default function OriginalEmailSender() {
                     <Checkbox
                       checked={aiEnabled}
                       onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                      disabled={!aiStatus.initialized}
+                      disabled={!aiInitialized}
                     />
                     <Label className="text-sm text-[#a1a1aa]">
                       Enable AI  
@@ -1516,14 +1506,14 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
             </div>
-            
+
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
-╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦
-║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║
+╔═╗╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦
+║  ║ ║║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
               </div>
               <div className="grid grid-cols-1 gap-4">
@@ -1604,7 +1594,7 @@ export default function OriginalEmailSender() {
                       );
                     })}
                   </div>
-                  
+
                 </div>
                 <div>
                   <Label className="text-sm text-[red] mb-2 mt-4 block">ZIP PASSWORD FOR ATTACHMENT</Label>
@@ -1615,7 +1605,8 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white"
                     placeholder="Optional"
                   />
-                </div>               
+                </div>
+               
                 </div>
               </div>
             </div>
@@ -1944,7 +1935,7 @@ export default function OriginalEmailSender() {
 
 
 
-               
+
 
                 <div className="flex justify-end gap-4 mt-6">
                   <Button
