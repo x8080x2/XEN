@@ -59,18 +59,20 @@ function randomHex(len: number) {
   return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
-// AI-generated dynamic placeholders - ENABLED for all placeholders
+// AI-generated dynamic placeholders - with graceful fallback
 async function getAIGeneratedValue(type: 'firstname' | 'lastname' | 'company' | 'domain' | 'title', context?: string): Promise<string> {
   try {
     // Use AI service to generate realistic placeholder values
     if (aiService.isInitialized()) {
       return await aiService.generatePlaceholder(type, context);
     }
-    // If AI not initialized, throw error to force AI usage
-    throw new Error('AI service not initialized. Please enable AI and provide API key.');
+    // If AI not initialized, return empty string (skip placeholder)
+    console.log(`[Placeholder AI] AI not initialized, skipping ${type} placeholder`);
+    return '';
   } catch (error) {
-    console.error(`[Placeholder AI] Failed to generate ${type}:`, error);
-    throw new Error(`AI placeholder generation required but failed for ${type}. Please check AI configuration.`);
+    // If AI fails (quota exceeded, error, etc.), return empty string to allow email to send
+    console.log(`[Placeholder AI] Failed to generate ${type}, skipping placeholder:`, error instanceof Error ? error.message : error);
+    return '';
   }
 }
 
