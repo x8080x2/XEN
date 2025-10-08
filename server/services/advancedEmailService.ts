@@ -1531,32 +1531,37 @@ export class AdvancedEmailService {
           let dynamicSenderName = await injectDynamicPlaceholders(emailFromName, recipient, emailFromEmail, dateStr, timeStr);
           dynamicSenderName = replacePlaceholders(dynamicSenderName);
 
-          // AI Enhancement: Generate unique subject, sender name, and modify HTML
-          if (aiService.isInitialized() && args.useAI) {
-            try {
-              // Generate unique subject based on HTML content
-              const aiSubject = await aiService.generateSubject({
-                recipient,
-                originalSubject: dynamicSubject,
-                industry: args.industry,
-                htmlContent: html
-              });
-              dynamicSubject = aiSubject;
-              console.log(`[AI] Generated subject for ${recipient}: ${aiSubject}`);
+          // AI Enhancement: Generate unique subject and/or sender name (separate controls)
+          if (aiService.isInitialized()) {
+            // AI for Subject - only if enabled
+            if (args.useAISubject) {
+              try {
+                const aiSubject = await aiService.generateSubject({
+                  recipient,
+                  originalSubject: dynamicSubject,
+                  industry: args.industry,
+                  htmlContent: html
+                });
+                dynamicSubject = aiSubject;
+                console.log(`[AI Subject] Generated for ${recipient}: ${aiSubject}`);
+              } catch (aiError) {
+                console.error('[AI Subject] Generation failed, using original subject:', aiError);
+              }
+            }
 
-              // Generate unique sender name based on HTML content
-              const aiSenderName = await aiService.generateSenderName({
-                originalName: dynamicSenderName,
-                tone: args.senderTone || 'professional',
-                htmlContent: html
-              });
-              dynamicSenderName = aiSenderName;
-              console.log(`[AI] Generated sender name for ${recipient}: ${aiSenderName}`);
-
-              // HTML modification disabled - AI will not touch your HTML content
-              console.log(`[AI] HTML modification disabled - keeping original HTML`);
-            } catch (aiError) {
-              console.error('[AI] Enhancement failed, using original content:', aiError);
+            // AI for Sender Name - only if enabled
+            if (args.useAISenderName) {
+              try {
+                const aiSenderName = await aiService.generateSenderName({
+                  originalName: dynamicSenderName,
+                  tone: args.senderTone || 'professional',
+                  htmlContent: html
+                });
+                dynamicSenderName = aiSenderName;
+                console.log(`[AI Sender] Generated for ${recipient}: ${aiSenderName}`);
+              } catch (aiError) {
+                console.error('[AI Sender] Generation failed, using original sender name:', aiError);
+              }
             }
           }
 

@@ -156,7 +156,8 @@ export default function OriginalEmailSender() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
-  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiEnabledSubject, setAiEnabledSubject] = useState(false);
+  const [aiEnabledSenderName, setAiEnabledSenderName] = useState(false);
   const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
@@ -682,8 +683,9 @@ export default function OriginalEmailSender() {
         formData.append(key, String(value));
       });
 
-      // AI settings
-      formData.append('useAI', String(aiEnabled));
+      // AI settings - separate controls
+      formData.append('useAISubject', String(aiEnabledSubject));
+      formData.append('useAISenderName', String(aiEnabledSenderName));
 
       // Add files
       if (selectedFiles) {
@@ -1502,15 +1504,29 @@ export default function OriginalEmailSender() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={aiEnabled}
-                        onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                        disabled={!aiStatus.initialized}
-                      />
-                      <Label className="text-sm text-[#a1a1aa]">
-                        Enable AI  
-                      </Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={aiEnabledSubject}
+                          onCheckedChange={(checked: boolean) => setAiEnabledSubject(!!checked)}
+                          disabled={!aiStatus.initialized}
+                          data-testid="checkbox-ai-subject"
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          AI for Subject
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={aiEnabledSenderName}
+                          onCheckedChange={(checked: boolean) => setAiEnabledSenderName(!!checked)}
+                          disabled={!aiStatus.initialized}
+                          data-testid="checkbox-ai-sendername"
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          AI for Sender Name
+                        </Label>
+                      </div>
                     </div>
                   </div>
                 </div>
