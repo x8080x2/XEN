@@ -329,6 +329,22 @@ export default function OriginalEmailSender() {
       return;
     }
 
+    // If AI is already initialized, this button acts as a toggle to turn it OFF
+    if (aiStatus.initialized) {
+      setAiEnabled(false); // Disable AI features
+      setAiStatus(prev => ({ ...prev, initialized: false })); // Update status
+      setStatusText('AI features turned off.');
+      localStorage.removeItem('google_ai_key'); // Remove key from local storage
+      // Optionally, you might want to clear the key from setup.ini as well
+      await fetch('/api/config/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ GOOGLE_AI_KEY: '' }) // Send empty key to clear
+      });
+      return;
+    }
+
+    // If AI is not initialized, proceed with initialization
     try {
       const response = await fetch('/api/ai/initialize', {
         method: 'POST',
@@ -868,7 +884,7 @@ export default function OriginalEmailSender() {
           <div className="absolute bottom-4  right-4">
             <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
 {`
-▓ SYSTEM STATUS ▓  
+▓ SYSTEM STATUS ▓
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
@@ -1498,9 +1514,9 @@ export default function OriginalEmailSender() {
                         />
                         <Button
                           onClick={initializeAI}
-                          className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                          className={`${aiStatus.initialized ? 'bg-green-600 hover:bg-green-700' : 'bg-[#ef4444] hover:bg-[#dc2626]'} text-white min-w-[100px]`}
                         >
-                          {aiStatus.initialized ? 'Update' : 'Initialize'}
+                          {aiStatus.initialized ? 'Turn Off' : 'Initialize'}
                         </Button>
                       </div>
                       {aiStatus.initialized && (
@@ -1553,7 +1569,7 @@ export default function OriginalEmailSender() {
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
  {`
 ╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦  
-║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║║  
+║  ║ ║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║║║  
 ╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
               </div>
               <div className="grid grid-cols-1 gap-4">
