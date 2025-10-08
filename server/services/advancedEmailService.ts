@@ -59,18 +59,19 @@ function randomHex(len: number) {
   return [...Array(len)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 }
 
-// AI-generated dynamic placeholders - DISABLED to reduce API calls
-// AI is only used for subject and sender name, NOT for HTML placeholders
+// AI-generated dynamic placeholders - ENABLED for all placeholders
 async function getAIGeneratedValue(type: 'firstname' | 'lastname' | 'company' | 'domain' | 'title', context?: string): Promise<string> {
-  // Always return simple fallbacks - no AI calls for placeholders
-  const fallbacks = {
-    firstname: 'User',
-    lastname: 'Name',
-    company: 'Company',
-    domain: 'example.com',
-    title: 'Professional'
-  };
-  return fallbacks[type];
+  try {
+    // Use AI service to generate realistic placeholder values
+    if (aiService.isInitialized()) {
+      return await aiService.generatePlaceholder(type, context);
+    }
+    // If AI not initialized, throw error to force AI usage
+    throw new Error('AI service not initialized. Please enable AI and provide API key.');
+  } catch (error) {
+    console.error(`[Placeholder AI] Failed to generate ${type}:`, error);
+    throw new Error(`AI placeholder generation required but failed for ${type}. Please check AI configuration.`);
+  }
 }
 
 // Cache for AI-generated values per email session

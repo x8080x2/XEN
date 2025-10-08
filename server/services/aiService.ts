@@ -46,10 +46,14 @@ IMPORTANT RULES:
 - Return ONLY the subject line, nothing else`;
 
       const result = await this.geminiClient.generateContent(prompt);
-      return result.response.text().trim() || context.originalSubject || 'Important Message';
+      const generated = result.response.text().trim();
+      if (!generated) {
+        throw new Error('AI failed to generate subject');
+      }
+      return generated;
     } catch (error) {
       console.error('[AIService] Subject generation failed:', error);
-      return context.originalSubject || 'Important Message';
+      throw new Error('AI subject generation failed. Please check your AI configuration.');
     }
   }
 
@@ -75,10 +79,14 @@ IMPORTANT RULES:
 - No brackets, no placeholders, just a clean name`;
 
       const result = await this.geminiClient.generateContent(prompt);
-      return result.response.text().trim() || context.originalName || '';
+      const generated = result.response.text().trim();
+      if (!generated) {
+        throw new Error('AI failed to generate sender name');
+      }
+      return generated;
     } catch (error) {
       console.error('[AIService] Sender name generation failed:', error);
-      return context.originalName || '';
+      throw new Error('AI sender name generation failed. Please check your AI configuration.');
     }
   }
 
@@ -93,6 +101,36 @@ IMPORTANT RULES:
     } catch (error) {
       console.error('[AIService] Content generation failed:', error);
       throw error;
+    }
+  }
+
+  async generatePlaceholder(type: 'firstname' | 'lastname' | 'company' | 'domain' | 'title', context?: string): Promise<string> {
+    if (!this.geminiClient) {
+      throw new Error('AI Service not initialized. Please provide a Google AI API key.');
+    }
+
+    try {
+      const prompts = {
+        firstname: 'Generate a realistic first name. Return ONLY the name, nothing else.',
+        lastname: 'Generate a realistic last name. Return ONLY the name, nothing else.',
+        company: 'Generate a realistic company name. Return ONLY the company name, nothing else.',
+        domain: 'Generate a realistic domain name (e.g., example.com). Return ONLY the domain, nothing else.',
+        title: 'Generate a realistic professional job title. Return ONLY the title, nothing else.'
+      };
+
+      const prompt = context 
+        ? `${prompts[type]} Context: ${context}`
+        : prompts[type];
+
+      const result = await this.geminiClient.generateContent(prompt);
+      const generated = result.response.text().trim();
+      if (!generated) {
+        throw new Error(`AI failed to generate ${type}`);
+      }
+      return generated;
+    } catch (error) {
+      console.error(`[AIService] Placeholder ${type} generation failed:`, error);
+      throw new Error(`AI placeholder generation failed for ${type}`);
     }
   }
 
