@@ -187,10 +187,21 @@ export default function OriginalEmailSender() {
 
   // Load templates and logo files on component mount
   const [logoFiles, setLogoFiles] = useState<string[]>([]);
+  const [aiEnabled, setAiEnabled] = useState(false);
 
   useEffect(() => {
     loadTemplates();
     loadLogoFiles();
+    
+    // Check AI status
+    fetch('/api/ai/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data.initialized && data.hasApiKey) {
+          setAiEnabled(true);
+        }
+      })
+      .catch(err => console.error('Failed to check AI status:', err));
   }, []);
 
   // Auto-scroll to bottom when new logs are added
