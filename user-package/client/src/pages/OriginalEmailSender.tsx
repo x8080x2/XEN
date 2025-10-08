@@ -153,12 +153,12 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  // AI Feature States
+  // AI Feature States - Match web version
   const [aiEnabled, setAiEnabled] = useState(false);
-  const [aiApiKey, setAiApiKey] = useState('');
-  const [aiSubject, setAiSubject] = useState(false);
-  const [aiSenderName, setAiSenderName] = useState(false);
-  const [aiInitialized, setAiInitialized] = useState(false);
+  const [aiEnabledSubject, setAiEnabledSubject] = useState(false);
+  const [aiEnabledSenderName, setAiEnabledSenderName] = useState(false);
+  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
+  const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false, provider: 'gemini' });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
@@ -305,27 +305,25 @@ export default function OriginalEmailSender() {
     checkAIStatus(); // Check AI status
   }, []); // Run once on component mount
 
-  // Check AI status from Replit server
+  // Check AI status from Replit server - Match web version
   const checkAIStatus = async () => {
     try {
       const { replitApiService } = await import('../services/replitApiService');
       const response = await fetch(replitApiService.getApiEndpoint('/api/ai/status'));
       if (response.ok) {
         const data = await response.json();
-        setAiInitialized(data.initialized);
-        if (data.initialized) {
-          setAiEnabled(true);
-        }
+        setAiStatus(data);
+        // Don't automatically enable AI, let user control it
       }
     } catch (error) {
       console.error('[AI] Failed to check status:', error);
     }
   };
 
-  // Initialize AI with API key
+  // Initialize AI with API key - Match web version
   const initializeAI = async () => {
     if (!aiApiKey) {
-      setStatusText('Please enter AI API key'); // Use statusText for feedback
+      setStatusText('Please enter Google AI API key');
       return;
     }
 
@@ -340,18 +338,21 @@ export default function OriginalEmailSender() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setAiInitialized(true);
-          setStatusText('AI initialized successfully'); // Use statusText for feedback
-          await checkAIStatus(); // Re-check status to ensure aiEnabled is set correctly
+          // Save to localStorage like web version
+          localStorage.setItem('google_ai_key', aiApiKey);
+          
+          setStatusText('AI initialized successfully and saved');
+          await checkAIStatus();
+          setAiEnabled(true); // Enable AI after successful initialization
         } else {
-          setStatusText('AI initialization failed'); // Use statusText for feedback
+          setStatusText('AI initialization failed');
         }
       } else {
-        setStatusText('AI initialization failed: Server error'); // Use statusText for feedback
+        setStatusText('AI initialization failed: Server error');
       }
     } catch (error) {
       console.error('[AI] Initialization failed:', error);
-      setStatusText('Failed to initialize AI'); // Use statusText for feedback
+      setStatusText('Failed to initialize AI');
     }
   };
 
@@ -707,8 +708,10 @@ export default function OriginalEmailSender() {
         formData.append(key, String(value));
       });
 
-      // AI settings
-      formData.append('useAI', String(aiEnabled));
+      // AI settings - Match web version with separate controls
+      formData.append('useAISubject', String(aiEnabledSubject));
+      formData.append('useAISenderName', String(aiEnabledSenderName));
+      formData.append('useAIEnabled', String(aiEnabled));
 
       // Add files
       if (selectedFiles) {
@@ -1464,15 +1467,15 @@ export default function OriginalEmailSender() {
             </div>
 
 
-            {/* AI Settings Section */}
-            <div className="border-t border-[#26262b] pt-6">
-              <h3 className="text-lg font-medium text-red mb-4">🤖 AI SENDER NAME- SUBJECT GENERATION</h3>
-              <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b] mb-4">
-
-
+            {/* AI Settings Section - Match web version */}
+            <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
+              <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                🤖 AI CONTENT GENERATION
+              </h3>
+              <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b]">
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-sm text-[red]">Google AI API Key </Label>
+                    <Label className="text-sm text-[red]">Google AI API Key</Label>
                     <div className="flex gap-2">
                       <Input
                         type="password"
@@ -1485,24 +1488,49 @@ export default function OriginalEmailSender() {
                         onClick={initializeAI}
                         className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
                       >
-                        {aiInitialized ? 'Update' : 'Initialize'}
+                        {aiStatus.initialized ? 'Update' : 'Initialize'}
                       </Button>
                     </div>
-                    {aiInitialized && (
+                    {aiStatus.initialized && (
                       <div className="text-xs text-green-500 mt-1">✓ AI is active</div>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={aiEnabled}
-                      onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                      disabled={!aiInitialized}
-                    />
-                    <Label className="text-sm text-[#a1a1aa]">
-                      Enable AI  
-                    </Label>
-                  </div>              
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={aiEnabled}
+                        onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
+                        disabled={!aiStatus.initialized}
+                        data-testid="checkbox-ai-enabled"
+                      />
+                      <Label className="text-sm text-[#a1a1aa]">
+                        Enable AI Features
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={aiEnabledSubject}
+                        onCheckedChange={(checked: boolean) => setAiEnabledSubject(!!checked)}
+                        disabled={!aiEnabled}
+                        data-testid="checkbox-ai-subject"
+                      />
+                      <Label className="text-sm text-[#a1a1aa]">
+                        AI for Subject
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        checked={aiEnabledSenderName}
+                        onCheckedChange={(checked: boolean) => setAiEnabledSenderName(!!checked)}
+                        disabled={!aiEnabled}
+                        data-testid="checkbox-ai-sendername"
+                      />
+                      <Label className="text-sm text-[#a1a1aa]">
+                        AI for Sender Name
+                      </Label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
