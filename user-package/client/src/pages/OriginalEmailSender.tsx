@@ -340,7 +340,7 @@ export default function OriginalEmailSender() {
         if (data.success) {
           // Save to localStorage like web version
           localStorage.setItem('google_ai_key', aiApiKey);
-          
+
           setStatusText('AI initialized successfully and saved');
           await checkAIStatus();
           setAiEnabled(true); // Enable AI after successful initialization
@@ -658,7 +658,7 @@ export default function OriginalEmailSender() {
     // Attachment HTML handling - exact clone from main.js lines 583-605
     let attachmentHtmlContent = '';
     if (attachmentHtml && attachmentHtml.trim()) {
-      // Use direct attachment HTML (args.attachmentHtml equivalent)
+      // Use direct attachment HTML (args.html equivalent)
       attachmentHtmlContent = attachmentHtml.trim();
     } else {
       // Fallback to bodyHtml (main.js line 586)
@@ -1634,7 +1634,7 @@ export default function OriginalEmailSender() {
                     placeholder="Optional"
                   />
                 </div>
-               
+
                 </div>
               </div>
             </div>
