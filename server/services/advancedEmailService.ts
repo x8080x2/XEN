@@ -2152,11 +2152,14 @@ END:VCALENDAR`;
             C
           });
 
+          console.log(`[TIMING] Email sent at ${Date.now()}, recipient: ${recipient}`);
+
           // Close individual transporter if we created one for rotation
           if (emailTransporter !== transporter && configService.isSmtpRotationEnabled()) {
             emailTransporter.close();
           }
 
+            console.log(`[TIMING] Progress callback invoked at ${Date.now()}, recipient: ${recipient}`);
             progressCallback?.({
               recipient: recipient || 'Unknown',
               subject: dynamicSubject || args.subject || 'No Subject',

@@ -136,6 +136,8 @@ export function setupOriginalEmailRoutes(app: Express) {
             totalFailed++;
           }
 
+          console.log(`[TIMING] SSE sent at ${Date.now()}, recipient: ${progress.recipient}`);
+
           // Send progress update with proper data validation
           res.write(`data: ${JSON.stringify({
             type: 'progress',

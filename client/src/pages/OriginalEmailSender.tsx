@@ -769,8 +769,11 @@ export default function OriginalEmailSender() {
 
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
+                  console.log(`[TIMING] UI received SSE at ${Date.now()}, recipient: ${data.recipient}`);
+                  
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
+                    console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${data.recipient}`);
                     setEmailLogs(prev => [...prev, data]);
 
                     if (data.totalRecipients) {
