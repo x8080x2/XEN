@@ -156,7 +156,7 @@ export default function OriginalEmailSender() {
   const updateProgress = useCallback((progressData: EmailProgress) => {
     flushSync(() => {
       console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
-      
+
       setEmailLogs(prev => [...prev, progressData]);
 
       if (progressData.totalRecipients) {
@@ -306,37 +306,39 @@ export default function OriginalEmailSender() {
     checkAIStatus();
   }, []); // Run once on component mount
 
-  // Auto-load AI key from config
+  // Auto-load AI key from config and initialize AI service
   useEffect(() => {
-    const loadAIKeyFromConfig = async () => {
+    let mounted = true;
+
+    const initializeAI = async () => {
       try {
-        const response = await fetch('/api/config/load');
-        const data = await response.json();
-        if (data.success && data.config.GOOGLE_AI_KEY) {
-          setAiApiKey(data.config.GOOGLE_AI_KEY);
-          // Auto-initialize if key is present
-          if (data.config.GOOGLE_AI_KEY.startsWith('AIzaSy')) {
-            try {
-              const initResponse = await fetch('/api/ai/initialize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ apiKey: data.config.GOOGLE_AI_KEY })
-              });
-              const initData = await initResponse.json();
-              if (initData.success) {
-                setAiStatus({ initialized: true, hasApiKey: true, provider: 'google' });
-                setAiEnabled(true);
-              }
-            } catch (error) {
-              console.error('Failed to auto-initialize AI:', error);
-            }
+        const configResponse = await fetch('/api/config/load');
+        const configData = await configResponse.json();
+
+        if (!mounted) return;
+
+        if (configData.success && configData.config?.GOOGLE_AI_KEY) {
+          const aiResponse = await fetch('/api/ai/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: configData.config.GOOGLE_AI_KEY })
+          });
+
+          const aiData = await aiResponse.json();
+          if (mounted && aiData.success) {
+            setAiEnabled(true);
           }
         }
       } catch (error) {
-        console.error('Failed to load AI key from config:', error);
+        console.error('Failed to auto-initialize AI:', error);
       }
     };
-    loadAIKeyFromConfig();
+
+    initializeAI();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const checkAIStatus = async () => {
@@ -366,7 +368,7 @@ export default function OriginalEmailSender() {
           setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
           setStatusText('AI service turned off successfully');
           localStorage.removeItem('google_ai_key'); // Remove key from local storage
-          
+
           // Clear from config file but keep the key in the input field for easy re-initialization
           await fetch('/api/config/save', {
             method: 'POST',
@@ -775,7 +777,7 @@ export default function OriginalEmailSender() {
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
                   console.log(`[TIMING] UI received SSE at ${Date.now()}, recipient: ${data.recipient}`);
-                  
+
                   const progressData: EmailProgress = {
                     recipient: data.recipient || 'Unknown',
                     subject: data.subject || subject || 'No Subject',
@@ -787,7 +789,7 @@ export default function OriginalEmailSender() {
                     totalRecipients: data.totalRecipients,
                     smtp: data.smtp
                   };
-                  
+
                   updateProgress(progressData);
 
                 } else if (data.type === 'complete') {
@@ -923,7 +925,7 @@ export default function OriginalEmailSender() {
 ██║     ██║     ╚════██║    ██║  ██║██╔══╝  ██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗  ╚██╔╝      ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║    
 ╚██████╗███████╗███████║    ██████╔╝███████╗███████╗██║ ╚████╔╝ ███████╗██║  ██║   ██║       ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║    
  ╚═════╝╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝    
-                                                                                                                                                      
+
 `}
               </div>
               <div className="text-center mt-4">
@@ -1595,7 +1597,7 @@ export default function OriginalEmailSender() {
 ██╔══██║   ██║   ██║╚██╔╝██║██║         ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   
 ██║  ██║   ██║   ██║ ╚═╝ ██║███████╗    ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║   
 ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   
-                                                                                                     
+
 `}
               </div>
               <div className="grid grid-cols-1 gap-4">

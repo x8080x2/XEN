@@ -11,6 +11,12 @@ class AIService {
         return false;
       }
 
+      // Skip if already initialized with same key
+      if (this.geminiClient && this.apiKey === apiKey) {
+        console.log('[AIService] Already initialized with this key');
+        return true;
+      }
+
       this.apiKey = apiKey;
       const genAI = new GoogleGenerativeAI(apiKey);
       this.geminiClient = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });

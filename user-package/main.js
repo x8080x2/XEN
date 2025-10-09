@@ -67,11 +67,13 @@ async function verifyLicense() {
       };
     }
   } catch (error) {
+    console.error('[Electron] License verification error:', error);
     return {
       valid: false,
       error: `License verification failed: ${error.message}`
     };
   }
+}
 }
 
 function createWindow() {
