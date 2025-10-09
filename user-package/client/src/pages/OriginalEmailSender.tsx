@@ -874,7 +874,7 @@ export default function OriginalEmailSender() {
 {`
  +-+-+-+-+-+-+ +-+-+-+-+-+-+
  |C|L|O|S|E|D| |S|E|N|D|E|R|
- +-+-+-+-+-+-+ +-+-+-+-+-+-+
+  +-+-+-+-+-+-+ +-+-+-+-+-+-+
 `}
               </div>
 

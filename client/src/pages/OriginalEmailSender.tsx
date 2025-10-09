@@ -870,9 +870,9 @@ export default function OriginalEmailSender() {
               {/* Large ASCII Art Logo */}
               <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
   {`  
- +-+-+-+-+-+-+ +-+-+-+-+-+-+
- |C|L|O|S|E|D| |S|E|N|D|E|R|
- +-+-+-+-+-+-+ +-+-+-+-+-+-+ `}
+  +-+-+-+-+-+-+ +-+-+-+-+-+-+
+  |C|L|O|S|E|D| |S|E|N|D|E|R|
+   +-+-+-+-+-+-+ +-+-+-+-+-+-+ `}
               </div>
 
               {/* Decorative Elements */}
