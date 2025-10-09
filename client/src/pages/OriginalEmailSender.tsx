@@ -765,48 +765,69 @@ export default function OriginalEmailSender() {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
-                const data: EmailProgress = JSON.parse(line.slice(6)); // Use EmailProgress interface
+                const data: any = JSON.parse(line.slice(6));
 
                 // Process each message individually with immediate rendering
                 if (data.type === 'progress') {
                   console.log(`[TIMING] UI received SSE at ${Date.now()}, recipient: ${data.recipient}`);
                   
+                  // Create properly typed progress data
+                  const progressData: EmailProgress = {
+                    recipient: data.recipient || 'Unknown',
+                    subject: data.subject || subject || 'No Subject',
+                    status: data.status || 'fail',
+                    error: data.error || undefined,
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    totalSent: data.totalSent,
+                    totalFailed: data.totalFailed,
+                    totalRecipients: data.totalRecipients,
+                    smtp: data.smtp
+                  };
+                  
                   // Use flushSync to force immediate rendering of each email confirmation
                   flushSync(() => {
-                    console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${data.recipient}`);
-                    setEmailLogs(prev => [...prev, data]);
+                    console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
+                    
+                    // Add to logs immediately
+                    setEmailLogs(prev => [...prev, progressData]);
 
-                    if (data.totalRecipients) {
-                      const currentProgress = ((data.totalSent || 0) + (data.totalFailed || 0)) / data.totalRecipients * 100;
+                    // Update progress immediately
+                    if (progressData.totalRecipients) {
+                      const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
                       setProgress(currentProgress);
-                      setProgressDetails(`Sent: ${data.totalSent || 0}, Failed: ${data.totalFailed || 0}, Total: ${data.totalRecipients}`);
+                      setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
                     }
 
                     // Update current SMTP info
-                    if (data.smtp) {
-                      setCurrentSmtpInfo(data.smtp);
+                    if (progressData.smtp) {
+                      setCurrentSmtpInfo(progressData.smtp);
                     }
 
-                    if (data.status === 'success') {
-                      setStatusText(`✓ Successfully sent to ${data.recipient}`);
-                      setCurrentEmailStatus(`✓ Successfully sent to ${data.recipient}`);
+                    // Update status text immediately
+                    if (progressData.status === 'success') {
+                      setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
+                      setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
                     } else {
-                      setStatusText(`✗ Failed to send to ${data.recipient}: ${data.error}`);
-                      setCurrentEmailStatus(`✗ Failed to send to ${data.recipient}: ${data.error}`);
+                      setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
+                      setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
                     }
                   });
 
                 } else if (data.type === 'complete') {
-                  setIsLoading(false);
-                  setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${data.sent} emails`);
-                  setCurrentEmailStatus("");
+                  flushSync(() => {
+                    setIsLoading(false);
+                    setProgress(100);
+                    setStatusText(`Email sending completed. Sent: ${data.sent} emails`);
+                    setCurrentEmailStatus("");
+                  });
                   if (!data.success && data.error) {
                     console.error('Email sending error:', data.error);
                   }
                 } else if (data.type === 'error') {
-                  setIsLoading(false);
-                  setStatusText(`Error: ${data.error}`);
+                  flushSync(() => {
+                    setIsLoading(false);
+                    setStatusText(`Error: ${data.error}`);
+                  });
                   console.error('Email sending error:', data.error);
                 }
               } catch (e) {
