@@ -167,6 +167,33 @@ export default function OriginalEmailSender() {
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
   const currentStatusRef = useRef<HTMLDivElement>(null);
+
+  // Consolidated progress update function
+  const updateProgress = useCallback((progressData: EmailProgress) => {
+    flushSync(() => {
+      console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
+      
+      setEmailLogs(prev => [...prev, progressData]);
+
+      if (progressData.totalRecipients) {
+        const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
+        setProgress(currentProgress);
+        setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+      }
+
+      if (progressData.smtp) {
+        setCurrentSmtpInfo(progressData.smtp);
+      }
+
+      if (progressData.status === 'success') {
+        setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
+        setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
+      } else {
+        setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
+        setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
+      }
+    });
+  }, []);
   const [smtpData, setSmtpData] = useState({
     smtpConfigs: [] as any[],
     currentSmtp: null as any,
@@ -216,6 +243,22 @@ export default function OriginalEmailSender() {
       currentStatusRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [currentEmailStatus]);
+
+  // Consolidated template loading function
+  const loadTemplateContent = useCallback(async (templatePath: string): Promise<string> => {
+    try {
+      const response = await fetch('/api/original/readFile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filepath: templatePath })
+      });
+      const data = await response.json();
+      return data.success ? (data.content || '') : '';
+    } catch (error) {
+      console.error('Failed to load template:', error);
+      return '';
+    }
+  }, []);
 
   const loadTemplates = async () => {
     try {
@@ -771,7 +814,6 @@ export default function OriginalEmailSender() {
                 if (data.type === 'progress') {
                   console.log(`[TIMING] UI received SSE at ${Date.now()}, recipient: ${data.recipient}`);
                   
-                  // Create properly typed progress data
                   const progressData: EmailProgress = {
                     recipient: data.recipient || 'Unknown',
                     subject: data.subject || subject || 'No Subject',
@@ -784,34 +826,7 @@ export default function OriginalEmailSender() {
                     smtp: data.smtp
                   };
                   
-                  // Use flushSync to force immediate rendering of each email confirmation
-                  flushSync(() => {
-                    console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
-                    
-                    // Add to logs immediately
-                    setEmailLogs(prev => [...prev, progressData]);
-
-                    // Update progress immediately
-                    if (progressData.totalRecipients) {
-                      const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
-                      setProgress(currentProgress);
-                      setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
-                    }
-
-                    // Update current SMTP info
-                    if (progressData.smtp) {
-                      setCurrentSmtpInfo(progressData.smtp);
-                    }
-
-                    // Update status text immediately
-                    if (progressData.status === 'success') {
-                      setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
-                      setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
-                    } else {
-                      setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
-                      setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
-                    }
-                  });
+                  updateProgress(progressData);
 
                 } else if (data.type === 'complete') {
                   flushSync(() => {
