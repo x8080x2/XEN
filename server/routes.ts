@@ -67,10 +67,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existsSync(leadsPath)) {
         const leadsContent = readFileSync(leadsPath, 'utf-8');
         const leads = leadsContent.trim();
-        console.log(`[ConfigService] Loaded leads from leads.txt`);
         res.json({ success: true, leads });
       } else {
-        console.log('[ConfigService] No leads.txt found, returning empty');
         res.json({ success: true, leads: '' });
       }
     } catch (error) {

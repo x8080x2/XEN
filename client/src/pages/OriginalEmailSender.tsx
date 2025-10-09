@@ -524,7 +524,6 @@ export default function OriginalEmailSender() {
           // Auto-set sender email from SMTP config - exact clone from main.js behavior
           if (smtpConfig.fromEmail) {
             setSenderEmail(smtpConfig.fromEmail);
-            console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
           }
 
         }
@@ -574,10 +573,6 @@ export default function OriginalEmailSender() {
           const leadsData = await leadsResponse.json();
           if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
             setRecipients(leadsData.leads);
-            const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-            console.log(`[Config Load] Auto-loaded ${leadCount} leads from leads.txt`);
-          } else {
-            console.log('[Config Load] No leads.txt found, starting with empty recipients');
           }
         } catch (leadsError) {
           console.log('[Config Load] Failed to load leads:', leadsError);
@@ -586,13 +581,11 @@ export default function OriginalEmailSender() {
         // Auto-load letter content if available
         if (config.LETTER_CONTENT) {
           setEmailContent(config.LETTER_CONTENT);
-          console.log('[Config Load] Auto-loaded letter content from config');
         }
 
         // Auto-load subject if available
         if (config.SUBJECT) {
           setSubject(config.SUBJECT);
-          console.log('[Config Load] Auto-loaded subject from config');
         }
 
         setStatusText('Configuration and maillist loaded automatically');
