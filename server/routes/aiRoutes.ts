@@ -15,6 +15,12 @@ export function setupAIRoutes(app: Express) {
     res.json({ success, message: success ? 'AI initialized' : 'Initialization failed' });
   });
 
+  // Deinitialize AI
+  app.post("/api/ai/deinitialize", (req, res) => {
+    const success = aiService.deinitialize();
+    res.json({ success, message: 'AI deinitialized' });
+  });
+
   // Get AI status
   app.get("/api/ai/status", (req, res) => {
     const status = aiService.getStatus();

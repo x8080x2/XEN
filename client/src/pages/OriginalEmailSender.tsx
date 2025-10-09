@@ -331,16 +331,33 @@ export default function OriginalEmailSender() {
 
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
-      setAiEnabled(false); // Disable AI features
-      setAiStatus(prev => ({ ...prev, initialized: false })); // Update status
-      setStatusText('AI features turned off.');
-      localStorage.removeItem('google_ai_key'); // Remove key from local storage
-      // Optionally, you might want to clear the key from setup.ini as well
-      await fetch('/api/config/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ GOOGLE_AI_KEY: '' }) // Send empty key to clear
-      });
+      try {
+        // Call backend to deinitialize AI service
+        const response = await fetch('/api/ai/deinitialize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          setAiEnabled(false); // Disable AI features
+          setAiStatus(prev => ({ ...prev, initialized: false })); // Update status
+          setStatusText('AI service turned off successfully');
+          localStorage.removeItem('google_ai_key'); // Remove key from local storage
+          setAiApiKey(''); // Clear the input field
+          
+          // Clear from config file
+          await fetch('/api/config/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ GOOGLE_AI_KEY: '' })
+          });
+        } else {
+          setStatusText('Failed to turn off AI service');
+        }
+      } catch (error) {
+        setStatusText('Error turning off AI service');
+      }
       return;
     }
 

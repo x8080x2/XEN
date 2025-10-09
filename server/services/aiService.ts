@@ -139,6 +139,13 @@ IMPORTANT RULES:
     return html;
   }
 
+  deinitialize() {
+    this.geminiClient = null;
+    this.apiKey = '';
+    console.log('[AIService] AI service deinitialized');
+    return true;
+  }
+
   isInitialized(): boolean {
     return this.geminiClient !== null;
   }
