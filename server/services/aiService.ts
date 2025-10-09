@@ -140,11 +140,6 @@ IMPORTANT RULES:
     }
   }
 
-  async modifyHtmlFirstDiv(html: string, recipient: string): Promise<string> {
-    // Return original HTML without modifications to preserve div structure
-    return html;
-  }
-
   deinitialize() {
     this.geminiClient = null;
     this.apiKey = '';

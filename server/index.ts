@@ -203,4 +203,26 @@ app.use((req, res, next) => {
       }
     }
   });
+
+  // Graceful shutdown
+  const shutdown = async (signal: string) => {
+    log(`${signal} signal received: closing HTTP server`);
+    
+    // Cleanup file service
+    const { FileService } = await import('./services/fileService');
+    const fileService = new FileService();
+    await fileService.cleanup();
+    
+    // Cleanup email service
+    const { advancedEmailService } = await import('./services/advancedEmailService');
+    await advancedEmailService.cleanup();
+    
+    server.close(() => {
+      log('HTTP server closed');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 })();

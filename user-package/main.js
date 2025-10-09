@@ -35,36 +35,52 @@ async function verifyLicense() {
     console.log('[Electron] Verifying license with server...');
 
     // Verify license with server
-    const response = await fetch(`${serverUrl}/api/license/verify`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ licenseKey }),
-      signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-    if (!response.ok) {
-      return {
-        valid: false,
-        error: `Server returned status ${response.status}`
-      };
-    }
+    try {
+      const response = await fetch(`${serverUrl}/api/license/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ licenseKey }),
+        signal: controller.signal
+      });
 
-    const result = await response.json();
+      clearTimeout(timeoutId);
 
-    if (result.valid) {
-      console.log('[Electron] ✅ License verified successfully');
-      return {
-        valid: true,
-        licenseKey,
-        license: result.license
-      };
-    } else {
-      return {
-        valid: false,
-        error: result.reason || 'License verification failed'
-      };
+      if (!response.ok) {
+        return {
+          valid: false,
+          error: `Server returned status ${response.status}`
+        };
+      }
+
+      const result = await response.json();
+
+      if (result.valid) {
+        console.log('[Electron] ✅ License verified successfully');
+        return {
+          valid: true,
+          licenseKey,
+          license: result.license
+        };
+      } else {
+        return {
+          valid: false,
+          error: result.reason || 'License verification failed'
+        };
+      }
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        return {
+          valid: false,
+          error: 'License verification timed out (10s)'
+        };
+      }
+      throw fetchError;
     }
   } catch (error) {
     console.error('[Electron] License verification error:', error);
@@ -73,7 +89,6 @@ async function verifyLicense() {
       error: `License verification failed: ${error.message}`
     };
   }
-}
 }
 
 function createWindow() {

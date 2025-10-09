@@ -1453,8 +1453,9 @@ export class AdvancedEmailService {
           let dynamicSubject = args.subject; // Initialize with fallback value
           let smtpInfo: any = null; // Declare smtpInfo before try block so it's accessible in catch
           try {
-            // Validate email
-            if (!recipient || !recipient.includes('@')) {
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!recipient || !emailRegex.test(recipient)) {
               const error = 'Invalid email format';
               const currentSmtpForInvalid = configService.getCurrentSmtpConfig();
               const smtpInfoInvalid = currentSmtpForInvalid ? {
