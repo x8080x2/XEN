@@ -301,8 +301,20 @@ export default function OriginalEmailSender() {
           setAiApiKey(data.config.GOOGLE_AI_KEY);
           // Auto-initialize if key is present
           if (data.config.GOOGLE_AI_KEY.startsWith('AIzaSy')) {
-            await initializeAI();
-            setAiEnabled(true); // Enable AI if key is found and initialized
+            try {
+              const initResponse = await fetch('/api/ai/initialize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ apiKey: data.config.GOOGLE_AI_KEY })
+              });
+              const initData = await initResponse.json();
+              if (initData.success) {
+                setAiStatus({ initialized: true, hasApiKey: true, provider: 'google' });
+                setAiEnabled(true);
+              }
+            } catch (error) {
+              console.error('Failed to auto-initialize AI:', error);
+            }
           }
         }
       } catch (error) {
@@ -324,11 +336,6 @@ export default function OriginalEmailSender() {
   };
 
   const initializeAI = async () => {
-    if (!aiApiKey) {
-      setStatusText('Please enter Google AI API key');
-      return;
-    }
-
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
       try {
@@ -341,12 +348,11 @@ export default function OriginalEmailSender() {
 
         if (data.success) {
           setAiEnabled(false); // Disable AI features
-          setAiStatus(prev => ({ ...prev, initialized: false })); // Update status
+          setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
           setStatusText('AI service turned off successfully');
           localStorage.removeItem('google_ai_key'); // Remove key from local storage
-          setAiApiKey(''); // Clear the input field
           
-          // Clear from config file
+          // Clear from config file but keep the key in the input field for easy re-initialization
           await fetch('/api/config/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -362,6 +368,11 @@ export default function OriginalEmailSender() {
     }
 
     // If AI is not initialized, proceed with initialization
+    if (!aiApiKey) {
+      setStatusText('Please enter Google AI API key');
+      return;
+    }
+
     try {
       const response = await fetch('/api/ai/initialize', {
         method: 'POST',
