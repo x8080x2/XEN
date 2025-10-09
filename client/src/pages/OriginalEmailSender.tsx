@@ -869,7 +869,7 @@ export default function OriginalEmailSender() {
             <div className="flex flex-col items-center mb-8">
               {/* Large ASCII Art Logo */}
               <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
-  {`  
+  {`
   +-+-+-+-+-+-+ +-+-+-+-+-+-+
   |C|L|O|S|E|D| |S|E|N|D|E|R|
    +-+-+-+-+-+-+ +-+-+-+-+-+-+ `}
@@ -1590,7 +1590,7 @@ export default function OriginalEmailSender() {
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 mb-8 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center mb-1 whitespace-pre overflow-hidden">
- {` 
+ {`
 ██╗  ██╗████████╗███╗   ███╗██╗          ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ████████╗
 ██║  ██║╚══██╔══╝████╗ ████║██║         ██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗╚══██╔══╝
 ███████║   ██║   ██╔████╔██║██║         ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║   
@@ -1608,7 +1608,7 @@ export default function OriginalEmailSender() {
                     onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
                     className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                   >
-                    ZIP 
+                    ZIP
                     {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
                   </Button>
                   <Button
@@ -1867,7 +1867,7 @@ export default function OriginalEmailSender() {
 
                 {/* Domain Logo Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-red mb-3">🏢 DOMAIN-LOGO </h3>
+                  <h3 className="text-lg font-medium text-red mb-3">DOMAIN-LOGO </h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">LOGO SIZE</Label>
