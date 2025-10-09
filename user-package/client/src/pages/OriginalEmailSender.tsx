@@ -872,13 +872,9 @@ export default function OriginalEmailSender() {
               {/* Large ASCII Art Logo */}
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre">
 {`
- ██████╗██╗     ███████╗
-██╔════╝██║     ██╔════╝
-██║     ██║     ███████╗
-██║     ██║     ╚════██║
-╚██████╗███████╗███████║
- ╚═════╝╚══════╝╚══════╝
-
+ +-+-+-+-+-+-+ +-+-+-+-+-+-+
+ |C|L|O|S|E|D| |S|E|N|D|E|R|
+ +-+-+-+-+-+-+ +-+-+-+-+-+-+
 `}
               </div>
 
@@ -888,8 +884,7 @@ export default function OriginalEmailSender() {
               </div>
 
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="mb-1">EMAIL DELIVERY SYSTEM⚡</div>
-                <div className="text-[#ef4444] font-bold"> SHOOTER</div>
+                <div className="text-[#ef4444] font-bold"> 🚸</div>
               </div>
             </div>
 
@@ -927,9 +922,13 @@ export default function OriginalEmailSender() {
             <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
 {`
-░█▀▀░█░░░█▀▀░░░█▀▀░█▄█░█▀█░█▀▄░▀█▀░░░█▀▄░█▀▀░█░░░▀█▀░█░█░█▀▀░█▀▄░█░█░░░█▀▀░█░█░█▀▀░▀█▀░█▀▀░█▄█
-░█░░░█░░░▀▀█░░░▀▀█░█░█░█▀█░█▀▄░░█░░░░█░█░█▀▀░█░░░░█░░▀▄▀░█▀▀░█▀▄░░█░░░░▀▀█░░█░░▀▀█░░█░░█▀▀░█░█
-░▀▀▀░▀▀▀░▀▀▀░░░▀▀▀░▀░▀░▀░▀░▀░▀░░▀░░░░▀▀░░▀▀▀░▀▀▀░▀▀▀░░▀░░▀▀▀░▀░▀░░▀░░░░▀▀▀░░▀░░▀▀▀░░▀░░▀▀▀░▀░▀`}
+
+ ██████╗██╗     ███████╗    ██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗    
+██╔════╝██║     ██╔════╝    ██╔══██╗██╔════╝██║     ██║██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║    
+██║     ██║     ███████╗    ██║  ██║█████╗  ██║     ██║██║   ██║█████╗  ██████╔╝ ╚████╔╝     ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║    
+██║     ██║     ╚════██║    ██║  ██║██╔══╝  ██║     ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗  ╚██╔╝      ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║    
+╚██████╗███████╗███████║    ██████╔╝███████╗███████╗██║ ╚████╔╝ ███████╗██║  ██║   ██║       ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║    
+ ╚═════╝╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝       ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝    `}
               </div>
               <div className="text-center mt-4">
                 <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
@@ -1538,11 +1537,16 @@ export default function OriginalEmailSender() {
 
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
- {`
-╔═╗╔═╗╔═╗╔╗╔╦  ╦╔═╗╦═╗╔╦╗  ╦ ╦╔╦╗╔╦╗╦
-║  ║ ║║║║║╚╗╔╝║╣ ╠╦╝ ║   ╠═╣ ║ ║║║║
-╚═╝╚═╝╝╚╝ ╚╝ ╚═╝╩╚═ ╩   ╩ ╩ ╩ ╩ ╩╩═╝ `}
+              <div className="text-[#ef4444] font-mono text-xs leading-none text-center mb-1 whitespace-pre overflow-hidden">
+ {` 
+                                 ██╗  ██╗████████╗███╗   ███╗██╗          ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ████████╗
+                                 ██║  ██║╚══██╔══╝████╗ ████║██║         ██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗╚══██╔══╝
+                                 ███████║   ██║   ██╔████╔██║██║         ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║   
+                                 ██╔══██║   ██║   ██║╚██╔╝██║██║         ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   
+                                 ██║  ██║   ██║   ██║ ╚═╝ ██║███████╗    ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║   
+                                 ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   
+                                                                                                                        
+                                                                                                                        `}
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
@@ -1556,7 +1560,7 @@ export default function OriginalEmailSender() {
                         className={`${advancedSettings.zipUse ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
                         data-testid="toggle-zip-attachment"
                       >
-                        📦 ZIP ATTACHMENT
+                        📦 ZIP
                         {advancedSettings.zipUse && <span className="ml-2 text-xs">✓</span>}
                       </Button>
                       <Button
@@ -1565,7 +1569,7 @@ export default function OriginalEmailSender() {
                         className={`${advancedSettings.htmlImgBody ? 'bg-slate-600 hover:bg-slate-700 border-slate-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
                         data-testid="toggle-html-to-img"
                       >
-                        🖼️ HTML-TO-IMG
+                        HTML-TO-IMG
                         {advancedSettings.htmlImgBody && <span className="ml-2 text-xs">✓</span>}
                       </Button>
                       <Button
@@ -1574,7 +1578,7 @@ export default function OriginalEmailSender() {
                         className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700 border-red-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
                         data-testid="toggle-qr-code"
                       >
-                        🔲 QR CODE
+                        QRCODE
                         {advancedSettings.qrcode && <span className="ml-2 text-xs">✓</span>}
                       </Button>
                       <Button
@@ -1583,7 +1587,7 @@ export default function OriginalEmailSender() {
                         className={`${advancedSettings.randomMetadata ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
                         data-testid="toggle-random-metadata"
                       >
-                        🎲 Random Metadata
+                        🎲 Metadata
                         {advancedSettings.randomMetadata && <span className="ml-2 text-xs">✓</span>}
                       </Button>
                       <Button
@@ -1592,7 +1596,7 @@ export default function OriginalEmailSender() {
                         className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700 border-purple-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
                         data-testid="toggle-calendar-mode"
                       >
-                        📅 CALENDAR MODE
+                        CALENDAR
                         {advancedSettings.calendarMode && <span className="ml-2 text-xs">✓</span>}
                       </Button>
                     {[
@@ -1654,32 +1658,24 @@ export default function OriginalEmailSender() {
               <div className=" items-center mb-6">
                 <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
                   {`
-                    .d8888b.                     .d888 d8b
-                   d88P  Y88b                   d88P"  Y8P
-                   888    888                   888
-                   888         .d88b.  88888b.  888888 888  .d88b.
-                   888        d88""88b 888 "88b 888    888 d88P"88b
-                   888    888 888  888 888  888 888    888 888  888
-                   Y88b  d88P Y88..88P 888  888 888    888 Y88b 888
-                    "Y8888P"   "Y88P"  888  888 888    888  "Y88888
-                                                                888
-                                                           Y8b d88P
-                                                            "Y88P"  `}
+                                                  ########################################
+                                                  #░█▀▀░█░░░█▀▀░░░█▀▀░█▀█░█▀█░█▀▀░▀█▀░█▀▀#
+                                                  #░█░░░█░░░▀▀█░░░█░░░█░█░█░█░█▀▀░░█░░█░█#
+                                                  #░▀▀▀░▀▀▀░▀▀▀░░░▀▀▀░▀▀▀░▀░▀░▀░░░▀▀▀░▀▀▀#
+                                                  ######################################## `}
               </div>
 
               </div>
               <div className="text-[#ef4444] font-mono text-xs leading-none text-left mb-1 whitespace-pre overflow-hidden">
               {`
-                   | _______________ |
-                   | |XXXXXXXXXXXXX| |
-                   | |XXXXXXXXXXXXX| |
-                   | |XXXXXXXXXXXXX| |
-                   |_________________|
-                       _[_______]_
-                   ___[___________]___
-                  |         [_____] []|__
-                  |         [_____] []|  \__
-                  L___________________J     \ \___\/  /###GET#CONNECTED###
+                                                            | _______________ |
+                                                            | |XXXXXXXXXXXXX| |
+                                                            | |XXXXXXXXXXXXX| |
+                                                            | |XXXXXXXXXXXXX| |
+                                                            |_________________|
+                                                            ___[___________]___
+                                                            |         [_____] []|
+                                                            |###GET#CONNECTED###|
               `}
               </div>
               <div className="space-y-6">
@@ -1768,7 +1764,7 @@ export default function OriginalEmailSender() {
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm text-[red]">QR MIDDLE IMG SIZE (px)</Label>
+                      <Label className="text-sm text-[red]">QR MIDDLE-IMG SIZE (px)</Label>
                       <Input
                         type="number"
                         min="10"
@@ -1793,7 +1789,7 @@ export default function OriginalEmailSender() {
 
 
                 <div>
-                  <Label className="text-sm text-[red]">QR LINK</Label>
+                  <Label className="text-sm text-[red]">QR-LINK</Label>
                   <Input
                     value={advancedSettings.qrLink}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
@@ -1817,7 +1813,7 @@ export default function OriginalEmailSender() {
                 <div className="grid grid-cols-2 gap-4">
 
                   <div>
-                    <Label className="text-sm text-[red]">ATTACH FILE NAME</Label>
+                    <Label className="text-sm text-[red]"> FILE NAME</Label>
                     <Input
                       value={advancedSettings.fileName}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
@@ -1847,7 +1843,7 @@ export default function OriginalEmailSender() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-sm text-[red]">RETRY ATTEMPT</Label>
+                    <Label className="text-sm text-[red]">RETRY</Label>
                     <Input
                       type="number"
                       min="0"
