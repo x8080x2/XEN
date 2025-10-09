@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -51,29 +51,13 @@ export default function OriginalEmailSender() {
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
 
-  // Attachment template change handler
+  // Attachment template change handler - using consolidated template loading
   const handleAttachmentTemplateChange = async (template: string) => {
     setSelectedAttachmentTemplate(template);
 
     if (template && template !== 'off') {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${template}` })
-        });
-        const data = await response.json();
-        if (data.success && data.content) {
-          setAttachmentHtml(data.content);
-        } else {
-          setAttachmentHtml('');
-        }
-      } catch (error) {
-        console.error('Error loading attachment template:', error);
-        setAttachmentHtml('');
-      }
+      const content = await loadTemplateContent(`files/${template}`);
+      setAttachmentHtml(content);
     } else {
       setAttachmentHtml('');
     }
@@ -299,30 +283,18 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Template change handler - exact clone from sender.html lines 992-1006
+  // Template change handler - using consolidated template loading
   const handleTemplateChange = async (template: string) => {
     setSelectedTemplate(template);
 
-    // Load template content into textarea when selected - exact clone from sender.html lines 992-1006
     if (template && template !== 'off') {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${template}` })
-        });
-        const data = await response.json();
-        if (data.success && data.content) {
-          setEmailContent(data.content);
-          setStatusText('');
-        } else {
-          setEmailContent('');
-          setStatusText('Error loading template content.');
-        }
-      } catch (error) {
-        setStatusText(`Error loading template: ${error}`);
+      const content = await loadTemplateContent(`files/${template}`);
+      if (content) {
+        setEmailContent(content);
+        setStatusText('');
+      } else {
+        setEmailContent('');
+        setStatusText('Error loading template content.');
       }
     }
   };
@@ -702,19 +674,9 @@ export default function OriginalEmailSender() {
     }
     // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
-      try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: 'files/letter.html' })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
-      } catch (error) {
+      bodyHtml = await loadTemplateContent('files/letter.html');
+      if (!bodyHtml) {
         console.log('No default letter.html found');
-        bodyHtml = '';
       }
     }
 
