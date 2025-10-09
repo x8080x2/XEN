@@ -109,6 +109,8 @@ export const licenseSchema = z.object({
   telegramUsername: z.string().optional(),
   status: z.enum(['active', 'expired', 'revoked']),
   expiresAt: z.date().optional(),
+  hardwareId: z.string().optional(),
+  activatedAt: z.date().optional(),
   createdAt: z.date().default(() => new Date()),
 });
 
@@ -119,6 +121,13 @@ export const insertLicenseSchema = licenseSchema.omit({
 
 export type License = z.infer<typeof licenseSchema>;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
+
+export interface LicenseUpdate {
+  status?: 'active' | 'expired' | 'revoked';
+  hardwareId?: string;
+  activatedAt?: Date;
+  expiresAt?: Date;
+}
 
 // Email Send Request Schema
 export const emailSendRequestSchema = z.object({
@@ -192,6 +201,8 @@ export const licenses = sqliteTable("licenses", {
   telegramUsername: text("telegram_username"),
   status: text("status").notNull().default("active"),
   expiresAt: integer("expires_at", { mode: 'timestamp' }),
+  hardwareId: text("hardware_id"),
+  activatedAt: integer("activated_at", { mode: 'timestamp' }),
   createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 

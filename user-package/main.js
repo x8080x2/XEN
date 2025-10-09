@@ -4,12 +4,27 @@ const fs = require('fs').promises;
 const { existsSync } = require('fs');
 const https = require('https');
 const http = require('http');
+const os = require('os');
+const crypto = require('crypto');
 
 // Load environment variables
 require('dotenv').config();
 
 // Keep a global reference of the window object
 let mainWindow;
+
+// Generate hardware fingerprint
+function generateHardwareFingerprint() {
+  const machineId = [
+    os.hostname(),
+    os.platform(),
+    os.arch(),
+    os.cpus()[0].model,
+    os.totalmem().toString()
+  ].join('|');
+  
+  return crypto.createHash('sha256').update(machineId).digest('hex');
+}
 
 // License verification function
 async function verifyLicense() {
@@ -32,6 +47,9 @@ async function verifyLicense() {
       };
     }
 
+    // Generate hardware fingerprint
+    const hardwareId = generateHardwareFingerprint();
+    console.log('[Electron] Hardware ID:', hardwareId.substring(0, 16) + '...');
     console.log('[Electron] Verifying license with server...');
 
     // Verify license with server
@@ -44,7 +62,10 @@ async function verifyLicense() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ licenseKey }),
+        body: JSON.stringify({ 
+          licenseKey,
+          hardwareId 
+        }),
         signal: controller.signal
       });
 

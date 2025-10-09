@@ -7,7 +7,7 @@ const router = Router();
 // Verify license key
 router.post('/verify', async (req, res) => {
   try {
-    const { licenseKey } = req.body;
+    const { licenseKey, hardwareId } = req.body;
     
     if (!licenseKey) {
       return res.status(400).json({ 
@@ -16,7 +16,7 @@ router.post('/verify', async (req, res) => {
       });
     }
 
-    const result = await licenseService.verifyLicense(licenseKey);
+    const result = await licenseService.verifyLicense(licenseKey, hardwareId);
     
     res.json(result);
   } catch (error) {

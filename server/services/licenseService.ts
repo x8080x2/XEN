@@ -25,7 +25,10 @@ class LicenseService {
     return await storage.createLicense(insertLicense);
   }
 
-  async verifyLicense(licenseKey: string): Promise<{ valid: boolean; license?: License; reason?: string }> {
+  async verifyLicense(
+    licenseKey: string, 
+    hardwareId?: string
+  ): Promise<{ valid: boolean; license?: License; reason?: string }> {
     const license = await storage.getLicenseByKey(licenseKey);
 
     if (!license) {
@@ -43,6 +46,26 @@ class LicenseService {
     if (license.expiresAt && new Date() > license.expiresAt) {
       await storage.updateLicense(license.id, { status: 'expired' });
       return { valid: false, license, reason: 'License has expired' };
+    }
+
+    // Hardware binding check
+    if (hardwareId) {
+      if (license.hardwareId && license.hardwareId !== hardwareId) {
+        return { 
+          valid: false, 
+          license, 
+          reason: 'License is already activated on another computer' 
+        };
+      }
+
+      // Bind license to this hardware if not already bound
+      if (!license.hardwareId) {
+        await storage.updateLicense(license.id, { 
+          hardwareId,
+          activatedAt: new Date()
+        });
+        console.log(`License ${licenseKey} bound to hardware ${hardwareId.substring(0, 16)}...`);
+      }
     }
 
     return { valid: true, license };
