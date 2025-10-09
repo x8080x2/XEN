@@ -37,7 +37,7 @@ export class ConfigService {
         }
       }
 
-      console.log('[ConfigService] Configuration loaded:', Object.keys(this.configData));
+      // Config loaded successfully (logging disabled to reduce console clutter)
       return this.configData;
     } catch (error) {
       console.error('[ConfigService] Failed to load config:', error);
