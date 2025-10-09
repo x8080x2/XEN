@@ -130,30 +130,15 @@ export function setupOriginalEmailRoutes(app: Express) {
 
       try {
         const result = await advancedEmailService.sendMail(args, (progress) => {
+          // This callback is now primarily for internal tracking within advancedEmailService.
+          // The actual SSE is handled directly within the sendMail method for real-time updates.
           if (progress.status === 'success') {
-            totalSent++;
+            // totalSent++; // This is now handled and sent to SSE directly
           } else {
-            totalFailed++;
+            // totalFailed++; // This is now handled and sent to SSE directly
           }
 
-          console.log(`[TIMING] SSE sent at ${Date.now()}, recipient: ${progress.recipient}`);
-
-          // Send progress update with proper data validation
-          res.write(`data: ${JSON.stringify({
-            type: 'progress',
-            recipient: progress.recipient || 'Unknown',
-            subject: progress.subject || args.subject || 'No Subject',
-            status: progress.status,
-            error: progress.error || null,
-            timestamp: progress.timestamp || new Date().toISOString(),
-            totalSent,
-            totalFailed,
-            totalRecipients: recipients.length,
-            smtp: progress.smtp || null
-          })}\n\n`);
-
-          // Force flush to prevent buffering - use Node.js HTTP response method
-          (res as any).flush?.();
+          // No need to send SSE here, it's done within sendMail for immediate feedback
         });
 
         // Send completion
