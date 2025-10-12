@@ -1,10 +1,6 @@
 import { 
   type EmailConfig, 
   type InsertEmailConfig,
-  type EmailJob,
-  type InsertEmailJob,
-  type EmailLog,
-  type InsertEmailLog,
   type AppSettings,
   type InsertAppSettings,
   type User, 
@@ -13,8 +9,6 @@ import {
   type InsertLicense,
   users,
   emailConfigs,
-  emailJobs,
-  emailLogs,
   appSettings,
   licenses
 } from "@shared/schema";
@@ -35,16 +29,6 @@ export interface IStorage {
   updateEmailConfig(id: string, config: Partial<EmailConfig>): Promise<EmailConfig>;
   deleteEmailConfig(id: string): Promise<void>;
   
-  // Email job operations
-  getEmailJob(id: string): Promise<EmailJob | undefined>;
-  getEmailJobsByUser(userId: string): Promise<EmailJob[]>;
-  createEmailJob(job: InsertEmailJob): Promise<EmailJob>;
-  updateEmailJob(id: string, job: Partial<EmailJob>): Promise<EmailJob>;
-  
-  // Email log operations
-  getEmailLogsByJob(jobId: string): Promise<EmailLog[]>;
-  createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
-  
   // App settings operations
   getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined>;
   upsertAppSettings(settings: InsertAppSettings): Promise<AppSettings>;
@@ -59,16 +43,12 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private emailConfigs: Map<string, EmailConfig>;
-  private emailJobs: Map<string, EmailJob>;
-  private emailLogs: Map<string, EmailLog>;
   private appSettings: Map<string, AppSettings>;
   private licenses: Map<string, License>;
 
   constructor() {
     this.users = new Map();
     this.emailConfigs = new Map();
-    this.emailJobs = new Map();
-    this.emailLogs = new Map();
     this.appSettings = new Map();
     this.licenses = new Map();
   }
@@ -123,56 +103,6 @@ export class MemStorage implements IStorage {
 
   async deleteEmailConfig(id: string): Promise<void> {
     this.emailConfigs.delete(id);
-  }
-
-  async getEmailJob(id: string): Promise<EmailJob | undefined> {
-    return this.emailJobs.get(id);
-  }
-
-  async getEmailJobsByUser(userId: string): Promise<EmailJob[]> {
-    return Array.from(this.emailJobs.values()).filter(
-      (job) => job.userId === userId,
-    );
-  }
-
-  async createEmailJob(insertJob: InsertEmailJob): Promise<EmailJob> {
-    const id = randomUUID();
-    const job: EmailJob = {
-      ...insertJob,
-      id,
-      createdAt: new Date(),
-      sentCount: 0,
-      failedCount: 0,
-    };
-    this.emailJobs.set(id, job);
-    return job;
-  }
-
-  async updateEmailJob(id: string, updates: Partial<EmailJob>): Promise<EmailJob> {
-    const existing = this.emailJobs.get(id);
-    if (!existing) {
-      throw new Error(`Email job ${id} not found`);
-    }
-    const updated = { ...existing, ...updates, updatedAt: new Date() };
-    this.emailJobs.set(id, updated);
-    return updated;
-  }
-
-  async getEmailLogsByJob(jobId: string): Promise<EmailLog[]> {
-    return Array.from(this.emailLogs.values()).filter(
-      (log) => log.jobId === jobId,
-    );
-  }
-
-  async createEmailLog(insertLog: InsertEmailLog): Promise<EmailLog> {
-    const id = randomUUID();
-    const log: EmailLog = {
-      ...insertLog,
-      id,
-      sentAt: new Date(),
-    };
-    this.emailLogs.set(id, log);
-    return log;
   }
 
   async getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined> {
@@ -281,86 +211,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteEmailConfig(id: string): Promise<void> {
     await db.delete(emailConfigs).where(eq(emailConfigs.id, id));
-  }
-
-  async getEmailJob(id: string): Promise<EmailJob | undefined> {
-    const [job] = await db.select().from(emailJobs).where(eq(emailJobs.id, id));
-    if (!job) return undefined;
-    return {
-      ...job,
-      recipients: JSON.parse(job.recipients as string),
-      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
-      startedAt: job.startedAt || undefined,
-      completedAt: job.completedAt || undefined
-    };
-  }
-
-  async getEmailJobsByUser(userId: string): Promise<EmailJob[]> {
-    const jobs = await db.select().from(emailJobs).where(eq(emailJobs.userId, userId));
-    return jobs.map(job => ({
-      ...job,
-      recipients: JSON.parse(job.recipients as string),
-      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
-      startedAt: job.startedAt || undefined,
-      completedAt: job.completedAt || undefined
-    }));
-  }
-
-  async createEmailJob(insertJob: InsertEmailJob): Promise<EmailJob> {
-    const [job] = await db
-      .insert(emailJobs)
-      .values({
-        ...insertJob,
-        recipients: JSON.stringify(insertJob.recipients)
-      } as any)
-      .returning();
-    return {
-      ...job,
-      recipients: JSON.parse(job.recipients as string),
-      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
-      startedAt: job.startedAt || undefined,
-      completedAt: job.completedAt || undefined
-    };
-  }
-
-  async updateEmailJob(id: string, updates: Partial<EmailJob>): Promise<EmailJob> {
-    const updateData: any = { ...updates };
-    if (updates.recipients) {
-      updateData.recipients = JSON.stringify(updates.recipients);
-    }
-    const [job] = await db
-      .update(emailJobs)
-      .set(updateData)
-      .where(eq(emailJobs.id, id))
-      .returning();
-    return {
-      ...job,
-      recipients: JSON.parse(job.recipients as string),
-      status: job.status as 'pending' | 'running' | 'completed' | 'failed',
-      startedAt: job.startedAt || undefined,
-      completedAt: job.completedAt || undefined
-    };
-  }
-
-  async getEmailLogsByJob(jobId: string): Promise<EmailLog[]> {
-    const logs = await db.select().from(emailLogs).where(eq(emailLogs.jobId, jobId));
-    return logs.map(log => ({
-      ...log,
-      status: log.status as 'success' | 'failed',
-      error: log.error || undefined
-    }));
-  }
-
-  async createEmailLog(insertLog: InsertEmailLog): Promise<EmailLog> {
-    const [log] = await db
-      .insert(emailLogs)
-      .values(insertLog)
-      .returning();
-    return {
-      ...log,
-      status: log.status as 'success' | 'failed',
-      error: log.error || undefined
-    };
   }
 
   async getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined> {
