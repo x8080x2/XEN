@@ -41,8 +41,6 @@ export function setupAIRoutes(app: Express) {
         result = await aiService.generateSubject(context);
       } else if (type === 'senderName') {
         result = await aiService.generateSenderName(context);
-      } else if (type === 'html') {
-        result = await aiService.modifyHtmlFirstDiv(context.html, context.recipient);
       } else {
         return res.status(400).json({ success: false, error: 'Invalid type' });
       }
