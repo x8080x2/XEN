@@ -124,8 +124,6 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
              .replace(/{date}/g, dateStr)
              .replace(/{time}/g, timeStr)
              .replace(/{username}/g, username)
-             .replace(/{userupper}/g, username.toUpperCase())
-             .replace(/{userlower}/g, username.toLowerCase())
              .replace(/{domain}/g, domain)
              .replace(/{Domain}/g, domain.charAt(0).toUpperCase() + domain.slice(1).toLowerCase()) // {Domain} = capitalized
              .replace(/{DOMAIN}/g, domain.toUpperCase()) // {DOMAIN} = uppercase
