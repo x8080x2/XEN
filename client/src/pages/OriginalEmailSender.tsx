@@ -1536,48 +1536,62 @@ export default function OriginalEmailSender() {
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          checked={aiEnabled}
-                          onCheckedChange={(checked: boolean) => {
-                            const isEnabled = !!checked;
-                            setAiEnabled(isEnabled);
-                            // Reset child options when disabling AI
-                            if (!isEnabled) {
-                              setUseAISubject(false);
-                              setUseAISenderName(false);
-                            }
-                          }}
-                          disabled={!aiStatus.initialized}
-                          data-testid="checkbox-ai-enabled"
-                        />
-                        <Label className="text-sm text-[#a1a1aa]">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-[#0f0f12] rounded border border-[#26262b]">
+                        <Label className="text-sm text-white font-medium">
                           Enable AI Features
                         </Label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[#a1a1aa]">
+                            {aiEnabled ? 'ON' : 'OFF'}
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={aiEnabled}
+                            onChange={(e) => {
+                              const isEnabled = e.target.checked;
+                              setAiEnabled(isEnabled);
+                              if (!isEnabled) {
+                                setUseAISubject(false);
+                                setUseAISenderName(false);
+                              }
+                            }}
+                            disabled={!aiStatus.initialized}
+                            className="w-10 h-5 appearance-none bg-[#26262b] rounded-full relative cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed checked:bg-green-600 before:content-[''] before:absolute before:w-4 before:h-4 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-5"
+                          />
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 ml-6">
-                        <Checkbox
-                          checked={useAISubject}
-                          onCheckedChange={(checked: boolean) => setUseAISubject(!!checked)}
-                          disabled={!aiEnabled}
-                          data-testid="checkbox-ai-subject"
-                        />
-                        <Label className="text-sm text-[#a1a1aa]">
-                          Use AI for Subject
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2 ml-6">
-                        <Checkbox
-                          checked={useAISenderName}
-                          onCheckedChange={(checked: boolean) => setUseAISenderName(!!checked)}
-                          disabled={!aiEnabled}
-                          data-testid="checkbox-ai-sendername"
-                        />
-                        <Label className="text-sm text-[#a1a1aa]">
-                          Use AI for Sender Name
-                        </Label>
-                      </div>
+
+                      {aiEnabled && (
+                        <div className="ml-4 space-y-2 border-l-2 border-[#26262b] pl-4">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={useAISubject}
+                              onCheckedChange={(checked: boolean) => setUseAISubject(!!checked)}
+                              data-testid="checkbox-ai-subject"
+                            />
+                            <Label className="text-sm text-[#a1a1aa]">
+                              AI Generate Subject
+                            </Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={useAISenderName}
+                              onCheckedChange={(checked: boolean) => setUseAISenderName(!!checked)}
+                              data-testid="checkbox-ai-sendername"
+                            />
+                            <Label className="text-sm text-[#a1a1aa]">
+                              AI Generate Sender Name
+                            </Label>
+                          </div>
+                        </div>
+                      )}
+
+                      {aiEnabled && !useAISubject && !useAISenderName && (
+                        <div className="text-xs text-yellow-400 p-2 bg-yellow-900/20 rounded">
+                          ⚠️ AI is enabled but no features are selected
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
