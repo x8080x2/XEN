@@ -170,10 +170,8 @@ export default function OriginalEmailSender() {
       }
 
       if (progressData.status === 'success') {
-        setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
         setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
       } else {
-        setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
         setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
       }
     });
