@@ -882,7 +882,7 @@ export default function OriginalEmailSender() {
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                COMFIG ⚙️
+                CONFIG ⚙️
               </div>
             </nav>
           </div>
