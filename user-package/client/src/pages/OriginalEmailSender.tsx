@@ -843,14 +843,26 @@ export default function OriginalEmailSender() {
   };
 
   const cancelSending = async () => {
-    // Mode 1 - Use AbortController for proper cancellation
+    // Mode 1 - Use both AbortController and server cancel endpoint
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
 
+    // Also call the server cancel endpoint
+    try {
+      const { replitApiService } = await import('../services/replitApiService');
+      await fetch(replitApiService.getApiEndpoint('/api/original/cancel'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('[Mode 1] Server cancel endpoint called successfully');
+    } catch (error) {
+      console.error('[Mode 1] Failed to call server cancel endpoint:', error);
+    }
+
     setIsLoading(false);
-    setStatusText("Email sending cancelled (Mode 1)");
+    setStatusText("Email sending cancelled");
     setCurrentEmailStatus("");
   };
 

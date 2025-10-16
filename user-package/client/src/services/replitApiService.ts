@@ -160,6 +160,20 @@ class ElectronReplitApiService {
 
     return response.json();
   }
+
+  // Cancel sending
+  async cancelSending(): Promise<any> {
+    const response = await fetch(this.getApiEndpoint('api/original/cancel'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to cancel sending: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json();
+  }
 }
 
 // Export singleton instance
