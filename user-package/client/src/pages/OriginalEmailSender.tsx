@@ -1215,20 +1215,56 @@ export default function OriginalEmailSender() {
                           </div>
                         ) : (
                           <div className="space-y-1 p-2">
-                            {emailLogs.slice(-20).reverse().map((item, i) => (
-                              <div key={i} className="text-xs font-mono">
-                                <span className={item.status === 'success' ? 'text-green-400' : 'text-red-400'}>
-                                  [{item.timestamp.slice(11, 19)}]
-                                </span>{' '}
-                                <span className="text-[#a1a1aa]">
-                                  {item.recipient} - {item.subject} - {item.status === 'success' ? 'SUCCESS' : 'FAILED'}
-                                  {item.smtp && (
-                                    <span className="text-blue-400"> [SMTP: {item.smtp.fromEmail} ({item.smtp.id})]</span>
-                                  )}
-                                  {item.error && ` (${item.error})`}
-                                </span>
-                              </div>
-                            ))}
+                            {emailLogs.slice(-20).reverse().map((log, index) => {
+                              const logIndex = emailLogs.length - 1 - index;
+                              const isRecentlyAdded = logIndex === recentlyAddedLogIndex;
+
+                              return (
+                                <div
+                                  key={index}
+                                  className={`text-xs py-2 px-3 rounded flex items-start gap-2 transition-all duration-1000 ${
+                                    log.status === 'success'
+                                      ? `bg-green-900/20 border-l-2 border-green-500 ${isRecentlyAdded ? 'ring-2 ring-green-400 bg-green-900/40 shadow-lg transform scale-[1.02]' : ''}`
+                                      : `bg-red-900/20 border-l-2 border-red-500 ${isRecentlyAdded ? 'ring-2 ring-red-400 bg-red-900/40 shadow-lg transform scale-[1.02]' : ''}`
+                                  }`}
+                                  data-testid={`email-log-${index}`}
+                                >
+                                  <span className={`font-bold ${
+                                    log.status === 'success' ? 'text-green-400' : 'text-red-400'
+                                  }`}>
+                                    {log.status === 'success' ? '✓' : '✗'}
+                                  </span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-white font-medium truncate">{log.recipient}</span>
+                                      <span className="text-[#75798b] text-[10px]">
+                                        {log.timestamp.slice(11, 19)}
+                                      </span>
+                                      {isRecentlyAdded && (
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-semibold bg-blue-500/20 text-blue-200 animate-bounce">
+                                          NEW
+                                        </span>
+                                      )}
+                                    </div>
+                                    {log.subject && (
+                                      <div className="text-[#a1a1aa] text-[10px] truncate">
+                                        Subject: {log.subject}
+                                      </div>
+                                    )}
+                                    {log.error && (
+                                      <div className="text-red-300 text-[10px] mt-1">
+                                        Error: {log.error}
+                                      </div>
+                                    )}
+                                    {log.smtp && (
+                                      <div className="text-blue-400 text-[10px] mt-1">
+                                        SMTP: {log.smtp.fromEmail} ({log.smtp.id} - {log.smtp.host})
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
