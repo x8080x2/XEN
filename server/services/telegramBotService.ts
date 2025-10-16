@@ -2,7 +2,7 @@ import TelegramBot from 'node-telegram-bot-api';
 import { licenseService } from './licenseService';
 
 interface UserState {
-  action?: 'awaiting_status_key' | 'awaiting_revoke_key';
+  action?: 'awaiting_status_key' | 'awaiting_revoke_key' | 'awaiting_download_key';
 }
 
 class TelegramBotService {
@@ -74,6 +74,9 @@ class TelegramBotService {
         ],
         [
           { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
+        ],
+        [
+          { text: '💾 Download Desktop App', callback_data: 'menu_download' }
         ],
         [
           { text: '🔍 Check Status', callback_data: 'menu_status' },
@@ -239,6 +242,19 @@ class TelegramBotService {
           );
           break;
 
+        case 'menu_download':
+          this.userStates.set(userId, { action: 'awaiting_download_key' });
+          await this.bot?.sendMessage(
+            chatId,
+            '💾 *Download Desktop App*\n\n' +
+            'Please send your license key to download the desktop app with your license pre-configured:',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
+
         case 'menu_help':
           await this.bot?.editMessageText(
             '📖 *Help & Information*\n\n' +
@@ -283,6 +299,9 @@ class TelegramBotService {
       } else if (state?.action === 'awaiting_revoke_key') {
         this.userStates.delete(userId);
         await this.handleRevokeLicense(chatId, text);
+      } else if (state?.action === 'awaiting_download_key') {
+        this.userStates.delete(userId);
+        await this.handleDownloadApp(chatId, text);
       }
     });
 
@@ -499,6 +518,136 @@ class TelegramBotService {
       await this.bot?.sendMessage(
         chatId,
         '❌ Failed to revoke license.\n\nPlease try again later.',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu()
+        }
+      );
+    }
+  }
+
+  private async handleDownloadApp(chatId: number, licenseKey: string) {
+    try {
+      const result = await licenseService.verifyLicense(licenseKey);
+      
+      if (!result.valid) {
+        await this.bot?.sendMessage(
+          chatId,
+          `❌ *Invalid License Key*\n\n` +
+          `Reason: ${result.reason}\n\n` +
+          `Please check your license key and try again.`,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu()
+          }
+        );
+        return;
+      }
+
+      await this.bot?.sendMessage(
+        chatId,
+        `✅ *License Verified!*\n\n` +
+        `Preparing your desktop app package...\n` +
+        `This may take a moment.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      const archiver = require('archiver');
+      const fs = require('fs');
+      const path = require('path');
+      const { promises: fsPromises } = require('fs');
+
+      const timestamp = Date.now();
+      const zipPath = path.join(process.cwd(), 'uploads', `email-sender-${timestamp}.zip`);
+      
+      await fsPromises.mkdir(path.dirname(zipPath), { recursive: true });
+
+      const output = fs.createWriteStream(zipPath);
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      output.on('close', async () => {
+        try {
+          await this.bot?.sendDocument(
+            chatId,
+            zipPath,
+            {
+              caption: `📦 *Email Sender Desktop App*\n\n` +
+                `✅ Pre-configured with your license key\n` +
+                `🔑 License: \`${licenseKey.substring(0, 8)}...${licenseKey.substring(licenseKey.length - 4)}\`\n\n` +
+                `*Installation:*\n` +
+                `1. Extract the ZIP file\n` +
+                `2. Run \`npm install\` in the folder\n` +
+                `3. Run \`npm run electron\` to start\n\n` +
+                `Your license is already configured in the .env file!`,
+              parse_mode: 'Markdown',
+              reply_markup: this.getMainMenu()
+            }
+          );
+
+          await fsPromises.unlink(zipPath);
+          console.log(`[Telegram Bot] Sent desktop app to user, cleaned up ${zipPath}`);
+        } catch (error) {
+          console.error('[Telegram Bot] Error sending file:', error);
+          await this.bot?.sendMessage(
+            chatId,
+            '❌ Failed to send the desktop app. Please try again.',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getMainMenu()
+            }
+          );
+        }
+      });
+
+      archive.on('error', (err) => {
+        throw err;
+      });
+
+      archive.pipe(output);
+
+      const userPackagePath = path.join(process.cwd(), 'user-package');
+      
+      archive.directory(userPackagePath, false, (entry) => {
+        if (entry.name === '.env.example') {
+          return false;
+        }
+        if (entry.name === 'node_modules' || entry.prefix?.includes('node_modules')) {
+          return false;
+        }
+        if (entry.name === 'dist' || entry.prefix?.includes('dist')) {
+          return false;
+        }
+        if (entry.name === 'dist-electron' || entry.prefix?.includes('dist-electron')) {
+          return false;
+        }
+        return entry;
+      });
+
+      const serverUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : 'https://your-replit-app.replit.app';
+
+      const envContent = `# Email Sender Desktop App Configuration
+
+# Your license key (Pre-configured by Telegram bot)
+LICENSE_KEY=${licenseKey}
+
+# Replit server URL
+REPLIT_SERVER_URL=${serverUrl}
+
+# Development mode
+NODE_ENV=production
+`;
+
+      archive.append(envContent, { name: '.env' });
+
+      await archive.finalize();
+      
+    } catch (error) {
+      console.error('[Telegram Bot] Error preparing download:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Failed to prepare the desktop app package.\n\nPlease try again later.',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu()
