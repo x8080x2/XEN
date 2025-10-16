@@ -1058,8 +1058,6 @@ export default function OriginalEmailSender() {
                       <div className="space-y-2">
                         <div className="text-blue-400 font-semibold">🔧 Advanced Email Placeholders:</div>
                         <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
-                          <div><span className="text-cyan-400">{'{userupper}'}</span> - Username uppercase</div>
-                          <div><span className="text-cyan-400">{'{userlower}'}</span> - Username lowercase</div>
                           <div><span className="text-cyan-400">{'{domainbase}'}</span> - Domain without TLD</div>
                           <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
                           <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
