@@ -824,10 +824,12 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      await fetch('/api/original/pause', { method: 'POST' });
+      await fetch('/api/original/cancel', { method: 'POST' });
       setIsLoading(false);
       setStatusText("Email sending cancelled");
-      setCurrentEmailStatus("");
+      setCurrentEmailStatus("Campaign cancelled");
+      setProgress(0);
+      setProgressDetails("");
 
       // Close any active event source
       if ((window as any).currentEventSource) {

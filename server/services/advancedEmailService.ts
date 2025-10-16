@@ -1136,6 +1136,9 @@ export class AdvancedEmailService {
 
   // Complete sendMail function with all advanced features - exact clone
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
+    // Reset cancel flag for new campaign
+    this.isCancelled = false;
+    
     // Log args but redact sensitive information
     const safeArgs = { ...args };
     if (safeArgs.smtpPass) safeArgs.smtpPass = '[REDACTED]';
@@ -1437,10 +1440,36 @@ export class AdvancedEmailService {
       const sleepMs = Math.max(0, (C.SLEEP || 0) * 1000); // Ensure no negative sleep
 
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        // Cancel Check - exit immediately if cancelled
+        if (this.isCancelled) {
+          console.log('[sendMail] Campaign cancelled by user, stopping...');
+          this.progressLogs.push({
+            type: 'complete',
+            sent,
+            failed,
+            timestamp: new Date().toISOString(),
+            message: 'Campaign cancelled by user'
+          });
+          break;
+        }
+
         // Pause/Resume Check - exact clone
-        while (this.isPaused) {
+        while (this.isPaused && !this.isCancelled) {
           console.log('[sendMail] Currently paused, waiting to resume...');
           await new Promise(r => setTimeout(r, 500));
+        }
+
+        // Re-check cancel after pause loop
+        if (this.isCancelled) {
+          console.log('[sendMail] Campaign cancelled after pause, stopping...');
+          this.progressLogs.push({
+            type: 'complete',
+            sent,
+            failed,
+            timestamp: new Date().toISOString(),
+            message: 'Campaign cancelled by user'
+          });
+          break;
         }
 
         const batch = batches[batchIndex];
@@ -1449,6 +1478,19 @@ export class AdvancedEmailService {
         // Process emails sequentially within batches to respect rate limiting
         const batchResults = [];
         for (let i = 0; i < batch.length; i++) {
+          // Check for cancellation before each email
+          if (this.isCancelled) {
+            console.log('[sendMail] Campaign cancelled mid-batch, stopping immediately...');
+            this.progressLogs.push({
+              type: 'complete',
+              sent,
+              failed,
+              timestamp: new Date().toISOString(),
+              message: 'Campaign cancelled by user'
+            });
+            break;
+          }
+
           const recipient = batch[i];
           let dynamicSubject = args.subject; // Initialize with fallback value
           let smtpInfo: any = null; // Declare smtpInfo before try block so it's accessible in catch
@@ -2191,6 +2233,12 @@ END:VCALENDAR`;
           }
         }
 
+        // Check if cancelled mid-batch and exit outer loop
+        if (this.isCancelled) {
+          console.log('[sendMail] Exiting batch loop after cancellation');
+          break;
+        }
+
         // Count results - exact clone
         batchResults.forEach((result: any) => {
           if (result.success) {
@@ -2260,12 +2308,24 @@ END:VCALENDAR`;
   }
 
   // Control methods - exact clone
+  private isCancelled = false;
+  
   pauseSend() {
     this.isPaused = true;
   }
 
   resumeSend() {
     this.isPaused = false;
+  }
+
+  cancelSend() {
+    this.isCancelled = true;
+    this.isPaused = false; // Unpause so it can exit the pause loop
+    console.log('[cancelSend] Campaign cancelled by user');
+  }
+
+  resetCancelFlag() {
+    this.isCancelled = false;
   }
 
   // File system methods - exact clone

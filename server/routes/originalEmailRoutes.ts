@@ -199,6 +199,13 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json({ success: true, message: 'Email sending resumed' });
   });
 
+  // Cancel send endpoint
+  app.post("/api/original/cancel", (req, res) => {
+    advancedEmailService.cancelSend();
+    sendingInProgress = false; // Stop the progress indicator
+    res.json({ success: true, message: 'Email sending cancelled' });
+  });
+
   // List files endpoint
   app.get("/api/original/listFiles", async (req, res) => {
     const folder = req.query.folder as string || 'files';
