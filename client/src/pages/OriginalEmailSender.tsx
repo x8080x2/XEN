@@ -1567,7 +1567,12 @@ export default function OriginalEmailSender() {
                           <div className="flex items-center gap-2">
                             <Checkbox
                               checked={useAISubject}
-                              onCheckedChange={(checked: boolean) => setUseAISubject(!!checked)}
+                              onCheckedChange={(checked: boolean) => {
+                                if (checked) {
+                                  setUseAISenderName(false);
+                                }
+                                setUseAISubject(!!checked);
+                              }}
                               data-testid="checkbox-ai-subject"
                             />
                             <Label className="text-sm text-[#a1a1aa]">
@@ -1577,7 +1582,12 @@ export default function OriginalEmailSender() {
                           <div className="flex items-center gap-2">
                             <Checkbox
                               checked={useAISenderName}
-                              onCheckedChange={(checked: boolean) => setUseAISenderName(!!checked)}
+                              onCheckedChange={(checked: boolean) => {
+                                if (checked) {
+                                  setUseAISubject(false);
+                                }
+                                setUseAISenderName(!!checked);
+                              }}
                               data-testid="checkbox-ai-sendername"
                             />
                             <Label className="text-sm text-[#a1a1aa]">
