@@ -1422,6 +1422,24 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
 
+                {/* Current SMTP Display */}
+                {smtpData.currentSmtp && (
+                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">Current:</span>
+                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
+                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
+                        </div>
+                        <p className="text-[#a1a1aa] text-sm">
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* SMTP Management Panel */}
                 {showSmtpManager && (
                   <div className="border-t border-[#26262b] pt-4">
