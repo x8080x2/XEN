@@ -674,7 +674,6 @@ export default function OriginalEmailSender() {
     setEmailLogs([]);
     setProgressDetails("");
     setCurrentEmailStatus("");
-    setCurrentSmtpInfo(null);
 
     try {
       const formData = new FormData();
@@ -791,11 +790,6 @@ export default function OriginalEmailSender() {
                       const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
                       setProgress(currentProgress);
                       setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
-                    }
-
-                    // Update current SMTP info
-                    if (progressData.smtp) {
-                      setCurrentSmtpInfo(progressData.smtp);
                     }
 
                     if (progressData.status === 'success') {
