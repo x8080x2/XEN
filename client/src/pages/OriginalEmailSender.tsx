@@ -1387,10 +1387,10 @@ export default function OriginalEmailSender() {
               </div>
 
               {/* SMTP Management - Moved to SMTP Settings Area */}
-              <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    ⚙️ SMTP MANAGMENT
+              <div className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+                    ⚙️ SMTP Management
                   </h3>
                   <div className="flex items-center gap-4">
                     <Button
@@ -1517,11 +1517,11 @@ export default function OriginalEmailSender() {
               </div>
 
               {/* AI Content Generation - Moved under SMTP Management */}
-              <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
-                <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
-                  🤖 AI CONTENT GENERATION
+              <div className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2 mb-3">
+                  🤖 AI Content Generation
                 </h3>
-                <div className="bg-[#0a0a0f] p-4 rounded-lg border border-[#26262b]">
+                <div className="bg-[#0a0a0f] p-3 rounded border border-[#26262b]">
 
 
                   <div className="space-y-4">
@@ -1596,20 +1596,11 @@ export default function OriginalEmailSender() {
             </div>
 
             {/* HTML Convert Settings - Moved to Front */}
-            <div className="mt-4 mb-8 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-center mb-1 whitespace-pre overflow-hidden">
- {`
-██╗  ██╗████████╗███╗   ███╗██╗          ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ████████╗
-██║  ██║╚══██╔══╝████╗ ████║██║         ██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗╚══██╔══╝
-███████║   ██║   ██╔████╔██║██║         ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║   
-██╔══██║   ██║   ██║╚██╔╝██║██║         ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   
-██║  ██║   ██║   ██║ ╚═╝ ██║███████╗    ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║   
-╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   
-
-`}
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <Label className="text-sm text-[green] mb-3 block">CONVERSION FORMATS</Label>
+            <div className="mt-4 mb-8 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+              <h3 className="text-sm font-semibold text-[#ef4444] mb-3 flex items-center gap-2">
+                🔄 HTML Convert
+              </h3>
+              <div className="space-y-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     type="button"
@@ -1679,12 +1670,12 @@ export default function OriginalEmailSender() {
                   })}
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2 block">ZIP PASSWORD FOR ATTACHMENT</Label>
+                  <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
                   <Input
                     type="password"
                     value={advancedSettings.zipPassword}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
                     placeholder="Optional"
                   />
                 </div>
