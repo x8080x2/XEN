@@ -1004,7 +1004,7 @@ export default function OriginalEmailSender() {
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span>✏️ OFF TO USE TXT</span>
+                        <span>✏️ OFF TO USE TXT </span>
                       )}
                     </div>
                   </div>
@@ -1043,12 +1043,12 @@ export default function OriginalEmailSender() {
                           <div><span className="text-cyan-400">{'{userupper}'}</span> - Username uppercase</div>
                           <div><span className="text-cyan-400">{'{userlower}'}</span> - Username lowercase</div>
                           <div><span className="text-cyan-400">{'{domainbase}'}</span> - Domain without TLD</div>
-                          <div><span className="text-cyan-400">{'{host}'}</span> - Host lowercase (gmail)</div>
-                          <div><span className="text-cyan-400">{'{Host}'}</span> - Host capitalized (Gmail)</div>
-                          <div><span className="text-cyan-400">{'{HOST}'}</span> - Host uppercase (GMAIL)</div>
                           <div><span className="text-cyan-400">{'{initials}'}</span> - User initials</div>
                           <div><span className="text-cyan-400">{'{userid}'}</span> - Unique user ID</div>
                           <div><span className="text-cyan-400">{'{emailb64}'}</span> - Base64 encoded email</div>
+                          <div><span className="text-green-400">{'{host}'}</span> - Host lowercase (gmail)</div>
+                          <div><span className="text-green-400">{'{Host}'}</span> - Host capitalized (Gmail)</div>
+                          <div><span className="text-green-400">{'{HOST}'}</span> - Host uppercase (GMAIL)</div>
                         </div>
                       </div>
 
@@ -1088,7 +1088,7 @@ export default function OriginalEmailSender() {
                         </div>
                       </div>
 
-                      <div className="mt-3 p-2 bg-[#1a1a1f] rounded border-l-2 border-[#ef4444]">
+                      <div className="mt-3 p-2 bg-[#1a1f] rounded border-l-2 border-[#ef4444]">
                         <div className="text-[#ef4444] font-semibold text-[10px] mb-1">💡 Pro Tips:</div>
                         <div className="text-[10px] space-y-1">
                           <div>• Use placeholders in both subject and email body</div>
@@ -1169,7 +1169,7 @@ export default function OriginalEmailSender() {
               {(isLoading || emailLogs.length > 0) && (
                 <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
                   <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
-                    <span>{isLoading ? '🚀 SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
+                    <span>{isLoading ? '  SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded">
                       {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
                     </span>
@@ -1389,10 +1389,10 @@ export default function OriginalEmailSender() {
               </div>
 
               {/* SMTP Management - Moved to SMTP Settings Area */}
-              <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                    ⚙️ SMTP MANAGMENT
+              <div className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+                    ⚙️ SMTP Management
                   </h3>
                   <div className="flex items-center gap-4">
                     <Button
