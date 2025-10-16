@@ -1015,10 +1015,16 @@ export default function OriginalEmailSender() {
                       <div className="space-y-2">
                         <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
                         <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
-                          <div><span className="text-green-400">{'{user}'}</span> - Username from email</div>
+                          <div><span className="text-green-400">{'{user}'}</span> - Username lowercase</div>
+                          <div><span className="text-green-400">{'{User}'}</span> - Username capitalized</div>
+                          <div><span className="text-green-400">{'{USER}'}</span> - Username UPPERCASE</div>
                           <div><span className="text-green-400">{'{username}'}</span> - Same as user</div>
-                          <div><span className="text-green-400">{'{email}'}</span> - Full email address</div>
-                          <div><span className="text-green-400">{'{domain}'}</span> - Email domain</div>
+                          <div><span className="text-green-400">{'{email}'}</span> - Email lowercase</div>
+                          <div><span className="text-green-400">{'{Email}'}</span> - Email capitalized</div>
+                          <div><span className="text-green-400">{'{EMAIL}'}</span> - Email UPPERCASE</div>
+                          <div><span className="text-green-400">{'{domain}'}</span> - Domain lowercase</div>
+                          <div><span className="text-green-400">{'{Domain}'}</span> - Domain capitalized</div>
+                          <div><span className="text-green-400">{'{DOMAIN}'}</span> - Domain UPPERCASE</div>
                           <div><span className="text-green-400">{'{date}'}</span> - Current date</div>
                           <div><span className="text-green-400">{'{time}'}</span> - Current time</div>
                         </div>

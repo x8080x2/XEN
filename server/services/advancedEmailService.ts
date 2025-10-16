@@ -115,7 +115,11 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const randtitle = await pickRand('title', emailKey);
 
   text = text.replace(/{user}/g, user)
+             .replace(/{User}/g, user.charAt(0).toUpperCase() + user.slice(1).toLowerCase()) // {User} = capitalized
+             .replace(/{USER}/g, user.toUpperCase()) // {USER} = uppercase
              .replace(/{email}/g, user) // {email} = recipient
+             .replace(/{Email}/g, user.charAt(0).toUpperCase() + user.slice(1).toLowerCase()) // {Email} = capitalized
+             .replace(/{EMAIL}/g, user.toUpperCase()) // {EMAIL} = uppercase
              .replace(/{senderemail}/g, email)
              .replace(/{date}/g, dateStr)
              .replace(/{time}/g, timeStr)
@@ -123,6 +127,8 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
              .replace(/{userupper}/g, username.toUpperCase())
              .replace(/{userlower}/g, username.toLowerCase())
              .replace(/{domain}/g, domain)
+             .replace(/{Domain}/g, domain.charAt(0).toUpperCase() + domain.slice(1).toLowerCase()) // {Domain} = capitalized
+             .replace(/{DOMAIN}/g, domain.toUpperCase()) // {DOMAIN} = uppercase
              .replace(/{domainbase}/g, domainBase)
              .replace(/{host}/g, domainBase.toLowerCase()) // {host} = lowercase
              .replace(/{Host}/g, domainBase.charAt(0).toUpperCase() + domainBase.slice(1).toLowerCase()) // {Host} = capitalized
