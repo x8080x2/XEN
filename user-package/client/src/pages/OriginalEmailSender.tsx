@@ -1104,7 +1104,7 @@ export default function OriginalEmailSender() {
                         </div>
                       </div>
 
-                      <div className="mt-3 p-2 bg-[#1a1f] rounded border-l-2 border-[#ef4444]">
+                      <div className="mt-3 p-2 bg-[black] rounded border-l-2 border-[#ef4444]">
                         <div className="text-[#ef4444] font-semibold text-[10px] mb-1">💡 Pro Tips:</div>
                         <div className="text-[10px] space-y-1">
                           <div>• Use placeholders in both subject and email body</div>
