@@ -161,7 +161,6 @@ export default function OriginalEmailSender() {
   const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false, provider: 'gemini' });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
-  const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
 
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -367,7 +366,11 @@ export default function OriginalEmailSender() {
         // Use Electron API for SMTP data
         const data = await window.electronAPI.smtpList();
         if (data.success) {
-          setSmtpData(data);
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: data.rotationEnabled || false
+          });
           console.log('[Mode 1] SMTP data loaded from local config:', data);
         }
       } else {
