@@ -742,80 +742,72 @@ export default function OriginalEmailSender() {
         }
       }
 
-      // Use Server-Sent Events for real-time progress
+      // Start email sending
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start email sending');
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to start email sending');
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      setStatusText("Email sending started. Checking for updates...");
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      // Poll for progress updates
+      let logIndex = 0;
+      const pollInterval = setInterval(async () => {
+        try {
+          const progressResponse = await fetch(`/api/original/progress?since=${logIndex}`);
+          const progressData = await progressResponse.json();
 
-          // Add new data to buffer
-          buffer += decoder.decode(value);
+          if (progressData.logs && progressData.logs.length > 0) {
+            for (const log of progressData.logs) {
+              if (log.type === 'complete') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setProgress(100);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails`);
+                  setCurrentEmailStatus("");
+                });
+                clearInterval(pollInterval);
+              } else if (log.type === 'error') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setStatusText(`Error: ${log.error}`);
+                });
+                clearInterval(pollInterval);
+              } else {
+                // Regular progress update
+                const progressData: EmailProgress = {
+                  recipient: log.recipient || 'Unknown',
+                  subject: log.subject || subject || 'No Subject',
+                  status: log.status || 'fail',
+                  error: log.error || undefined,
+                  timestamp: log.timestamp || new Date().toISOString(),
+                  totalSent: log.totalSent,
+                  totalFailed: log.totalFailed,
+                  totalRecipients: log.totalRecipients,
+                  smtp: log.smtp
+                };
 
-          // Process complete lines
-          const lines = buffer.split('\n');
-          // Keep the last potentially incomplete line in buffer
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data: any = JSON.parse(line.slice(6));
-
-                // Process each message individually with immediate rendering
-                if (data.type === 'progress') {
-                  console.log(`[TIMING] UI received SSE at ${Date.now()}, recipient: ${data.recipient}`);
-
-                  const progressData: EmailProgress = {
-                    recipient: data.recipient || 'Unknown',
-                    subject: data.subject || subject || 'No Subject',
-                    status: data.status || 'fail',
-                    error: data.error || undefined,
-                    timestamp: data.timestamp || new Date().toISOString(),
-                    totalSent: data.totalSent,
-                    totalFailed: data.totalFailed,
-                    totalRecipients: data.totalRecipients,
-                    smtp: data.smtp
-                  };
-
-                  updateProgress(progressData);
-
-                } else if (data.type === 'complete') {
-                  flushSync(() => {
-                    setIsLoading(false);
-                    setProgress(100);
-                    setStatusText(`Email sending completed. Sent: ${data.sent} emails`);
-                    setCurrentEmailStatus("");
-                  });
-                  if (!data.success && data.error) {
-                    console.error('Email sending error:', data.error);
-                  }
-                } else if (data.type === 'error') {
-                  flushSync(() => {
-                    setIsLoading(false);
-                    setStatusText(`Error: ${data.error}`);
-                  });
-                  console.error('Email sending error:', data.error);
-                }
-              } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                updateProgress(progressData);
               }
             }
+            logIndex = progressData.total;
           }
+
+          // Stop polling if not in progress
+          if (!progressData.inProgress && progressData.logs.length === 0) {
+            clearInterval(pollInterval);
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.error('Error polling progress:', err);
         }
-      }
+      }, 500); // Poll every 500ms
 
     } catch (error: any) {
       console.error('Email sending error:', error);
@@ -825,13 +817,10 @@ export default function OriginalEmailSender() {
         type: 'error',
         message: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
         timestamp: new Date().toISOString(),
-        recipient: "N/A", // Added for type safety
-        subject: "N/A", // Added for type safety
-        status: "fail" // Added for type safety
+        recipient: "N/A",
+        subject: "N/A",
+        status: "fail"
       }]);
-    } finally {
-      // Always ensure sending state is reset
-      setIsLoading(false);
     }
   };
 

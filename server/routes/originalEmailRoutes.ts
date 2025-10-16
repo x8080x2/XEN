@@ -9,7 +9,11 @@ const upload = multer({ dest: 'uploads/' });
 
 export function setupOriginalEmailRoutes(app: Express) {
 
-  // Main sendMail endpoint - exact clone functionality
+  // Store progress logs in memory
+  const progressLogs: any[] = [];
+  let sendingInProgress = false;
+
+  // Main sendMail endpoint - simple polling approach
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
@@ -28,12 +32,10 @@ export function setupOriginalEmailRoutes(app: Express) {
         if (!req.body.smtpUser) missingFields.push('User');
         if (!req.body.smtpPass) missingFields.push('Password');
 
-        res.write(`data: ${JSON.stringify({
-          type: 'error',
+        return res.status(400).json({
+          success: false,
           error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
-        })}\n\n`);
-        res.end();
-        return;
+        });
       }
 
       const files = req.files as Express.Multer.File[];
@@ -113,69 +115,56 @@ export function setupOriginalEmailRoutes(app: Express) {
         proxyPass: req.body.proxyPass || '',
       };
 
-      // Send progress updates via Server-Sent Events
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Cache-Control',
-        'X-Accel-Buffering': 'no'  // Disable nginx buffering
-      });
+      // Clear previous logs and start sending
+      progressLogs.length = 0;
+      sendingInProgress = true;
 
       let totalSent = 0;
       let totalFailed = 0;
 
-      try {
-        const result = await advancedEmailService.sendMail(args, (progress) => {
-          // Update counters
-          if (progress.status === 'success') {
-            totalSent++;
-          } else {
-            totalFailed++;
-          }
+      // Start sending in background
+      advancedEmailService.sendMail(args, (progress) => {
+        // Update counters
+        if (progress.status === 'success') {
+          totalSent++;
+        } else {
+          totalFailed++;
+        }
 
-          console.log(`[TIMING] SSE sent at ${Date.now()}, recipient: ${progress.recipient}`);
-
-          // Send progress update immediately to frontend
-          res.write(`data: ${JSON.stringify({
-            type: 'progress',
-            recipient: progress.recipient || 'Unknown',
-            subject: progress.subject || args.subject || 'No Subject',
-            status: progress.status,
-            error: progress.error || null,
-            timestamp: progress.timestamp || new Date().toISOString(),
-            totalSent,
-            totalFailed,
-            totalRecipients: (args.recipients || []).length,
-            smtp: progress.smtp || null
-          })}\n\n`);
-
-          // Force flush to prevent buffering
-          (res as any).flush?.();
+        // Store progress in memory
+        progressLogs.push({
+          recipient: progress.recipient || 'Unknown',
+          subject: progress.subject || args.subject || 'No Subject',
+          status: progress.status,
+          error: progress.error || null,
+          timestamp: progress.timestamp || new Date().toISOString(),
+          totalSent,
+          totalFailed,
+          totalRecipients: (args.recipients || []).length,
+          smtp: progress.smtp || null
         });
-
-        // Send completion
-        res.write(`data: ${JSON.stringify({
+      }).then((result) => {
+        sendingInProgress = false;
+        progressLogs.push({
           type: 'complete',
           success: result.success,
           sent: result.sent || totalSent,
           error: result.error,
           details: result.details
-        })}\n\n`);
-        (res as any).flush?.();
-
-      } catch (error: any) {
-        res.write(`data: ${JSON.stringify({
+        });
+      }).catch((error: any) => {
+        sendingInProgress = false;
+        progressLogs.push({
           type: 'error',
           error: error.message || 'Unknown error occurred'
-        })}\n\n`);
-        (res as any).flush?.();
-      }
+        });
+      });
 
-      res.end();
+      // Return immediately
+      res.json({
+        success: true,
+        message: 'Email sending started'
+      });
 
     } catch (error: any) {
       console.error('Error in sendMail:', error);
@@ -184,6 +173,18 @@ export function setupOriginalEmailRoutes(app: Express) {
         error: error.message || 'Internal server error'
       });
     }
+  });
+
+  // New endpoint to poll for progress
+  app.get("/api/original/progress", (req, res) => {
+    const since = parseInt(req.query.since as string) || 0;
+    const newLogs = progressLogs.slice(since);
+    
+    res.json({
+      logs: newLogs,
+      total: progressLogs.length,
+      inProgress: sendingInProgress
+    });
   });
 
   // Pause send endpoint
