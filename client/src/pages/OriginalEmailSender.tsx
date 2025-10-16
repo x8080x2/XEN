@@ -1596,95 +1596,94 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* HTML Convert Settings - Moved to Front */}
-            <div className="mt-4 mb-8 bg-[#131316] rounded-lg border border-[#26262b] p-3">
-              <h3 className="text-sm font-semibold text-[#ef4444] mb-3 flex items-center gap-2">
-                🔄 HTML Convert
-              </h3>
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
-                    className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                  >
-                    ZIP
-                    {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
-                    className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                  >
-                    🌫️ HTML-TO-IMG
-                    {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
-                    className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                  >
-                    QRCODE
-                    {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
-                    className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                  >
-                    🍬 Metadata
-                    {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
-                    className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                  >
-                    CALENDAR
-                    {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
-                  </Button>
-                  {[
-                    { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
-                    { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
-                    { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
-                    { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
-                  ].map(({ format, label, color }) => {
-                    const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
-
-                    return (
+              {/* HTML Convert Settings - Moved to Front */}
+                <div className="mt-4 mb-8 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                  <h3 className="text-sm font-semibold text-[#ef4444] mb-3 flex items-center gap-2">
+                    🔄 HTML Convert
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <Button
-                        key={format}
                         type="button"
-                        onClick={() => {
-                          const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
-                          const newFormats = isActive
-                            ? formats.filter((f: string) => f !== format)
-                            : [...formats, format];
-                          setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
-                        }}
-                        className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                        onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
+                        className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
                       >
-                        {label}
-                        {isActive && <span className="ml-1 text-xs">✓</span>}
+                        ZIP
+                        {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
                       </Button>
-                    );
-                  })}
-                </div>
-                <div>
-                  <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
-                  <Input
-                    type="password"
-                    value={advancedSettings.zipPassword}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
-                    placeholder="Optional"
-                  />
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
+                        className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        🌫️ HTML-TO-IMG
+                        {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                        className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        QRCODE
+                        {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                        className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        🍬 Metadata
+                        {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                        className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        CALENDAR
+                        {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      {[
+                        { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
+                        { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
+                        { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
+                        { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
+                      ].map(({ format, label, color }) => {
+                        const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
+
+                        return (
+                          <Button
+                            key={format}
+                            type="button"
+                            onClick={() => {
+                              const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
+                              const newFormats = isActive
+                                ? formats.filter((f: string) => f !== format)
+                                : [...formats, format];
+                              setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
+                            }}
+                            className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                          >
+                            {label}
+                            {isActive && <span className="ml-1 text-xs">✓</span>}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
+                      <Input
+                        type="password"
+                        value={advancedSettings.zipPassword}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
+                        placeholder="Optional"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </div>         
         </div>
 
         {/* Settings Overlay */}
