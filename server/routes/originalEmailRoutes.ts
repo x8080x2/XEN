@@ -13,7 +13,7 @@ export function setupOriginalEmailRoutes(app: Express) {
   const progressLogs: any[] = [];
   let sendingInProgress = false;
 
-  // Main sendMail endpoint - simple polling approach
+  // Main sendMail endpoint - SSE streaming for real-time updates
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
@@ -115,55 +115,44 @@ export function setupOriginalEmailRoutes(app: Express) {
         proxyPass: req.body.proxyPass || '',
       };
 
-      // Clear previous logs and start sending
-      progressLogs.length = 0;
-      sendingInProgress = true;
+      // Set up SSE streaming
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
-      let totalSent = 0;
-      let totalFailed = 0;
-
-      // Start sending in background
+      // Start sending emails with real-time progress streaming
       advancedEmailService.sendMail(args, (progress) => {
-        // Update counters
-        if (progress.status === 'success') {
-          totalSent++;
-        } else {
-          totalFailed++;
-        }
-
-        // Store progress in memory
-        progressLogs.push({
+        // Stream progress updates immediately
+        const data = {
+          type: 'progress',
           recipient: progress.recipient || 'Unknown',
           subject: progress.subject || args.subject || 'No Subject',
           status: progress.status,
           error: progress.error || null,
           timestamp: progress.timestamp || new Date().toISOString(),
-          totalSent,
-          totalFailed,
-          totalRecipients: (args.recipients || []).length,
+          totalSent: progress.totalSent,
+          totalFailed: progress.totalFailed,
+          totalRecipients: progress.totalRecipients,
           smtp: progress.smtp || null
-        });
+        };
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
       }).then((result) => {
-        sendingInProgress = false;
-        progressLogs.push({
+        // Send completion event
+        res.write(`data: ${JSON.stringify({
           type: 'complete',
           success: result.success,
-          sent: result.sent || totalSent,
+          sent: result.sent,
           error: result.error,
           details: result.details
-        });
+        })}\n\n`);
+        res.end();
       }).catch((error: any) => {
-        sendingInProgress = false;
-        progressLogs.push({
+        // Send error event
+        res.write(`data: ${JSON.stringify({
           type: 'error',
           error: error.message || 'Unknown error occurred'
-        });
-      });
-
-      // Return immediately
-      res.json({
-        success: true,
-        message: 'Email sending started'
+        })}\n\n`);
+        res.end();
       });
 
     } catch (error: any) {

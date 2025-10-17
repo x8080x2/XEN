@@ -725,6 +725,7 @@ export default function OriginalEmailSender() {
       // Create AbortController for cancellation (Mode 1)
       abortControllerRef.current = new AbortController();
 
+      // Use Server-Sent Events for real-time progress (same as web version)
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
@@ -768,7 +769,7 @@ export default function OriginalEmailSender() {
                     totalSent: data.totalSent,
                     totalFailed: data.totalFailed,
                     totalRecipients: data.totalRecipients,
-                    smtp: data.smtp // Include SMTP info
+                    smtp: data.smtp
                   };
 
                   // Use flushSync to force immediate rendering of each email confirmation
@@ -1594,14 +1595,14 @@ export default function OriginalEmailSender() {
             {/* HTML Convert Settings - Moved to Front */}
             <div className="mt-4 bg-[#0a0a0b] rounded-xl p-6 border border-[#26262b]">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center mb-1 whitespace-pre overflow-hidden">
- {` 
+ {`
                                  ██╗  ██╗████████╗███╗   ███╗██╗          ██████╗ ██████╗ ███╗   ██╗██╗   ██╗███████╗██████╗ ████████╗
                                  ██║  ██║╚══██╔══╝████╗ ████║██║         ██╔════╝██╔═══██╗████╗  ██║██║   ██║██╔════╝██╔══██╗╚══██╔══╝
-                                 ███████║   ██║   ██╔████╔██║██║         ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║   
-                                 ██╔══██║   ██║   ██║╚██╔╝██║██║         ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║   
-                                 ██║  ██║   ██║   ██║ ╚═╝ ██║███████╗    ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║   
-                                 ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝   
-                                                                                                                        
+                                 ███████║   ██║   ██╔████╔██║██║         ██║     ██║   ██║██╔██╗ ██║██║   ██║█████╗  ██████╔╝   ██║
+                                 ██╔══██║   ██║   ██║╚██╔╝██║██║         ██║     ██║   ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██╔══██╗   ██║
+                                 ██║  ██║   ██║   ██║ ╚═╝ ██║███████╗    ╚██████╗╚██████╔╝██║ ╚████║ ╚████╔╝ ███████╗██║  ██║   ██║
+                                 ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚═╝╚══════╝     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝   ╚═╝
+
                                                                                                                         `}
               </div>
               <div className="grid grid-cols-1 gap-4">
@@ -2012,8 +2013,6 @@ export default function OriginalEmailSender() {
                     />
                   </div>
                 </div>
-
-
 
 
 
