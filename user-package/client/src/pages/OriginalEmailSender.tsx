@@ -1650,6 +1650,12 @@ export default function OriginalEmailSender() {
                         </Label>
                       </div>
                     </div>
+
+                    {aiEnabled && !useAISubject && !useAISenderName && (
+                      <div className="text-xs text-yellow-400 p-2 bg-yellow-900/20 rounded">
+                        ⚠️ AI is enabled but no features are selected
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
