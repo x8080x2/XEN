@@ -747,7 +747,7 @@ export default function OriginalEmailSender() {
       });
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to start email sending');
       }
@@ -788,7 +788,8 @@ export default function OriginalEmailSender() {
                   totalSent: log.totalSent,
                   totalFailed: log.totalFailed,
                   totalRecipients: log.totalRecipients,
-                  smtp: log.smtp
+                  smtp: log.smtp,
+                  type: 'progress'
                 };
 
                 updateProgress(progressData);
@@ -1696,8 +1697,7 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>         
+              </div>         
         </div>
 
         {/* Settings Overlay */}

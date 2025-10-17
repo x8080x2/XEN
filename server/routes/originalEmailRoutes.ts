@@ -13,7 +13,7 @@ export function setupOriginalEmailRoutes(app: Express) {
   const progressLogs: any[] = [];
   let sendingInProgress = false;
 
-  // Main sendMail endpoint - SSE streaming for real-time updates
+  // Main sendMail endpoint - supports both polling and SSE
   app.post("/api/original/sendMail", upload.any(), async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
@@ -115,16 +115,14 @@ export function setupOriginalEmailRoutes(app: Express) {
         proxyPass: req.body.proxyPass || '',
       };
 
-      // Set up SSE streaming
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
+      // Clear previous progress logs
+      progressLogs.length = 0;
+      sendingInProgress = true;
 
-      // Start sending emails with real-time progress streaming
+      // Start sending emails with progress tracking
       advancedEmailService.sendMail(args, (progress) => {
-        // Stream progress updates immediately
-        const data = {
-          type: 'progress',
+        // Store progress in memory for polling
+        progressLogs.push({
           recipient: progress.recipient || 'Unknown',
           subject: progress.subject || args.subject || 'No Subject',
           status: progress.status,
@@ -134,29 +132,32 @@ export function setupOriginalEmailRoutes(app: Express) {
           totalFailed: progress.totalFailed,
           totalRecipients: progress.totalRecipients,
           smtp: progress.smtp || null
-        };
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
+        });
       }).then((result) => {
-        // Send completion event
-        res.write(`data: ${JSON.stringify({
+        // Add completion log
+        progressLogs.push({
           type: 'complete',
           success: result.success,
           sent: result.sent,
           error: result.error,
           details: result.details
-        })}\n\n`);
-        res.end();
+        });
+        sendingInProgress = false;
       }).catch((error: any) => {
-        // Send error event
-        res.write(`data: ${JSON.stringify({
+        // Add error log
+        progressLogs.push({
           type: 'error',
           error: error.message || 'Unknown error occurred'
-        })}\n\n`);
-        res.end();
+        });
+        sendingInProgress = false;
       });
+
+      // Return immediate response for polling mode
+      res.json({ success: true, message: 'Email sending started' });
 
     } catch (error: any) {
       console.error('Error in sendMail:', error);
+      sendingInProgress = false;
       res.status(500).json({
         success: false,
         error: error.message || 'Internal server error'
