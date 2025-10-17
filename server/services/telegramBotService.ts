@@ -573,9 +573,7 @@ class TelegramBotService {
                 `✅ Pre-configured with your license key\n` +
                 `🔑 License: \`${licenseKey.substring(0, 8)}...${licenseKey.substring(licenseKey.length - 4)}\`\n\n` +
                 `*Installation:*\n` +
-                `1. Extract the ZIP file\n` +
-                `2. Run \`npm install\` in the folder\n` +
-                `3. Run \`npm run electron\` to start\n\n` +
+                `1. Extract the ZIP file\n` +                
                 `Your license is already configured in the .env file!`,
               parse_mode: 'Markdown',
               reply_markup: this.getMainMenu()
