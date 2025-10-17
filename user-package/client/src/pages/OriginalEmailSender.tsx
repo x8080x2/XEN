@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ interface EmailProgress {
   totalFailed?: number;
   totalRecipients?: number;
   smtp?: { id: string, fromEmail: string, host: string }; // Added SMTP info
+  type?: string; // For progress updates from polling
 }
 
 interface SMTPSettings {
@@ -586,6 +587,27 @@ export default function OriginalEmailSender() {
     setTimeout(() => setStatusText(""), 3000);
   };
 
+  // Function to update progress and logs, forcing immediate UI updates
+  const updateProgress = (progressData: EmailProgress) => {
+    flushSync(() => {
+      setEmailLogs(prev => [...prev, progressData]);
+
+      if (progressData.totalRecipients) {
+        const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
+        setProgress(currentProgress);
+        setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+      }
+
+      if (progressData.status === 'success') {
+        setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
+        setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
+      } else {
+        setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
+        setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
+      }
+    });
+  };
+
   const handleSendEmails = async () => {
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
@@ -711,7 +733,6 @@ export default function OriginalEmailSender() {
         }
       }
 
-      // Use Server-Sent Events for real-time progress
       // Mode 1 - Always use hosted Replit server for email sending
       if (!window.electronAPI) {
         setStatusText('Mode 1 requires Electron API for local file system access');
@@ -720,97 +741,95 @@ export default function OriginalEmailSender() {
 
       // Import and use the configurable Replit API service
       const { replitApiService } = await import('../services/replitApiService');
-      const apiEndpoint = replitApiService.getEmailSendEndpoint();
+      const serverUrl = replitApiService.getServerUrl(); // Get the base server URL
 
-      // Create AbortController for cancellation (Mode 1)
-      abortControllerRef.current = new AbortController();
-
-      // Use Server-Sent Events for real-time progress (same as web version)
-      const response = await fetch(apiEndpoint, {
+      // Start email sending
+      const response = await fetch(`${serverUrl}/api/original/sendMail`, {
         method: 'POST',
         body: formData,
-        signal: abortControllerRef.current.signal
+        signal: abortControllerRef.current?.signal // Use the abort signal
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to start email sending');
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to start email sending');
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+      setStatusText("Email sending started. Checking for updates...");
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      // Poll for progress updates
+      let logIndex = 0;
+      const pollInterval = setInterval(async () => {
+        try {
+          const progressResponse = await fetch(`${serverUrl}/api/original/progress?since=${logIndex}`, {
+            signal: abortControllerRef.current?.signal // Pass abort signal to polling requests too
+          });
+          if (!progressResponse.ok) {
+            throw new Error(`Polling request failed with status ${progressResponse.status}`);
+          }
+          const progressData = await progressResponse.json();
 
-          // Add new data to buffer
-          buffer += decoder.decode(value);
-
-          // Process complete lines
-          const lines = buffer.split('\n');
-          // Keep the last potentially incomplete line in buffer
-          buffer = lines.pop() || '';
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-
-                // Process each message individually with immediate rendering
-                if (data.type === 'progress') {
-                  const progressData: EmailProgress = {
-                    recipient: data.recipient || 'Unknown',
-                    subject: data.subject || subject || 'No Subject',
-                    status: data.status || 'fail',
-                    error: data.error ?? undefined,
-                    timestamp: data.timestamp || new Date().toISOString(),
-                    totalSent: data.totalSent,
-                    totalFailed: data.totalFailed,
-                    totalRecipients: data.totalRecipients,
-                    smtp: data.smtp
-                  };
-
-                  // Use flushSync to force immediate rendering of each email confirmation
-                  flushSync(() => {
-                    setEmailLogs(prev => [...prev, progressData]);
-
-                    if (progressData.totalRecipients) {
-                      const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
-                      setProgress(currentProgress);
-                      setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
-                    }
-
-                    if (progressData.status === 'success') {
-                      setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
-                      setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
-                    } else {
-                      setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
-                      setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
-                    }
-                  });
-
-                } else if (data.type === 'complete') {
+          if (progressData.logs && progressData.logs.length > 0) {
+            for (const log of progressData.logs) {
+              if (log.type === 'complete') {
+                flushSync(() => {
                   setIsLoading(false);
                   setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${data.sent} emails`);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails`);
                   setCurrentEmailStatus("");
-                  if (!data.success && data.error) {
-                    console.error('Email sending error:', data.error);
-                  }
-                } else if (data.type === 'error') {
+                });
+                clearInterval(pollInterval);
+              } else if (log.type === 'error') {
+                flushSync(() => {
                   setIsLoading(false);
-                  setStatusText(`Error: ${data.error}`);
-                  console.error('Email sending error:', data.error);
-                }
-              } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                  setStatusText(`Error: ${log.error}`);
+                  setCurrentEmailStatus(`Sending failed: ${log.error}`);
+                });
+                clearInterval(pollInterval);
+              } else {
+                // Regular progress update
+                const progressLog: EmailProgress = {
+                  recipient: log.recipient || 'Unknown',
+                  subject: log.subject || subject || 'No Subject',
+                  status: log.status || 'fail',
+                  error: log.error || undefined,
+                  timestamp: log.timestamp || new Date().toISOString(),
+                  totalSent: log.totalSent,
+                  totalFailed: log.totalFailed,
+                  totalRecipients: log.totalRecipients,
+                  smtp: log.smtp,
+                  type: 'progress'
+                };
+
+                updateProgress(progressLog);
               }
             }
+            logIndex = progressData.total; // Update the index for the next poll
+          }
+
+          // Stop polling if not in progress and no new logs were received
+          if (!progressData.inProgress && progressData.logs.length === 0) {
+            clearInterval(pollInterval);
+            setIsLoading(false); // Ensure loading state is false if polling stops without explicit completion
+            if (emailLogs.length === 0) { // Handle case where sending might have been very quick
+                setStatusText("Email sending completed (no logs to display).");
+            }
+          }
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            console.log('Polling aborted.');
+            setStatusText('Email sending cancelled.');
+            setCurrentEmailStatus("");
+            clearInterval(pollInterval);
+          } else {
+            console.error('Error polling progress:', err);
+            setStatusText(`Polling error: ${err.message}`);
+            clearInterval(pollInterval);
+            setIsLoading(false);
           }
         }
-      }
+      }, 500); // Poll every 500ms
 
     } catch (error: any) {
       console.error('Email sending error:', error);
@@ -824,8 +843,8 @@ export default function OriginalEmailSender() {
         timestamp: new Date().toISOString()
       }]);
     } finally {
-      // Always ensure sending state is reset
-      setIsLoading(false);
+      // Note: isLoading is managed within the polling loop for progressive updates.
+      // This finally block might be redundant if all paths inside try/catch manage isLoading.
     }
   };
 
@@ -839,7 +858,8 @@ export default function OriginalEmailSender() {
     // Also call the server cancel endpoint
     try {
       const { replitApiService } = await import('../services/replitApiService');
-      await fetch(replitApiService.getApiEndpoint('/api/original/cancel'), {
+      const serverUrl = replitApiService.getServerUrl();
+      await fetch(`${serverUrl}/api/original/cancel`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
