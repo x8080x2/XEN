@@ -1,6 +1,4 @@
 import { 
-  type EmailConfig, 
-  type InsertEmailConfig,
   type AppSettings,
   type InsertAppSettings,
   type User, 
@@ -8,7 +6,6 @@ import {
   type License,
   type InsertLicense,
   users,
-  emailConfigs,
   appSettings,
   licenses
 } from "@shared/schema";
@@ -21,13 +18,6 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // Email config operations
-  getEmailConfig(id: string): Promise<EmailConfig | undefined>;
-  getEmailConfigsByUser(userId: string): Promise<EmailConfig[]>;
-  createEmailConfig(config: InsertEmailConfig): Promise<EmailConfig>;
-  updateEmailConfig(id: string, config: Partial<EmailConfig>): Promise<EmailConfig>;
-  deleteEmailConfig(id: string): Promise<void>;
   
   // App settings operations
   getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined>;
@@ -42,13 +32,11 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
-  private emailConfigs: Map<string, EmailConfig>;
   private appSettings: Map<string, AppSettings>;
   private licenses: Map<string, License>;
 
   constructor() {
     this.users = new Map();
-    this.emailConfigs = new Map();
     this.appSettings = new Map();
     this.licenses = new Map();
   }
@@ -68,41 +56,6 @@ export class MemStorage implements IStorage {
     const user: User = { ...insertUser, id, createdAt: new Date() };
     this.users.set(id, user);
     return user;
-  }
-
-  async getEmailConfig(id: string): Promise<EmailConfig | undefined> {
-    return this.emailConfigs.get(id);
-  }
-
-  async getEmailConfigsByUser(userId: string): Promise<EmailConfig[]> {
-    return Array.from(this.emailConfigs.values()).filter(
-      (config) => config.userId === userId,
-    );
-  }
-
-  async createEmailConfig(insertConfig: InsertEmailConfig): Promise<EmailConfig> {
-    const id = randomUUID();
-    const config: EmailConfig = {
-      ...insertConfig,
-      id,
-      createdAt: new Date(),
-    };
-    this.emailConfigs.set(id, config);
-    return config;
-  }
-
-  async updateEmailConfig(id: string, updates: Partial<EmailConfig>): Promise<EmailConfig> {
-    const existing = this.emailConfigs.get(id);
-    if (!existing) {
-      throw new Error(`Email config ${id} not found`);
-    }
-    const updated = { ...existing, ...updates, updatedAt: new Date() };
-    this.emailConfigs.set(id, updated);
-    return updated;
-  }
-
-  async deleteEmailConfig(id: string): Promise<void> {
-    this.emailConfigs.delete(id);
   }
 
   async getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined> {
@@ -181,36 +134,6 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user as User;
-  }
-
-  async getEmailConfig(id: string): Promise<EmailConfig | undefined> {
-    const [config] = await db.select().from(emailConfigs).where(eq(emailConfigs.id, id));
-    return config || undefined;
-  }
-
-  async getEmailConfigsByUser(userId: string): Promise<EmailConfig[]> {
-    return await db.select().from(emailConfigs).where(eq(emailConfigs.userId, userId));
-  }
-
-  async createEmailConfig(insertConfig: InsertEmailConfig): Promise<EmailConfig> {
-    const [config] = await db
-      .insert(emailConfigs)
-      .values(insertConfig)
-      .returning();
-    return config;
-  }
-
-  async updateEmailConfig(id: string, updates: Partial<EmailConfig>): Promise<EmailConfig> {
-    const [config] = await db
-      .update(emailConfigs)
-      .set(updates)
-      .where(eq(emailConfigs.id, id))
-      .returning();
-    return config;
-  }
-
-  async deleteEmailConfig(id: string): Promise<void> {
-    await db.delete(emailConfigs).where(eq(emailConfigs.id, id));
   }
 
   async getAppSettings(userId: string, settingsType: string): Promise<AppSettings | undefined> {
