@@ -131,30 +131,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Email configs
-  app.get("/api/configs", async (req, res) => {
-    try {
-      const configs = await storage.getEmailConfigsByUser("default-user");
-      res.json(configs);
-    } catch (error) {
-      console.error("Error getting configs:", error);
-      res.status(500).json({ error: "Failed to get configs" });
-    }
-  });
-
-  app.post("/api/configs", async (req, res) => {
-    try {
-      const config = await storage.createEmailConfig({
-        ...req.body,
-        userId: "default-user",
-      });
-      res.json(config);
-    } catch (error) {
-      console.error("Error creating config:", error);
-      res.status(500).json({ error: "Failed to create config" });
-    }
-  });
-
   // SMTP Management Routes
   app.get("/api/smtp/list", (req, res) => {
     try {
