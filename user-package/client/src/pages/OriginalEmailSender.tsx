@@ -154,10 +154,10 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  // AI Feature States - Match web version
+  // AI Feature States - Match web version exactly
   const [aiEnabled, setAiEnabled] = useState(false);
-  const [aiEnabledSubject, setAiEnabledSubject] = useState(false);
-  const [aiEnabledSenderName, setAiEnabledSenderName] = useState(false);
+  const [useAISubject, setUseAISubject] = useState(false);
+  const [useAISenderName, setUseAISenderName] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
   const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false, provider: 'gemini' });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
@@ -320,8 +320,36 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Initialize AI with API key - Match web version
+  // Initialize AI with API key - Match web version with deinitialize support
   const initializeAI = async () => {
+    // If AI is already initialized, this button acts as a toggle to turn it OFF
+    if (aiStatus.initialized) {
+      try {
+        const { replitApiService } = await import('../services/replitApiService');
+        const response = await fetch(replitApiService.getApiEndpoint('/api/ai/deinitialize'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          setAiEnabled(false); // Disable AI features
+          setUseAISubject(false);
+          setUseAISenderName(false);
+          setAiStatus({ initialized: false, hasApiKey: false, provider: 'gemini' }); // Reset status
+          setStatusText('AI service turned off successfully');
+          localStorage.removeItem('google_ai_key'); // Remove key from localStorage
+        } else {
+          setStatusText('Failed to turn off AI service');
+        }
+      } catch (error) {
+        console.error('[AI] Deinitialization failed:', error);
+        setStatusText('Failed to turn off AI service');
+      }
+      return;
+    }
+
+    // Initialize AI
     if (!aiApiKey) {
       setStatusText('Please enter Google AI API key');
       return;
@@ -721,10 +749,10 @@ export default function OriginalEmailSender() {
         formData.append(key, String(value));
       });
 
-      // AI settings - Match web version with separate controls
-      formData.append('useAISubject', String(aiEnabledSubject));
-      formData.append('useAISenderName', String(aiEnabledSenderName));
-      formData.append('useAIEnabled', String(aiEnabled));
+      // AI settings - send correct flags to backend (match web version)
+      formData.append('useAIEnabled', String(aiEnabled)); // Main AI enabled flag
+      formData.append('useAISubject', String(aiEnabled && useAISubject)); // Only true if AI enabled AND subject checked
+      formData.append('useAISenderName', String(aiEnabled && useAISenderName)); // Only true if AI enabled AND sender name checked
 
       // Add files
       if (selectedFiles) {
@@ -1543,7 +1571,7 @@ export default function OriginalEmailSender() {
             </div>
 
 
-            {/* AI Settings Section - Match web version */}
+            {/* AI Settings Section - Match web version exactly */}
             <div className="mt-4 bg-[#131316] rounded-xl border border-[#26262b] p-4">
               <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
                 🤖 AI CONTENT GENERATION
@@ -1562,9 +1590,9 @@ export default function OriginalEmailSender() {
                       />
                       <Button
                         onClick={initializeAI}
-                        className="bg-[#ef4444] text-white hover:bg-[#dc2626]"
+                        className={`${aiStatus.initialized ? 'bg-red-600 hover:bg-red-700' : 'bg-[#ef4444] hover:bg-[#dc2626]'} text-white min-w-[100px]`}
                       >
-                        {aiStatus.initialized ? 'Update' : 'Initialize'}
+                        {aiStatus.initialized ? 'Turn Off' : 'Initialize'}
                       </Button>
                     </div>
                     {aiStatus.initialized && (
@@ -1572,39 +1600,55 @@ export default function OriginalEmailSender() {
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={aiEnabled}
-                        onCheckedChange={(checked: boolean) => setAiEnabled(!!checked)}
-                        disabled={!aiStatus.initialized}
-                        data-testid="checkbox-ai-enabled"
-                      />
-                      <Label className="text-sm text-[#a1a1aa]">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-[#0f0f12] rounded border border-[#26262b]">
+                      <Label className="text-sm text-white font-medium">
                         Enable AI Features
                       </Label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-[#a1a1aa]">
+                          {aiEnabled ? 'ON' : 'OFF'}
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={aiEnabled}
+                          onChange={(e) => {
+                            const isEnabled = e.target.checked;
+                            setAiEnabled(isEnabled);
+                            if (!isEnabled) {
+                              setUseAISubject(false);
+                              setUseAISenderName(false);
+                            }
+                          }}
+                          disabled={!aiStatus.initialized}
+                          className="w-10 h-5 appearance-none bg-[#26262b] rounded-full relative cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed checked:bg-[#ef4444] before:content-[''] before:absolute before:top-0.5 before:left-0.5 before:w-4 before:h-4 before:bg-white before:rounded-full before:transition-transform checked:before:translate-x-5"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={aiEnabledSubject}
-                        onCheckedChange={(checked: boolean) => setAiEnabledSubject(!!checked)}
-                        disabled={!aiEnabled}
-                        data-testid="checkbox-ai-subject"
-                      />
-                      <Label className="text-sm text-[#a1a1aa]">
-                        AI for Subject
-                      </Label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        checked={aiEnabledSenderName}
-                        onCheckedChange={(checked: boolean) => setAiEnabledSenderName(!!checked)}
-                        disabled={!aiEnabled}
-                        data-testid="checkbox-ai-sendername"
-                      />
-                      <Label className="text-sm text-[#a1a1aa]">
-                        AI for Sender Name
-                      </Label>
+
+                    <div className="space-y-3 pl-4">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={useAISubject}
+                          onCheckedChange={(checked: boolean) => setUseAISubject(!!checked)}
+                          disabled={!aiEnabled}
+                          data-testid="checkbox-ai-subject"
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          AI for Subject
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          checked={useAISenderName}
+                          onCheckedChange={(checked: boolean) => setUseAISenderName(!!checked)}
+                          disabled={!aiEnabled}
+                          data-testid="checkbox-ai-sendername"
+                        />
+                        <Label className="text-sm text-[#a1a1aa]">
+                          AI for Sender Name
+                        </Label>
+                      </div>
                     </div>
                   </div>
                 </div>
