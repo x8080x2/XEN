@@ -177,18 +177,6 @@ export function setupOriginalEmailRoutes(app: Express) {
     });
   });
 
-  // Pause send endpoint
-  app.post("/api/original/pause", (req, res) => {
-    advancedEmailService.pauseSend();
-    res.json({ success: true, message: 'Email sending paused' });
-  });
-
-  // Resume send endpoint
-  app.post("/api/original/resume", (req, res) => {
-    advancedEmailService.resumeSend();
-    res.json({ success: true, message: 'Email sending resumed' });
-  });
-
   // Cancel send endpoint
   app.post("/api/original/cancel", (req, res) => {
     advancedEmailService.cancelSend();
