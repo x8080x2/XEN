@@ -587,17 +587,6 @@ export default function OriginalEmailSender() {
   };
 
   const handleSendEmails = async () => {
-    // Validate SMTP configuration before sending
-    if (!smtpSettings.host || !smtpSettings.user || !smtpSettings.pass) {
-      setStatusText('SMTP configuration incomplete. Please check config files.');
-      console.error('[Desktop] SMTP validation failed:', {
-        hasHost: !!smtpSettings.host,
-        hasUser: !!smtpSettings.user,
-        hasPass: !!smtpSettings.pass
-      });
-      return;
-    }
-
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
     if (!recipientList.length) {
