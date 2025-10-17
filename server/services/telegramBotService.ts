@@ -1,5 +1,8 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { licenseService } from './licenseService';
+import archiver from 'archiver';
+import fs from 'fs';
+import path from 'path';
 
 interface UserState {
   action?: 'awaiting_status_key' | 'awaiting_revoke_key' | 'awaiting_download_key';
@@ -552,15 +555,10 @@ class TelegramBotService {
         { parse_mode: 'Markdown' }
       );
 
-      const archiver = require('archiver');
-      const fs = require('fs');
-      const path = require('path');
-      const { promises: fsPromises } = require('fs');
-
       const timestamp = Date.now();
       const zipPath = path.join(process.cwd(), 'uploads', `email-sender-${timestamp}.zip`);
       
-      await fsPromises.mkdir(path.dirname(zipPath), { recursive: true });
+      await fs.promises.mkdir(path.dirname(zipPath), { recursive: true });
 
       const output = fs.createWriteStream(zipPath);
       const archive = archiver('zip', { zlib: { level: 9 } });
@@ -584,7 +582,7 @@ class TelegramBotService {
             }
           );
 
-          await fsPromises.unlink(zipPath);
+          await fs.promises.unlink(zipPath);
           console.log(`[Telegram Bot] Sent desktop app to user, cleaned up ${zipPath}`);
         } catch (error) {
           console.error('[Telegram Bot] Error sending file:', error);
