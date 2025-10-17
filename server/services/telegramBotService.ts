@@ -69,27 +69,34 @@ class TelegramBotService {
     return true;
   }
 
-  private getMainMenu(): TelegramBot.InlineKeyboardMarkup {
-    return {
-      inline_keyboard: [
-        [
-          { text: '🆕 Generate License', callback_data: 'menu_generate' }
-        ],
-        [
-          { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
-        ],
-        [
-          { text: '💾 Download Desktop App', callback_data: 'menu_download' }
-        ],
-        [
-          { text: '🔍 Check Status', callback_data: 'menu_status' },
-          { text: '❌ Revoke License', callback_data: 'menu_revoke' }
-        ],
-        [
-          { text: '❓ Help', callback_data: 'menu_help' }
-        ]
-      ]
-    };
+  private getMainMenu(isAdmin: boolean = true): TelegramBot.InlineKeyboardMarkup {
+    const buttons = [];
+    
+    if (isAdmin) {
+      buttons.push([
+        { text: '🆕 Generate License', callback_data: 'menu_generate' }
+      ]);
+      buttons.push([
+        { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
+      ]);
+    }
+    
+    buttons.push([
+      { text: '💾 Download Desktop App', callback_data: 'menu_download' }
+    ]);
+    
+    if (isAdmin) {
+      buttons.push([
+        { text: '🔍 Check Status', callback_data: 'menu_status' },
+        { text: '❌ Revoke License', callback_data: 'menu_revoke' }
+      ]);
+    }
+    
+    buttons.push([
+      { text: '❓ Help', callback_data: 'menu_help' }
+    ]);
+    
+    return { inline_keyboard: buttons };
   }
 
   private getGenerateDurationMenu(): TelegramBot.InlineKeyboardMarkup {
@@ -129,18 +136,20 @@ class TelegramBotService {
       const userId = msg.from?.id;
       const username = msg.from?.username || msg.from?.first_name || 'User';
 
-      if (!userId || !await this.checkAdminAccess(userId, chatId)) {
-        return;
-      }
+      if (!userId) return;
+
+      const isAdmin = this.isAdmin(userId);
       
       await this.bot?.sendMessage(
         chatId,
         `👋 *Welcome ${username}!*\n\n` +
         `🔐 Email Sender License Management Bot\n\n` +
-        `Use the buttons below to manage licenses:`,
+        (isAdmin 
+          ? `Use the buttons below to manage licenses:` 
+          : `Use the button below to download the desktop app with your license:`),
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     });
@@ -149,16 +158,16 @@ class TelegramBotService {
       const chatId = msg.chat.id;
       const userId = msg.from?.id;
 
-      if (!userId || !await this.checkAdminAccess(userId, chatId)) {
-        return;
-      }
+      if (!userId) return;
+
+      const isAdmin = this.isAdmin(userId);
       
       await this.bot?.sendMessage(
         chatId,
         '🔐 *License Management*\n\nSelect an option:',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     });
@@ -171,7 +180,8 @@ class TelegramBotService {
 
       if (!chatId || !userId || !data) return;
 
-      if (!await this.checkAdminAccess(userId, chatId)) {
+      // Allow download action for any user, admin check for other actions
+      if (data !== 'menu_download' && !await this.checkAdminAccess(userId, chatId)) {
         await this.bot?.answerCallbackQuery(query.id, {
           text: '❌ Access denied',
           show_alert: true
@@ -183,15 +193,28 @@ class TelegramBotService {
 
       switch (data) {
         case 'menu_main':
-          await this.bot?.editMessageText(
-            '🔐 *License Management*\n\nSelect an option:',
-            {
-              chat_id: chatId,
-              message_id: messageId,
-              parse_mode: 'Markdown',
-              reply_markup: this.getMainMenu()
-            }
-          );
+          const isAdmin = this.isAdmin(userId);
+          try {
+            await this.bot?.editMessageText(
+              '🔐 *License Management*\n\nSelect an option:',
+              {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown',
+                reply_markup: this.getMainMenu(isAdmin)
+              }
+            );
+          } catch (error) {
+            // If edit fails, send new message
+            await this.bot?.sendMessage(
+              chatId,
+              '🔐 *License Management*\n\nSelect an option:',
+              {
+                parse_mode: 'Markdown',
+                reply_markup: this.getMainMenu(isAdmin)
+              }
+            );
+          }
           break;
 
         case 'menu_generate':
@@ -259,24 +282,47 @@ class TelegramBotService {
           break;
 
         case 'menu_help':
-          await this.bot?.editMessageText(
-            '📖 *Help & Information*\n\n' +
-            '*🆕 Generate License:* Create new licenses with various durations\n\n' +
-            '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
-            '*🔍 Check Status:* Verify if a license key is valid\n\n' +
-            '*❌ Revoke License:* Deactivate a license key\n\n' +
-            '*Usage Instructions:*\n' +
-            '1. Generate a license with desired duration\n' +
-            '2. Copy the license key\n' +
-            '3. Add to desktop app .env file\n' +
-            '4. Restart the desktop application',
-            {
-              chat_id: chatId,
-              message_id: messageId,
-              parse_mode: 'Markdown',
-              reply_markup: this.getBackButton()
-            }
-          );
+          try {
+            await this.bot?.editMessageText(
+              '📖 *Help & Information*\n\n' +
+              '*🆕 Generate License:* Create new licenses with various durations\n\n' +
+              '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
+              '*🔍 Check Status:* Verify if a license key is valid\n\n' +
+              '*❌ Revoke License:* Deactivate a license key\n\n' +
+              '*💾 Download Desktop App:* Get the app with your license pre-configured\n\n' +
+              '*Usage Instructions:*\n' +
+              '1. Generate a license with desired duration\n' +
+              '2. Copy the license key\n' +
+              '3. Add to desktop app .env file\n' +
+              '4. Restart the desktop application',
+              {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown',
+                reply_markup: this.getBackButton()
+              }
+            );
+          } catch (error) {
+            // If edit fails, send new message instead
+            await this.bot?.sendMessage(
+              chatId,
+              '📖 *Help & Information*\n\n' +
+              '*🆕 Generate License:* Create new licenses with various durations\n\n' +
+              '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
+              '*🔍 Check Status:* Verify if a license key is valid\n\n' +
+              '*❌ Revoke License:* Deactivate a license key\n\n' +
+              '*💾 Download Desktop App:* Get the app with your license pre-configured\n\n' +
+              '*Usage Instructions:*\n' +
+              '1. Generate a license with desired duration\n' +
+              '2. Copy the license key\n' +
+              '3. Add to desktop app .env file\n' +
+              '4. Restart the desktop application',
+              {
+                parse_mode: 'Markdown',
+                reply_markup: this.getBackButton()
+              }
+            );
+          }
           break;
       }
     });
@@ -358,7 +404,7 @@ class TelegramBotService {
         `3. Restart your desktop app`,
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(true)
         }
       );
     } catch (error) {
