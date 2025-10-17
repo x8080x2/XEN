@@ -49,16 +49,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/config/smtp', (req, res) => {
-    try {
-      const config = configService.getEmailConfig();
-      res.json({ success: true, smtp: config.SMTP || {} });
-    } catch (error) {
-      console.error('SMTP config error:', error);
-      res.status(500).json({ success: false, error: 'Failed to load SMTP configuration' });
-    }
-  });
-
   // Load leads/maillist from files/leads.txt
   app.get('/api/config/loadLeads', (req, res) => {
     try {
