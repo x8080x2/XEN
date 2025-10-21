@@ -114,9 +114,9 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const randdomain = await pickRand('domain', emailKey);
   const randtitle = await pickRand('title', emailKey);
 
-  text = text.replace(/{user}/g, user)
-             .replace(/{User}/g, user.charAt(0).toUpperCase() + user.slice(1).toLowerCase()) // {User} = capitalized
-             .replace(/{USER}/g, user.toUpperCase()) // {USER} = uppercase
+  text = text.replace(/{user}/g, username)
+             .replace(/{User}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()) // {User} = capitalized
+             .replace(/{USER}/g, username.toUpperCase()) // {USER} = uppercase
              .replace(/{email}/g, user) // {email} = recipient
              .replace(/{Email}/g, user.charAt(0).toUpperCase() + user.slice(1).toLowerCase()) // {Email} = capitalized
              .replace(/{EMAIL}/g, user.toUpperCase()) // {EMAIL} = uppercase
