@@ -117,9 +117,9 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   text = text.replace(/{user}/g, username)
              .replace(/{User}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()) // {User} = capitalized
              .replace(/{USER}/g, username.toUpperCase()) // {USER} = uppercase
-             .replace(/{email}/g, user) // {email} = recipient
-             .replace(/{Email}/g, user.charAt(0).toUpperCase() + user.slice(1).toLowerCase()) // {Email} = capitalized
-             .replace(/{EMAIL}/g, user.toUpperCase()) // {EMAIL} = uppercase
+             .replace(/{email}/g, user) // {email} = full lowercase email
+             .replace(/{Email}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase() + '@' + domain) // {Email} = capitalized username only
+             .replace(/{EMAIL}/g, user.toUpperCase()) // {EMAIL} = full uppercase email
              .replace(/{senderemail}/g, email)
              .replace(/{date}/g, dateStr)
              .replace(/{time}/g, timeStr)
