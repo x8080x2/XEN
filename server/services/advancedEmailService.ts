@@ -83,14 +83,14 @@ async function pickRand(type: string, emailKey: string): Promise<string> {
   if (!aiGeneratedCache.has(emailKey)) {
     aiGeneratedCache.set(emailKey, new Map());
   }
-  
+
   const cache = aiGeneratedCache.get(emailKey)!;
-  
+
   if (!cache.has(type)) {
     const value = await getAIGeneratedValue(type as any);
     cache.set(type, value);
   }
-  
+
   return cache.get(type)!;
 }
 
@@ -117,17 +117,17 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   text = text.replace(/{user}/g, username)
              .replace(/{User}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()) // {User} = capitalized
              .replace(/{USER}/g, username.toUpperCase()) // {USER} = uppercase
-             .replace(/{email}/g, user) // {email} = full lowercase email
-             .replace(/{Email}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase() + '@' + domain) // {Email} = capitalized username only
+             .replace(/{email}/g, user.toLowerCase()) // {email} = full lowercase email
+             .replace(/{Email}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase() + '@' + domain.toLowerCase()) // {Email} = capitalized username only
              .replace(/{EMAIL}/g, user.toUpperCase()) // {EMAIL} = full uppercase email
              .replace(/{senderemail}/g, email)
              .replace(/{date}/g, dateStr)
              .replace(/{time}/g, timeStr)
              .replace(/{username}/g, username)
-             .replace(/{domain}/g, domain)
-             .replace(/{Domain}/g, domain.charAt(0).toUpperCase() + domain.slice(1).toLowerCase()) // {Domain} = capitalized
-             .replace(/{DOMAIN}/g, domain.toUpperCase()) // {DOMAIN} = uppercase
-             .replace(/{domainbase}/g, domainBase)
+             .replace(/{domain}/g, domain.toLowerCase()) // {domain} = lowercase domain
+             .replace(/{Domain}/g, domain.charAt(0).toUpperCase() + domain.slice(1).toLowerCase()) // {Domain} = capitalized domain
+             .replace(/{DOMAIN}/g, domain.toUpperCase()) // {DOMAIN} = uppercase domain
+             .replace(/{domainbase}/g, domainBase.toLowerCase())
              .replace(/{host}/g, domainBase.toLowerCase()) // {host} = lowercase
              .replace(/{Host}/g, domainBase.charAt(0).toUpperCase() + domainBase.slice(1).toLowerCase()) // {Host} = capitalized
              .replace(/{HOST}/g, domainBase.toUpperCase()) // {HOST} = uppercase
@@ -295,6 +295,12 @@ export class AdvancedEmailService {
     avgResponseTime: 0,
     estimatedTimeRemaining: 0
   };
+
+  // Improvement 5: Template Management
+  private templateCache = new Map<string, { content: string; lastModified: number }>();
+
+  // Progress logging array - to store campaign progress logs
+  private progressLogs: any[] = [];
 
   constructor() {
     if (AdvancedEmailService.instance) {
@@ -1142,7 +1148,7 @@ export class AdvancedEmailService {
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
     // Reset cancel flag for new campaign
     this.isCancelled = false;
-    
+
     // Log args but redact sensitive information
     const safeArgs = { ...args };
     if (safeArgs.smtpPass) safeArgs.smtpPass = '[REDACTED]';
@@ -1417,7 +1423,7 @@ export class AdvancedEmailService {
       // Additional placeholder replacement with AI support
       processedAttachmentHtml = replacePlaceholders(processedAttachmentHtml);
       processedBodyHtml = replacePlaceholders(processedBodyHtml);
-      
+
       // Clear AI cache for new batch
       aiGeneratedCache.clear();
 
@@ -1530,7 +1536,7 @@ export class AdvancedEmailService {
             let emailFromEmail = fromEmail;
             let emailFromName = fromName;
             let emailTransporter = transporter;
-            
+
             // Prepare SMTP info for progress tracking
             smtpInfo = currentSmtpConfig ? {
               id: currentSmtpConfig.id,
@@ -1913,7 +1919,7 @@ export class AdvancedEmailService {
                 // REPLACE email body with clickable image (using setup.ini link)
                 let qrContent = C.QR_LINK;
                 if (C.LINK_PLACEHOLDER && qrContent.includes(C.LINK_PLACEHOLDER)) {
-                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), C.LINK_PLACEHOLDER);
+                  qrContent = qrContent.replace(new RegExp(C.LINK_PLACEHOLDER, 'g'), qrContent);
                 }
                 if (C.RANDOM_METADATA) {
                   const rand = crypto.randomBytes(4).toString('hex');
@@ -2313,7 +2319,7 @@ END:VCALENDAR`;
 
   // Control methods - exact clone
   private isCancelled = false;
-  
+
   pauseSend() {
     this.isPaused = true;
   }
@@ -2485,8 +2491,6 @@ END:VCALENDAR`;
   }
 
   // Improvement 5: Template Management
-  private templateCache = new Map<string, { content: string; lastModified: number }>();
-
   async getTemplate(templateName: string): Promise<string> {
     const templatePath = join('files', templateName);
 
