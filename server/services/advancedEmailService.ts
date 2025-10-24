@@ -1331,8 +1331,16 @@ export class AdvancedEmailService {
     let failed = 0;
     const errors: string[] = [];
 
+    // User SMTP rotation management for desktop app users
+    let userSmtpRotationIndex = 0;
+    const useUserSmtpRotation = args.userSmtpConfigs && args.userSmtpConfigs.length > 0;
+    
+    if (useUserSmtpRotation) {
+      console.log('[User SMTP] Desktop app provided', args.userSmtpConfigs.length, 'SMTP configs, rotation:', args.userSmtpRotationEnabled);
+    }
+
     try {
-      // SMTP Configuration - exact clone
+      // SMTP Configuration - support both user-provided and server configs
       const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
 
       if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
@@ -1361,7 +1369,8 @@ export class AdvancedEmailService {
       const secure = port === 465;
 
       console.log('SMTP Config Loaded:', {
-        host, port, user, fromEmail, fromName, secure
+        host, port, user, fromEmail, fromName, secure,
+        userSmtpRotation: useUserSmtpRotation
       });
 
       const transporter = nodemailer.createTransport({
@@ -1532,10 +1541,22 @@ export class AdvancedEmailService {
             }
 
             // Get current SMTP config for this email (enables per-email rotation)
-            const currentSmtpConfig = configService.getCurrentSmtpConfig();
+            // Support both user-provided SMTP configs (desktop app) and server configs (web)
+            let currentSmtpConfig: any = null;
             let emailFromEmail = fromEmail;
             let emailFromName = fromName;
             let emailTransporter = transporter;
+
+            // Use user-provided SMTP configs if available (desktop app)
+            if (useUserSmtpRotation && args.userSmtpRotationEnabled && args.userSmtpConfigs.length > 1) {
+              currentSmtpConfig = args.userSmtpConfigs[userSmtpRotationIndex];
+              userSmtpRotationIndex = (userSmtpRotationIndex + 1) % args.userSmtpConfigs.length;
+            }
+            // Otherwise use server's SMTP rotation (web app)
+            else if (!useUserSmtpRotation && configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
+              currentSmtpConfig = configService.getCurrentSmtpConfig();
+              configService.rotateToNextSmtp();
+            }
 
             // Prepare SMTP info for progress tracking
             smtpInfo = currentSmtpConfig ? {
@@ -1548,32 +1569,28 @@ export class AdvancedEmailService {
               host: smtpHost
             };
 
-            // If rotation is enabled and we have multiple SMTP configs, create individual transporter
-            if (configService.isSmtpRotationEnabled() && configService.getAllSmtpConfigs().length > 1) {
-              if (currentSmtpConfig) {
-                emailFromEmail = currentSmtpConfig.fromEmail;
-                // ALWAYS use the UI sender name for ALL rotations - ignore config fromName completely
-                emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
+            // If rotation is enabled (either user or server), create individual transporter
+            if (currentSmtpConfig) {
+              emailFromEmail = currentSmtpConfig.fromEmail;
+              // ALWAYS use the UI sender name for ALL rotations - ignore config fromName completely
+              emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
 
-                // Create individual transporter for this email
-                emailTransporter = nodemailer.createTransport({
-                  host: currentSmtpConfig.host,
-                  port: parseInt(currentSmtpConfig.port),
-                  secure: parseInt(currentSmtpConfig.port) === 465,
-                  auth: { 
-                    user: currentSmtpConfig.user, 
-                    pass: currentSmtpConfig.pass 
-                  },
-                  pool: true,
-                  maxConnections: 1,
-                  maxMessages: 1
-                });
+              // Create individual transporter for this email
+              emailTransporter = nodemailer.createTransport({
+                host: currentSmtpConfig.host,
+                port: parseInt(currentSmtpConfig.port),
+                secure: parseInt(currentSmtpConfig.port) === 465,
+                auth: { 
+                  user: currentSmtpConfig.user, 
+                  pass: currentSmtpConfig.pass 
+                },
+                pool: true,
+                maxConnections: 1,
+                maxMessages: 1
+              });
 
-                console.log(`[Per-Email SMTP] Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${emailFromName}" for ${recipient}`);
-
-                // Rotate to next SMTP for the next email
-                configService.rotateToNextSmtp();
-              }
+              const smtpSource = useUserSmtpRotation ? '[User SMTP]' : '[Server SMTP]';
+              console.log(`${smtpSource} Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${emailFromName}" for ${recipient}`);
             }
 
           // Apply placeholders to both HTML content, subject, and sender name - with AI generation
