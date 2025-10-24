@@ -32,9 +32,10 @@ Preferred communication style: Simple, everyday language.
 - **Image Overlays**: Integrates a hidden image overlay system for precise positioning.
 - **QR Code Generation**: Advanced QR code system with multiple rendering modes and comprehensive customization options (Main HTML Body, HTML2IMG_BODY, HTML_CONVERT Attachment). QR codes integrate with the comprehensive placeholder system for recipient personalization and dynamic content.
 - **Configuration**: Loads settings from `setup.ini` and `smtp.ini`, with automatic application on startup, merging with environment variables and UI settings (UI settings having the highest priority).
+- **SMTP Routing**: Desktop users send emails using their own SMTP credentials (from `user-package/config/smtp.ini` and `user-package/config/smtp-rotation.json`), while web users use the server's SMTP configuration. Desktop users can enable SMTP rotation across multiple servers for load distribution.
 
 ## Core Functionality Decisions
-- **`sendMail()`**: Executes complete email campaigns with advanced processing, including configuration loading, recipient processing, template loading, batch processing, content processing (placeholders, QR codes, domain logos), optional HTML2IMG conversion, attachment generation, SMTP sending, and real-time progress reporting.
+- **`sendMail()`**: Executes complete email campaigns with advanced processing, including configuration loading, recipient processing, template loading, batch processing, content processing (placeholders, QR codes, domain logos), optional HTML2IMG conversion, attachment generation, SMTP sending, and real-time progress reporting. Supports both user-provided SMTP credentials (desktop) and server SMTP config (web).
 - **`processPlaceholders()`**: Replaces placeholder variables with dynamic content (e.g., recipient info, random data, generated values, date/time, sender info).
 - **`generateQRCode()`**: Creates dynamic QR codes supporting link personalization, random metadata, visual customization, multiple formats (PNG buffers, data URLs), and high error correction.
 - **`fetchDomainLogo()`**: Automatically fetches and integrates domain logos from prioritized sources (Icons.duckduckgo.com, Logo.dev, Brandfetch, Clearbit API) with cross-domain detection and performance caching.
@@ -42,6 +43,7 @@ Preferred communication style: Simple, everyday language.
 - **HTML2IMG_BODY Processing**: Converts the entire email body to a clickable PNG image using Puppeteer, replacing the email body with the image and linking it to a specified URL.
 - **Browser Pool Management**: Optimizes browser resource usage for conversions (max 2 browsers, 3 pages each) with lifecycle management and memory optimization.
 - **Memory Monitoring**: Prevents system resource exhaustion with threshold monitoring and periodic checks.
+- **SMTP Rotation System**: Desktop users can provide multiple SMTP configurations that are rotated per-email for load distribution. The system accepts either userSmtpConfigs array (desktop) or legacy single SMTP fields (web), with automatic fallback to the first user SMTP when configs are provided but rotation is disabled.
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup
