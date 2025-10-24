@@ -61,6 +61,27 @@ export function setupOriginalEmailRoutes(app: Express) {
         }
       }
 
+      // Parse user's SMTP configs array if provided (from desktop app)
+      let userSmtpConfigs: any[] = [];
+      let userSmtpRotationEnabled = false;
+      
+      if (req.body.userSmtpConfigs) {
+        try {
+          userSmtpConfigs = typeof req.body.userSmtpConfigs === 'string' 
+            ? JSON.parse(req.body.userSmtpConfigs)
+            : req.body.userSmtpConfigs;
+          userSmtpRotationEnabled = req.body.smtpRotationEnabled === 'true' || req.body.smtpRotationEnabled === true;
+          
+          console.log('[Server] Received user SMTP configs:', {
+            count: userSmtpConfigs.length,
+            rotationEnabled: userSmtpRotationEnabled,
+            configs: userSmtpConfigs.map(c => ({ id: c.id, host: c.host, fromEmail: c.fromEmail }))
+          });
+        } catch (error) {
+          console.error('[Server] Failed to parse user SMTP configs:', error);
+        }
+      }
+
       const args = {
         ...req.body,
         ...settings,
@@ -71,7 +92,10 @@ export function setupOriginalEmailRoutes(app: Express) {
         subject: req.body.subject,
         html: req.body.html || req.body.emailContent,
         attachmentHtml: req.body.attachmentHtml,
-        // SMTP settings - with validation
+        // User's SMTP configs for rotation (if provided by desktop app)
+        userSmtpConfigs,
+        userSmtpRotationEnabled,
+        // SMTP settings - with validation (fallback to first user SMTP or request params)
         smtpHost: req.body.smtpHost || '',
         smtpPort: req.body.smtpPort || '587',
         smtpUser: req.body.smtpUser || '',
