@@ -906,8 +906,11 @@ export default function OriginalEmailSender() {
         <div className="flex-1 p-6 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
             {/* Large ASCII Banner */}
-            <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
+            <div className="relative bg-gradient-to-br from-[#1a0e0e] via-[#0e0e10] to-[#0e1a1a] rounded-2xl border border-[#ef4444]/40 p-8 mb-6 shadow-2xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#ef4444]/5 via-transparent to-[#ef4444]/5 pointer-events-none"></div>
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#ef4444]/10 rounded-full blur-3xl"></div>
+              <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-[#ef4444]/10 rounded-full blur-3xl"></div>
+              <div className="relative z-10 text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden drop-shadow-[0_0_15px_rgba(239,68,68,0.5)]">
 {`
  ██████╗██╗     ███████╗    ██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗    
 ██╔════╝██║     ██╔════╝    ██╔══██╗██╔════╝██║     ██║██║   ██║██╔════╝██╔══██╗╚██╗ ██╔╝    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║    
@@ -918,46 +921,51 @@ export default function OriginalEmailSender() {
 
 `}
               </div>
-              <div className="text-center mt-4">
-                <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
-                <div className="text-[#ef4444] text-sm font-bold">⚡ ADVANCED SMART EMAIL SENDER ⚡</div>
-                <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
+              <div className="relative z-10 text-center mt-6">
+                <div className="flex items-center justify-center gap-4 mb-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/50 to-transparent"></div>
+                  <div className="text-[#ef4444] text-lg font-bold tracking-wider drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]">⚡ ADVANCED SMART EMAIL SENDER ⚡</div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/50 to-transparent"></div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
+            <div className="bg-gradient-to-br from-[#131316] to-[#0e0e10] rounded-2xl border border-[#26262b] p-6 shadow-xl">
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SENDER EMAIL</Label>
+                  <Label className="text-sm text-[#ef4444] mb-2 font-semibold tracking-wide">SENDER EMAIL</Label>
                   <Input
                     type="email"
                     value={senderEmail}
                     onChange={(e) => setSenderEmail(e.target.value)}
                     placeholder="sender@example.com"
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    className="bg-[#0f0f12] border-[#26262b] text-white focus:border-[#ef4444] focus:ring-2 focus:ring-[#ef4444]/20 transition-all"
                     readOnly={!senderEmail}
                   />
                   {senderEmail && (
-                    <div className="text-xs text-green-500 mt-1">✓ Loaded from SMTP config</div>
+                    <div className="text-xs text-green-400 mt-1 flex items-center gap-1">
+                      <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                      Loaded from SMTP config
+                    </div>
                   )}
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SENDER NAME</Label>
+                  <Label className="text-sm text-[#ef4444] mb-2 font-semibold tracking-wide">SENDER NAME</Label>
                   <Input
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
                     placeholder="Your Name"
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    className="bg-[#0f0f12] border-[#26262b] text-white focus:border-[#ef4444] focus:ring-2 focus:ring-[#ef4444]/20 transition-all"
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SUBJECT</Label>
+                  <Label className="text-sm text-[#ef4444] mb-2 font-semibold tracking-wide">SUBJECT</Label>
                   <Input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
                     placeholder="Enter subject..."
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    className="bg-[#0f0f12] border-[#26262b] text-white focus:border-[#ef4444] focus:ring-2 focus:ring-[#ef4444]/20 transition-all"
                   />
                 </div>
               </div>
@@ -966,13 +974,16 @@ export default function OriginalEmailSender() {
               {/* Main Content Row */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Letter */}
-                <div>
-                  <Label className="text-sm text-[green] mb-2">LETTER</Label>
+                <div className="bg-gradient-to-br from-[#0e0e10] to-[#131316] rounded-xl p-4 border border-[#26262b] shadow-lg">
+                  <Label className="text-sm text-[#10b981] mb-2 font-semibold tracking-wide flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                    LETTER
+                  </Label>
                   <Textarea
                     value={emailContent}
                     onChange={(e) => setEmailContent(e.target.value)}
                     placeholder="Enter your letter content here..."
-                    className="bg-[#0f0f12] border-[#26262b] text-white min-h-[200px]"
+                    className="bg-[#0a0a0d] border-[#26262b] text-white min-h-[200px] focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all"
                   />
                   <div className="mt-2">
                     <Label className="text-xs text-[red]">MAIN LETTER</Label>
@@ -999,16 +1010,23 @@ export default function OriginalEmailSender() {
                 </div>
 
                 {/* Maillist */}
-                <div>
-                  <Label className="text-sm text-[green] mb-2">MAILLIST</Label>
+                <div className="bg-gradient-to-br from-[#0e0e10] to-[#131316] rounded-xl p-4 border border-[#26262b] shadow-lg">
+                  <Label className="text-sm text-[#10b981] mb-2 font-semibold tracking-wide flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                    MAILLIST
+                  </Label>
                   <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
                     placeholder="recipient1@example.com&#10;recipient2@example.com&#10;recipient3@example.com"
-                    className="bg-[#0f0f12] border-[#26262b] text-white min-h-[200px]"
+                    className="bg-[#0a0a0d] border-[#26262b] text-white min-h-[200px] focus:border-[#10b981] focus:ring-2 focus:ring-[#10b981]/20 transition-all"
                   />
-                  <div className="text-xs text-[#75798b] mt-1">
-                    {recipientCount} recipients
+                  <div className="text-xs text-[#a1a1aa] mt-2 flex items-center justify-between bg-[#0a0a0d] px-3 py-2 rounded-lg border border-[#26262b]">
+                    <span className="flex items-center gap-2">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                      Total Recipients
+                    </span>
+                    <span className="font-semibold text-[#10b981]">{recipientCount}</span>
                   </div>
                   <details className="mt-2">
                     <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 SENDER TAGS (Click to Expand)</summary>
@@ -1266,23 +1284,27 @@ export default function OriginalEmailSender() {
               )}
 
               {/* Action Buttons with ASCII Frame */}
-              <div className="mt-6">
-                <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
-                  ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
+              <div className="mt-8">
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/30 to-transparent"></div>
+                  <div className="text-[#ef4444] font-mono text-sm tracking-widest drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
+                    ◆ MISSION CONTROL ◆
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/30 to-transparent"></div>
                 </div>
                 <div className="flex justify-center gap-4">
                   <Button
                     onClick={handleSendEmails}
                     disabled={isLoading}
-                    className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative"
+                    className="min-w-[120px] bg-gradient-to-r from-[#ef4444] to-[#dc2626] hover:from-[#dc2626] hover:to-[#b91c1c] text-white relative shadow-lg shadow-[#ef4444]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#ef4444]/40 hover:scale-105"
                   >
                     {isLoading ? (
                       <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         SENDING...
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 font-bold tracking-wider">
                         🚀 SEND
                       </span>
                     )}
@@ -1291,30 +1313,37 @@ export default function OriginalEmailSender() {
                     variant="outline"
                     onClick={cancelSending}
                     disabled={!isLoading}
-                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    className="min-w-[120px] border-2 border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-[#ef4444]/20 hover:scale-105 font-bold tracking-wider"
                   >
                     ⛔ CANCEL
                   </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowSettings(!showSettings)}
-                    className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    className="min-w-[120px] border-2 border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white transition-all duration-300 hover:shadow-lg hover:shadow-[#ef4444]/20 hover:scale-105 font-bold tracking-wider"
                   >
                     ⚙️ SETTINGS
                   </Button>
                 </div>
-                <div className="text-[#ef4444] font-mono text-xs text-center mt-3 opacity-60 whitespace-pre">
-{`
-┌───────────────────────┐
-│ ▓▓▓ READY SHOOTER ▓▓▓
-└───────────────────────┘
-`}
+                <div className="flex items-center justify-center gap-3 mt-4">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/20 to-transparent"></div>
+                  <div className="text-[#ef4444] font-mono text-xs tracking-widest opacity-60">
+                    ▓▓▓ READY TO DEPLOY ▓▓▓
+                  </div>
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[#ef4444]/20 to-transparent"></div>
                 </div>
               </div>
             </div>
 
             {/* SMTP Settings */}
-            <div className="mt-6 bg-black rounded-xl p-4 border border-[#26262b]">
+            <div className="mt-6 bg-gradient-to-br from-[#0e0e10] to-[#131316] rounded-2xl p-6 border border-[#26262b] shadow-xl">
+              <div className="mb-4">
+                <h3 className="text-lg font-bold text-white tracking-wide flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-[#ef4444] animate-pulse"></span>
+                  SMTP CONFIGURATION
+                </h3>
+                <div className="h-px bg-gradient-to-r from-[#ef4444]/50 via-transparent to-transparent mt-2"></div>
+              </div>
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-sm text-[#a1a1aa]">SMTP:</span>
                 <Input
