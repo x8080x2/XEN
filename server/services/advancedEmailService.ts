@@ -1341,7 +1341,18 @@ export class AdvancedEmailService {
 
     try {
       // SMTP Configuration - support both user-provided and server configs
-      const { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
+      let { smtpHost, smtpPort, smtpUser, smtpPass, senderEmail, senderName } = args;
+
+      // If user provided SMTP configs, use the first one as fallback (regardless of rotation setting)
+      if (useUserSmtpRotation) {
+        const firstUserSmtp = args.userSmtpConfigs[0];
+        smtpHost = smtpHost || firstUserSmtp.host;
+        smtpPort = smtpPort || firstUserSmtp.port;
+        smtpUser = smtpUser || firstUserSmtp.user;
+        smtpPass = smtpPass || firstUserSmtp.pass;
+        senderEmail = senderEmail || firstUserSmtp.fromEmail;
+        senderName = senderName || firstUserSmtp.fromName || '';
+      }
 
       if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
         const missingFields = [];
@@ -1355,7 +1366,8 @@ export class AdvancedEmailService {
           host: smtpHost,
           port: smtpPort, 
           user: smtpUser,
-          hasPass: !!smtpPass
+          hasPass: !!smtpPass,
+          hasUserSmtpConfigs: useUserSmtpRotation
         });
         throw new Error(`SMTP configuration is incomplete. Missing: ${missingFields.join(', ')}`);
       }
@@ -1370,7 +1382,8 @@ export class AdvancedEmailService {
 
       console.log('SMTP Config Loaded:', {
         host, port, user, fromEmail, fromName, secure,
-        userSmtpRotation: useUserSmtpRotation
+        userSmtpRotation: useUserSmtpRotation,
+        userSmtpCount: useUserSmtpRotation ? args.userSmtpConfigs.length : 0
       });
 
       const transporter = nodemailer.createTransport({
