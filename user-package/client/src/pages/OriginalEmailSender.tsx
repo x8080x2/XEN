@@ -725,24 +725,22 @@ export default function OriginalEmailSender() {
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-      // SMTP settings - ensure they're properly set from auto-loaded config
-      const finalSmtpHost = smtpSettings.host || '';
-      const finalSmtpPort = smtpSettings.port || '587';
-      const finalSmtpUser = smtpSettings.user || '';
-      const finalSmtpPass = smtpSettings.pass || '';
-
-      console.log('[Desktop] SMTP Settings being sent:', {
-        host: finalSmtpHost,
-        port: finalSmtpPort,
-        user: finalSmtpUser,
-        hasPassword: !!finalSmtpPass
+      // Send ALL user SMTP configs to server for rotation support
+      console.log('[Desktop] Sending user SMTP configs:', {
+        count: smtpData.smtpConfigs.length,
+        rotationEnabled: smtpData.rotationEnabled
       });
 
-      // Ensure all SMTP parameters are properly formatted strings
-      formData.append('smtpHost', String(finalSmtpHost));
-      formData.append('smtpPort', String(finalSmtpPort));
-      formData.append('smtpUser', String(finalSmtpUser));
-      formData.append('smtpPass', String(finalSmtpPass));
+      // Send user's SMTP configs as JSON array
+      formData.append('userSmtpConfigs', JSON.stringify(smtpData.smtpConfigs));
+      formData.append('smtpRotationEnabled', String(smtpData.rotationEnabled));
+
+      // Also send first SMTP as fallback for backward compatibility
+      const firstSmtp = smtpData.smtpConfigs[0] || smtpSettings;
+      formData.append('smtpHost', String(firstSmtp.host || ''));
+      formData.append('smtpPort', String(firstSmtp.port || '587'));
+      formData.append('smtpUser', String(firstSmtp.user || ''));
+      formData.append('smtpPass', String(firstSmtp.pass || ''));
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
