@@ -63,11 +63,10 @@ Preferred communication style: Simple, everyday language.
   - **Dual Endpoints**: Both `server/routes.ts` and `server/routes/licenseRoutes.ts` properly enforce hardware binding
 - **Telegram Bot Distribution System** (October 31, 2025): Automated desktop app distribution and license management:
   - **User Access Control**: Regular users can download desktop app packages and check license status; admins can generate, view, and revoke licenses
-  - **Ownership Verification**: Download security ensures users can only download packages with their own license keys (telegramUserId matching)
+  - **License Validation**: Any user can download the app with ANY valid, active license key - no ownership restrictions
   - **Public Actions**: Regular users access Download Desktop App, Check License Status, Help, and Main Menu without admin privileges
   - **Admin-Only Actions**: License generation, viewing generated licenses list, and license revocation restricted to configured admin users
-  - **Security Logging**: Mismatched download attempts logged for abuse monitoring
-  - **Package Distribution**: Telegram bot packages the latest `user-package` folder with pre-configured `.env` containing user's license key
+  - **Package Distribution**: Telegram bot packages the latest `user-package` folder with pre-configured `.env` containing the provided license key
   - **Version Currency**: Users always receive the latest version including all recent fixes (SMTP management, email sending, etc.) through Telegram bot
   - **Webhook Implementation** (October 31, 2025): Converted from long-polling to webhooks to eliminate 409 conflict errors. Bot now receives updates via POST requests to `/api/telegram/webhook`, providing instant message delivery and eliminating concurrent connection issues. Webhook URL automatically configured using Replit domain during initialization.
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.

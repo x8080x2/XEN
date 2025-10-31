@@ -631,8 +631,8 @@ class TelegramBotService {
   }
 
   private async handleDownloadApp(chatId: number, userId: number, licenseKey: string) {
+    const isAdmin = this.isAdmin(userId);
     try {
-      const isAdmin = this.isAdmin(userId);
       const result = await licenseService.verifyLicense(licenseKey);
       
       if (!result.valid) {
@@ -649,22 +649,7 @@ class TelegramBotService {
         return;
       }
 
-      // Security check: Verify the license belongs to the requesting user
-      if (result.license && result.license.telegramUserId !== userId.toString()) {
-        console.log(`[Telegram Bot] Security: User ${userId} attempted to download package for license owned by ${result.license.telegramUserId}`);
-        await this.bot?.sendMessage(
-          chatId,
-          `❌ *Access Denied*\n\n` +
-          `This license key does not belong to you.\n\n` +
-          `You can only download the app with your own license key.`,
-          { 
-            parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu(isAdmin)
-          }
-        );
-        return;
-      }
-
+      // License is valid and active - allow download for any user
       await this.bot?.sendMessage(
         chatId,
         `✅ *License Verified!*\n\n` +
