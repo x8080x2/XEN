@@ -85,9 +85,13 @@ class TelegramBotService {
       { text: '💾 Download Desktop App', callback_data: 'menu_download' }
     ]);
     
+    // All users can check license status
+    buttons.push([
+      { text: '🔍 Check Status', callback_data: 'menu_status' }
+    ]);
+    
     if (isAdmin) {
       buttons.push([
-        { text: '🔍 Check Status', callback_data: 'menu_status' },
         { text: '❌ Revoke License', callback_data: 'menu_revoke' }
       ]);
     }
@@ -339,11 +343,16 @@ class TelegramBotService {
 
       if (!userId || !text) return;
 
-      if (!await this.checkAdminAccess(userId, chatId)) {
+      const state = this.userStates.get(userId);
+
+      // Allow non-admin users to complete public actions (download and status check)
+      const publicStates = ['awaiting_status_key', 'awaiting_download_key'];
+      const isPublicAction = state?.action && publicStates.includes(state.action);
+
+      // Only check admin access if this is NOT a public action
+      if (!isPublicAction && !await this.checkAdminAccess(userId, chatId)) {
         return;
       }
-
-      const state = this.userStates.get(userId);
 
       if (state?.action === 'awaiting_status_key') {
         this.userStates.delete(userId);
@@ -353,7 +362,7 @@ class TelegramBotService {
         await this.handleRevokeLicense(chatId, text);
       } else if (state?.action === 'awaiting_download_key') {
         this.userStates.delete(userId);
-        await this.handleDownloadApp(chatId, text);
+        await this.handleDownloadApp(chatId, userId, text);
       }
     });
 
@@ -578,7 +587,7 @@ class TelegramBotService {
     }
   }
 
-  private async handleDownloadApp(chatId: number, licenseKey: string) {
+  private async handleDownloadApp(chatId: number, userId: number, licenseKey: string) {
     try {
       const result = await licenseService.verifyLicense(licenseKey);
       
@@ -588,6 +597,22 @@ class TelegramBotService {
           `❌ *Invalid License Key*\n\n` +
           `Reason: ${result.reason}\n\n` +
           `Please check your license key and try again.`,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu()
+          }
+        );
+        return;
+      }
+
+      // Security check: Verify the license belongs to the requesting user
+      if (result.license && result.license.telegramUserId !== userId.toString()) {
+        console.log(`[Telegram Bot] Security: User ${userId} attempted to download package for license owned by ${result.license.telegramUserId}`);
+        await this.bot?.sendMessage(
+          chatId,
+          `❌ *Access Denied*\n\n` +
+          `This license key does not belong to you.\n\n` +
+          `You can only download the app with your own license key.`,
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu()
