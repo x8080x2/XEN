@@ -61,6 +61,14 @@ Preferred communication style: Simple, everyday language.
   - **Backward Compatibility**: Existing licenses without hardware binding get bound on first use
   - **Clear Error Messages**: Users get clear messages when trying to use a license already activated on another computer
   - **Dual Endpoints**: Both `server/routes.ts` and `server/routes/licenseRoutes.ts` properly enforce hardware binding
+- **Telegram Bot Distribution System** (October 31, 2025): Automated desktop app distribution and license management:
+  - **User Access Control**: Regular users can download desktop app packages and check license status; admins can generate, view, and revoke licenses
+  - **Ownership Verification**: Download security ensures users can only download packages with their own license keys (telegramUserId matching)
+  - **Public Actions**: Regular users access Download Desktop App, Check License Status, Help, and Main Menu without admin privileges
+  - **Admin-Only Actions**: License generation, viewing generated licenses list, and license revocation restricted to configured admin users
+  - **Security Logging**: Mismatched download attempts logged for abuse monitoring
+  - **Package Distribution**: Telegram bot packages the latest `user-package` folder with pre-configured `.env` containing user's license key
+  - **Version Currency**: Users always receive the latest version including all recent fixes (SMTP management, email sending, etc.) through Telegram bot
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup
