@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp-toggle-rotation', enabled),
   smtpAdd: (smtpData) => ipcRenderer.invoke('smtp-add', smtpData),
   smtpDelete: (smtpId) => ipcRenderer.invoke('smtp-delete', smtpId),
+  smtpRotate: () => ipcRenderer.invoke('smtp-rotate'),
   
   // Server configuration
   getServerUrl: () => process.env.REPLIT_SERVER_URL
