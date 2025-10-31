@@ -180,8 +180,11 @@ class TelegramBotService {
 
       if (!chatId || !userId || !data) return;
 
-      // Allow download action for any user, admin check for other actions
-      if (data !== 'menu_download' && !await this.checkAdminAccess(userId, chatId)) {
+      // Allow these actions for all users
+      const publicActions = ['menu_download', 'menu_status', 'menu_help', 'menu_main'];
+      
+      // Check admin access only for admin-only actions
+      if (!publicActions.includes(data) && !await this.checkAdminAccess(userId, chatId)) {
         await this.bot?.answerCallbackQuery(query.id, {
           text: '❌ Access denied',
           show_alert: true
