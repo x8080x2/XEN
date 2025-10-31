@@ -52,6 +52,13 @@ Preferred communication style: Simple, everyday language.
   - **Delete SMTP**: Removes config from `smtp.ini` and updates current selection
   - **Rotate SMTP**: Increments index circularly and persists to rotation state file
   - Desktop rotation state survives app restarts via `user-package/config/smtp-rotation.json` containing `{ rotationEnabled, currentIndex }`
+- **License System** (October 31, 2025): IP-based one-license-per-computer enforcement:
+  - **IP-Based Binding**: Desktop app uses computer's IP address (SHA256 hashed) as hardware identifier
+  - **First Activation**: When a license is used for the first time, it gets permanently bound to that computer's IP address
+  - **Enforcement**: Once bound, the license only works on that specific IP address
+  - **Backward Compatibility**: Existing licenses without hardware binding get bound on first use
+  - **Clear Error Messages**: Users get clear messages when trying to use a license already activated on another computer
+  - **Dual Endpoints**: Both `server/routes.ts` and `server/routes/licenseRoutes.ts` properly enforce hardware binding
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup
