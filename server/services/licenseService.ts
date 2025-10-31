@@ -73,13 +73,10 @@ class LicenseService {
       return { valid: false, license, reason: 'License has expired' };
     }
 
-    // Hardware ID is mandatory for license verification
+    // If no hardware ID provided (e.g., Telegram bot download), just verify license is active
     if (!hardwareId) {
-      console.warn(`[License] License ${licenseKey} verification blocked: hardware ID is required`);
-      return {
-        valid: false,
-        reason: 'Hardware ID is required for license verification'
-      };
+      console.log(`[License] License ${licenseKey} verified without hardware ID (Telegram download)`);
+      return { valid: true, license };
     }
 
     // Hardware binding: one license per computer (IP address)
