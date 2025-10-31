@@ -821,6 +821,50 @@ ipcMain.handle('smtp-delete', async (event, smtpId) => {
   }
 });
 
+// File upload handler
+ipcMain.handle('file-upload', async (event, sourceFilePath) => {
+  try {
+    console.log(`[Electron] Uploading file: ${sourceFilePath}`);
+
+    if (!existsSync(sourceFilePath)) {
+      return { success: false, error: 'Source file not found' };
+    }
+
+    const fileName = path.basename(sourceFilePath);
+    const uploadsDir = path.resolve(__dirname, 'uploads');
+    const destPath = path.resolve(uploadsDir, fileName);
+
+    await fs.mkdir(uploadsDir, { recursive: true });
+    await fs.copyFile(sourceFilePath, destPath);
+
+    const stats = await fs.stat(destPath);
+    const ext = path.extname(fileName).toLowerCase();
+    
+    const mimeTypes = {
+      '.pdf': 'application/pdf',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.html': 'text/html',
+      '.txt': 'text/plain'
+    };
+
+    console.log(`[Electron] File uploaded successfully: ${fileName}`);
+
+    return {
+      success: true,
+      filename: fileName,
+      path: destPath,
+      size: stats.size,
+      mimetype: mimeTypes[ext] || 'application/octet-stream'
+    };
+  } catch (error) {
+    console.error(`[Electron] Failed to upload file:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Parse SMTP INI file format and convert to array
 function parseSmtpIni(content) {
   const parsed = parseIniFile(content);
