@@ -133,20 +133,93 @@ export function SMTPManager() {
       return;
     }
 
-    toast({
-      title: "Manual Edit Required",
-      description: "Please edit config/smtp.ini directly to add SMTP servers, then restart the app",
-      variant: "default"
-    });
-    setDialogOpen(false);
+    setLoading(true);
+    try {
+      if (window.electronAPI) {
+        const data = await window.electronAPI.smtpAdd(newSmtp);
+        if (data.success) {
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: smtpData.rotationEnabled
+          });
+          setNewSmtp({
+            host: "",
+            port: "587",
+            user: "",
+            pass: "",
+            fromEmail: "",
+            fromName: ""
+          });
+          setDialogOpen(false);
+          toast({
+            title: "Success",
+            description: `SMTP configuration ${data.smtpId} added successfully`,
+          });
+        } else {
+          throw new Error(data.error || 'Failed to add SMTP configuration');
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Electron API not available",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('[SMTPManager] Error adding SMTP:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add SMTP configuration",
+        variant: "destructive"
+      });
+    }
+    setLoading(false);
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    toast({
-      title: "Manual Edit Required",
-      description: "Please edit config/smtp.ini directly to remove SMTP servers, then restart the app",
-      variant: "default"
-    });
+    if (smtpData.smtpConfigs.length <= 1) {
+      toast({
+        title: "Error",
+        description: "Cannot delete the last SMTP configuration",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (window.electronAPI) {
+        const data = await window.electronAPI.smtpDelete(smtpId);
+        if (data.success) {
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: smtpData.rotationEnabled
+          });
+          toast({
+            title: "Success",
+            description: `SMTP configuration ${smtpId} deleted successfully`,
+          });
+        } else {
+          throw new Error(data.error || 'Failed to delete SMTP configuration');
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Electron API not available",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('[SMTPManager] Error deleting SMTP:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete SMTP configuration",
+        variant: "destructive"
+      });
+    }
+    setLoading(false);
   };
 
   const rotateSmtp = async () => {
