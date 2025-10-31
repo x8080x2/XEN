@@ -52,14 +52,6 @@ Preferred communication style: Simple, everyday language.
   - **Delete SMTP**: Removes config from `smtp.ini` and updates current selection
   - **Rotate SMTP**: Increments index circularly and persists to rotation state file
   - Desktop rotation state survives app restarts via `user-package/config/smtp-rotation.json` containing `{ rotationEnabled, currentIndex }`
-- **License Security System** (October 31, 2025): Enhanced license verification with hardware-based activation limits:
-  - **MAC Address Fingerprinting**: Desktop app generates hardware ID from MAC address (replacing hostname/CPU) for stronger hardware binding
-  - **Single-Activation Limit**: Each license can only be activated on one computer (hardware ID). Once bound, cannot move to another machine
-  - **Strict Enforcement**: Backend requires hardware ID for all verification requests. Desktop mode cannot bypass or omit hardware binding
-  - **Persistence Verification**: Database updates are verified before returning success, preventing activation without proper binding
-  - **Separate Status Endpoint**: Admin status checks (`GET /status/:licenseKey`) work without hardware ID requirement, preserving administrative functionality
-  - **Enhanced Error Messages**: Clear, specific messages for different scenarios (already activated, revoked, expired, database errors)
-  - **Security Logging**: All activation attempts, binding changes, and security events are logged for audit trail
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup
