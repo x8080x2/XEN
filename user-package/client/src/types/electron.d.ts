@@ -16,6 +16,7 @@ declare global {
       smtpAdd: (smtpData: { host: string; port: string; user: string; pass: string; fromEmail: string; fromName?: string }) => Promise<{ success: boolean; smtpId?: string; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
       smtpDelete: (smtpId: string) => Promise<{ success: boolean; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
       smtpRotate: () => Promise<{ success: boolean; currentSmtp?: any; rotationEnabled?: boolean; error?: string }>;
+      fileUpload: (sourceFilePath: string) => Promise<{ success: boolean; filename?: string; path?: string; size?: number; mimetype?: string; error?: string }>;
     };
   }
 }

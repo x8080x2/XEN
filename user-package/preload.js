@@ -22,6 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpDelete: (smtpId) => ipcRenderer.invoke('smtp-delete', smtpId),
   smtpRotate: () => ipcRenderer.invoke('smtp-rotate'),
   
+  // File upload
+  fileUpload: (sourceFilePath) => ipcRenderer.invoke('file-upload', sourceFilePath),
+  
   // Server configuration
   getServerUrl: () => process.env.REPLIT_SERVER_URL
 });
