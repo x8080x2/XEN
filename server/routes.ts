@@ -211,7 +211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/license/verify", async (req, res) => {
     try {
-      const { licenseKey } = req.body;
+      const { licenseKey, hardwareId } = req.body;
 
       if (!licenseKey) {
         return res.status(400).json({ 
@@ -221,7 +221,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const result = await licenseService.verifyLicense(licenseKey);
+      if (!hardwareId || typeof hardwareId !== 'string' || hardwareId.trim() === '') {
+        return res.status(400).json({ 
+          success: false,
+          valid: false,
+          error: 'Hardware ID is required for license verification' 
+        });
+      }
+
+      const result = await licenseService.verifyLicense(licenseKey, hardwareId);
 
       res.json({
         success: true,
