@@ -28,7 +28,7 @@ export function setupOriginalEmailRoutes(app: Express) {
 
       // Validate SMTP settings early - accept either legacy single SMTP OR user SMTP configs
       // Desktop mode detection: check if userSmtpConfigs KEY exists (even if empty array)
-      const isDesktopMode = req.body.hasOwnProperty('userSmtpConfigs');
+      const isDesktopMode = 'userSmtpConfigs' in req.body;
       let hasUserSmtpConfigs = false;
       let userSmtpConfigsArray: any[] = [];
       
