@@ -88,29 +88,21 @@ export function SMTPManager() {
         if (result.success) {
           setSmtpData(prev => ({
             ...prev,
-            rotationEnabled: newRotationState,
-            currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
-              ? prev.smtpConfigs[0] 
-              : prev.currentSmtp
+            rotationEnabled: result.rotationEnabled,
+            currentSmtp: result.currentSmtp ?? prev.currentSmtp
           }));
           toast({
             title: "SMTP Rotation",
-            description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
+            description: `SMTP rotation ${result.rotationEnabled ? 'enabled' : 'disabled'}`,
           });
         } else {
           throw new Error('Failed to save rotation state');
         }
       } else {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: newRotationState,
-          currentSmtp: newRotationState && prev.smtpConfigs.length > 0 
-            ? prev.smtpConfigs[0] 
-            : prev.currentSmtp
-        }));
         toast({
-          title: "SMTP Rotation",
-          description: `SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`,
+          title: "Error",
+          description: "Electron API not available",
+          variant: "destructive"
         });
       }
     } catch (error) {

@@ -456,15 +456,52 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
     console.log(`[Electron] Toggling SMTP rotation to: ${enabled}`);
     smtpRotationEnabled = enabled;
 
-    const statePath = path.resolve(__dirname, 'config', 'smtp-rotation.json');
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let smtpPath = null;
+    let statePath = null;
+
+    // Find config files
+    for (const basePath of basePaths) {
+      const testSmtpPath = path.resolve(basePath, 'config', 'smtp.ini');
+      const testStatePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
+      
+      if (existsSync(testSmtpPath)) {
+        smtpPath = testSmtpPath;
+        statePath = testStatePath;
+        break;
+      }
+    }
+
+    // Load current SMTP configs to return current SMTP
+    let currentSmtp = null;
+    if (smtpPath && existsSync(smtpPath)) {
+      const smtpContent = await fs.readFile(smtpPath, 'utf-8');
+      const smtpConfigs = parseSmtpIni(smtpContent);
+      
+      if (smtpConfigs.length > 0) {
+        // Use current index to get current SMTP
+        const validIndex = currentSmtpIndex < smtpConfigs.length ? currentSmtpIndex : 0;
+        currentSmtp = smtpConfigs[validIndex];
+      }
+    }
+
     await fs.mkdir(path.dirname(statePath), { recursive: true });
     await fs.writeFile(statePath, JSON.stringify({ 
       rotationEnabled: enabled,
       currentIndex: currentSmtpIndex 
     }), 'utf-8');
 
-    console.log(`[Electron] SMTP rotation state saved: ${enabled}`);
-    return { success: true, rotationEnabled: enabled };
+    console.log(`[Electron] SMTP rotation state saved: ${enabled}, index: ${currentSmtpIndex}`);
+    return { 
+      success: true, 
+      rotationEnabled: enabled,
+      currentSmtp: currentSmtp
+    };
   } catch (error) {
     console.error(`[Electron] Failed to save rotation state:`, error);
     return { success: false, rotationEnabled: smtpRotationEnabled };

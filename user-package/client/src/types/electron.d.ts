@@ -12,7 +12,7 @@ declare global {
       loadConfig: () => Promise<any>;
       loadLeads: () => Promise<any>;
       smtpList: () => Promise<any>;
-      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean }>;
+      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean; currentSmtp?: any }>;
       smtpAdd: (smtpData: { host: string; port: string; user: string; pass: string; fromEmail: string; fromName?: string }) => Promise<{ success: boolean; smtpId?: string; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
       smtpDelete: (smtpId: string) => Promise<{ success: boolean; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
       smtpRotate: () => Promise<{ success: boolean; currentSmtp?: any; rotationEnabled?: boolean; error?: string }>;
