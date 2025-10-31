@@ -121,9 +121,8 @@ app.use((req, res, next) => {
   if (process.env.TELEGRAM_BOT_TOKEN) {
     const { telegramBotService } = await import('./services/telegramBotService');
     
-    // Build webhook URL from Replit domain
-    const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPL_SLUG;
-    const webhookUrl = domain ? `https://${domain}/api/telegram/webhook` : undefined;
+    // Use permanent Replit deployment URL for webhook
+    const webhookUrl = 'https://xen-1-cls8080.replit.app/api/telegram/webhook';
     
     const initialized = await telegramBotService.initialize(
       process.env.TELEGRAM_BOT_TOKEN,
@@ -132,9 +131,7 @@ app.use((req, res, next) => {
     );
     if (initialized) {
       log('✅ Telegram License Bot initialized successfully with webhooks');
-      if (webhookUrl) {
-        log(`   Webhook URL: ${webhookUrl}`);
-      }
+      log(`   Webhook URL: ${webhookUrl}`);
     } else {
       log('⚠️  Telegram Bot initialization failed');
     }
