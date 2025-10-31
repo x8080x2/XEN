@@ -260,6 +260,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/licenses/stats", async (req, res) => {
+    try {
+      const allLicenses = await storage.getAllLicenses();
+      
+      const stats = {
+        total: allLicenses.length,
+        active: allLicenses.filter(l => l.status === 'active').length,
+        expired: allLicenses.filter(l => l.status === 'expired').length,
+        revoked: allLicenses.filter(l => l.status === 'revoked').length,
+        byStatus: {
+          active: allLicenses.filter(l => l.status === 'active'),
+          expired: allLicenses.filter(l => l.status === 'expired'),
+          revoked: allLicenses.filter(l => l.status === 'revoked')
+        }
+      };
+
+      res.json({
+        success: true,
+        stats
+      });
+    } catch (error: any) {
+      console.error('License stats error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to get license statistics' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
