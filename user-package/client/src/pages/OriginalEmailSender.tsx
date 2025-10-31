@@ -442,21 +442,120 @@ export default function OriginalEmailSender() {
   };
 
   const addNewSmtp = async () => {
-    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
-    setStatusText('Mode 1: Please add SMTP configs to your local config/smtp.ini file');
-    setTimeout(() => setStatusText(""), 3000);
+    // Validate all required fields
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+      setStatusText('Error: Please fill in all required SMTP fields');
+      setTimeout(() => setStatusText(""), 3000);
+      return;
+    }
+
+    try {
+      if (window.electronAPI?.smtpAdd) {
+        console.log('[Desktop] Adding new SMTP config:', newSmtp);
+        const data = await window.electronAPI.smtpAdd(newSmtp);
+        
+        if (data.success) {
+          // Update SMTP data with new list
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: smtpData.rotationEnabled
+          });
+          
+          // Clear form
+          setNewSmtp({
+            host: "",
+            port: "587",
+            user: "",
+            pass: "",
+            fromEmail: "",
+            fromName: ""
+          });
+          
+          setStatusText(`✓ SMTP config ${data.smtpId} added successfully`);
+          setTimeout(() => setStatusText(""), 3000);
+          console.log('[Desktop] SMTP config added successfully:', data.smtpId);
+        } else {
+          throw new Error(data.error || 'Failed to add SMTP configuration');
+        }
+      } else {
+        setStatusText('Error: Electron API not available');
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error: any) {
+      console.error('[Desktop] Error adding SMTP:', error);
+      setStatusText(`Error: ${error.message || 'Failed to add SMTP'}`);
+      setTimeout(() => setStatusText(""), 3000);
+    }
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
-    setStatusText('Mode 1: Please modify SMTP configs in your local config/smtp.ini file');
-    setTimeout(() => setStatusText(""), 3000);
+    // Prevent deleting the last SMTP config
+    if (smtpData.smtpConfigs.length <= 1) {
+      setStatusText('Error: Cannot delete the last SMTP configuration');
+      setTimeout(() => setStatusText(""), 3000);
+      return;
+    }
+
+    try {
+      if (window.electronAPI?.smtpDelete) {
+        console.log('[Desktop] Deleting SMTP config:', smtpId);
+        const data = await window.electronAPI.smtpDelete(smtpId);
+        
+        if (data.success) {
+          // Update SMTP data with new list
+          setSmtpData({
+            smtpConfigs: data.smtpConfigs || [],
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: smtpData.rotationEnabled
+          });
+          
+          setStatusText(`✓ SMTP config ${smtpId} deleted successfully`);
+          setTimeout(() => setStatusText(""), 3000);
+          console.log('[Desktop] SMTP config deleted successfully:', smtpId);
+        } else {
+          throw new Error(data.error || 'Failed to delete SMTP configuration');
+        }
+      } else {
+        setStatusText('Error: Electron API not available');
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error: any) {
+      console.error('[Desktop] Error deleting SMTP:', error);
+      setStatusText(`Error: ${error.message || 'Failed to delete SMTP'}`);
+      setTimeout(() => setStatusText(""), 3000);
+    }
   };
 
   const rotateSmtp = async () => {
-    // Mode 1 - SMTP configs managed via local config/smtp.ini file only
-    setStatusText('Mode 1: SMTP rotation managed via local config/smtp.ini file');
-    setTimeout(() => setStatusText(""), 3000);
+    try {
+      if (window.electronAPI?.smtpRotate) {
+        console.log('[Desktop] Rotating to next SMTP server');
+        const data = await window.electronAPI.smtpRotate();
+        
+        if (data.success) {
+          // Update current SMTP
+          setSmtpData(prev => ({
+            ...prev,
+            currentSmtp: data.currentSmtp || null,
+            rotationEnabled: data.rotationEnabled ?? prev.rotationEnabled
+          }));
+          
+          setStatusText(`✓ Rotated to ${data.currentSmtp?.fromEmail || 'next SMTP'}`);
+          setTimeout(() => setStatusText(""), 3000);
+          console.log('[Desktop] SMTP rotated successfully to:', data.currentSmtp?.id);
+        } else {
+          throw new Error(data.error || 'Failed to rotate SMTP');
+        }
+      } else {
+        setStatusText('Error: Electron API not available');
+        setTimeout(() => setStatusText(""), 3000);
+      }
+    } catch (error: any) {
+      console.error('[Desktop] Error rotating SMTP:', error);
+      setStatusText(`Error: ${error.message || 'Failed to rotate SMTP'}`);
+      setTimeout(() => setStatusText(""), 3000);
+    }
   };
 
   // Load configuration from files - Mode 1 local access only
