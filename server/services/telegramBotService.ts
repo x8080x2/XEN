@@ -395,10 +395,10 @@ class TelegramBotService {
 
       if (state.action === 'awaiting_status_key') {
         this.userStates.delete(userId);
-        await this.handleCheckStatus(chatId, text);
+        await this.handleCheckStatus(chatId, userId, text);
       } else if (state.action === 'awaiting_revoke_key') {
         this.userStates.delete(userId);
-        await this.handleRevokeLicense(chatId, text);
+        await this.handleRevokeLicense(chatId, userId, text);
       } else if (state.action === 'awaiting_download_key') {
         this.userStates.delete(userId);
         await this.handleDownloadApp(chatId, userId, text);
@@ -416,6 +416,7 @@ class TelegramBotService {
     username: string,
     action: string
   ) {
+    const isAdmin = this.isAdmin(userId);
     try {
       let durationDays: number | undefined;
 
@@ -455,7 +456,7 @@ class TelegramBotService {
         `3. Restart your desktop app`,
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu(true)
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     } catch (error) {
@@ -466,13 +467,14 @@ class TelegramBotService {
         'Please try again later.',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     }
   }
 
   private async handleMyKeys(chatId: number, userId: number) {
+    const isAdmin = this.isAdmin(userId);
     try {
       const allLicenses = await licenseService.getAllLicenses();
       const userLicenses = allLicenses.filter(l => l.telegramUserId === userId.toString());
@@ -485,7 +487,7 @@ class TelegramBotService {
           'Use *Generate License* to create a new one.',
           { 
             parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu()
+            reply_markup: this.getMainMenu(isAdmin)
           }
         );
         return;
@@ -520,7 +522,7 @@ class TelegramBotService {
         licenseList,
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     } catch (error) {
@@ -530,13 +532,14 @@ class TelegramBotService {
         '❌ Failed to fetch licenses.\n\nPlease try again later.',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     }
   }
 
-  private async handleCheckStatus(chatId: number, licenseKey: string) {
+  private async handleCheckStatus(chatId: number, userId: number, licenseKey: string) {
+    const isAdmin = this.isAdmin(userId);
     try {
       const result = await licenseService.verifyLicense(licenseKey);
       
@@ -548,7 +551,7 @@ class TelegramBotService {
           `Key: \`${licenseKey}\``,
           { 
             parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu()
+            reply_markup: this.getMainMenu(isAdmin)
           }
         );
         return;
@@ -569,7 +572,7 @@ class TelegramBotService {
         `📆 Created: ${license.createdAt.toLocaleDateString()}`,
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     } catch (error) {
@@ -579,13 +582,14 @@ class TelegramBotService {
         '❌ Failed to check license status.\n\nPlease try again later.',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     }
   }
 
-  private async handleRevokeLicense(chatId: number, licenseKey: string) {
+  private async handleRevokeLicense(chatId: number, userId: number, licenseKey: string) {
+    const isAdmin = this.isAdmin(userId);
     try {
       const license = await licenseService.revokeLicense(licenseKey);
       
@@ -596,7 +600,7 @@ class TelegramBotService {
           `Key: \`${licenseKey}\``,
           { 
             parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu()
+            reply_markup: this.getMainMenu(isAdmin)
           }
         );
         return;
@@ -610,7 +614,7 @@ class TelegramBotService {
         `⚠️ This license can no longer be used.`,
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     } catch (error) {
@@ -620,7 +624,7 @@ class TelegramBotService {
         '❌ Failed to revoke license.\n\nPlease try again later.',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     }
@@ -628,6 +632,7 @@ class TelegramBotService {
 
   private async handleDownloadApp(chatId: number, userId: number, licenseKey: string) {
     try {
+      const isAdmin = this.isAdmin(userId);
       const result = await licenseService.verifyLicense(licenseKey);
       
       if (!result.valid) {
@@ -638,7 +643,7 @@ class TelegramBotService {
           `Please check your license key and try again.`,
           { 
             parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu()
+            reply_markup: this.getMainMenu(isAdmin)
           }
         );
         return;
@@ -654,7 +659,7 @@ class TelegramBotService {
           `You can only download the app with your own license key.`,
           { 
             parse_mode: 'Markdown',
-            reply_markup: this.getMainMenu()
+            reply_markup: this.getMainMenu(isAdmin)
           }
         );
         return;
@@ -689,7 +694,7 @@ class TelegramBotService {
                 `1. Extract the ZIP file\n` +                
                 `Your license is already configured in the .env file!`,
               parse_mode: 'Markdown',
-              reply_markup: this.getMainMenu()
+              reply_markup: this.getMainMenu(isAdmin)
             }
           );
 
@@ -702,7 +707,7 @@ class TelegramBotService {
             '❌ Failed to send the desktop app. Please try again.',
             { 
               parse_mode: 'Markdown',
-              reply_markup: this.getMainMenu()
+              reply_markup: this.getMainMenu(isAdmin)
             }
           );
         }
@@ -759,7 +764,7 @@ NODE_ENV=production
         '❌ Failed to prepare the desktop app package.\n\nPlease try again later.',
         { 
           parse_mode: 'Markdown',
-          reply_markup: this.getMainMenu()
+          reply_markup: this.getMainMenu(isAdmin)
         }
       );
     }
