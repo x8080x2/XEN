@@ -16,6 +16,14 @@ router.post('/verify', async (req, res) => {
       });
     }
 
+    // SECURITY: Hardware ID is mandatory for license verification
+    if (!hardwareId || typeof hardwareId !== 'string' || hardwareId.trim() === '') {
+      return res.status(400).json({ 
+        valid: false, 
+        error: 'Hardware ID is required for license verification' 
+      });
+    }
+
     const result = await licenseService.verifyLicense(licenseKey, hardwareId);
     
     res.json(result);
@@ -28,11 +36,12 @@ router.post('/verify', async (req, res) => {
   }
 });
 
-// Check license status
+// Check license status (admin endpoint - no hardware binding required)
 router.get('/status/:licenseKey', async (req, res) => {
   try {
     const { licenseKey } = req.params;
-    const result = await licenseService.verifyLicense(licenseKey);
+    // Use dedicated status check method that doesn't require hardware ID
+    const result = await licenseService.checkLicenseStatus(licenseKey);
     res.json(result);
   } catch (error) {
     console.error('License status check error:', error);
