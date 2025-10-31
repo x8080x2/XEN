@@ -208,6 +208,15 @@ app.use((req, res, next) => {
   const shutdown = async (signal: string) => {
     log(`${signal} signal received: closing HTTP server`);
     
+    // Cleanup Telegram bot
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+      const { telegramBotService } = await import('./services/telegramBotService');
+      if (telegramBotService.isRunning()) {
+        telegramBotService.stop();
+        log('Telegram bot stopped');
+      }
+    }
+    
     // Cleanup file service
     const { FileService } = await import('./services/fileService');
     const fileService = new FileService();
