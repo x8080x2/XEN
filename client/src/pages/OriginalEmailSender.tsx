@@ -1669,7 +1669,11 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
               </details>
-            </div>         
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>         
         </div>
 
         {/* Settings Overlay */}
