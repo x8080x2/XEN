@@ -175,11 +175,7 @@ class TelegramBotService {
       
       await this.bot?.sendMessage(
         chatId,
-        `👋 *Welcome ${username}!*\n\n` +
-        `🔐 Email Sender License Management Bot\n\n` +
-        (isAdmin 
-          ? `Use the buttons below to manage licenses:` 
-          : `Use the button below to download the desktop app with your license:`),
+        `👋 Welcome ${username}!`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -197,7 +193,7 @@ class TelegramBotService {
       
       await this.bot?.sendMessage(
         chatId,
-        '🔐 *License Management*\n\nSelect an option:',
+        '📋 Select an option:',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -232,7 +228,7 @@ class TelegramBotService {
           const isAdmin = this.isAdmin(userId);
           try {
             await this.bot?.editMessageText(
-              '🔐 *License Management*\n\nSelect an option:',
+              '📋 Select an option:',
               {
                 chat_id: chatId,
                 message_id: messageId,
@@ -244,7 +240,7 @@ class TelegramBotService {
             // If edit fails, send new message
             await this.bot?.sendMessage(
               chatId,
-              '🔐 *License Management*\n\nSelect an option:',
+              '📋 Select an option:',
               {
                 parse_mode: 'Markdown',
                 reply_markup: this.getMainMenu(isAdmin)
@@ -255,8 +251,7 @@ class TelegramBotService {
 
         case 'menu_generate':
           await this.bot?.editMessageText(
-            '🆕 *Generate New License*\n\n' +
-            'Select the license duration:',
+            '⏱️ Select duration:',
             {
               chat_id: chatId,
               message_id: messageId,
@@ -282,8 +277,7 @@ class TelegramBotService {
           this.userStates.set(userId, { action: 'awaiting_status_key' });
           await this.bot?.sendMessage(
             chatId,
-            '🔍 *Check License Status*\n\n' +
-            'Please send the license key you want to check:',
+            '🔑 Send license key:',
             { 
               parse_mode: 'Markdown',
               reply_markup: this.getBackButton()
@@ -295,8 +289,7 @@ class TelegramBotService {
           this.userStates.set(userId, { action: 'awaiting_revoke_key' });
           await this.bot?.sendMessage(
             chatId,
-            '❌ *Revoke License*\n\n' +
-            'Please send the license key you want to revoke:',
+            '🔑 Send license key to revoke:',
             { 
               parse_mode: 'Markdown',
               reply_markup: this.getBackButton()
@@ -308,8 +301,7 @@ class TelegramBotService {
           this.userStates.set(userId, { action: 'awaiting_download_key' });
           await this.bot?.sendMessage(
             chatId,
-            '💾 *Download Desktop App*\n\n' +
-            'Please send your license key to download the desktop app with your license pre-configured:',
+            '🔑 Send your license key:',
             { 
               parse_mode: 'Markdown',
               reply_markup: this.getBackButton()
@@ -320,17 +312,7 @@ class TelegramBotService {
         case 'menu_help':
           try {
             await this.bot?.editMessageText(
-              '📖 *Help & Information*\n\n' +
-              '*🆕 Generate License:* Create new licenses with various durations\n\n' +
-              '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
-              '*🔍 Check Status:* Verify if a license key is valid\n\n' +
-              '*❌ Revoke License:* Deactivate a license key\n\n' +
-              '*💾 Download Desktop App:* Get the app with your license pre-configured\n\n' +
-              '*Usage Instructions:*\n' +
-              '1. Generate a license with desired duration\n' +
-              '2. Copy the license key\n' +
-              '3. Add to desktop app .env file\n' +
-              '4. Restart the desktop application',
+              '📖 Use buttons to generate, check, or download with license key.',
               {
                 chat_id: chatId,
                 message_id: messageId,
@@ -342,17 +324,7 @@ class TelegramBotService {
             // If edit fails, send new message instead
             await this.bot?.sendMessage(
               chatId,
-              '📖 *Help & Information*\n\n' +
-              '*🆕 Generate License:* Create new licenses with various durations\n\n' +
-              '*📋 My Licenses:* View all licenses you\'ve generated\n\n' +
-              '*🔍 Check Status:* Verify if a license key is valid\n\n' +
-              '*❌ Revoke License:* Deactivate a license key\n\n' +
-              '*💾 Download Desktop App:* Get the app with your license pre-configured\n\n' +
-              '*Usage Instructions:*\n' +
-              '1. Generate a license with desired duration\n' +
-              '2. Copy the license key\n' +
-              '3. Add to desktop app .env file\n' +
-              '4. Restart the desktop application',
+              '📖 Use buttons to generate, check, or download with license key.',
               {
                 parse_mode: 'Markdown',
                 reply_markup: this.getBackButton()
@@ -444,16 +416,7 @@ class TelegramBotService {
 
       await this.bot?.sendMessage(
         chatId,
-        `✅ *License Generated Successfully!*\n\n` +
-        `🔑 License Key:\n\`${license.licenseKey}\`\n\n` +
-        `⏱️ Duration: ${durationText}\n` +
-        `${expiryText}\n` +
-        `👤 Generated for: @${username}\n\n` +
-        `*Setup Instructions:*\n` +
-        `1. Copy the license key above\n` +
-        `2. Add to .env file:\n` +
-        `   \`LICENSE_KEY=${license.licenseKey}\`\n` +
-        `3. Restart your desktop app`,
+        `✅ \`${license.licenseKey}\` (${durationText})`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -463,8 +426,7 @@ class TelegramBotService {
       console.error('Error generating license:', error);
       await this.bot?.sendMessage(
         chatId,
-        '❌ *Failed to generate license*\n\n' +
-        'Please try again later.',
+        '❌ Failed to generate license',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -482,9 +444,7 @@ class TelegramBotService {
       if (userLicenses.length === 0) {
         await this.bot?.sendMessage(
           chatId,
-          '📋 *My Licenses*\n\n' +
-          'You have no generated licenses yet.\n\n' +
-          'Use *Generate License* to create a new one.',
+          '📋 No licenses found',
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu(isAdmin)
@@ -529,7 +489,7 @@ class TelegramBotService {
       console.error('Error fetching licenses:', error);
       await this.bot?.sendMessage(
         chatId,
-        '❌ Failed to fetch licenses.\n\nPlease try again later.',
+        '❌ Error loading licenses',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -546,9 +506,7 @@ class TelegramBotService {
       if (!result.valid) {
         await this.bot?.sendMessage(
           chatId,
-          `🔍 *License Status: Invalid*\n\n` +
-          `❌ Reason: ${result.reason}\n\n` +
-          `Key: \`${licenseKey}\``,
+          `❌ Invalid: ${result.reason}`,
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu(isAdmin)
@@ -559,17 +517,12 @@ class TelegramBotService {
 
       const license = result.license!;
       const expiryText = license.expiresAt 
-        ? `📅 Expires: ${license.expiresAt.toLocaleDateString()}`
-        : '♾️ Never expires';
+        ? `Expires ${license.expiresAt.toLocaleDateString()}`
+        : 'Lifetime';
 
       await this.bot?.sendMessage(
         chatId,
-        `🔍 *License Status: Valid* ✅\n\n` +
-        `🔑 Key: \`${license.licenseKey}\`\n\n` +
-        `👤 User: @${license.telegramUsername || 'Unknown'}\n` +
-        `${expiryText}\n` +
-        `🟢 Status: ${license.status}\n` +
-        `📆 Created: ${license.createdAt.toLocaleDateString()}`,
+        `✅ Valid - ${license.status} (${expiryText})`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -579,7 +532,7 @@ class TelegramBotService {
       console.error('Error checking license status:', error);
       await this.bot?.sendMessage(
         chatId,
-        '❌ Failed to check license status.\n\nPlease try again later.',
+        '❌ Error checking status',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -596,8 +549,7 @@ class TelegramBotService {
       if (!license) {
         await this.bot?.sendMessage(
           chatId,
-          `❌ *License Not Found*\n\n` +
-          `Key: \`${licenseKey}\``,
+          `❌ License not found`,
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu(isAdmin)
@@ -608,10 +560,7 @@ class TelegramBotService {
 
       await this.bot?.sendMessage(
         chatId,
-        `✅ *License Revoked Successfully*\n\n` +
-        `🔑 Key: \`${license.licenseKey}\`\n` +
-        `👤 User: @${license.telegramUsername || 'Unknown'}\n\n` +
-        `⚠️ This license can no longer be used.`,
+        `✅ License revoked`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -621,7 +570,7 @@ class TelegramBotService {
       console.error('Error revoking license:', error);
       await this.bot?.sendMessage(
         chatId,
-        '❌ Failed to revoke license.\n\nPlease try again later.',
+        '❌ Error revoking license',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -638,9 +587,7 @@ class TelegramBotService {
       if (!result.valid) {
         await this.bot?.sendMessage(
           chatId,
-          `❌ *Invalid License Key*\n\n` +
-          `Reason: ${result.reason}\n\n` +
-          `Please check your license key and try again.`,
+          `❌ ${result.reason}`,
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu(isAdmin)
@@ -652,9 +599,7 @@ class TelegramBotService {
       // License is valid and active - allow download for any user
       await this.bot?.sendMessage(
         chatId,
-        `✅ *License Verified!*\n\n` +
-        `Preparing your desktop app package...\n` +
-        `This may take a moment.`,
+        `⏳ Preparing package...`,
         { parse_mode: 'Markdown' }
       );
 
@@ -672,12 +617,7 @@ class TelegramBotService {
             chatId,
             zipPath,
             {
-              caption: `📦 *Email Sender Desktop App*\n\n` +
-                `✅ Pre-configured with your license key\n` +
-                `🔑 License: \`${licenseKey.substring(0, 8)}...${licenseKey.substring(licenseKey.length - 4)}\`\n\n` +
-                `*Installation:*\n` +
-                `1. Extract the ZIP file\n` +                
-                `Your license is already configured in the .env file!`,
+              caption: `📦 Extract and run - license pre-configured`,
               parse_mode: 'Markdown',
               reply_markup: this.getMainMenu(isAdmin)
             }
@@ -689,7 +629,7 @@ class TelegramBotService {
           console.error('[Telegram Bot] Error sending file:', error);
           await this.bot?.sendMessage(
             chatId,
-            '❌ Failed to send the desktop app. Please try again.',
+            '❌ Failed to send package',
             { 
               parse_mode: 'Markdown',
               reply_markup: this.getMainMenu(isAdmin)
@@ -746,7 +686,7 @@ NODE_ENV=production
       console.error('[Telegram Bot] Error preparing download:', error);
       await this.bot?.sendMessage(
         chatId,
-        '❌ Failed to prepare the desktop app package.\n\nPlease try again later.',
+        '❌ Error preparing package',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
