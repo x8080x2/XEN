@@ -448,6 +448,7 @@ ipcMain.handle('load-leads', async () => {
 
 // SMTP rotation state storage
 let smtpRotationEnabled = false;
+let currentSmtpIndex = 0;
 
 // SMTP toggle rotation handler
 ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
@@ -457,13 +458,91 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
 
     const statePath = path.resolve(__dirname, 'config', 'smtp-rotation.json');
     await fs.mkdir(path.dirname(statePath), { recursive: true });
-    await fs.writeFile(statePath, JSON.stringify({ rotationEnabled: enabled }), 'utf-8');
+    await fs.writeFile(statePath, JSON.stringify({ 
+      rotationEnabled: enabled,
+      currentIndex: currentSmtpIndex 
+    }), 'utf-8');
 
     console.log(`[Electron] SMTP rotation state saved: ${enabled}`);
     return { success: true, rotationEnabled: enabled };
   } catch (error) {
     console.error(`[Electron] Failed to save rotation state:`, error);
     return { success: false, rotationEnabled: smtpRotationEnabled };
+  }
+});
+
+// SMTP rotate handler
+ipcMain.handle('smtp-rotate', async () => {
+  try {
+    console.log(`[Electron] Rotating SMTP server`);
+
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let smtpPath = null;
+    let statePath = null;
+
+    // Find SMTP config file
+    for (const basePath of basePaths) {
+      const testSmtpPath = path.resolve(basePath, 'config', 'smtp.ini');
+      const testStatePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
+      
+      if (existsSync(testSmtpPath)) {
+        smtpPath = testSmtpPath;
+        statePath = testStatePath;
+        break;
+      }
+    }
+
+    if (!smtpPath) {
+      return { success: false, error: 'SMTP config file not found' };
+    }
+
+    // Load SMTP configs
+    const smtpContent = await fs.readFile(smtpPath, 'utf-8');
+    const smtpConfigs = parseSmtpIni(smtpContent);
+
+    if (smtpConfigs.length <= 1) {
+      return { success: false, error: 'Need at least 2 SMTP configs to rotate' };
+    }
+
+    // Load current index from state file
+    let savedIndex = 0;
+    if (existsSync(statePath)) {
+      try {
+        const stateContent = await fs.readFile(statePath, 'utf-8');
+        const state = JSON.parse(stateContent);
+        savedIndex = state.currentIndex || 0;
+        smtpRotationEnabled = state.rotationEnabled || false;
+      } catch (error) {
+        console.error(`[Electron] Failed to parse rotation state:`, error);
+      }
+    }
+
+    // Calculate next index
+    currentSmtpIndex = (savedIndex + 1) % smtpConfigs.length;
+    const nextSmtp = smtpConfigs[currentSmtpIndex];
+
+    // Save updated state
+    await fs.mkdir(path.dirname(statePath), { recursive: true });
+    await fs.writeFile(statePath, JSON.stringify({ 
+      rotationEnabled: smtpRotationEnabled,
+      currentIndex: currentSmtpIndex 
+    }), 'utf-8');
+
+    console.log(`[Electron] Rotated to SMTP index ${currentSmtpIndex}: ${nextSmtp.fromEmail}`);
+
+    return {
+      success: true,
+      currentSmtp: nextSmtp,
+      rotationEnabled: smtpRotationEnabled
+    };
+  } catch (error) {
+    console.error(`[Electron] Failed to rotate SMTP:`, error);
+    return { success: false, error: error.message };
   }
 });
 
@@ -479,6 +558,7 @@ ipcMain.handle('smtp-list', async () => {
     ];
 
     let rotationEnabled = false;
+    let savedIndex = 0;
 
     for (const basePath of basePaths) {
       const smtpPath = path.resolve(basePath, 'config', 'smtp.ini');
@@ -491,8 +571,10 @@ ipcMain.handle('smtp-list', async () => {
           const stateContent = await fs.readFile(statePath, 'utf-8');
           const state = JSON.parse(stateContent);
           rotationEnabled = state.rotationEnabled || false;
+          savedIndex = state.currentIndex || 0;
           smtpRotationEnabled = rotationEnabled;
-          console.log(`[Electron] Loaded rotation state: ${rotationEnabled}`);
+          currentSmtpIndex = savedIndex;
+          console.log(`[Electron] Loaded rotation state: enabled=${rotationEnabled}, index=${savedIndex}`);
         } catch (error) {
           console.error(`[Electron] Failed to parse rotation state:`, error);
         }
@@ -503,10 +585,14 @@ ipcMain.handle('smtp-list', async () => {
         const smtpContent = await fs.readFile(smtpPath, 'utf-8');
         const smtpConfigs = parseSmtpIni(smtpContent);
 
+        // Use saved index to determine current SMTP, fallback to first if index is out of range
+        const validIndex = savedIndex < smtpConfigs.length ? savedIndex : 0;
+        const currentSmtp = smtpConfigs[validIndex] || null;
+
         return {
           success: true,
           smtpConfigs,
-          currentSmtp: smtpConfigs[0] || null,
+          currentSmtp: currentSmtp,
           rotationEnabled: rotationEnabled
         };
       }
