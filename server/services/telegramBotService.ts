@@ -374,22 +374,32 @@ class TelegramBotService {
 
       const state = this.userStates.get(userId);
 
+      // If user has no state, direct them to use /start
+      if (!state?.action) {
+        await this.bot?.sendMessage(
+          chatId,
+          '👋 Welcome! Please use /start to begin.',
+          { reply_markup: { remove_keyboard: true } }
+        );
+        return;
+      }
+
       // Allow non-admin users to complete public actions (download and status check)
       const publicStates = ['awaiting_status_key', 'awaiting_download_key'];
-      const isPublicAction = state?.action && publicStates.includes(state.action);
+      const isPublicAction = state.action && publicStates.includes(state.action);
 
       // Only check admin access if this is NOT a public action
       if (!isPublicAction && !await this.checkAdminAccess(userId, chatId)) {
         return;
       }
 
-      if (state?.action === 'awaiting_status_key') {
+      if (state.action === 'awaiting_status_key') {
         this.userStates.delete(userId);
         await this.handleCheckStatus(chatId, text);
-      } else if (state?.action === 'awaiting_revoke_key') {
+      } else if (state.action === 'awaiting_revoke_key') {
         this.userStates.delete(userId);
         await this.handleRevokeLicense(chatId, text);
-      } else if (state?.action === 'awaiting_download_key') {
+      } else if (state.action === 'awaiting_download_key') {
         this.userStates.delete(userId);
         await this.handleDownloadApp(chatId, userId, text);
       }
