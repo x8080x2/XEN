@@ -44,6 +44,13 @@ Preferred communication style: Simple, everyday language.
 - **Browser Pool Management**: Optimizes browser resource usage for conversions (max 2 browsers, 3 pages each) with lifecycle management and memory optimization.
 - **Memory Monitoring**: Prevents system resource exhaustion with threshold monitoring and periodic checks.
 - **SMTP Rotation System**: Desktop users can provide multiple SMTP configurations that are rotated per-email for load distribution. The system accepts either userSmtpConfigs array (desktop) or legacy single SMTP fields (web), with automatic fallback to the first user SMTP when configs are provided but rotation is disabled.
+- **Desktop-Web SMTP Parity** (October 31, 2025): Complete feature parity achieved between web and desktop SMTP management. Both versions perform identical operations with full state persistence:
+  - **Fetch SMTP List**: Returns all configs with current SMTP based on saved index
+  - **Toggle Rotation**: Persists rotation state and current SMTP index to `smtp-rotation.json`
+  - **Add SMTP**: Adds new config to `smtp.ini` and returns updated list
+  - **Delete SMTP**: Removes config from `smtp.ini` and updates current selection
+  - **Rotate SMTP**: Increments index circularly and persists to rotation state file
+  - Desktop rotation state survives app restarts via `user-package/config/smtp-rotation.json` containing `{ rotationEnabled, currentIndex }`
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup
