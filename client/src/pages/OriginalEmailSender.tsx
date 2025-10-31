@@ -1380,37 +1380,45 @@ export default function OriginalEmailSender() {
                 )}
               </div>
 
-              {/* SMTP Management - Dropdown Design */}
-              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
-                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
+              {/* SMTP Management - Moved to SMTP Settings Area */}
+              <div className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
                     ⚙️ SMTP Management
                   </h3>
-                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="border-t border-[#26262b]"></div>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      onClick={() => setShowSmtpManager(!showSmtpManager)}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                    >
+                      {showSmtpManager ? "Hide" : "Manage"}
+                    </Button>
+                  </div>
+                </div>
 
-                <div className="p-3">
-                  {/* Current SMTP Display */}
-                  {smtpData.currentSmtp && (
-                    <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white font-medium">Current:</span>
-                            <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
-                            <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
-                          </div>
-                          <p className="text-[#a1a1aa] text-sm">
-                            {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
-                          </p>
+                {/* Current SMTP Display */}
+                {smtpData.currentSmtp && (
+                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white font-medium">Current:</span>
+                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
+                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
                         </div>
+                        <p className="text-[#a1a1aa] text-sm">
+                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
+                        </p>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* SMTP Management Panel */}
-                  <div>
+                {/* SMTP Management Panel */}
+                {showSmtpManager && (
+                  <div className="border-t border-[#26262b] pt-4">
                     {/* Add New SMTP Form */}
                     <div className="mb-4 p-3 bg-[#0f0f12] rounded border border-[#26262b]">
                       <h4 className="text-white font-medium mb-3">Add New SMTP Server</h4>
@@ -1499,8 +1507,8 @@ export default function OriginalEmailSender() {
                       )) || <p className="text-[#a1a1aa] text-center py-4">No SMTP servers configured</p>}
                     </div>
                   </div>
-                </div>
-              </details>
+                )}
+              </div>
 
               {/* AI Content Generation - Compact Dropdown Design */}
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
@@ -1580,100 +1588,94 @@ export default function OriginalEmailSender() {
                   )}
                 </div>
               </details>
-              {/* HTML Convert Settings - Dropdown Design */}
-              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
-                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
-                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+              {/* HTML Convert Settings - Moved to Front */}
+                <div className="mt-4 mb-8 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                  <h3 className="text-sm font-semibold text-[#ef4444] mb-3 flex items-center gap-2">
                     🔄 HTML Convert
                   </h3>
-                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 space-y-3 border-t border-[#26262b]">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
-                      className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                    >
-                      ZIP
-                      {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
-                      className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                    >
-                      🌫️ HTML-TO-IMG
-                      {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
-                      className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                    >
-                      QRCODE
-                      {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
-                      className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                    >
-                      🍬 Metadata
-                      {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
-                      className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                    >
-                      CALENDAR
-                      {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
-                    </Button>
-                    {[
-                      { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
-                      { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
-                      { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
-                      { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
-                    ].map(({ format, label, color }) => {
-                      const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
+                        className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        ZIP
+                        {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
+                        className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        🌫️ HTML-TO-IMG
+                        {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                        className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        QRCODE
+                        {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                        className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        🍬 Metadata
+                        {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                        className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                      >
+                        CALENDAR
+                        {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
+                      </Button>
+                      {[
+                        { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
+                        { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
+                        { format: 'docx', label: '📝 DOCX', color: 'bg-green-600 hover:bg-green-700' },
+                        { format: 'html', label: '🌐 HTML', color: 'bg-purple-600 hover:bg-purple-700' }
+                      ].map(({ format, label, color }) => {
+                        const isActive = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).includes(format);
 
-                      return (
-                        <Button
-                          key={format}
-                          type="button"
-                          onClick={() => {
-                            const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
-                            const newFormats = isActive
-                              ? formats.filter((f: string) => f !== format)
-                              : [...formats, format];
-                            setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
-                          }}
-                          className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
-                        >
-                          {label}
-                          {isActive && <span className="ml-1 text-xs">✓</span>}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
-                    <Input
-                      type="password"
-                      value={advancedSettings.zipPassword}
-                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                      className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
-                      placeholder="Optional"
-                    />
+                        return (
+                          <Button
+                            key={format}
+                            type="button"
+                            onClick={() => {
+                              const formats = advancedSettings.htmlConvert.split(',').map((f: string) => f.trim().toLowerCase()).filter(Boolean);
+                              const newFormats = isActive
+                                ? formats.filter((f: string) => f !== format)
+                                : [...formats, format];
+                              setAdvancedSettings({...advancedSettings, htmlConvert: newFormats.join(',')});
+                            }}
+                            className={`${isActive ? color : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                          >
+                            {label}
+                            {isActive && <span className="ml-1 text-xs">✓</span>}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    <div>
+                      <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
+                      <Input
+                        type="password"
+                        value={advancedSettings.zipPassword}
+                        onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
+                        placeholder="Optional"
+                      />
+                    </div>
                   </div>
                 </div>
-              </details>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>         
+              </div>
+            </div>         
         </div>
 
         {/* Settings Overlay */}
