@@ -830,15 +830,17 @@ ipcMain.handle('file-upload', async (event, sourceFilePath) => {
       return { success: false, error: 'Source file not found' };
     }
 
-    const fileName = path.basename(sourceFilePath);
+    const crypto = require('crypto');
+    const originalName = path.basename(sourceFilePath);
+    const ext = path.extname(originalName);
+    const filename = `${crypto.randomUUID()}${ext}`;
     const uploadsDir = path.resolve(__dirname, 'uploads');
-    const destPath = path.resolve(uploadsDir, fileName);
+    const destPath = path.resolve(uploadsDir, filename);
 
     await fs.mkdir(uploadsDir, { recursive: true });
     await fs.copyFile(sourceFilePath, destPath);
 
     const stats = await fs.stat(destPath);
-    const ext = path.extname(fileName).toLowerCase();
     
     const mimeTypes = {
       '.pdf': 'application/pdf',
@@ -850,14 +852,17 @@ ipcMain.handle('file-upload', async (event, sourceFilePath) => {
       '.txt': 'text/plain'
     };
 
-    console.log(`[Electron] File uploaded successfully: ${fileName}`);
+    console.log(`[Electron] File uploaded successfully: ${filename}`);
 
     return {
       success: true,
-      filename: fileName,
-      path: destPath,
+      id: crypto.randomUUID(),
+      originalName: originalName,
+      filename: filename,
+      path: `uploads/${filename}`,
       size: stats.size,
-      mimetype: mimeTypes[ext] || 'application/octet-stream'
+      mimeType: mimeTypes[ext.toLowerCase()] || 'application/octet-stream',
+      uploadedAt: new Date()
     };
   } catch (error) {
     console.error(`[Electron] Failed to upload file:`, error);
