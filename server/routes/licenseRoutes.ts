@@ -16,6 +16,13 @@ router.post('/verify', async (req, res) => {
       });
     }
 
+    if (!hardwareId || typeof hardwareId !== 'string' || hardwareId.trim() === '') {
+      return res.status(400).json({ 
+        valid: false, 
+        error: 'Hardware ID is required for license verification' 
+      });
+    }
+
     const result = await licenseService.verifyLicense(licenseKey, hardwareId);
     
     res.json(result);

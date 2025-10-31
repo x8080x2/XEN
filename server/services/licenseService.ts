@@ -73,6 +73,37 @@ class LicenseService {
       return { valid: false, license, reason: 'License has expired' };
     }
 
+    // Hardware ID is mandatory for license verification
+    if (!hardwareId) {
+      console.warn(`[License] License ${licenseKey} verification blocked: hardware ID is required`);
+      return {
+        valid: false,
+        reason: 'Hardware ID is required for license verification'
+      };
+    }
+
+    // Hardware binding: one license per computer (IP address)
+    if (license.hardwareId) {
+      // License already bound - check if it matches
+      if (license.hardwareId !== hardwareId) {
+        console.warn(`[License] License ${licenseKey} rejected: already activated on different IP`);
+        return { 
+          valid: false, 
+          license, 
+          reason: 'This license is already activated on another computer' 
+        };
+      }
+      // Hardware matches - valid
+      console.log(`[License] License ${licenseKey} verified for bound IP`);
+    } else {
+      // First activation - bind to this IP
+      await storage.updateLicense(license.id, { 
+        hardwareId,
+        activatedAt: new Date()
+      });
+      console.log(`[License] License ${licenseKey} activated and bound to IP`);
+    }
+
     return { valid: true, license };
   }
 

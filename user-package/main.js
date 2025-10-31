@@ -13,10 +13,33 @@ require('dotenv').config();
 // Keep a global reference of the window object
 let mainWindow;
 
-// Generate simple hardware fingerprint
+// Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
-  const machineId = os.hostname() + os.platform();
-  return crypto.createHash('sha256').update(machineId).digest('hex');
+  try {
+    const networkInterfaces = os.networkInterfaces();
+    
+    // Find the first non-internal IPv4 address
+    for (const interfaceName in networkInterfaces) {
+      const interfaces = networkInterfaces[interfaceName];
+      for (const iface of interfaces) {
+        // Skip internal (loopback) and non-IPv4 addresses
+        if (!iface.internal && iface.family === 'IPv4') {
+          console.log('[Electron] Using IP address for hardware fingerprint:', iface.address);
+          return crypto.createHash('sha256').update(iface.address).digest('hex');
+        }
+      }
+    }
+    
+    // Fallback if no external IP found (shouldn't happen in normal cases)
+    console.warn('[Electron] No external IP found, using hostname fallback');
+    const fallbackId = os.hostname();
+    return crypto.createHash('sha256').update(fallbackId).digest('hex');
+  } catch (error) {
+    console.error('[Electron] Error generating hardware fingerprint:', error);
+    // Emergency fallback
+    const emergencyId = os.hostname();
+    return crypto.createHash('sha256').update(emergencyId).digest('hex');
+  }
 }
 
 // License verification function
@@ -163,11 +186,22 @@ app.whenReady().then(async () => {
 
     const { dialog } = require('electron');
     
+    // Check for specific error message about already activated
+    let errorTitle = 'License Verification Failed';
+    let errorMessage = 'Invalid or Missing License';
+    let errorDetail = licenseResult.error;
+    
+    if (licenseResult.error && licenseResult.error.includes('already activated on another computer')) {
+      errorTitle = 'License Already Activated';
+      errorMessage = 'This license is already in use on another computer';
+      errorDetail = 'Each license can only be activated on one computer at a time.\n\nIf you need to transfer this license, please contact support.';
+    }
+    
     await dialog.showMessageBox({
       type: 'error',
-      title: 'License Verification Failed',
-      message: 'Invalid or Missing License',
-      detail: licenseResult.error,
+      title: errorTitle,
+      message: errorMessage,
+      detail: errorDetail,
       buttons: ['Exit']
     });
 
