@@ -52,6 +52,7 @@ Preferred communication style: Simple, everyday language.
   - **Delete SMTP**: Removes config from `smtp.ini` and updates current selection
   - **Rotate SMTP**: Increments index circularly and persists to rotation state file
   - Desktop rotation state survives app restarts via `user-package/config/smtp-rotation.json` containing `{ rotationEnabled, currentIndex }`
+  - **Desktop UI Implementation** (October 31, 2025): Fixed desktop SMTP management UI in OriginalEmailSender.tsx. Replaced stub functions with working implementations that call `window.electronAPI` methods (smtpAdd, smtpDelete, smtpRotate). All SMTP operations now properly write to local `config/smtp.ini` file via Electron IPC with validation, state updates, and user feedback.
 - **License System** (October 31, 2025): IP-based one-license-per-computer enforcement:
   - **IP-Based Binding**: Desktop app uses computer's IP address (SHA256 hashed) as hardware identifier
   - **First Activation**: When a license is used for the first time, it gets permanently bound to that computer's IP address
