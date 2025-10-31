@@ -35,6 +35,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup AI routes
   setupAIRoutes(app);
 
+  // Telegram webhook endpoint
+  app.post('/api/telegram/webhook', async (req, res) => {
+    try {
+      const { telegramBotService } = await import('./services/telegramBotService');
+      await telegramBotService.processUpdate(req.body);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('[Telegram Webhook] Error processing update:', error);
+      res.sendStatus(500);
+    }
+  });
 
   // Config loading routes - exact clone from main.js
 

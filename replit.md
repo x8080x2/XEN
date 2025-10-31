@@ -69,6 +69,7 @@ Preferred communication style: Simple, everyday language.
   - **Security Logging**: Mismatched download attempts logged for abuse monitoring
   - **Package Distribution**: Telegram bot packages the latest `user-package` folder with pre-configured `.env` containing user's license key
   - **Version Currency**: Users always receive the latest version including all recent fixes (SMTP management, email sending, etc.) through Telegram bot
+  - **Webhook Implementation** (October 31, 2025): Converted from long-polling to webhooks to eliminate 409 conflict errors. Bot now receives updates via POST requests to `/api/telegram/webhook`, providing instant message delivery and eliminating concurrent connection issues. Webhook URL automatically configured using Replit domain during initialization.
 - **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
 
 # Replit Environment Setup

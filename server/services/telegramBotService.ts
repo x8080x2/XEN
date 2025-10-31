@@ -13,15 +13,17 @@ class TelegramBotService {
   private isInitialized = false;
   private adminChatIds: Set<number> = new Set();
   private userStates: Map<number, UserState> = new Map();
+  private webhookUrl: string = '';
 
-  initialize(token: string, adminChatIds?: string): boolean {
+  async initialize(token: string, adminChatIds?: string, webhookUrl?: string): Promise<boolean> {
     try {
       if (this.isInitialized) {
         console.log('Telegram bot already initialized');
         return true;
       }
 
-      this.bot = new TelegramBot(token, { polling: true });
+      // Initialize bot without polling (we'll use webhooks)
+      this.bot = new TelegramBot(token, { polling: false });
       
       if (adminChatIds) {
         const ids = adminChatIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
@@ -32,13 +34,40 @@ class TelegramBotService {
       }
       
       this.setupCommands();
+      
+      // Set up webhook if URL provided
+      if (webhookUrl) {
+        this.webhookUrl = webhookUrl;
+        await this.setWebhook(webhookUrl);
+      }
+      
       this.isInitialized = true;
-      console.log('✅ Telegram bot initialized successfully');
+      console.log('✅ Telegram bot initialized successfully with webhooks');
       return true;
     } catch (error) {
       console.error('Failed to initialize Telegram bot:', error);
       return false;
     }
+  }
+
+  private async setWebhook(url: string): Promise<void> {
+    try {
+      await this.bot?.setWebHook(url);
+      console.log(`✅ Telegram webhook set to: ${url}`);
+    } catch (error) {
+      console.error('Failed to set Telegram webhook:', error);
+      throw error;
+    }
+  }
+
+  async processUpdate(update: any): Promise<void> {
+    if (!this.bot) {
+      console.error('Bot not initialized');
+      return;
+    }
+
+    // Process the update through the bot's internal handler
+    this.bot.processUpdate(update);
   }
 
   private isAdmin(userId: number): boolean {

@@ -117,15 +117,24 @@ app.use((req, res, next) => {
     }
   }
 
-  // Auto-initialize Telegram bot for license management
+  // Auto-initialize Telegram bot for license management with webhooks
   if (process.env.TELEGRAM_BOT_TOKEN) {
     const { telegramBotService } = await import('./services/telegramBotService');
-    const initialized = telegramBotService.initialize(
+    
+    // Build webhook URL from Replit domain
+    const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPL_SLUG;
+    const webhookUrl = domain ? `https://${domain}/api/telegram/webhook` : undefined;
+    
+    const initialized = await telegramBotService.initialize(
       process.env.TELEGRAM_BOT_TOKEN,
-      process.env.TELEGRAM_ADMIN_CHAT_IDS
+      process.env.TELEGRAM_ADMIN_CHAT_IDS,
+      webhookUrl
     );
     if (initialized) {
-      log('✅ Telegram License Bot initialized successfully');
+      log('✅ Telegram License Bot initialized successfully with webhooks');
+      if (webhookUrl) {
+        log(`   Webhook URL: ${webhookUrl}`);
+      }
     } else {
       log('⚠️  Telegram Bot initialization failed');
     }
