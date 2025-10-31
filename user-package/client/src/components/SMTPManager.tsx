@@ -225,29 +225,35 @@ export function SMTPManager() {
   const rotateSmtp = async () => {
     setLoading(true);
     try {
-      setSmtpData(prev => {
-        if (prev.smtpConfigs.length <= 1) return prev;
+      if (window.electronAPI?.smtpRotate) {
+        const data = await window.electronAPI.smtpRotate();
+        console.log('[SMTPManager] Rotate response:', data);
         
-        const currentIndex = prev.smtpConfigs.findIndex(
-          smtp => smtp.id === prev.currentSmtp?.id
-        );
-        const nextIndex = (currentIndex + 1) % prev.smtpConfigs.length;
-        const nextSmtp = prev.smtpConfigs[nextIndex];
-        
+        if (data.success) {
+          setSmtpData(prev => ({
+            ...prev,
+            currentSmtp: data.currentSmtp,
+            rotationEnabled: data.rotationEnabled ?? prev.rotationEnabled
+          }));
+          toast({
+            title: "SMTP Rotated",
+            description: `Now using: ${data.currentSmtp?.fromEmail}`,
+          });
+        } else {
+          throw new Error(data.error || 'Failed to rotate SMTP');
+        }
+      } else {
         toast({
-          title: "SMTP Rotated",
-          description: `Now using: ${nextSmtp.fromEmail}`,
+          title: "Error",
+          description: "Electron API not available",
+          variant: "destructive"
         });
-        
-        return {
-          ...prev,
-          currentSmtp: nextSmtp
-        };
-      });
-    } catch (error) {
+      }
+    } catch (error: any) {
+      console.error('[SMTPManager] Error rotating SMTP:', error);
       toast({
         title: "Error",
-        description: "Failed to rotate SMTP",
+        description: error.message || "Failed to rotate SMTP",
         variant: "destructive"
       });
     }
