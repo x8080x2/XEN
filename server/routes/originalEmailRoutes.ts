@@ -27,20 +27,45 @@ export function setupOriginalEmailRoutes(app: Express) {
       });
 
       // Validate SMTP settings early - accept either legacy single SMTP OR user SMTP configs
+      // Desktop mode detection: check if userSmtpConfigs KEY exists (even if empty array)
+      const isDesktopMode = req.body.hasOwnProperty('userSmtpConfigs');
       let hasUserSmtpConfigs = false;
-      try {
-        hasUserSmtpConfigs = req.body.userSmtpConfigs && 
-          (typeof req.body.userSmtpConfigs === 'string' ? JSON.parse(req.body.userSmtpConfigs).length > 0 : req.body.userSmtpConfigs.length > 0);
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          error: 'Invalid userSmtpConfigs format. Expected JSON array.'
-        });
+      let userSmtpConfigsArray: any[] = [];
+      
+      if (isDesktopMode) {
+        try {
+          userSmtpConfigsArray = typeof req.body.userSmtpConfigs === 'string' 
+            ? JSON.parse(req.body.userSmtpConfigs) 
+            : req.body.userSmtpConfigs;
+          
+          if (!Array.isArray(userSmtpConfigsArray)) {
+            return res.status(400).json({
+              success: false,
+              error: 'Invalid userSmtpConfigs format. Expected JSON array.'
+            });
+          }
+          
+          hasUserSmtpConfigs = userSmtpConfigsArray.length > 0;
+        } catch (error) {
+          return res.status(400).json({
+            success: false,
+            error: 'Invalid userSmtpConfigs format. Expected JSON array.'
+          });
+        }
       }
       
       const hasLegacySmtp = req.body.smtpHost && req.body.smtpUser && req.body.smtpPass;
 
-      if (!hasUserSmtpConfigs && !hasLegacySmtp) {
+      // Desktop mode enforcement: must have userSmtpConfigs, cannot use server SMTP
+      if (isDesktopMode && !hasUserSmtpConfigs) {
+        return res.status(400).json({
+          success: false,
+          error: 'Desktop mode requires SMTP configuration in local smtp.ini file. Please configure user-package/config/smtp.ini with your SMTP credentials. Server SMTP is not available for desktop users.'
+        });
+      }
+
+      // Web mode validation: must have legacy SMTP fields
+      if (!isDesktopMode && !hasLegacySmtp) {
         const missingFields = [];
         if (!req.body.smtpHost) missingFields.push('Host');
         if (!req.body.smtpUser) missingFields.push('User');
@@ -48,7 +73,7 @@ export function setupOriginalEmailRoutes(app: Express) {
 
         return res.status(400).json({
           success: false,
-          error: `SMTP configuration incomplete. Either provide userSmtpConfigs or all legacy SMTP fields. Missing: ${missingFields.join(', ')}`
+          error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
         });
       }
 

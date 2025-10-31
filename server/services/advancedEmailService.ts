@@ -1185,6 +1185,9 @@ export class AdvancedEmailService {
     const configData = configService.loadConfig();
     const emailConfig = configService.getEmailConfig();
 
+    // Detect desktop mode: userSmtpConfigs present indicates desktop client
+    const isDesktopMode = args.userSmtpConfigs && args.userSmtpConfigs.length > 0;
+
     // Auto-apply SMTP sender settings from config - exact clone from main.js behavior
     if (emailConfig.SMTP && emailConfig.SMTP.fromEmail) {
       if (!args.senderEmail || args.senderEmail.trim() === '') {
@@ -1192,14 +1195,20 @@ export class AdvancedEmailService {
         console.log('[AdvancedEmailService] Auto-applied sender email from config:', args.senderEmail);
       }
 
-
-      // Auto-apply SMTP settings if not provided - exact clone from main.js
+      // Auto-apply SMTP settings if not provided - WEB ONLY
+      // Desktop users MUST provide their own SMTP via userSmtpConfigs
       if (!args.smtpHost && emailConfig.SMTP.host) {
+        if (isDesktopMode) {
+          console.error('[Desktop Mode] Desktop users must provide SMTP credentials via local smtp.ini - server SMTP not allowed');
+          throw new Error('Desktop mode requires local SMTP configuration. Please configure smtp.ini in your user-package/config directory.');
+        }
+        
+        // Web users can use server SMTP
         args.smtpHost = emailConfig.SMTP.host;
         args.smtpPort = emailConfig.SMTP.port || '587';
         args.smtpUser = emailConfig.SMTP.user;
         args.smtpPass = emailConfig.SMTP.pass;
-        console.log('[AdvancedEmailService] Auto-applied SMTP settings from config');
+        console.log('[Web Mode] Auto-applied SMTP settings from server config');
       }
     }
 
