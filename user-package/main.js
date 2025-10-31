@@ -556,6 +556,148 @@ function parseIniFile(content) {
   return result;
 }
 
+// SMTP add handler
+ipcMain.handle('smtp-add', async (event, smtpData) => {
+  try {
+    console.log(`[Electron] Adding new SMTP config:`, smtpData);
+    
+    if (!smtpData.host || !smtpData.port || !smtpData.user || !smtpData.pass || !smtpData.fromEmail) {
+      return { success: false, error: 'All SMTP fields are required' };
+    }
+
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let smtpPath = null;
+    let existingContent = '';
+
+    // Find existing smtp.ini or create in first basePath
+    for (const basePath of basePaths) {
+      const testPath = path.resolve(basePath, 'config', 'smtp.ini');
+      if (existsSync(testPath)) {
+        smtpPath = testPath;
+        existingContent = await fs.readFile(smtpPath, 'utf-8');
+        break;
+      }
+    }
+
+    // If no existing file, create in first basePath
+    if (!smtpPath) {
+      smtpPath = path.resolve(basePaths[0], 'config', 'smtp.ini');
+      await fs.mkdir(path.dirname(smtpPath), { recursive: true });
+    }
+
+    // Parse existing configs to find next available index
+    const existingConfigs = existingContent ? parseSmtpIni(existingContent) : [];
+    const existingIds = existingConfigs.map(s => s.id);
+    let nextIndex = 0;
+    while (existingIds.includes(`smtp${nextIndex}`)) {
+      nextIndex++;
+    }
+
+    const smtpId = `smtp${nextIndex}`;
+    const newSection = `\n[${smtpId}]\nhost=${smtpData.host}\nport=${smtpData.port}\nuser=${smtpData.user}\npass=${smtpData.pass}\nfromEmail=${smtpData.fromEmail}\nfromName=${smtpData.fromName || ''}\n`;
+
+    await fs.writeFile(smtpPath, existingContent + newSection, 'utf-8');
+    console.log(`[Electron] SMTP config ${smtpId} added successfully`);
+
+    // Reload and return updated list
+    const updatedContent = await fs.readFile(smtpPath, 'utf-8');
+    const smtpConfigs = parseSmtpIni(updatedContent);
+
+    return {
+      success: true,
+      smtpId: smtpId,
+      smtpConfigs: smtpConfigs,
+      currentSmtp: smtpConfigs[0] || null
+    };
+  } catch (error) {
+    console.error(`[Electron] Failed to add SMTP config:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// SMTP delete handler
+ipcMain.handle('smtp-delete', async (event, smtpId) => {
+  try {
+    console.log(`[Electron] Deleting SMTP config: ${smtpId}`);
+
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let smtpPath = null;
+    let existingContent = '';
+
+    // Find existing smtp.ini
+    for (const basePath of basePaths) {
+      const testPath = path.resolve(basePath, 'config', 'smtp.ini');
+      if (existsSync(testPath)) {
+        smtpPath = testPath;
+        existingContent = await fs.readFile(smtpPath, 'utf-8');
+        break;
+      }
+    }
+
+    if (!smtpPath) {
+      return { success: false, error: 'SMTP config file not found' };
+    }
+
+    // Parse and remove the specified section
+    const lines = existingContent.split('\n');
+    const newLines = [];
+    let inTargetSection = false;
+    let sectionFound = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Check if this is the section we want to delete
+      if (trimmed === `[${smtpId}]`) {
+        inTargetSection = true;
+        sectionFound = true;
+        continue;
+      }
+      
+      // Check if we're entering a new section
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        inTargetSection = false;
+      }
+      
+      // Only add lines that are not in the target section
+      if (!inTargetSection) {
+        newLines.push(line);
+      }
+    }
+
+    if (!sectionFound) {
+      return { success: false, error: 'SMTP config not found' };
+    }
+
+    // Write updated content
+    await fs.writeFile(smtpPath, newLines.join('\n'), 'utf-8');
+    console.log(`[Electron] SMTP config ${smtpId} deleted successfully`);
+
+    // Reload and return updated list
+    const updatedContent = await fs.readFile(smtpPath, 'utf-8');
+    const smtpConfigs = parseSmtpIni(updatedContent);
+
+    return {
+      success: true,
+      smtpConfigs: smtpConfigs,
+      currentSmtp: smtpConfigs[0] || null
+    };
+  } catch (error) {
+    console.error(`[Electron] Failed to delete SMTP config:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Parse SMTP INI file format and convert to array
 function parseSmtpIni(content) {
   const parsed = parseIniFile(content);
