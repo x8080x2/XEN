@@ -13,52 +13,10 @@ require('dotenv').config();
 // Keep a global reference of the window object
 let mainWindow;
 
-// Generate hardware fingerprint using MAC address (stronger binding)
+// Generate simple hardware fingerprint
 function generateHardwareFingerprint() {
-  try {
-    // Get MAC address from network interfaces (hardware-bound, difficult to spoof)
-    const networkInterfaces = os.networkInterfaces();
-    
-    // Find first non-internal network interface with valid MAC address
-    let macAddress = null;
-    for (const interfaceName in networkInterfaces) {
-      const interfaces = networkInterfaces[interfaceName];
-      for (const iface of interfaces) {
-        // Skip internal/loopback and invalid MAC addresses
-        if (!iface.internal && iface.mac && iface.mac !== '00:00:00:00:00:00') {
-          macAddress = iface.mac;
-          break;
-        }
-      }
-      if (macAddress) break;
-    }
-    
-    // Fallback to system info if MAC address not found (virtual machines, etc.)
-    if (!macAddress) {
-      console.warn('[Electron] MAC address not found, using fallback fingerprint');
-      const fallbackId = [
-        os.hostname(),
-        os.platform(),
-        os.arch(),
-        os.cpus()[0].model
-      ].join('|');
-      return crypto.createHash('sha256').update(fallbackId).digest('hex');
-    }
-    
-    // Combine MAC address with platform for additional security
-    const machineId = [
-      macAddress.toLowerCase().replace(/[:-]/g, ''),  // Normalize MAC address
-      os.platform(),
-      os.arch()
-    ].join('|');
-    
-    return crypto.createHash('sha256').update(machineId).digest('hex');
-  } catch (error) {
-    console.error('[Electron] Error generating hardware fingerprint:', error);
-    // Emergency fallback
-    const emergencyId = os.hostname() + os.platform();
-    return crypto.createHash('sha256').update(emergencyId).digest('hex');
-  }
+  const machineId = os.hostname() + os.platform();
+  return crypto.createHash('sha256').update(machineId).digest('hex');
 }
 
 // License verification function
@@ -205,33 +163,11 @@ app.whenReady().then(async () => {
 
     const { dialog } = require('electron');
     
-    // Provide specific error messages based on the error type
-    let errorTitle = 'License Verification Failed';
-    let errorMessage = 'Invalid or Missing License';
-    let errorDetail = licenseResult.error;
-    
-    // Check for specific error scenarios
-    if (licenseResult.error.includes('already activated on another computer')) {
-      errorTitle = 'License Already Activated';
-      errorMessage = 'This license is already in use on another computer';
-      errorDetail = licenseResult.error + '\n\n⚠️ SECURITY NOTICE:\nEach license can only be activated on ONE computer at a time.\n\nIf you need to transfer this license to a new computer:\n1. Contact support to reset your license activation\n2. Or purchase an additional license for multiple computers';
-    } else if (licenseResult.error.includes('revoked')) {
-      errorTitle = 'License Revoked';
-      errorMessage = 'Your license has been revoked';
-      errorDetail = licenseResult.error + '\n\nPlease contact support for assistance.';
-    } else if (licenseResult.error.includes('expired')) {
-      errorTitle = 'License Expired';
-      errorMessage = 'Your license has expired';
-      errorDetail = licenseResult.error + '\n\nPlease renew your license to continue using this application.';
-    } else if (licenseResult.error.includes('No license key')) {
-      errorDetail = licenseResult.error + '\n\nPlease:\n1. Get a license key from the Telegram bot\n2. Add it to your .env file as LICENSE_KEY=your-key-here\n3. Restart the application';
-    }
-    
     await dialog.showMessageBox({
       type: 'error',
-      title: errorTitle,
-      message: errorMessage,
-      detail: errorDetail,
+      title: 'License Verification Failed',
+      message: 'Invalid or Missing License',
+      detail: licenseResult.error,
       buttons: ['Exit']
     });
 
