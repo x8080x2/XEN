@@ -906,7 +906,6 @@ export default function OriginalEmailSender() {
         <div className="flex-1 p-6 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
             {/* Large ASCII Banner */}
-            <div className="bg-gradient-to-r from-[#131316] via-[#1a1a1f] to-[#131316] rounded-xl border border-[#ef4444]/30 p-6 mb-6">
               <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre overflow-hidden">
 {`
  ██████╗██╗     ███████╗    ██████╗ ███████╗██╗     ██╗██╗   ██╗███████╗██████╗ ██╗   ██╗    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗    
@@ -918,12 +917,11 @@ export default function OriginalEmailSender() {
 
 `}
               </div>
-              <div className="text-center mt-4">
+              <div className="text-center mt-1">
                 <div className="text-[#a1a1aa] text-sm mb-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
                 <div className="text-[#ef4444] text-sm font-bold">⚡ ADVANCED SMART EMAIL SENDER ⚡</div>
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
-            </div>
 
             <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
               {/* Sender Email, Name, Subject Row */}
@@ -1303,13 +1301,7 @@ export default function OriginalEmailSender() {
                     ⚙️ SETTINGS
                   </Button>
                 </div>
-                <div className="text-[#ef4444] font-mono text-xs text-center mt-3 opacity-60 whitespace-pre">
-{`
-┌───────────────────────┐
-│ ▓▓▓ READY SHOOTER ▓▓▓
-└───────────────────────┘
-`}
-                </div>
+              
               </div>
             </div>
 
