@@ -1028,7 +1028,7 @@ export default function OriginalEmailSender() {
               </div>
 
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="text-[#ef4444] font-bold"> 🚸</div>
+                <div className="text-[#ef4444] font-bold">V1 🚸</div>
               </div>
             </div>
 
