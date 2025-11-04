@@ -1372,135 +1372,112 @@ export default function OriginalEmailSender() {
                 )}
               </div>
 
-              {/* SMTP Management - Moved to SMTP Settings Area */}
-              <div className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] p-3">
-                <div className="flex items-center justify-between mb-3">
+              {/* SMTP Management - Dropdown Design */}
+              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
+                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
                     ⚙️ SMTP Management
+                    {smtpData.currentSmtp && <span className="text-xs text-green-500">● {smtpData.smtpConfigs?.length || 0}</span>}
                   </h3>
-                  <div className="flex items-center gap-4">
+                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 space-y-3 border-t border-[#26262b]">
+                  {/* Current SMTP Display */}
+                  {smtpData.currentSmtp && (
+                    <div className="p-2 bg-[#0f0f12] rounded border border-[#26262b]">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-[#a1a1aa]">Current:</span>
+                        <span className="text-green-400 text-xs font-medium">{smtpData.currentSmtp.fromEmail}</span>
+                        <span className="px-1.5 py-0.5 bg-blue-500 text-white rounded text-[10px]">{smtpData.currentSmtp.id}</span>
+                      </div>
+                      <p className="text-[#75798b] text-[10px]">
+                        {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Add New SMTP Form */}
+                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b]">
+                    <h4 className="text-white font-medium mb-2 text-xs">Add New SMTP</h4>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <Input
+                        placeholder="Host"
+                        value={newSmtp.host}
+                        onChange={(e) => setNewSmtp({...newSmtp, host: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
+                      />
+                      <Input
+                        placeholder="Port"
+                        value={newSmtp.port}
+                        onChange={(e) => setNewSmtp({...newSmtp, port: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
+                      />
+                      <Input
+                        placeholder="Username"
+                        value={newSmtp.user}
+                        onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Password"
+                        value={newSmtp.pass}
+                        onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
+                      />
+                      <Input
+                        placeholder="From Email"
+                        value={newSmtp.fromEmail}
+                        onChange={(e) => setNewSmtp({...newSmtp, fromEmail: e.target.value})}
+                        className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs col-span-2"
+                      />
+                    </div>
                     <Button
-                      onClick={() => setShowSmtpManager(!showSmtpManager)}
-                      variant="outline"
-                      size="sm"
-                      className="border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                      onClick={addNewSmtp}
+                      className="bg-[#ef4444] text-white hover:bg-[#dc3636] h-7 px-3 text-xs w-full"
                     >
-                      {showSmtpManager ? "Hide" : "Manage"}
+                      Add Server
                     </Button>
                   </div>
-                </div>
 
-                {/* Current SMTP Display */}
-                {smtpData.currentSmtp && (
-                  <div className="p-3 bg-[#0f0f12] rounded border border-[#26262b] mb-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white font-medium">Current:</span>
-                          <span className="text-green-400">{smtpData.currentSmtp.fromEmail}</span>
-                          <span className="px-2 py-1 bg-blue-500 text-white rounded text-xs">{smtpData.currentSmtp.id}</span>
-                        </div>
-                        <p className="text-[#a1a1aa] text-sm">
-                          {smtpData.currentSmtp.host}:{smtpData.currentSmtp.port} ({smtpData.currentSmtp.user})
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* SMTP Management Panel */}
-                {showSmtpManager && (
-                  <div className="border-t border-[#26262b] pt-4">
-                    {/* Add New SMTP Form */}
-                    <div className="mb-4 p-3 bg-[#0f0f12] rounded border border-[#26262b]">
-                      <h4 className="text-white font-medium mb-3">Add New SMTP Server</h4>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
-                        <Input
-                          placeholder="SMTP Host"
-                          value={newSmtp.host}
-                          onChange={(e) => setNewSmtp({...newSmtp, host: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="Port (587)"
-                          value={newSmtp.port}
-                          onChange={(e) => setNewSmtp({...newSmtp, port: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="Username"
-                          value={newSmtp.user}
-                          onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          type="password"
-                          placeholder="Password"
-                          value={newSmtp.pass}
-                          onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="From Email"
-                          value={newSmtp.fromEmail}
-                          onChange={(e) => setNewSmtp({...newSmtp, fromEmail: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                        <Input
-                          placeholder="From Name (optional)"
-                          value={newSmtp.fromName}
-                          onChange={(e) => setNewSmtp({...newSmtp, fromName: e.target.value})}
-                          className="bg-[#0f0f12] border-[#26262b] text-white"
-                        />
-                      </div>
-                      <Button
-                        onClick={addNewSmtp}
-                        className="bg-[#ef4444] text-white hover:bg-[#dc3636]"
-                        size="sm"
+                  {/* SMTP List */}
+                  <div className="space-y-2">
+                    <h4 className="text-white font-medium text-xs">Servers ({smtpData.smtpConfigs?.length || 0})</h4>
+                    {smtpData.smtpConfigs?.map((smtp) => (
+                      <div
+                        key={smtp.id}
+                        className={`flex items-center justify-between p-2 border rounded ${
+                          smtpData.currentSmtp?.id === smtp.id
+                            ? 'border-blue-500 bg-blue-900/20'
+                            : 'border-[#26262b] bg-[#0f0f12]'
+                        }`}
                       >
-                        Add SMTP Server
-                      </Button>
-                    </div>
-
-                    {/* SMTP List */}
-                    <div>
-                      <h4 className="text-white font-medium mb-3">Available SMTP Servers ({smtpData.smtpConfigs?.length || 0})</h4>
-                      {smtpData.smtpConfigs?.map((smtp) => (
-                        <div
-                          key={smtp.id}
-                          className={`flex items-center justify-between p-3 mb-2 border rounded ${
-                            smtpData.currentSmtp?.id === smtp.id
-                              ? 'border-blue-500 bg-blue-900/20'
-                              : 'border-[#26262b] bg-[#0f0f12]'
-                          }`}
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-1 bg-gray-600 text-white rounded text-xs">{smtp.id}</span>
-                              <span className="text-white font-medium">{smtp.fromEmail}</span>
-                              {smtpData.currentSmtp?.id === smtp.id && (
-                                <span className="px-2 py-1 bg-green-500 text-white rounded text-xs">Active</span>
-                              )}
-                            </div>
-                            <p className="text-[#a1a1aa] text-sm mt-1">
-                              {smtp.host}:{smtp.port} ({smtp.user})
-                            </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="px-1.5 py-0.5 bg-gray-600 text-white rounded text-[10px]">{smtp.id}</span>
+                            <span className="text-white font-medium text-xs truncate">{smtp.fromEmail}</span>
+                            {smtpData.currentSmtp?.id === smtp.id && (
+                              <span className="px-1.5 py-0.5 bg-green-500 text-white rounded text-[10px]">Active</span>
+                            )}
                           </div>
-                          <Button
-                            onClick={() => deleteSmtp(smtp.id)}
-                            disabled={smtpData.smtpConfigs?.length <= 1}
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            🗑️
-                          </Button>
+                          <p className="text-[#75798b] text-[10px] truncate">
+                            {smtp.host}:{smtp.port}
+                          </p>
                         </div>
-                      )) || <p className="text-[#a1a1aa] text-center py-4">No SMTP servers configured</p>}
-                    </div>
+                        <Button
+                          onClick={() => deleteSmtp(smtp.id)}
+                          disabled={smtpData.smtpConfigs?.length <= 1}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 h-6 w-6 p-0 ml-2"
+                        >
+                          🗑️
+                        </Button>
+                      </div>
+                    )) || <p className="text-[#75798b] text-center py-2 text-xs">No servers configured</p>}
                   </div>
-                )}
-              </div>
+                </div>
+              </details>
 
               {/* AI Content Generation - Compact Dropdown Design */}
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
