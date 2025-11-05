@@ -442,9 +442,9 @@ export default function OriginalEmailSender() {
   };
 
   const addNewSmtp = async () => {
-    // Validate all required fields
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
-      setStatusText('Error: Please fill in all required SMTP fields');
+    // Validate only required fields - username/password are optional for relay servers
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.fromEmail) {
+      setStatusText('Error: Please fill in Host, Port, and From Email');
       setTimeout(() => setStatusText(""), 3000);
       return;
     }
@@ -1569,14 +1569,14 @@ export default function OriginalEmailSender() {
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
                       />
                       <Input
-                        placeholder="Username"
+                        placeholder="Username (optional)"
                         value={newSmtp.user}
                         onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
                       />
                       <Input
                         type="password"
-                        placeholder="Password"
+                        placeholder="Password (optional)"
                         value={newSmtp.pass}
                         onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
