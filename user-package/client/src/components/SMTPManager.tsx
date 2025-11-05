@@ -116,10 +116,11 @@ export function SMTPManager() {
   };
 
   const addSmtp = async () => {
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+    // Only require host, port, and fromEmail - username/password are optional
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.fromEmail) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in Host, Port, and From Email (Username/Password are optional)",
         variant: "destructive"
       });
       return;
@@ -323,7 +324,7 @@ export function SMTPManager() {
                 <DialogHeader>
                   <DialogTitle>Add SMTP Server</DialogTitle>
                   <DialogDescription>
-                    Add a new SMTP server configuration for email sending.
+                    Add a new SMTP server configuration. Username and password are optional for no-auth SMTP servers.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -350,18 +351,18 @@ export function SMTPManager() {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="user" className="text-right">Username</Label>
+                    <Label htmlFor="user" className="text-right">Username (optional)</Label>
                     <Input
                       id="user"
                       data-testid="input-smtp-user"
                       value={newSmtp.user}
                       onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
                       className="col-span-3"
-                      placeholder="your@email.com"
+                      placeholder="your@email.com (optional)"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="pass" className="text-right">Password</Label>
+                    <Label htmlFor="pass" className="text-right">Password (optional)</Label>
                     <Input
                       id="pass"
                       data-testid="input-smtp-pass"
@@ -369,7 +370,7 @@ export function SMTPManager() {
                       value={newSmtp.pass}
                       onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
                       className="col-span-3"
-                      placeholder="App password"
+                      placeholder="App password (optional)"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">

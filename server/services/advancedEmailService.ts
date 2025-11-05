@@ -1363,12 +1363,11 @@ export class AdvancedEmailService {
         senderName = senderName || firstUserSmtp.fromName || '';
       }
 
-      if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
+      // Only require host and port - username/password are optional for no-auth SMTP
+      if (!smtpHost || !smtpPort) {
         const missingFields = [];
         if (!smtpHost) missingFields.push('Host');
         if (!smtpPort) missingFields.push('Port');
-        if (!smtpUser) missingFields.push('User');
-        if (!smtpPass) missingFields.push('Password');
 
         console.error('SMTP configuration is incomplete. Missing:', missingFields);
         console.error('SMTP values received:', {
@@ -1391,20 +1390,28 @@ export class AdvancedEmailService {
 
       console.log('SMTP Config Loaded:', {
         host, port, user, fromEmail, fromName, secure,
+        authEnabled: !!(user && pass),
         userSmtpRotation: useUserSmtpRotation,
         userSmtpCount: useUserSmtpRotation ? args.userSmtpConfigs.length : 0
       });
 
-      const transporter = nodemailer.createTransport({
+      // Create transporter config - auth is optional
+      const transporterConfig: any = {
         host,
         port,
         secure,
-        auth: { user, pass },
         pool: true,
         maxConnections: C.EMAIL_PER_SECOND || 5,
         maxMessages: 100,
         rateLimit: C.EMAIL_PER_SECOND || 5
-      });
+      };
+
+      // Only add auth if username and password are provided
+      if (user && pass) {
+        transporterConfig.auth = { user, pass };
+      }
+
+      const transporter = nodemailer.createTransport(transporterConfig);
 
       // Accept UI args or fallback to config/disk - exact clone from main.js
       const recipients = Array.isArray(args.recipients) && args.recipients.length
@@ -1597,22 +1604,29 @@ export class AdvancedEmailService {
               // ALWAYS use the UI sender name for ALL rotations - ignore config fromName completely
               emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
 
-              // Create individual transporter for this email
-              emailTransporter = nodemailer.createTransport({
+              // Create individual transporter config - auth is optional
+              const rotationTransporterConfig: any = {
                 host: currentSmtpConfig.host,
                 port: parseInt(currentSmtpConfig.port),
                 secure: parseInt(currentSmtpConfig.port) === 465,
-                auth: { 
-                  user: currentSmtpConfig.user, 
-                  pass: currentSmtpConfig.pass 
-                },
                 pool: true,
                 maxConnections: 1,
                 maxMessages: 1
-              });
+              };
+
+              // Only add auth if username and password are provided
+              if (currentSmtpConfig.user && currentSmtpConfig.pass) {
+                rotationTransporterConfig.auth = { 
+                  user: currentSmtpConfig.user, 
+                  pass: currentSmtpConfig.pass 
+                };
+              }
+
+              emailTransporter = nodemailer.createTransport(rotationTransporterConfig);
 
               const smtpSource = useUserSmtpRotation ? '[User SMTP]' : '[Server SMTP]';
-              console.log(`${smtpSource} Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) with UI sender name "${emailFromName}" for ${recipient}`);
+              const authStatus = (currentSmtpConfig.user && currentSmtpConfig.pass) ? 'with auth' : 'no auth';
+              console.log(`${smtpSource} Using SMTP ${currentSmtpConfig.id} (${currentSmtpConfig.fromEmail}) ${authStatus} with UI sender name "${emailFromName}" for ${recipient}`);
             }
 
           // Apply placeholders to both HTML content, subject, and sender name - with AI generation
