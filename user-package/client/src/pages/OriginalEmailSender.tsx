@@ -827,15 +827,31 @@ export default function OriginalEmailSender() {
       // Send ALL user SMTP configs to server for rotation support
       console.log('[Desktop] Sending user SMTP configs:', {
         count: smtpData.smtpConfigs.length,
-        rotationEnabled: smtpData.rotationEnabled
+        rotationEnabled: smtpData.rotationEnabled,
+        configs: smtpData.smtpConfigs.map(c => ({
+          id: c.id,
+          host: c.host,
+          port: c.port,
+          user: c.user === '' ? '(empty)' : c.user,
+          pass: c.pass === '' ? '(empty)' : '***',
+          fromEmail: c.fromEmail
+        }))
       });
 
       // Send user's SMTP configs as JSON array
-      formData.append('userSmtpConfigs', JSON.stringify(smtpData.smtpConfigs));
+      const smtpConfigsToSend = JSON.stringify(smtpData.smtpConfigs);
+      console.log('[Desktop] SMTP configs JSON string:', smtpConfigsToSend);
+      formData.append('userSmtpConfigs', smtpConfigsToSend);
       formData.append('smtpRotationEnabled', String(smtpData.rotationEnabled));
 
       // Also send first SMTP as fallback for backward compatibility
       const firstSmtp = smtpData.smtpConfigs[0] || smtpSettings;
+      console.log('[Desktop] First SMTP fallback:', {
+        host: firstSmtp.host,
+        port: firstSmtp.port,
+        user: firstSmtp.user === '' ? '(empty)' : firstSmtp.user,
+        pass: firstSmtp.pass === '' ? '(empty)' : '***'
+      });
       formData.append('smtpHost', String(firstSmtp.host || ''));
       formData.append('smtpPort', String(firstSmtp.port || '587'));
       formData.append('smtpUser', String(firstSmtp.user || ''));
