@@ -1605,6 +1605,8 @@ export class AdvancedEmailService {
               emailFromName = fromName || senderName || args.senderName || ''; // Use UI sender name for all rotations
 
               // Create individual transporter config - auth is optional
+              console.log(`[SMTP Config Debug] SMTP ${currentSmtpConfig.id}: host=${currentSmtpConfig.host}, port=${currentSmtpConfig.port}, user="${currentSmtpConfig.user}", pass="${currentSmtpConfig.pass ? '***' : '(empty)'}"`);
+              
               const rotationTransporterConfig: any = {
                 host: currentSmtpConfig.host,
                 port: parseInt(currentSmtpConfig.port),
@@ -1616,10 +1618,13 @@ export class AdvancedEmailService {
 
               // Only add auth if username and password are provided
               if (currentSmtpConfig.user && currentSmtpConfig.pass) {
+                console.log(`[SMTP Config Debug] Adding auth for user: ${currentSmtpConfig.user}`);
                 rotationTransporterConfig.auth = { 
                   user: currentSmtpConfig.user, 
                   pass: currentSmtpConfig.pass 
                 };
+              } else {
+                console.log(`[SMTP Config Debug] No auth added (user="${currentSmtpConfig.user}", pass="${currentSmtpConfig.pass ? '***' : '(empty)'}")`);
               }
 
               emailTransporter = nodemailer.createTransport(rotationTransporterConfig);

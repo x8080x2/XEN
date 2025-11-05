@@ -114,7 +114,14 @@ export function setupOriginalEmailRoutes(app: Express) {
           console.log('[Server] Received user SMTP configs:', {
             count: userSmtpConfigs.length,
             rotationEnabled: userSmtpRotationEnabled,
-            configs: userSmtpConfigs.map(c => ({ id: c.id, host: c.host, fromEmail: c.fromEmail }))
+            configs: userSmtpConfigs.map(c => ({ 
+              id: c.id, 
+              host: c.host, 
+              port: c.port,
+              user: c.user === '' ? '(empty)' : c.user,
+              pass: c.pass === '' ? '(empty)' : '***',
+              fromEmail: c.fromEmail 
+            }))
           });
         } catch (error) {
           console.error('[Server] Failed to parse user SMTP configs:', error);
