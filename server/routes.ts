@@ -169,12 +169,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;
 
-      if (!host || !port || !user || !pass || !fromEmail) {
-        return res.status(400).json({ success: false, error: "All SMTP fields are required" });
+      // Only require host, port, and fromEmail - username/password are optional
+      if (!host || !port || !fromEmail) {
+        return res.status(400).json({ success: false, error: "Host, Port, and From Email are required" });
       }
 
       const smtpId = configService.addSmtpConfig({
-        host, port, user, pass, fromEmail, fromName
+        host, port, user: user || '', pass: pass || '', fromEmail, fromName
       });
 
       res.json({
