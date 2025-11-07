@@ -122,7 +122,7 @@ app.use((req, res, next) => {
     const { telegramBotService } = await import('./services/telegramBotService');
     
     // Use permanent Replit deployment URL for webhook
-    const webhookUrl = 'https://xen-1-cls8080.replit.app/api/telegram/webhook';
+    const webhookUrl = 'https://c3dd2533-ff3f-4b3e-a196-8cfcf6bde79a-00-31ou77f6qnsl5.picard.replit.dev/api/telegram/webhook';
     
     const initialized = await telegramBotService.initialize(
       process.env.TELEGRAM_BOT_TOKEN,
