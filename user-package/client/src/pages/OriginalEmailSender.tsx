@@ -1471,43 +1471,7 @@ export default function OriginalEmailSender() {
 
             {/* SMTP Settings */}
             <div className="mt-6 bg-black rounded-xl p-4 border border-[#26262b]">
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="text-sm text-[#a1a1aa]">SMTP:</span>
-                <Input
-                  placeholder="Host"
-                  value={smtpSettings.host}
-                  onChange={(e) => setSMTPSettings({...smtpSettings, host: e.target.value})}
-                  className="w-32 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
-                />
-                <Input
-                  type="number"
-                  placeholder="Port"
-                  value={smtpSettings.port}
-                  onChange={(e) => setSMTPSettings({...smtpSettings, port: e.target.value})}
-                  className="w-20 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
-                />
-                <Input
-                  placeholder="User"
-                  value={smtpSettings.user}
-                  onChange={(e) => setSMTPSettings({...smtpSettings, user: e.target.value})}
-                  className="w-28 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
-                />
-                <Input
-                  type="password"
-                  placeholder="Pass"
-                  value={smtpSettings.pass}
-                  onChange={(e) => setSMTPSettings({...smtpSettings, pass: e.target.value})}
-                  className="w-24 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
-                />
-                <Input
-                  type="email"
-                  placeholder="Sender Email"
-                  value={smtpSettings.fromEmail}
-                  onChange={(e) => setSMTPSettings({...smtpSettings, fromEmail: e.target.value})}
-                  className="w-40 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
-                />
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#26262b]">
+              <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
