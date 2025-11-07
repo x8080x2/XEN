@@ -1,0 +1,84 @@
+2025-11-05 18:51:18.30
+78faf285
+System
+starting up user application
+2025-11-05 18:51:18.30
+78faf285
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-11-05 18:51:18.31
+78faf285
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-11-05 18:51:19.07
+78faf285
+User
+> rest-express@1.0.0 start
+2025-11-05 18:51:19.07
+78faf285
+User
+> NODE_ENV=production node dist/index.js
+2025-11-05 18:51:21.70
+78faf285
+User
+AdvancedEmailService initialized
+2025-11-05 18:51:21.71
+78faf285
+User
+[ElectronAPI] Electron-compatible routes registered
+2025-11-05 18:51:21.72
+78faf285
+User
+✅ Telegram bot admin access configured for 1 user(s)
+2025-11-05 18:51:22.12
+78faf285
+User
+✅ Telegram webhook set to: https://xen-1-cls8080.replit.app/api/telegram/webhook
+2025-11-05 18:51:22.12
+78faf285
+User
+✅ Telegram bot initialized successfully with webhooks
+2025-11-05 18:51:22.15
+78faf285
+User
+4:51:22 PM [express] ✅ Telegram License Bot initialized successfully with webhooks
+2025-11-05 18:51:22.15
+78faf285
+User
+4:51:22 PM [express] Webhook URL: https://xen-1-cls8080.replit.app/api/telegram/webhook
+2025-11-05 18:51:22.15
+78faf285
+User
+4:51:22 PM [express] serving on 0.0.0.0:5000
+2025-11-05 18:51:22.15
+78faf285
+User
+4:51:22 PM [express] Production mode - serving static files from dist/public
+2025-11-05 18:51:23.71
+78faf285
+User
+4:51:23 PM [express] 🔧 Performing background cleanup...
+2025-11-05 18:51:23.80
+78faf285
+User
+4:51:23 PM [express] Current process count: 2
+2025-11-05 18:51:23.80
+78faf285
+User
+4:51:23 PM [express] ✅ Background cleanup check completed
+2025-11-05 18:51:51.70
+78faf285
+User
+{"timestamp":"2025-11-05T16:51:51.709Z","level":"info","message":"Memory status","data":{"memUsage":{"rss":127311872,"heapTotal":44158976,"heapUsed":40628712,"external":3833133,"arrayBuffers":190227},"browserPoolSize":0},"memory":{"rss":127311872,"heapTotal":44158976,"heapUsed":40628712,"external":3833133,"arrayBuffers":190227},"pid":38}
+2025-11-05 18:56:51.85
+78faf285
+User
+{"timestamp":"2025-11-05T16:56:51.858Z","level":"info","message":"Memory status","data":{"memUsage":{"rss":126238720,"heapTotal":43896832,"heapUsed":40991624,"external":3833173,"arrayBuffers":190227},"browserPoolSize":0},"memory":{"rss":126238720,"heapTotal":43896832,"heapUsed":40991624,"external":3833173,"arrayBuffers":190227},"pid":38}
+2025-11-05 19:01:52.11
+78faf285
+User
+{"timestamp":"2025-11-05T17:01:52.118Z","level":"info","message":"Memory status","data":{"memUsage":{"rss":126238720,"heapTotal":43896832,"heapUsed":41008624,"external":3833173,"arrayBuffers":190227},"browserPoolSize":0},"memory":{"rss":126238720,"heapTotal":43896832,"heapUsed":41008624,"external":3833173,"arrayBuffers":190227},"pid":38}
+2025-11-05 19:06:33.89
+78faf285
+System
+system: received signal terminated
