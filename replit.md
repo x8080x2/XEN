@@ -82,6 +82,16 @@ Preferred communication style: Simple, everyday language.
 - **Host Binding**: Server binds to 0.0.0.0:5000 for Replit environment
 - **Deployment**: Configured for autoscale deployment with production build
 
+## Database Migration (November 7, 2025)
+- **SQLite to PostgreSQL Migration**: Completed full migration from SQLite to PostgreSQL for production readiness
+  - **Schema Conversion**: Converted `shared/schema.ts` from `sqliteTable` to `pgTable` with proper PostgreSQL column types (varchar, timestamp, etc.)
+  - **Database Connection**: Updated `server/db.ts` to use Neon serverless driver (`@neondatabase/serverless`) instead of better-sqlite3
+  - **Runtime Connection**: Application now connects to PostgreSQL via DATABASE_URL environment variable
+  - **Type Safety**: Fixed null-to-undefined conversions in `server/storage.ts` for PostgreSQL nullable columns
+  - **License System**: All licenses now stored in PostgreSQL with proper persistence across server restarts
+  - **Configuration**: Updated `drizzle.config.ts` dialect from "sqlite" to "postgresql"
+  - **Impact**: Desktop app license verification now works correctly against persistent PostgreSQL database instead of temporary SQLite file
+
 ## System Dependencies (November 7, 2025)
 - **Chromium Browser**: Installed via Nix packages to support server-side HTML to PDF/PNG/DOCX conversion
 - **Graphics Libraries**: Mesa and related libraries (libgbm.so.1) required for headless Chrome rendering
