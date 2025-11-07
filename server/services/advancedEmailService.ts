@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import archiver from "archiver";
 import crypto from "crypto";
 import axios from "axios";
+import { execSync } from "child_process";
 
 import puppeteer from "puppeteer";
 import { htmlToText } from "html-to-text";
@@ -889,7 +890,6 @@ export class AdvancedEmailService {
 
     // Try to use system Chromium (installed via Nix on Replit)
     try {
-      const { execSync } = require('child_process');
       const chromiumPath = execSync('which chromium 2>/dev/null || echo ""', { 
         encoding: 'utf-8',
         env: process.env
