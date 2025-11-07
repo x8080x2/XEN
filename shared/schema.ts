@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { pgTable, varchar, integer, timestamp, text } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
@@ -84,46 +84,46 @@ export interface LicenseUpdate {
   expiresAt?: Date;
 }
 
-// SQLite Table Definitions
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  username: text("username").notNull().unique(),
-  email: text("email").notNull().unique(),
+// PostgreSQL Table Definitions
+export const users = pgTable("users", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  username: varchar("username", { length: 255 }).notNull().unique(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const emailConfigs = sqliteTable("email_configs", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id").notNull().references(() => users.id),
-  name: text("name").notNull(),
-  smtpHost: text("smtp_host").notNull(),
+export const emailConfigs = pgTable("email_configs", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  smtpHost: varchar("smtp_host", { length: 255 }).notNull(),
   smtpPort: integer("smtp_port").notNull(),
-  smtpUser: text("smtp_user").notNull(),
+  smtpUser: varchar("smtp_user", { length: 255 }).notNull(),
   smtpPassword: text("smtp_password").notNull(),
-  fromEmail: text("from_email").notNull(),
-  fromName: text("from_name").notNull(),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  fromEmail: varchar("from_email", { length: 255 }).notNull(),
+  fromName: varchar("from_name", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const appSettings = sqliteTable("app_settings", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id").notNull().references(() => users.id),
-  settingsType: text("settings_type").notNull(),
+export const appSettings = pgTable("app_settings", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id", { length: 255 }).notNull().references(() => users.id),
+  settingsType: varchar("settings_type", { length: 255 }).notNull(),
   settings: text("settings").notNull(),
-  updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const licenses = sqliteTable("licenses", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  licenseKey: text("license_key").notNull().unique(),
-  telegramUserId: text("telegram_user_id"),
-  telegramUsername: text("telegram_username"),
-  status: text("status").notNull().default("active"),
-  expiresAt: integer("expires_at", { mode: 'timestamp' }),
-  hardwareId: text("hardware_id"),
-  activatedAt: integer("activated_at", { mode: 'timestamp' }),
-  createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+export const licenses = pgTable("licenses", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  licenseKey: varchar("license_key", { length: 255 }).notNull().unique(),
+  telegramUserId: varchar("telegram_user_id", { length: 255 }),
+  telegramUsername: varchar("telegram_username", { length: 255 }),
+  status: varchar("status", { length: 50 }).notNull().default("active"),
+  expiresAt: timestamp("expires_at"),
+  hardwareId: varchar("hardware_id", { length: 255 }),
+  activatedAt: timestamp("activated_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Relations
