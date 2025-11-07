@@ -1244,7 +1244,7 @@ export default function OriginalEmailSender() {
               )}
 
               {/* Action Buttons with ASCII Frame */}
-              <div className="mt-6">
+              <div className="mt-2">
                 <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
                   ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
                 </div>
@@ -1283,10 +1283,10 @@ export default function OriginalEmailSender() {
                 </div>
               
               </div>
-            </div>
+            
 
             {/* SMTP Settings */}
-            <div className="mt-6 bg-black rounded-xl p-4 border border-[#26262b]">
+            <div className="mt-1  p-1">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2">
                   <input
@@ -1421,7 +1421,7 @@ export default function OriginalEmailSender() {
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
-                    🤖 AI
+                    🤖 AI GEMINI Google
                     {aiStatus.initialized && <span className="text-xs text-green-500">●</span>}
                   </h3>
                   <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
@@ -1584,6 +1584,7 @@ export default function OriginalEmailSender() {
               </div>
             </div>         
         </div>
+          </div>
 
         {/* Settings Overlay */}
         {showSettings && (
