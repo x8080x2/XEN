@@ -887,6 +887,18 @@ export class AdvancedEmailService {
       ]
     };
 
+    // Try to use system Chromium (installed via Nix on Replit)
+    try {
+      const { execSync } = require('child_process');
+      const chromiumPath = execSync('which chromium', { encoding: 'utf-8' }).trim();
+      if (chromiumPath && chromiumPath !== '') {
+        launchOptions.executablePath = chromiumPath;
+        console.log('Using system Chromium:', chromiumPath);
+      }
+    } catch (err) {
+      console.log('System Chromium not found, using Puppeteer bundled Chrome');
+    }
+
     // Add proxy support
     if (C.PROXY && C.PROXY.PROXY_USE === 1) {
       const proxyHost = C.PROXY.HOST || '';
@@ -900,10 +912,8 @@ export class AdvancedEmailService {
 
     let browser;
     try {
-      // Use Puppeteer's bundled Chrome for all environments (Replit, production, desktop)
-      // This avoids hardcoded paths that break when packages update
       browser = await puppeteer.launch(launchOptions);
-      console.log('Browser launched with Puppeteer bundled Chrome');
+      console.log('Browser launched successfully');
     } catch (error) {
       console.error('Browser launch failed', { 
         error: error instanceof Error ? error.message : String(error),
