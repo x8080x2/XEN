@@ -139,7 +139,6 @@ export default function OriginalEmailSender() {
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
-  const [sentEmails, setSentEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
