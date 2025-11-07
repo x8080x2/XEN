@@ -81,6 +81,12 @@ Preferred communication style: Simple, everyday language.
 - **Host Binding**: Server binds to 0.0.0.0:5000 for Replit environment
 - **Deployment**: Configured for autoscale deployment with production build
 
+## System Dependencies (November 7, 2025)
+- **Chromium Browser**: Installed via Nix packages to support server-side HTML to PDF/PNG/DOCX conversion
+- **Graphics Libraries**: Mesa and related libraries (libgbm.so.1) required for headless Chrome rendering
+- **Browser Detection**: Server automatically detects and uses system Chromium when available, falls back to Puppeteer bundled Chrome for backward compatibility
+- **Desktop PDF Fix**: Fixed desktop app HTML conversion by configuring Puppeteer to use system Chromium (includes all required dependencies), resolving `libgbm.so.1: cannot open shared object file` error that previously prevented PDF generation for desktop requests
+
 ## Running the Application
 - **Development**: `npm run dev` - Runs Express server with Vite middleware on port 5000
 - **Production Build**: `npm run build` - Builds frontend and backend
