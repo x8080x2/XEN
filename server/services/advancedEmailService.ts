@@ -900,28 +900,16 @@ export class AdvancedEmailService {
 
     let browser;
     try {
-      // Check if we're in a Replit environment (with Nix)
-      if (process.env.REPL_ID || process.env.REPLIT_DB_URL) {
-        // Try system chromium for Replit/Nix environment
-        launchOptions.executablePath = '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium';
-        browser = await puppeteer.launch(launchOptions);
-        console.log('Browser launched with system chromium (Replit)');
-      } else {
-        // For production environments (Render, Vercel, etc.), use bundled Chrome
-        browser = await puppeteer.launch(launchOptions);
-        console.log('Browser launched with bundled chrome (Production)');
-      }
+      // Use Puppeteer's bundled Chrome for all environments (Replit, production, desktop)
+      // This avoids hardcoded paths that break when packages update
+      browser = await puppeteer.launch(launchOptions);
+      console.log('Browser launched with Puppeteer bundled Chrome');
     } catch (error) {
-      console.warn('Primary browser launch failed, trying fallback', { error: error instanceof Error ? error.message : String(error) });
-      // Fallback: remove any executablePath and try bundled chrome
-      delete launchOptions.executablePath;
-      try {
-        browser = await puppeteer.launch(launchOptions);
-        console.log('Browser launched with bundled chrome (Fallback)');
-      } catch (fallbackError) {
-        console.error('All browser launch attempts failed', { error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
-        throw new Error(`Failed to launch browser: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
-      }
+      console.error('Browser launch failed', { 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw new Error(`Failed to launch browser: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     // Setup proxy authentication if needed
