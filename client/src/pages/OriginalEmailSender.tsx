@@ -846,21 +846,19 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-64 bg-[#131316] border-r border-[#26262b] min-h-screen">
+        <div className="w-40 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
             <div className="flex flex-col items-center mb-8">
               {/* Large ASCII Art Logo */}
               <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
   {`
-  +-+-+-+-+-+-+ +-+-+-+-+-+-+
-  |C|L|O|S|E|D| |S|E|N|D|E|R| 
-   +-+-+-+-+-+-+ +-+-+-+-+-+-+ `}
+   +-+-+-+-+-+-+
+   |C|L|O|S|E|D| 
+   +-+-+-+-+-+- `}
               </div>
 
               {/* Decorative Elements */}
-              <div className="text-[#ef4444] font-mono text-xs mb-4 opacity-60">
-                ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆ ◇ ◆
-              </div>
+             
 
               <div className="text-center text-[#a1a1aa] text-xs">
                 <div className="text-[#ef4444] font-bold">V1 🚸</div>
@@ -895,7 +893,7 @@ export default function OriginalEmailSender() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-6 overflow-y-auto max-h-screen">
+        <div className="flex-1 p-2 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
         
               <div className="text-center mt-1">
