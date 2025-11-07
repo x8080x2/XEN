@@ -706,14 +706,6 @@ export default function OriginalEmailSender() {
     }
   };
 
-  const saveSMTPSettings = async () => {
-    // In the original, this saves to config file
-    console.log('Saving SMTP settings:', smtpSettings);
-    setSenderEmail(smtpSettings.fromEmail);
-    setStatusText("✓ SMTP settings saved");
-    setTimeout(() => setStatusText(""), 3000);
-  };
-
   // Function to update progress and logs, forcing immediate UI updates
   const updateProgress = (progressData: EmailProgress) => {
     flushSync(() => {
@@ -1514,12 +1506,6 @@ export default function OriginalEmailSender() {
                   onChange={(e) => setSMTPSettings({...smtpSettings, fromEmail: e.target.value})}
                   className="w-40 h-8 bg-[#0f0f12] border-[#26262b] text-white text-xs"
                 />
-                <Button
-                  onClick={saveSMTPSettings}
-                  className="h-8 px-4 bg-[#ef4444] hover:bg-[#dc2626] text-white text-xs"
-                >
-                  Save
-                </Button>
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#26262b]">
                 <label className="flex items-center gap-2">
