@@ -187,6 +187,8 @@ export class DatabaseStorage implements IStorage {
       expiresAt: license.expiresAt || undefined,
       telegramUserId: license.telegramUserId || undefined,
       telegramUsername: license.telegramUsername || undefined,
+      hardwareId: license.hardwareId || undefined,
+      activatedAt: license.activatedAt || undefined,
     } : undefined;
   }
 
@@ -201,6 +203,8 @@ export class DatabaseStorage implements IStorage {
       expiresAt: license.expiresAt || undefined,
       telegramUserId: license.telegramUserId || undefined,
       telegramUsername: license.telegramUsername || undefined,
+      hardwareId: license.hardwareId || undefined,
+      activatedAt: license.activatedAt || undefined,
     };
   }
 
@@ -216,6 +220,8 @@ export class DatabaseStorage implements IStorage {
       expiresAt: license.expiresAt || undefined,
       telegramUserId: license.telegramUserId || undefined,
       telegramUsername: license.telegramUsername || undefined,
+      hardwareId: license.hardwareId || undefined,
+      activatedAt: license.activatedAt || undefined,
     };
   }
 
@@ -227,9 +233,11 @@ export class DatabaseStorage implements IStorage {
       expiresAt: license.expiresAt || undefined,
       telegramUserId: license.telegramUserId || undefined,
       telegramUsername: license.telegramUsername || undefined,
+      hardwareId: license.hardwareId || undefined,
+      activatedAt: license.activatedAt || undefined,
     }));
   }
 }
 
-// Always use database storage with SQLite
+// Always use database storage with PostgreSQL
 export const storage = new DatabaseStorage();
