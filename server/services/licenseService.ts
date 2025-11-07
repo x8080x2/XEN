@@ -3,6 +3,14 @@ import type { License, InsertLicense } from '@shared/schema';
 import { randomBytes } from 'crypto';
 
 class LicenseService {
+  // Normalize license key: trim whitespace, remove backticks, convert to uppercase
+  private normalizeLicenseKey(licenseKey: string): string {
+    return licenseKey
+      .trim()
+      .replace(/`/g, '') // Remove backticks from Telegram formatting
+      .toUpperCase();
+  }
+
   generateLicenseKey(): string {
     return randomBytes(16).toString('hex').toUpperCase();
   }
@@ -28,7 +36,9 @@ class LicenseService {
   async checkLicenseStatus(
     licenseKey: string
   ): Promise<{ valid: boolean; license?: License; reason?: string }> {
-    const license = await storage.getLicenseByKey(licenseKey);
+    // Normalize license key to handle case-insensitivity and whitespace
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    const license = await storage.getLicenseByKey(normalizedKey);
 
     if (!license) {
       return { valid: false, reason: 'License not found' };
@@ -54,7 +64,9 @@ class LicenseService {
     licenseKey: string, 
     hardwareId?: string
   ): Promise<{ valid: boolean; license?: License; reason?: string }> {
-    const license = await storage.getLicenseByKey(licenseKey);
+    // Normalize license key to handle case-insensitivity and whitespace
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    const license = await storage.getLicenseByKey(normalizedKey);
 
     if (!license) {
       return { valid: false, reason: 'License not found' };
@@ -105,7 +117,9 @@ class LicenseService {
   }
 
   async revokeLicense(licenseKey: string): Promise<License | null> {
-    const license = await storage.getLicenseByKey(licenseKey);
+    // Normalize license key to handle case-insensitivity and whitespace
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    const license = await storage.getLicenseByKey(normalizedKey);
     if (!license) {
       return null;
     }
@@ -118,7 +132,9 @@ class LicenseService {
   }
 
   async getLicenseByKey(licenseKey: string): Promise<License | undefined> {
-    return await storage.getLicenseByKey(licenseKey);
+    // Normalize license key to handle case-insensitivity and whitespace
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    return await storage.getLicenseByKey(normalizedKey);
   }
 }
 
