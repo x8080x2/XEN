@@ -241,6 +241,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Development mode bypass for testing with dev URL
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[License] Dev mode bypass - allowing license for testing');
+        return res.json({
+          success: true,
+          valid: true,
+          reason: 'Development mode - license check bypassed',
+          license: {
+            key: licenseKey,
+            status: 'active',
+            type: 'dev',
+            activatedAt: new Date().toISOString()
+          }
+        });
+      }
+
       const result = await licenseService.verifyLicense(licenseKey, hardwareId);
 
       res.json({
