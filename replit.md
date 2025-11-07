@@ -17,7 +17,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL, accessed via Drizzle ORM for type-safe operations.
 - **Email Service**: Nodemailer for SMTP email sending.
 - **File Handling**: Multer for processing file uploads.
-- **Storage**: An abstract storage interface (IStorage) with an in-memory default.
+- **Storage**: Simplified Storage class directly using PostgreSQL (removed in-memory storage and interface abstraction for cleaner code).
 
 ## Data Architecture
 - **Database Schema**: Structured with tables for users, email configurations, jobs, logs, and application settings.
