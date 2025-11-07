@@ -61,6 +61,7 @@ Preferred communication style: Simple, everyday language.
   - **Backward Compatibility**: Existing licenses without hardware binding get bound on first use
   - **Clear Error Messages**: Users get clear messages when trying to use a license already activated on another computer
   - **Dual Endpoints**: Both `server/routes.ts` and `server/routes/licenseRoutes.ts` properly enforce hardware binding
+  - **License Key Normalization** (November 7, 2025): Fixed case sensitivity issues causing "wrong license" errors. All license key inputs now normalize (trim whitespace, remove Telegram backticks, convert to uppercase) before database lookup. Users can enter license keys in any case format and with spacing variations - the system handles it automatically. Normalization applied uniformly across all entry points (REST API, Telegram bot handlers) through the `licenseService.normalizeLicenseKey()` helper method.
 - **Telegram Bot Distribution System** (October 31, 2025): Automated desktop app distribution and license management:
   - **User Access Control**: Regular users can download desktop app packages and check license status; admins can generate, view, and revoke licenses
   - **License Validation**: Any user can download the app with ANY valid, active license key - no ownership restrictions
