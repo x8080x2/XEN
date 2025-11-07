@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
+import { useToast } from "@/hooks/use-toast";
 
 interface EmailProgress {
   recipient: string;
@@ -137,6 +138,7 @@ export default function OriginalEmailSender() {
   const [statusText, setStatusText] = useState("");
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
+  const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
@@ -151,6 +153,29 @@ export default function OriginalEmailSender() {
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
   const currentStatusRef = useRef<HTMLDivElement>(null);
+
+  // Toast for notifications
+  const { toast } = useToast();
+
+  // Copy failed emails to clipboard
+  const copyFailedEmails = async () => {
+    if (failedEmails.length === 0) return;
+    
+    const emailText = failedEmails.join('\n');
+    try {
+      await navigator.clipboard.writeText(emailText);
+      toast({
+        title: "Copied to clipboard!",
+        description: `${failedEmails.length} failed email${failedEmails.length > 1 ? 's' : ''} copied. Paste into recipients field to retry.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Copy failed",
+        description: "Please try again or copy manually from the logs.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Consolidated progress update function
   const updateProgress = useCallback((progressData: EmailProgress) => {
@@ -694,6 +719,7 @@ export default function OriginalEmailSender() {
     setProgress(0);
     setStatusText("Preparing to send emails...");
     setEmailLogs([]);
+    setFailedEmails([]);
     setProgressDetails("");
     setCurrentEmailStatus("");
     setCurrentSmtpInfo(null);
@@ -759,8 +785,11 @@ export default function OriginalEmailSender() {
                 flushSync(() => {
                   setIsLoading(false);
                   setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${log.sent} emails`);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
                   setCurrentEmailStatus("");
+                  if (log.failedEmails && log.failedEmails.length > 0) {
+                    setFailedEmails(log.failedEmails);
+                  }
                 });
                 clearInterval(pollInterval);
               } else if (log.type === 'error') {
@@ -1155,7 +1184,20 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
-
+                    {/* Copy Failed Emails Button */}
+                    {failedEmails.length > 0 && !isLoading && (
+                      <div className="mb-3">
+                        <Button
+                          onClick={copyFailedEmails}
+                          variant="outline"
+                          size="sm"
+                          className="w-full border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
+                          data-testid="button-copy-failed-emails"
+                        >
+                          📋 Copy Failed Emails ({failedEmails.length})
+                        </Button>
+                      </div>
+                    )}
 
                     {/* Current Email Status - Prominent Display */}
                     {currentEmailStatus && (

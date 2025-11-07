@@ -209,8 +209,10 @@ export function setupOriginalEmailRoutes(app: Express) {
           type: 'complete',
           success: result.success,
           sent: result.sent,
+          failed: result.failed,
           error: result.error,
-          details: result.details
+          details: result.details,
+          failedEmails: result.failedEmails || []
         });
         sendingInProgress = false;
       }).catch((error: any) => {

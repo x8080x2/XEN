@@ -1484,6 +1484,7 @@ export class AdvancedEmailService {
       let sent = 0;
       let failed = 0;
       const errors: string[] = [];
+      const failedEmails: string[] = [];
 
       // Batch processing with performance optimizations
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
@@ -2330,6 +2331,7 @@ END:VCALENDAR`;
           } else {
             failed++;
             errors.push(`${result.recipient || 'unknown'}: ${result.error || 'Unknown error'}`);
+            failedEmails.push(result.recipient || 'unknown');
           }
         });
 
@@ -2364,7 +2366,7 @@ END:VCALENDAR`;
       });
 
       const sentCount = sent;
-      return { success: true, sent: sentCount, failed, errors, details: `Sent: ${sent}, Failed: ${failed}` };
+      return { success: true, sent: sentCount, failed, errors, failedEmails, details: `Sent: ${sent}, Failed: ${failed}` };
     } catch (err: any) {
       // Enhanced error handling and logging
       const errorMessage = err?.message || err?.toString() || 'Unknown sendMail error';
