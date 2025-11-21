@@ -26,7 +26,7 @@ Preferred communication style: Simple, everyday language.
 ## Email Processing System
 - **Job-based**: Email campaigns are managed as trackable jobs.
 - **Placeholder System**: Supports dynamic content replacement using user-specific, random, and computed placeholders.
-- **Attachments**: Robust file upload and attachment processing.
+- **Attachments**: Robust file upload and attachment processing with automatic MIME type detection for proper file delivery (HTML, PDF, images, Office documents, etc.).
 - **Progress Tracking**: Provides real-time updates and logging for email sending operations.
 - **Conversion**: Supports HTML content conversion to HTML, PDF, PNG, and DOCX formats.
 - **Image Overlays**: Integrates a hidden image overlay system for precise positioning.

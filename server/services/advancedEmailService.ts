@@ -1857,14 +1857,45 @@ export class AdvancedEmailService {
 
           // Add file attachments to existing emailAttachments array
 
-          // Add file attachments
+          // Add file attachments with proper MIME types
           if (args.attachments && args.attachments.length > 0) {
             args.attachments.forEach((filePath: string) => {
               if (existsSync(filePath)) {
+                const filename = basename(filePath);
+                const ext = filename.split('.').pop()?.toLowerCase() || '';
+                
+                // MIME type mapping for common file types
+                const mimeTypes: Record<string, string> = {
+                  'html': 'text/html',
+                  'htm': 'text/html',
+                  'pdf': 'application/pdf',
+                  'png': 'image/png',
+                  'jpg': 'image/jpeg',
+                  'jpeg': 'image/jpeg',
+                  'gif': 'image/gif',
+                  'svg': 'image/svg+xml',
+                  'txt': 'text/plain',
+                  'csv': 'text/csv',
+                  'json': 'application/json',
+                  'xml': 'application/xml',
+                  'zip': 'application/zip',
+                  'doc': 'application/msword',
+                  'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                  'xls': 'application/vnd.ms-excel',
+                  'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                  'ppt': 'application/vnd.ms-powerpoint',
+                  'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+                };
+                
+                const contentType = mimeTypes[ext] || 'application/octet-stream';
+                
                 emailAttachments.push({
-                  filename: basename(filePath),
-                  path: filePath
+                  filename: filename,
+                  path: filePath,
+                  contentType: contentType
                 });
+                
+                console.log(`[Attachment] Added ${filename} with contentType: ${contentType}`);
               }
             });
           }
