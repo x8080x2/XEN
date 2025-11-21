@@ -1902,8 +1902,17 @@ export class AdvancedEmailService {
           if (args.attachments && args.attachments.length > 0) {
             for (const filePath of args.attachments) {
               if (existsSync(filePath)) {
-                const filename = basename(filePath);
-                const ext = filename.split('.').pop()?.toLowerCase() || '';
+                const originalFilename = basename(filePath);
+                
+                // Extract extension properly (only if file has a dot)
+                const dotIndex = originalFilename.lastIndexOf('.');
+                const ext = dotIndex > 0 ? originalFilename.substring(dotIndex + 1).toLowerCase() : '';
+                
+                // Process placeholders in filename using FILE_NAME setting (same as converted attachments)
+                const rawFileName = C.FILE_NAME || 'attachment';
+                let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                processedFileName = replacePlaceholders(processedFileName);
+                const filename = ext ? `${processedFileName}.${ext}` : processedFileName;
                 
                 // MIME type mapping for common file types
                 const mimeTypes: Record<string, string> = {
