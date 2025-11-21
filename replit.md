@@ -1,126 +1,57 @@
 # Overview
-This project is a sophisticated web-based email marketing platform that replicates and enhances the functionality of an Electron email sender application. Built with modern web technologies, it serves as a comprehensive email campaign management tool with advanced personalization, content conversion, and delivery optimization capabilities. The platform enables users to execute sophisticated email marketing campaigns, offering features such as bulk email sending with rate limiting, dynamic content personalization, multi-format content conversion (HTML to PDF, PNG, DOCX), QR code integration, automatic domain logo fetching, real-time progress tracking, template-based file management, and INI-based configuration with UI overrides. The business vision is to provide an enterprise-grade email marketing solution with advanced personalization, content generation, and delivery optimization features.
+This project is a web-based email marketing platform that replicates and enhances an Electron email sender application. It provides comprehensive email campaign management with advanced personalization, content conversion (HTML to PDF, PNG, DOCX), QR code integration, dynamic domain logo fetching, real-time progress tracking, template management, and INI-based configuration with UI overrides. The platform aims to be an enterprise-grade solution for sophisticated email marketing with a focus on personalization, content generation, and delivery optimization.
 
 # User Preferences
 Preferred communication style: Simple, everyday language.
 
 # System Architecture
 
-## Frontend Architecture
-- **Framework**: React with TypeScript, using Vite for building.
-- **UI/UX**: Radix UI components integrated with Tailwind CSS, following a shadcn/ui design system with a dark theme and a custom professional color palette.
-- **State Management**: React Query for server state management.
-- **Routing**: Wouter for lightweight client-side routing.
+## UI/UX
+The frontend uses React with TypeScript and Vite, styled with Radix UI components and Tailwind CSS, adhering to a shadcn/ui dark theme with a custom professional color palette.
 
-## Backend Architecture
-- **Framework**: Express.js with TypeScript.
-- **Database**: PostgreSQL, accessed via Drizzle ORM for type-safe operations.
-- **Email Service**: Nodemailer for SMTP email sending.
-- **File Handling**: Multer for processing file uploads.
-- **Storage**: Simplified Storage class directly using PostgreSQL (removed in-memory storage and interface abstraction for cleaner code).
+## Technical Implementations
+- **Frontend**: React with TypeScript, Vite, Radix UI, Tailwind CSS, shadcn/ui, React Query, Wouter.
+- **Backend**: Express.js with TypeScript, PostgreSQL via Drizzle ORM, Nodemailer for SMTP, Multer for file uploads.
+- **Data**: PostgreSQL with Drizzle ORM, shared TypeScript schemas validated with Zod.
+- **Email Processing**: Job-based campaigns, dynamic placeholder system (user, random, computed, AI-generated), robust attachment processing with personalized content for text-based attachments, real-time progress tracking, HTML conversion to PDF/PNG/DOCX, image overlays, and advanced QR code generation.
+- **Configuration**: `setup.ini` and `smtp.ini` based, merged with environment variables and UI settings (UI has highest priority).
+- **SMTP Management**: Supports both user-provided SMTP credentials (desktop users via `smtp.ini` and `smtp-rotation.json`) and server SMTP configuration (web users). Desktop users enforce their own SMTP credentials and can utilize SMTP rotation across multiple servers.
+- **Core Functionality**: Includes `sendMail()` for comprehensive campaign execution, `processPlaceholders()` for dynamic content, `generateQRCode()` for personalized QR codes, `fetchDomainLogo()` for automatic logo integration, `convertHtmlToAttachment()` for multi-format conversions, and HTML2IMG_BODY processing.
+- **Browser Pool**: Manages Puppeteer instances for conversions, optimizing resource usage and preventing exhaustion.
+- **License System**: IP-based one-license-per-computer enforcement, binding licenses to a computer's IP address on first activation, with clear error messaging and license key normalization.
+- **Telegram Bot Integration**: Automates desktop app distribution and license management, providing user access control for downloads and license status checks, and admin-only functions for license generation and revocation. Uses webhooks for instant message delivery.
+- **File Structure**: Monorepo with distinct client, server, and shared codebases, facilitating type-safe data sharing.
 
-## Data Architecture
-- **Database Schema**: Structured with tables for users, email configurations, jobs, logs, and application settings.
-- **Type Safety**: Shared TypeScript schemas, validated with Drizzle and Zod.
+## Feature Specifications
+- **Attachment Placeholder Processing**: Text-based attachments (HTML, TXT, CSV, JSON, XML, MD) support full placeholder replacement per recipient.
+- **QR Code Generation**: Advanced system with multiple rendering modes and comprehensive customization, integrating with the placeholder system.
+- **Domain Logo Fetching**: Automatic fetching from prioritized sources (Icons.duckduckgo.com, Logo.dev, Brandfetch, Clearbit API) with caching.
+- **HTML2IMG_BODY**: Converts email body to a clickable PNG image.
+- **SMTP Rotation**: Desktop users can provide multiple SMTP configurations that are rotated per-email.
+- **License System**: IP-based hardware binding for desktop applications, ensuring a license is tied to a single computer.
+- **Telegram Bot**: Automates desktop app distribution and license management, providing distinct user and admin functionalities.
 
-## Email Processing System
-- **Job-based**: Email campaigns are managed as trackable jobs.
-- **Placeholder System**: Supports dynamic content replacement using user-specific, random, and computed placeholders.
-- **Attachments**: Robust file upload and attachment processing with automatic MIME type detection for proper file delivery (HTML, PDF, images, Office documents, etc.).
-- **Progress Tracking**: Provides real-time updates and logging for email sending operations.
-- **Conversion**: Supports HTML content conversion to HTML, PDF, PNG, and DOCX formats.
-- **Image Overlays**: Integrates a hidden image overlay system for precise positioning.
-- **QR Code Generation**: Advanced QR code system with multiple rendering modes and comprehensive customization options (Main HTML Body, HTML2IMG_BODY, HTML_CONVERT Attachment). QR codes integrate with the comprehensive placeholder system for recipient personalization and dynamic content.
-- **Configuration**: Loads settings from `setup.ini` and `smtp.ini`, with automatic application on startup, merging with environment variables and UI settings (UI settings having the highest priority).
-- **SMTP Routing**: Desktop users send emails using their own SMTP credentials (from `user-package/config/smtp.ini` and `user-package/config/smtp-rotation.json`), while web users use the server's SMTP configuration. Desktop users can enable SMTP rotation across multiple servers for load distribution.
-- **SMTP Enforcement** (October 31, 2025): Desktop users MUST provide their own SMTP credentials via local `smtp.ini` file and cannot fall back to server SMTP. The backend enforces this security boundary by detecting desktop mode (presence of `userSmtpConfigs`) and rejecting requests that attempt to use server SMTP. Web users continue to use server SMTP as their only option. This ensures complete separation between desktop user credentials and server credentials for enhanced security.
-
-## Core Functionality Decisions
-- **`sendMail()`**: Executes complete email campaigns with advanced processing, including configuration loading, recipient processing, template loading, batch processing, content processing (placeholders, QR codes, domain logos), optional HTML2IMG conversion, attachment generation, SMTP sending, and real-time progress reporting. Supports both user-provided SMTP credentials (desktop) and server SMTP config (web).
-- **`processPlaceholders()`**: Replaces placeholder variables with dynamic content (e.g., recipient info, random data, generated values, date/time, sender info).
-- **`generateQRCode()`**: Creates dynamic QR codes supporting link personalization, random metadata, visual customization, multiple formats (PNG buffers, data URLs), and high error correction.
-- **`fetchDomainLogo()`**: Automatically fetches and integrates domain logos from prioritized sources (Icons.duckduckgo.com, Logo.dev, Brandfetch, Clearbit API) with cross-domain detection and performance caching.
-- **`convertHtmlToAttachment()`**: Converts HTML templates to PDF, PNG, and DOCX formats, embedding QR codes and domain logos while preserving styling.
-- **HTML2IMG_BODY Processing**: Converts the entire email body to a clickable PNG image using Puppeteer, replacing the email body with the image and linking it to a specified URL.
-- **Browser Pool Management**: Optimizes browser resource usage for conversions (max 2 browsers, 3 pages each) with lifecycle management and memory optimization.
-- **Memory Monitoring**: Prevents system resource exhaustion with threshold monitoring and periodic checks.
-- **SMTP Rotation System**: Desktop users can provide multiple SMTP configurations that are rotated per-email for load distribution. The system accepts either userSmtpConfigs array (desktop) or legacy single SMTP fields (web), with automatic fallback to the first user SMTP when configs are provided but rotation is disabled.
-- **Desktop-Web SMTP Parity** (October 31, 2025): Complete feature parity achieved between web and desktop SMTP management. Both versions perform identical operations with full state persistence:
-  - **Fetch SMTP List**: Returns all configs with current SMTP based on saved index
-  - **Toggle Rotation**: Persists rotation state and current SMTP index to `smtp-rotation.json`
-  - **Add SMTP**: Adds new config to `smtp.ini` and returns updated list
-  - **Delete SMTP**: Removes config from `smtp.ini` and updates current selection
-  - **Rotate SMTP**: Increments index circularly and persists to rotation state file
-  - Desktop rotation state survives app restarts via `user-package/config/smtp-rotation.json` containing `{ rotationEnabled, currentIndex }`
-  - **Desktop UI Implementation** (October 31, 2025): Fixed desktop SMTP management UI in OriginalEmailSender.tsx. Replaced stub functions with working implementations that call `window.electronAPI` methods (smtpAdd, smtpDelete, smtpRotate). All SMTP operations now properly write to local `config/smtp.ini` file via Electron IPC with validation, state updates, and user feedback.
-  - **Desktop Email Sending Fix** (October 31, 2025): Fixed `req.body.hasOwnProperty is not a function` error in originalEmailRoutes.ts that broke desktop email sending. Replaced unsafe `hasOwnProperty` call with safe `in` operator for desktop mode detection. This ensures desktop email sending works correctly while maintaining proper SMTP enforcement.
-- **License System** (October 31, 2025): IP-based one-license-per-computer enforcement:
-  - **IP-Based Binding**: Desktop app uses computer's IP address (SHA256 hashed) as hardware identifier
-  - **First Activation**: When a license is used for the first time, it gets permanently bound to that computer's IP address
-  - **Enforcement**: Once bound, the license only works on that specific IP address
-  - **Backward Compatibility**: Existing licenses without hardware binding get bound on first use
-  - **Clear Error Messages**: Users get clear messages when trying to use a license already activated on another computer
-  - **Dual Endpoints**: Both `server/routes.ts` and `server/routes/licenseRoutes.ts` properly enforce hardware binding
-  - **License Key Normalization** (November 7, 2025): Fixed case sensitivity issues causing "wrong license" errors. All license key inputs now normalize (trim whitespace, remove Telegram backticks, convert to uppercase) before database lookup. Users can enter license keys in any case format and with spacing variations - the system handles it automatically. Normalization applied uniformly across all entry points (REST API, Telegram bot handlers) through the `licenseService.normalizeLicenseKey()` helper method.
-- **Telegram Bot Distribution System** (October 31, 2025): Automated desktop app distribution and license management:
-  - **User Access Control**: Regular users can download desktop app packages and check license status; admins can generate, view, and revoke licenses
-  - **License Validation**: Any user can download the app with ANY valid, active license key - no ownership restrictions
-  - **Public Actions**: Regular users access Download Desktop App, Check License Status, Help, and Main Menu without admin privileges
-  - **Admin-Only Actions**: License generation, viewing generated licenses list, and license revocation restricted to configured admin users
-  - **Package Distribution**: Telegram bot packages the latest `user-package` folder with pre-configured `.env` containing the provided license key
-  - **Version Currency**: Users always receive the latest version including all recent fixes (SMTP management, email sending, etc.) through Telegram bot
-  - **Webhook Implementation** (October 31, 2025): Converted from long-polling to webhooks to eliminate 409 conflict errors. Bot now receives updates via POST requests to `/api/telegram/webhook`, providing instant message delivery and eliminating concurrent connection issues. Webhook URL automatically configured using Replit domain during initialization.
-- **File Structure**: Monorepo organized with distinct client, server, and shared codebases, with common schemas and types shared across frontend and backend.
-
-# Replit Environment Setup
-
-## Development Configuration (September 30, 2025)
-- **Database**: PostgreSQL database provisioned and schema pushed successfully
-- **Drizzle Config**: Migrated from JSON to TypeScript config (drizzle.config.ts) for proper environment variable support
-- **Workflow**: Configured to run on port 5000 with webview output
-- **Vite Server**: Already configured with `allowedHosts: true` for Replit proxy compatibility
-- **Host Binding**: Server binds to 0.0.0.0:5000 for Replit environment
-- **Deployment**: Configured for autoscale deployment with production build
-
-## Database Migration (November 7, 2025)
-- **SQLite to PostgreSQL Migration**: Completed full migration from SQLite to PostgreSQL for production readiness
-  - **Schema Conversion**: Converted `shared/schema.ts` from `sqliteTable` to `pgTable` with proper PostgreSQL column types (varchar, timestamp, etc.)
-  - **Database Connection**: Updated `server/db.ts` to use Neon serverless driver (`@neondatabase/serverless`) instead of better-sqlite3
-  - **Runtime Connection**: Application now connects to PostgreSQL via DATABASE_URL environment variable
-  - **Type Safety**: Fixed null-to-undefined conversions in `server/storage.ts` for PostgreSQL nullable columns
-  - **License System**: All licenses now stored in PostgreSQL with proper persistence across server restarts
-  - **Configuration**: Updated `drizzle.config.ts` dialect from "sqlite" to "postgresql"
-  - **Impact**: Desktop app license verification now works correctly against persistent PostgreSQL database instead of temporary SQLite file
-
-## System Dependencies (November 7, 2025)
-- **Chromium Browser**: Installed via Nix packages to support server-side HTML to PDF/PNG/DOCX conversion
-- **Graphics Libraries**: Mesa and related libraries (libgbm.so.1) required for headless Chrome rendering
-- **Browser Detection**: Server automatically detects and uses system Chromium when available, falls back to Puppeteer bundled Chrome for backward compatibility
-- **Desktop PDF Fix**: Fixed desktop app HTML conversion by configuring Puppeteer to use system Chromium (includes all required dependencies), resolving `libgbm.so.1: cannot open shared object file` error that previously prevented PDF generation for desktop requests
-
-## Running the Application
-- **Development**: `npm run dev` - Runs Express server with Vite middleware on port 5000
-- **Production Build**: `npm run build` - Builds frontend and backend
-- **Production Start**: `npm run start` - Runs production server
-- **Database Push**: `npm run db:push` - Pushes schema changes to database
+## System Design Choices
+- **Database Migration**: Full migration from SQLite to PostgreSQL for production readiness, utilizing `@neondatabase/serverless` for database connection.
+- **System Dependencies**: Chromium browser and graphics libraries are installed via Nix for server-side HTML conversions, with automatic system Chromium detection and fallback to Puppeteer's bundled Chrome.
 
 # External Dependencies
 
-## Core Framework Dependencies
-- **Express.js**: Backend API framework.
+## Core Frameworks
+- **Express.js**: Backend API development.
 - **React**: Frontend UI library.
 - **Vite**: Frontend build tool.
 
-## Database and ORM
-- **@neondatabase/serverless**: Serverless PostgreSQL client.
-- **Drizzle ORM**: Type-safe ORM for PostgreSQL.
+## Database & ORM
+- **@neondatabase/serverless**: PostgreSQL client.
+- **Drizzle ORM**: Type-safe ORM.
 - **drizzle-kit**: Database schema management.
 
 ## Email Services
 - **Nodemailer**: SMTP email sending.
 
-## UI and Styling
-- **Tailwind CSS**: Utility-first CSS framework.
+## UI & Styling
+- **Tailwind CSS**: Utility-first CSS.
 - **Radix UI**: Headless UI components.
 - **shadcn/ui**: Design system.
 - **Lucide React**: Icon library.
@@ -128,14 +59,14 @@ Preferred communication style: Simple, everyday language.
 ## File Processing
 - **Multer**: Multipart/form-data handler.
 
-## State Management and HTTP
+## State Management & Routing
 - **@tanstack/react-query**: Server state management.
 - **React Hook Form**: Form handling.
-- **Wouter**: Lightweight routing for React.
+- **Wouter**: Lightweight client-side routing.
 
-## Validation and Utilities
-- **Zod**: TypeScript-first schema validation.
-- **drizzle-zod**: Drizzle ORM and Zod integration.
-- **qrcode**: QR code generation library.
-- **Puppeteer**: Headless Chrome for HTML to PDF/PNG conversions.
+## Utilities & Conversions
+- **Zod**: Schema validation.
+- **drizzle-zod**: Drizzle/Zod integration.
+- **qrcode**: QR code generation.
+- **Puppeteer**: Headless Chrome for HTML to PDF/PNG.
 - **html-docx-js**: HTML to DOCX conversion.

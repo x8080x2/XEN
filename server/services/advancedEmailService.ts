@@ -239,6 +239,7 @@ const defaultConfig = {
 
   QRCODE: false,
   CALENDAR_MODE: false,
+  PROCESS_ATTACHMENT_PLACEHOLDERS: true, // Enable placeholder processing in attachments by default
 
   SLEEP: 3,
   EMAIL_PER_SECOND: 5,
@@ -1148,6 +1149,47 @@ export class AdvancedEmailService {
     return await this.generateQRCodeInternal(link, C);
   }
 
+  // Helper: Determine if file extension is text-based and supports placeholder processing
+  private isTextBasedFile(extension: string): boolean {
+    const textExtensions = ['html', 'htm', 'txt', 'csv', 'json', 'xml', 'md', 'text'];
+    return textExtensions.includes(extension.toLowerCase());
+  }
+
+  // Helper: Read and process attachment file with placeholder replacement
+  private async processAttachmentFile(filePath: string, recipient: string, senderEmail: string, dateStr: string, timeStr: string, maxFileSizeBytes: number = 1048576): Promise<{ content?: Buffer; path?: string; error?: string }> {
+    try {
+      const stats = statSync(filePath);
+      const ext = basename(filePath).split('.').pop()?.toLowerCase() || '';
+      
+      // Check if file is text-based and within size limit
+      if (this.isTextBasedFile(ext) && stats.size <= maxFileSizeBytes) {
+        console.log(`[Attachment Processing] Reading text file for placeholder replacement: ${basename(filePath)} (${stats.size} bytes)`);
+        
+        // Read file content as UTF-8
+        const rawContent = readFileSync(filePath, 'utf8');
+        
+        // Apply placeholder replacements (same as email body)
+        let processedContent = await injectDynamicPlaceholders(rawContent, recipient, senderEmail, dateStr, timeStr);
+        processedContent = replacePlaceholders(processedContent);
+        
+        console.log(`[Attachment Processing] Placeholders processed for ${basename(filePath)}`);
+        
+        // Return as Buffer
+        return { content: Buffer.from(processedContent, 'utf8') };
+      } else {
+        // Binary file or too large - attach from path directly
+        if (stats.size > maxFileSizeBytes) {
+          console.log(`[Attachment Processing] File too large for placeholder processing: ${basename(filePath)} (${stats.size} bytes > ${maxFileSizeBytes} limit)`);
+        }
+        return { path: filePath };
+      }
+    } catch (error) {
+      console.error(`[Attachment Processing] Error reading file ${filePath}:`, error);
+      // Fallback to path-based attachment on error
+      return { path: filePath, error: error instanceof Error ? error.message : String(error) };
+    }
+  }
+
   // Complete sendMail function with all advanced features - exact clone
   async sendMail(args: any, progressCallback?: (progress: any) => void) {
     // Reset cancel flag for new campaign
@@ -1855,11 +1897,10 @@ export class AdvancedEmailService {
             }
           }
 
-          // Add file attachments to existing emailAttachments array
-
-          // Add file attachments with proper MIME types
+          // Add file attachments with placeholder processing for text files
+          // Process attachments per-recipient to support personalization
           if (args.attachments && args.attachments.length > 0) {
-            args.attachments.forEach((filePath: string) => {
+            for (const filePath of args.attachments) {
               if (existsSync(filePath)) {
                 const filename = basename(filePath);
                 const ext = filename.split('.').pop()?.toLowerCase() || '';
@@ -1889,16 +1930,44 @@ export class AdvancedEmailService {
                 
                 const contentType = mimeTypes[ext] || 'application/octet-stream';
                 
-                emailAttachments.push({
-                  filename: filename,
-                  path: filePath,
-                  contentType: contentType,
-                  contentDisposition: 'attachment'
-                });
+                // Check if placeholder processing is enabled (default: true)
+                const enablePlaceholderProcessing = C.PROCESS_ATTACHMENT_PLACEHOLDERS !== false;
                 
-                console.log(`[Attachment] Added ${filename} with contentType: ${contentType}`);
+                if (enablePlaceholderProcessing) {
+                  // Process attachment with placeholder replacement for text files
+                  const processed = await this.processAttachmentFile(filePath, recipient, fromEmail, dateStr, timeStr);
+                  
+                  if (processed.content) {
+                    // Text file processed with placeholders - use content buffer
+                    emailAttachments.push({
+                      filename: filename,
+                      content: processed.content,
+                      contentType: contentType,
+                      contentDisposition: 'attachment'
+                    });
+                    console.log(`[Attachment] Added ${filename} with placeholder processing (${processed.content.length} bytes)`);
+                  } else if (processed.path) {
+                    // Binary file or error - use path
+                    emailAttachments.push({
+                      filename: filename,
+                      path: processed.path,
+                      contentType: contentType,
+                      contentDisposition: 'attachment'
+                    });
+                    console.log(`[Attachment] Added ${filename} as binary/path-based attachment`);
+                  }
+                } else {
+                  // Placeholder processing disabled - attach raw file
+                  emailAttachments.push({
+                    filename: filename,
+                    path: filePath,
+                    contentType: contentType,
+                    contentDisposition: 'attachment'
+                  });
+                  console.log(`[Attachment] Added ${filename} without placeholder processing (disabled)`);
+                }
               }
-            });
+            }
           }
 
           // HTML to Image Body conversion - Match exact QR and domain logo settings flow
