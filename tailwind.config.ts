@@ -72,9 +72,9 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         serif: ["var(--font-serif)"],
-        mono: ["Fira Code", "var(--font-mono)"],
+        mono: ["Consolas", "Monaco", "Courier New", "monospace"],
       },
       spacing: {
         '45': '11.25rem',
