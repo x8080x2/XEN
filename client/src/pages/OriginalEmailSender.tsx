@@ -1122,16 +1122,22 @@ export default function OriginalEmailSender() {
                       className="hidden"
                     />
                     {selectedFiles && selectedFiles.length > 0 && (
-                      <div className="flex items-center justify-between bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2">
-                        <span className="text-xs text-[#a1a1aa]">
-                          {selectedFiles.length} file(s) selected
-                        </span>
-                        <button
-                          onClick={removeAttachment}
-                          className="text-[#ef4444] hover:text-[#dc2626] text-sm"
-                        >
-                          ×
-                        </button>
+                      <div className="bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2 space-y-1">
+                        {Array.from(selectedFiles).map((file, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-xs text-[#a1a1aa] truncate">
+                              📎 {file.name}
+                            </span>
+                            {index === 0 && (
+                              <button
+                                onClick={removeAttachment}
+                                className="text-[#ef4444] hover:text-[#dc2626] text-sm ml-2"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                     <div className="text-xs text-[#75798b]">Supports various file formats</div>

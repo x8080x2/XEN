@@ -50,7 +50,7 @@ export class FileService {
       // Validate file exists and is accessible
       await fs.access(file.path);
       
-      // Generate unique filename
+      // Generate unique filename for secure storage
       const ext = path.extname(file.originalname);
       const filename = `${crypto.randomUUID()}${ext}`;
       const filepath = path.join(this.uploadDir, filename);
