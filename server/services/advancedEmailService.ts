@@ -1892,7 +1892,8 @@ export class AdvancedEmailService {
                 emailAttachments.push({
                   filename: filename,
                   path: filePath,
-                  contentType: contentType
+                  contentType: contentType,
+                  contentDisposition: 'attachment'
                 });
                 
                 console.log(`[Attachment] Added ${filename} with contentType: ${contentType}`);
@@ -2204,7 +2205,8 @@ export class AdvancedEmailService {
                   replacedFileName = replacePlaceholders(replacedFileName);
                   emailAttachments.push({
                     filename: `${replacedFileName}.zip`,
-                    content: zipBuffer
+                    content: zipBuffer,
+                    contentDisposition: 'attachment'
                   });
                 } catch (zipError) {
                   console.error('ZIP creation failed:', zipError);
@@ -2212,7 +2214,8 @@ export class AdvancedEmailService {
                   convertFiles.forEach(file => {
                     emailAttachments.push({
                       filename: file.name,
-                      content: file.buffer
+                      content: file.buffer,
+                      contentDisposition: 'attachment'
                     });
                   });
                 }
@@ -2222,7 +2225,8 @@ export class AdvancedEmailService {
                 convertFiles.forEach(file => {
                   emailAttachments.push({
                     filename: file.name,
-                    content: file.buffer
+                    content: file.buffer,
+                    contentDisposition: 'attachment'
                   });
                   console.log(`[HTML_CONVERT] Added attachment: ${file.name} (${file.buffer.length} bytes)`);
                 });
@@ -2295,7 +2299,8 @@ END:VCALENDAR`;
               emailAttachments.push({
                 filename: 'event.ics',
                 content: Buffer.from(icsContent, 'utf8'),
-                contentType: 'text/calendar'
+                contentType: 'text/calendar',
+                contentDisposition: 'attachment'
               });
 
               console.log('[CALENDAR_MODE] Added .ics calendar invitation with processed QR content');
