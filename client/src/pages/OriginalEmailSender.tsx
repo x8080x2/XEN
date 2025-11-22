@@ -57,10 +57,24 @@ export default function OriginalEmailSender() {
     setSelectedAttachmentTemplate(template);
 
     if (template && template !== 'off') {
-      const content = await loadTemplateContent(`files/${template}`);
-      setAttachmentHtml(content);
+      try {
+        const content = await loadTemplateContent(`files/${template}`);
+        if (content) {
+          setAttachmentHtml(content);
+          setStatusText(`✓ Loaded attachment template: ${template}`);
+          setTimeout(() => setStatusText(""), 3000);
+        } else {
+          setStatusText(`✗ Failed to load template: ${template}`);
+          setAttachmentHtml('');
+        }
+      } catch (error) {
+        console.error('Error loading attachment template:', error);
+        setStatusText(`✗ Error loading template: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        setAttachmentHtml('');
+      }
     } else {
       setAttachmentHtml('');
+      setStatusText('');
     }
   };
 
