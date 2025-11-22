@@ -105,6 +105,13 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const domainBase = domain?.split('.')[0] || '';
   const initials = username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).join('');
   const userId = Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6);
+  
+  // Extract full name from username (convert dots/underscores to spaces and capitalize)
+  const fullName = username
+    .replace(/[._-]/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 
   // Generate AI-powered random values for placeholders
   const emailKey = `${user}_${Date.now()}`;
@@ -115,7 +122,8 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const randdomain = await pickRand('domain', emailKey);
   const randtitle = await pickRand('title', emailKey);
 
-  text = text.replace(/{user}/g, username)
+  text = text.replace(/{name}/g, fullName) // {name} = full name from username
+             .replace(/{user}/g, username)
              .replace(/{User}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()) // {User} = capitalized
              .replace(/{USER}/g, username.toUpperCase()) // {USER} = uppercase
              .replace(/{email}/g, user.toLowerCase()) // {email} = full lowercase email
