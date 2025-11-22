@@ -1093,6 +1093,9 @@ export default function OriginalEmailSender() {
           
               <div className="text-center mt-1">                
                 <div className="text-[#ef4444] text-xs font-bold">CLS ADVANCED SMART EMAIL SENDER ⚡</div>
+                <div className="text-[green] text-xs">
+                     <a href="https://t.me/Closedsenderbot" target="_blank" rel="noopener noreferrer">Click to get App on TG: @Closedsenderbot</a>
+                </div>
                 <div className="text-[#a1a1aa] text-xs mt-1">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
 
