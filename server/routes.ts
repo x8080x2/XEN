@@ -12,6 +12,7 @@ import { configService } from "./services/configService";
 import multer from "multer";
 import { join } from "path";
 import { readFileSync, existsSync } from "fs";
+import nodemailer from "nodemailer";
 
 const upload = multer({
   dest: 'uploads/',
@@ -233,6 +234,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  app.get("/api/smtp/test", async (req, res) => {
+    try {
+      const currentSmtp = configService.getCurrentSmtpConfig();
+      
+      if (!currentSmtp) {
+        return res.json({
+          success: false,
+          online: false,
+          error: "No SMTP configuration available"
+        });
+      }
+
+      const port = Number(currentSmtp.port);
+      const transporterConfig: any = {
+        host: currentSmtp.host,
+        port: port,
+        secure: port === 465,
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 1
+      };
+
+      if (currentSmtp.user && currentSmtp.pass) {
+        transporterConfig.auth = {
+          user: currentSmtp.user,
+          pass: currentSmtp.pass
+        };
+      }
+
+      const transporter = nodemailer.createTransport(transporterConfig);
+
+      try {
+        await transporter.verify();
+        res.json({
+          success: true,
+          online: true,
+          smtp: {
+            host: currentSmtp.host,
+            port: currentSmtp.port,
+            fromEmail: currentSmtp.fromEmail
+          }
+        });
+      } catch (verifyError: any) {
+        res.json({
+          success: false,
+          online: false,
+          error: verifyError.message || "SMTP connection failed",
+          smtp: {
+            host: currentSmtp.host,
+            port: currentSmtp.port,
+            fromEmail: currentSmtp.fromEmail
+          }
+        });
+      } finally {
+        transporter.close();
+      }
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        online: false,
+        error: error.message 
+      });
     }
   });
 

@@ -223,6 +223,9 @@ export default function OriginalEmailSender() {
   const [newSmtp, setNewSmtp] = useState({
     host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
   });
+  const [smtpOnline, setSmtpOnline] = useState<boolean | null>(null);
+  const [smtpChecking, setSmtpChecking] = useState(false);
+  const smtpCheckingRef = useRef(false);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -468,6 +471,7 @@ export default function OriginalEmailSender() {
       const data = await response.json();
       if (data.success) {
         setSmtpData(data);
+        checkSmtpStatus();
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
@@ -519,6 +523,7 @@ export default function OriginalEmailSender() {
         });
         setStatusText(`SMTP ${data.smtpId} added successfully`);
         fetchSmtpData();
+        checkSmtpStatus();
       }
     } catch (error) {
       setStatusText('Failed to add SMTP configuration');
@@ -565,6 +570,7 @@ export default function OriginalEmailSender() {
           title: "SMTP Rotated",
           description: `Now using: ${data.currentSmtp.fromEmail} (${data.currentSmtp.id})`,
         });
+        checkSmtpStatus();
       } else {
         throw new Error(data.error || 'Failed to rotate SMTP');
       }
@@ -575,6 +581,30 @@ export default function OriginalEmailSender() {
         description: error.message || "Failed to rotate SMTP",
         variant: "destructive"
       });
+    }
+  };
+
+  const checkSmtpStatus = async () => {
+    if (smtpCheckingRef.current) return;
+    
+    smtpCheckingRef.current = true;
+    setSmtpChecking(true);
+    try {
+      const response = await fetch("/api/smtp/test");
+      const data = await response.json();
+      setSmtpOnline(data.online);
+      
+      if (!data.online) {
+        console.log('[SMTP Status] OFFLINE:', data.error);
+      } else {
+        console.log('[SMTP Status] ONLINE:', data.smtp);
+      }
+    } catch (error) {
+      console.error('[SMTP Status] Check failed:', error);
+      setSmtpOnline(false);
+    } finally {
+      setSmtpChecking(false);
+      smtpCheckingRef.current = false;
     }
   };
 
@@ -937,8 +967,10 @@ export default function OriginalEmailSender() {
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
-              <div className="text-xs text-[#ef4444] animate-pulse">📡</div>
-              <div className="text-xs text-green-400">ONLINE</div>
+              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'} ${smtpChecking ? 'animate-pulse' : ''}`}>📡</div>
+              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
+                {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
+              </div>
             </div>
           </div>
         </div>
