@@ -889,9 +889,9 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-40 bg-[#131316] border-r border-[#26262b] min-h-screen">
-          <div className="p-4">
-            <div className="flex flex-col items-center mb-8">
+        <div className="w-36 bg-[#131316] border-r border-[#26262b] min-h-screen">
+          <div className="p-3">
+            <div className="flex flex-col items-center mb-4">
               {/* Large ASCII Art Logo */}
               <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
   {`
@@ -940,15 +940,15 @@ export default function OriginalEmailSender() {
           <div className="max-w-1xs mx-auto">
 
               <div className="text-center mt-1">
-                <div className="text-[#ef4444] text-sm font-bold">CLS ADVANCED SMART EMAIL SENDER ⚡</div>
-                <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
+                <div className="text-[#ef4444] text-xs font-bold">CLS ADVANCED SMART EMAIL SENDER ⚡</div>
+                <div className="text-[#a1a1aa] text-xs mt-1">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
 
-            <div className="bg-[#131316] rounded-xl border border-[#26262b] p-6">
+            <div className="bg-[#131316] rounded-lg border border-[#26262b] p-3">
               {/* Sender Email, Name, Subject Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SENDER EMAIL</Label>
+                  <Label className="text-xs text-[red] mb-1">SENDER EMAIL</Label>
                   <Input
                     type="email"
                     value={senderEmail}
@@ -962,7 +962,7 @@ export default function OriginalEmailSender() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SENDER NAME</Label>
+                  <Label className="text-xs text-[red] mb-1">SENDER NAME</Label>
                   <Input
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
@@ -971,7 +971,7 @@ export default function OriginalEmailSender() {
                   />
                 </div>
                 <div>
-                  <Label className="text-sm text-[red] mb-2">SUBJECT</Label>
+                  <Label className="text-xs text-[red] mb-1">SUBJECT</Label>
                   <Input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
@@ -983,10 +983,10 @@ export default function OriginalEmailSender() {
 
 
               {/* Main Content Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                 {/* Letter */}
                 <div>
-                  <Label className="text-sm text-[green] mb-2">LETTER</Label>
+                  <Label className="text-xs text-[green] mb-1">LETTER</Label>
                   <Textarea
                     value={emailContent}
                     onChange={(e) => setEmailContent(e.target.value)}
@@ -1019,7 +1019,7 @@ export default function OriginalEmailSender() {
 
                 {/* Maillist */}
                 <div>
-                  <Label className="text-sm text-[green] mb-2">MAILLIST</Label>
+                  <Label className="text-xs text-[green] mb-1">MAILLIST</Label>
                   <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
@@ -1116,7 +1116,7 @@ export default function OriginalEmailSender() {
 
 
               {/* Second Row - Attachment Files and HTML */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                 {/* Attachment Files */}
                 <div>
                   <Label className="text-sm text-[#a1a1aa] mb-2">Attachment Files</Label>
@@ -1184,15 +1184,15 @@ export default function OriginalEmailSender() {
 
               {/* Progress Section - Enhanced Real-time Display */}
               {(isLoading || emailLogs.length > 0) && (
-                <div className="mb-6 border-2 border-[#ef4444] rounded-lg overflow-hidden">
-                  <div className="bg-[#ef4444] text-white px-4 py-3 text-sm font-semibold flex items-center justify-between">
+                <div className="mb-3 border-2 border-[#ef4444] rounded-lg overflow-hidden">
+                  <div className="bg-[#ef4444] text-white px-3 py-2 text-sm font-semibold flex items-center justify-between">
                     <span>{isLoading ? '  SENDING EMAILS...' : '✅ SENDING COMPLETE'}</span>
                     <span className="text-xs bg-black/20 px-2 py-1 rounded">
                       {emailLogs.filter(log => log.status === 'success').length} / {emailLogs.length} sent
                     </span>
                   </div>
-                  <div className="bg-[#1d1d21] p-4">
-                    <div className="mb-3">
+                  <div className="bg-[#1d1d21] p-3">
+                    <div className="mb-2">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-white font-medium">Progress</span>
                         <span className="text-xs text-[#a1a1aa]">{Math.round(progress)}%</span>
@@ -1305,7 +1305,7 @@ export default function OriginalEmailSender() {
 
               {/* Action Buttons with ASCII Frame */}
               <div className="mt-2">
-                <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
+                <div className="text-[#ef4444] font-mono text-xs text-center mb-2 opacity-60">
                   ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
                 </div>
                 <div className="flex justify-center gap-4">
@@ -1346,7 +1346,7 @@ export default function OriginalEmailSender() {
 
 
             {/* SMTP Settings */}
-            <div className="mt-1  p-1">
+            <div className="mt-1 p-1">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2">
                   <input
@@ -1556,7 +1556,7 @@ export default function OriginalEmailSender() {
                 </div>
               </details>
               {/* HTML Convert Settings - Moved to Front */}
-                <div className="mt-4 mb-8 bg-[#131316] rounded-lg border border-[#26262b] p-3">
+                <div className="mt-3 mb-3 bg-[#131316] rounded-lg border border-[#26262b] p-3">
                   <h3 className="text-sm font-semibold text-[#ef4444] mb-3 flex items-center gap-2">
                     🔄 HTML Convert
                   </h3>
