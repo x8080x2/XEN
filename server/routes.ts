@@ -180,59 +180,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/smtp/test", async (req, res) => {
-    try {
-      const { host, port, user, pass, fromEmail } = req.body;
-      
-      if (!host || !port || !fromEmail) {
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Missing required SMTP parameters' 
-        });
-      }
-
-      const nodemailer = await import('nodemailer');
-      
-      const transporterConfig: any = {
-        host,
-        port: parseInt(port),
-        secure: parseInt(port) === 465,
-        connectionTimeout: 10000,
-        greetingTimeout: 5000
-      };
-
-      // Add TLS config for port 25
-      if (parseInt(port) === 25) {
-        transporterConfig.tls = {
-          rejectUnauthorized: false
-        };
-      }
-
-      // Only add auth if credentials provided
-      if (user && pass) {
-        transporterConfig.auth = { user, pass };
-      }
-
-      const transporter = nodemailer.default.createTransport(transporterConfig);
-
-      // Verify connection
-      await transporter.verify();
-      
-      transporter.close();
-
-      res.json({ 
-        success: true, 
-        message: 'SMTP connection successful' 
-      });
-    } catch (error: any) {
-      console.error('SMTP test failed:', error);
-      res.json({ 
-        success: false, 
-        error: error.message || 'Connection failed' 
-      });
-    }
-  });
-
   app.post("/api/smtp/add", (req, res) => {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;
