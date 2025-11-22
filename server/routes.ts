@@ -165,6 +165,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/smtp/rotate", (req, res) => {
+    try {
+      configService.rotateToNextSmtp();
+      const currentSmtp = configService.getCurrentSmtpConfig();
+
+      res.json({
+        success: true,
+        currentSmtp: currentSmtp,
+        rotationEnabled: configService.isSmtpRotationEnabled()
+      });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.post("/api/smtp/add", (req, res) => {
     try {
       const { host, port, user, pass, fromEmail, fromName } = req.body;

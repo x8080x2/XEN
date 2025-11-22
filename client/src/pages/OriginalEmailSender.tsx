@@ -160,7 +160,7 @@ export default function OriginalEmailSender() {
   // Copy failed emails to clipboard
   const copyFailedEmails = async () => {
     if (failedEmails.length === 0) return;
-    
+
     const emailText = failedEmails.join('\n');
     try {
       await navigator.clipboard.writeText(emailText);
@@ -535,18 +535,32 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("/api/smtp/rotate", { method: "POST" });
+      const response = await fetch("/api/smtp/rotate", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.currentSmtp) {
         setSmtpData(prev => ({
           ...prev,
-          currentSmtp: data.currentSmtp
+          currentSmtp: data.currentSmtp,
+          rotationEnabled: data.rotationEnabled
         }));
-        setStatusText(`Rotated to: ${data.currentSmtp?.fromEmail}`);
-        setTimeout(() => setStatusText(""), 3000);
+        toast({
+          title: "SMTP Rotated",
+          description: `Now using: ${data.currentSmtp.fromEmail} (${data.currentSmtp.id})`,
+        });
+      } else {
+        throw new Error(data.error || 'Failed to rotate SMTP');
       }
-    } catch (error) {
-      setStatusText('Failed to rotate SMTP');
+    } catch (error: any) {
+      console.error('SMTP rotation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to rotate SMTP",
+        variant: "destructive"
+      });
     }
   };
 
@@ -882,12 +896,12 @@ export default function OriginalEmailSender() {
               <div className="text-[#ef4444] font-mono text-xs leading-none mb-1 text-center whitespace-pre">
   {`
    +-+-+-+-+-+-+
-   |C|L|O|S|E|D| 
+   |C|L|O|S|E|D|
    +-+-+-+-+-+- `}
               </div>
 
               {/* Decorative Elements */}
-             
+
 
               <div className="text-center text-[#a1a1aa] text-xs">
                 <div className="text-[#ef4444] font-bold">V1 🚸</div>
@@ -924,7 +938,7 @@ export default function OriginalEmailSender() {
         {/* Main Content */}
         <div className="flex-1 p-2 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
-        
+
               <div className="text-center mt-1">
                 <div className="text-[#ef4444] text-sm font-bold">CLS ADVANCED SMART EMAIL SENDER ⚡</div>
                 <div className="text-[#a1a1aa] text-sm mt-2">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
@@ -1327,9 +1341,9 @@ export default function OriginalEmailSender() {
                     ⚙️ SETTINGS
                   </Button>
                 </div>
-              
+
               </div>
-            
+
 
             {/* SMTP Settings */}
             <div className="mt-1  p-1">
