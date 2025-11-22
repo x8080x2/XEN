@@ -78,7 +78,11 @@ export function setupOriginalEmailRoutes(app: Express) {
       }
 
       const files = req.files as Express.Multer.File[];
-      const attachments = files?.map(file => file.path) || [];
+      const attachments = files?.map(file => ({
+        path: file.path,
+        filename: file.originalname,
+        contentType: file.mimetype
+      })) || [];
 
       // Parse recipients if it's a string
       let recipients = req.body.recipients;

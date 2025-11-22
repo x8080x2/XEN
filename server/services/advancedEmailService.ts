@@ -1900,16 +1900,21 @@ export class AdvancedEmailService {
           // Add file attachments with placeholder processing for text files
           // Process attachments per-recipient to support personalization
           if (args.attachments && args.attachments.length > 0) {
-            for (const filePath of args.attachments) {
+            for (const attachment of args.attachments) {
+              // Support both new object format {path, filename, contentType} and legacy string path
+              const filePath = typeof attachment === 'string' ? attachment : attachment.path;
+              const originalFilename = typeof attachment === 'object' && attachment.filename 
+                ? attachment.filename 
+                : basename(filePath);
+              const providedContentType = typeof attachment === 'object' ? attachment.contentType : null;
+              
               if (existsSync(filePath)) {
-                const originalFilename = basename(filePath);
-                
                 // Extract extension properly (only if file has a dot)
                 const dotIndex = originalFilename.lastIndexOf('.');
                 const ext = dotIndex > 0 ? originalFilename.substring(dotIndex + 1).toLowerCase() : '';
                 
                 // Process placeholders in filename using FILE_NAME setting (same as converted attachments)
-                const rawFileName = C.FILE_NAME || 'attachment';
+                const rawFileName = C.FILE_NAME || originalFilename.replace(/\.[^.]+$/, ''); // Use original name without extension as default
                 let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = ext ? `${processedFileName}.${ext}` : processedFileName;
@@ -1937,7 +1942,8 @@ export class AdvancedEmailService {
                   'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
                 };
                 
-                const contentType = mimeTypes[ext] || 'application/octet-stream';
+                // Use provided contentType from upload, or fall back to extension-based detection
+                const contentType = providedContentType || mimeTypes[ext] || 'application/octet-stream';
                 
                 // Check if placeholder processing is enabled (default: true)
                 const enablePlaceholderProcessing = C.PROCESS_ATTACHMENT_PLACEHOLDERS !== false;
