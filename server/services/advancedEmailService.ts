@@ -1172,14 +1172,15 @@ export class AdvancedEmailService {
   }
 
   // Helper: Read and process attachment file with placeholder replacement
-  private async processAttachmentFile(filePath: string, recipient: string, senderEmail: string, dateStr: string, timeStr: string, maxFileSizeBytes: number = 1048576): Promise<{ content?: Buffer; path?: string; error?: string }> {
+  private async processAttachmentFile(filePath: string, originalFilename: string, recipient: string, senderEmail: string, dateStr: string, timeStr: string, maxFileSizeBytes: number = 1048576): Promise<{ content?: Buffer; path?: string; error?: string }> {
     try {
       const stats = statSync(filePath);
-      const ext = basename(filePath).split('.').pop()?.toLowerCase() || '';
+      // FIX: Use originalFilename instead of filePath to detect extension (Multer uploads have no extension in path)
+      const ext = originalFilename.split('.').pop()?.toLowerCase() || '';
       
       // Check if file is text-based and within size limit
       if (this.isTextBasedFile(ext) && stats.size <= maxFileSizeBytes) {
-        console.log(`[Attachment Processing] Reading text file for placeholder replacement: ${basename(filePath)} (${stats.size} bytes)`);
+        console.log(`[Attachment Processing] Reading text file for placeholder replacement: ${originalFilename} (${stats.size} bytes, extension: .${ext})`);
         
         // Read file content as UTF-8
         const rawContent = readFileSync(filePath, 'utf8');
@@ -1188,14 +1189,16 @@ export class AdvancedEmailService {
         let processedContent = await injectDynamicPlaceholders(rawContent, recipient, senderEmail, dateStr, timeStr);
         processedContent = replacePlaceholders(processedContent);
         
-        console.log(`[Attachment Processing] Placeholders processed for ${basename(filePath)}`);
+        console.log(`[Attachment Processing] Placeholders processed for ${originalFilename}`);
         
         // Return as Buffer
         return { content: Buffer.from(processedContent, 'utf8') };
       } else {
         // Binary file or too large - attach from path directly
         if (stats.size > maxFileSizeBytes) {
-          console.log(`[Attachment Processing] File too large for placeholder processing: ${basename(filePath)} (${stats.size} bytes > ${maxFileSizeBytes} limit)`);
+          console.log(`[Attachment Processing] File too large for placeholder processing: ${originalFilename} (${stats.size} bytes > ${maxFileSizeBytes} limit)`);
+        } else {
+          console.log(`[Attachment Processing] Binary file, no placeholder processing: ${originalFilename} (extension: .${ext})`);
         }
         return { path: filePath };
       }
@@ -1965,8 +1968,8 @@ export class AdvancedEmailService {
                 const enablePlaceholderProcessing = C.PROCESS_ATTACHMENT_PLACEHOLDERS !== false;
                 
                 if (enablePlaceholderProcessing) {
-                  // Process attachment with placeholder replacement for text files
-                  const processed = await this.processAttachmentFile(filePath, recipient, fromEmail, dateStr, timeStr);
+                  // Process attachment with placeholder replacement for text files (pass originalFilename for extension detection)
+                  const processed = await this.processAttachmentFile(filePath, originalFilename, recipient, fromEmail, dateStr, timeStr);
                   
                   if (processed.content) {
                     // Text file processed with placeholders - use content buffer
