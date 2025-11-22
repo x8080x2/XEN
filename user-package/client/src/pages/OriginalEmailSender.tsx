@@ -1171,7 +1171,7 @@ export default function OriginalEmailSender() {
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span>✏️ OFF TO USE TXT </span>
+                        <span className="font-bold text-[#ef4444] text-lg">✏️ OFF TO USE TXT</span>
                       )}
                     </div>
                   </div>
