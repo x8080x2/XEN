@@ -1001,7 +1001,7 @@ export default function OriginalEmailSender() {
                       </SelectContent>
                     </Select>
                     {/* Display which template is currently active - exact clone from sender.html */}
-                    <div className="text-xl text-[purple] mt-1">
+                    <div className="text-xl font-bold text-[red] mt-1">
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
