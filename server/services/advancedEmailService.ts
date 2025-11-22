@@ -112,6 +112,12 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
+  
+  // Extract first name only (first word from full name)
+  const firstName = fullName.split(' ')[0] || username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
+  
+  // Uppercase full name
+  const fullNameUpper = fullName.toUpperCase();
 
   // Generate AI-powered random values for placeholders
   const emailKey = `${user}_${Date.now()}`;
@@ -123,6 +129,8 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const randtitle = await pickRand('title', emailKey);
 
   text = text.replace(/{name}/g, fullName) // {name} = full name from username
+             .replace(/{Name}/g, firstName) // {Name} = first name only, capitalized
+             .replace(/{NAME}/g, fullNameUpper) // {NAME} = uppercase full name
              .replace(/{user}/g, username)
              .replace(/{User}/g, username.charAt(0).toUpperCase() + username.slice(1).toLowerCase()) // {User} = capitalized
              .replace(/{USER}/g, username.toUpperCase()) // {USER} = uppercase
