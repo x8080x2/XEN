@@ -1187,6 +1187,7 @@ export default function OriginalEmailSender() {
                       <div className="space-y-2">
                         <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
                         <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
+                          <div><span className="text-green-400">{'{name}'}</span> - Full name from email</div>
                           <div><span className="text-green-400">{'{user}'}</span> - Username lowercase</div>
                           <div><span className="text-green-400">{'{User}'}</span> - Username capitalized</div>
                           <div><span className="text-green-400">{'{USER}'}</span> - Username UPPERCASE</div>
