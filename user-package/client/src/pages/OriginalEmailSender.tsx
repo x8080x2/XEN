@@ -1051,20 +1051,12 @@ export default function OriginalEmailSender() {
         <div className="w-40 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-4">
             <div className="flex flex-col items-center mb-8">
-              {/* Large ASCII Art Logo */}
-              <div className="text-[#ef4444] font-mono text-xs leading-none text-center whitespace-pre">
-{`
-  +-+-+-+-+-+-++
-  |C|L|O|S|E|D||
-  +-+-+-+-+-+--+
-`}
-              </div>
-
+           
               {/* Decorative Elements */}
              
 
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="text-[#ef4444] font-bold">V1 🚸</div>
+                <div className="text-[#ef4444] font-bold">CLS V1 🚸</div>
               </div>
             </div>
 
@@ -1076,7 +1068,7 @@ export default function OriginalEmailSender() {
                 className="text-[#a1a1aa] px-4 py-2 rounded hover:bg-[#ef4444] hover:text-white cursor-pointer"
                 onClick={() => setShowSettings(!showSettings)}
               >
-                CONFIG ⚙️
+                CONFIG⚙️
               </div>
             </nav>
           </div>
@@ -1171,7 +1163,7 @@ export default function OriginalEmailSender() {
                       {selectedTemplate && selectedTemplate !== 'off' ? (
                         <span>📄 Using template: <strong className="text-white">{selectedTemplate}</strong></span>
                       ) : (
-                        <span className="font-bold text-[#ef4444] text-lg">✏️ OFF TO USE TXT</span>
+                        <span>✏️ OFF TO USE TXT </span>
                       )}
                     </div>
                   </div>
