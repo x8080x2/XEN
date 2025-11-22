@@ -171,6 +171,22 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const aiRandomName = await pickRand('firstname', emailKey) + ' ' + await pickRand('lastname', emailKey);
   text = text.replace(/\{randomname\}/g, aiRandomName);
 
+  // BASE64 ENCODED PLACEHOLDERS - for use in encrypted/obfuscated content
+  const datetime = `${dateStr} ${timeStr}`;
+  text = text.replace(/\{userb64\}/g, Buffer.from(username).toString('base64'))
+             .replace(/\{nameb64\}/g, Buffer.from(fullName).toString('base64'))
+             .replace(/\{domainb64\}/g, Buffer.from(domain).toString('base64'))
+             .replace(/\{dateb64\}/g, Buffer.from(dateStr).toString('base64'))
+             .replace(/\{timeb64\}/g, Buffer.from(timeStr).toString('base64'))
+             .replace(/\{datetimeb64\}/g, Buffer.from(datetime).toString('base64'))
+             .replace(/\{senderemailb64\}/g, Buffer.from(email).toString('base64'))
+             .replace(/\{randfirstb64\}/g, Buffer.from(randfirst).toString('base64'))
+             .replace(/\{randlastb64\}/g, Buffer.from(randlast).toString('base64'))
+             .replace(/\{randnameb64\}/g, Buffer.from(randname).toString('base64'))
+             .replace(/\{randcompanyb64\}/g, Buffer.from(randcompany).toString('base64'))
+             .replace(/\{randdomainb64\}/g, Buffer.from(randdomain).toString('base64'))
+             .replace(/\{randtitleb64\}/g, Buffer.from(randtitle).toString('base64'));
+
   // NOTE: hashN and randnumN are handled by replacePlaceholders() function later
 
   return text;
@@ -1522,14 +1538,19 @@ export class AdvancedEmailService {
         .replace(/\{time\}/g, timeStr);
 
       // After replacing user/email/date/time, also replace {link} with C.LINK_PLACEHOLDER or C.QR_LINK
-      processedBodyHtml = processedBodyHtml.replace(/\{link\}/g, C.LINK_PLACEHOLDER || C.QR_LINK || '');
+      const linkValue = C.LINK_PLACEHOLDER || C.QR_LINK || '';
+      processedBodyHtml = processedBodyHtml
+        .replace(/\{linkb64\}/g, Buffer.from(linkValue).toString('base64'))
+        .replace(/\{link\}/g, linkValue);
 
       // Replace placeholders in attachmentHtml
       let processedAttachmentHtml = attachmentHtml
         .replace(/\{senderemail\}/g, args.senderEmail || '')
         .replace(/\{date\}/g, dateStr)
         .replace(/\{time\}/g, timeStr);
-      processedAttachmentHtml = processedAttachmentHtml.replace(/\{link\}/g, C.LINK_PLACEHOLDER || C.QR_LINK || '');
+      processedAttachmentHtml = processedAttachmentHtml
+        .replace(/\{linkb64\}/g, Buffer.from(linkValue).toString('base64'))
+        .replace(/\{link\}/g, linkValue);
 
       // Additional placeholder replacement with AI support
       processedAttachmentHtml = replacePlaceholders(processedAttachmentHtml);
