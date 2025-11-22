@@ -1741,6 +1741,7 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
           </div>
+        </div>
 
         {/* Settings Overlay */}
         {showSettings && (
