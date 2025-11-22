@@ -38,6 +38,12 @@ interface SMTPSettings {
   fromName: string;
 }
 
+interface SMTPData {
+  smtpConfigs: any[];
+  currentSmtp: any;
+  rotationEnabled: boolean;
+}
+
 export default function OriginalEmailSender() {
   // Form state - exact match to original
   const [senderEmail, setSenderEmail] = useState("");
@@ -108,7 +114,7 @@ export default function OriginalEmailSender() {
 
   const [advancedSettings, setAdvancedSettings] = useState(() => {
     const saved = localStorage.getItem('emailAdvancedSettings');
-    return saved ? JSON.parse(saved) : {
+    return saved ? JSON.Parse(saved) : {
       qrcode: false,  // ✅ SAFE: Disabled by default to match config
       qrSize: 200,
       qrLink: 'https://example.com',
@@ -215,11 +221,15 @@ export default function OriginalEmailSender() {
       }
     });
   }, []);
-  const [smtpData, setSmtpData] = useState({
-    smtpConfigs: [] as any[],
-    currentSmtp: null as any,
+
+  // Initialize SMTP data and loading state
+  const [smtpData, setSmtpData] = useState<SMTPData>({
+    smtpConfigs: [],
+    currentSmtp: null,
     rotationEnabled: false
   });
+  const [loading, setLoading] = useState(false);
+  const [smtpConnectionStatus, setSmtpConnectionStatus] = useState<'testing' | 'online' | 'offline'>('testing');
   const [newSmtp, setNewSmtp] = useState({
     host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
   });
@@ -333,6 +343,33 @@ export default function OriginalEmailSender() {
         setEmailContent('');
         setStatusText('Error loading template content.');
       }
+    }
+  };
+
+  // Test SMTP connection function
+  const testSmtpConnection = async (config: SMTPSettings) => {
+    setSmtpConnectionStatus('testing');
+    try {
+      const response = await fetch('/api/original/testSmtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpConnectionStatus('online');
+        setStatusText('SMTP connection successful!');
+        setTimeout(() => setStatusText(''), 3000);
+      } else {
+        setSmtpConnectionStatus('offline');
+        setStatusText(`SMTP connection failed: ${data.error}`);
+        setTimeout(() => setStatusText(''), 5000);
+      }
+    } catch (error) {
+      console.error('Error testing SMTP connection:', error);
+      setSmtpConnectionStatus('offline');
+      setStatusText(`Error testing SMTP connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setTimeout(() => setStatusText(''), 5000);
     }
   };
 
@@ -468,9 +505,16 @@ export default function OriginalEmailSender() {
       const data = await response.json();
       if (data.success) {
         setSmtpData(data);
+        // If there are SMTP configs, test the current one
+        if (data.currentSmtp) {
+          await testSmtpConnection(data.currentSmtp);
+        } else if (data.smtpConfigs && data.smtpConfigs.length > 0) {
+          await testSmtpConnection(data.smtpConfigs[0]);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
+      setSmtpConnectionStatus('offline'); // Assume offline if fetching fails
     }
   };
 
@@ -490,6 +534,9 @@ export default function OriginalEmailSender() {
         }));
         setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
         setTimeout(() => setStatusText(""), 3000);
+        if (data.currentSmtp) {
+          await testSmtpConnection(data.currentSmtp);
+        }
       }
     } catch (error) {
       setStatusText('Failed to toggle SMTP rotation');
@@ -541,6 +588,9 @@ export default function OriginalEmailSender() {
           currentSmtp: data.currentSmtp
         }));
         setStatusText(`SMTP ${smtpId} deleted successfully`);
+        if (data.currentSmtp) {
+          await testSmtpConnection(data.currentSmtp);
+        }
       }
     } catch (error) {
       setStatusText('Failed to delete SMTP configuration');
@@ -565,6 +615,7 @@ export default function OriginalEmailSender() {
           title: "SMTP Rotated",
           description: `Now using: ${data.currentSmtp.fromEmail} (${data.currentSmtp.id})`,
         });
+        await testSmtpConnection(data.currentSmtp);
       } else {
         throw new Error(data.error || 'Failed to rotate SMTP');
       }
@@ -575,6 +626,7 @@ export default function OriginalEmailSender() {
         description: error.message || "Failed to rotate SMTP",
         variant: "destructive"
       });
+      setSmtpConnectionStatus('offline');
     }
   };
 
@@ -599,12 +651,22 @@ export default function OriginalEmailSender() {
             fromName: config.SMTP.fromName || ''
           };
           setSMTPSettings(smtpConfig);
+          console.log('Loaded SMTP settings from config:', smtpConfig);
 
-          // Auto-set sender email from SMTP config - exact clone from main.js behavior
-          if (smtpConfig.fromEmail) {
-            setSenderEmail(smtpConfig.fromEmail);
+          // Test SMTP connection
+          if (smtpConfig.host && smtpConfig.fromEmail) {
+            await testSmtpConnection(smtpConfig);
+          } else {
+            setSmtpConnectionStatus('offline'); // If essential details missing, mark as offline
           }
+        } else {
+          setSmtpConnectionStatus('offline'); // If no SMTP config found, mark as offline
+        }
 
+
+        // Auto-set sender email from SMTP config - exact clone from main.js behavior
+        if (smtpConfig.fromEmail) {
+          setSenderEmail(smtpConfig.fromEmail);
         }
 
         // Load advanced settings with delivery protection
@@ -672,10 +734,12 @@ export default function OriginalEmailSender() {
         setConfigLoaded(true);
       } else {
         setStatusText('Failed to load configuration');
+        setSmtpConnectionStatus('offline');
       }
     } catch (error) {
       console.error('Config load error:', error);
       setStatusText('Failed to load configuration');
+      setSmtpConnectionStatus('offline');
     }
   };
 
@@ -690,6 +754,12 @@ export default function OriginalEmailSender() {
 
     if (!senderEmail.trim()) {
       setStatusText('Sender email is required (from SMTP config).');
+      return;
+    }
+
+    // Check SMTP connection status before sending
+    if (smtpConnectionStatus !== 'online') {
+      setStatusText('SMTP connection is not online. Please check your SMTP settings.');
       return;
     }
 
@@ -906,7 +976,7 @@ export default function OriginalEmailSender() {
         <div className="w-36 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-3">
             <div className="flex flex-col items-center mb-4">
-             
+
 
               {/* Decorative Elements */}
 
@@ -936,10 +1006,27 @@ export default function OriginalEmailSender() {
 ▓ SYSTEM STATUS ▓
 `}
             </div>
-            <div className="flex items-center justify-center gap-2 px-1 py-2">
-              <div className="text-xs text-[#ef4444] animate-pulse">📡</div>
-              <div className="text-xs text-green-400">ONLINE</div>
-            </div>
+            <div className="text-center py-3 bg-[#131316] rounded-lg border border-[#26262b]">
+                <div className="text-white font-bold text-xs mb-1">▓ SYSTEM STATUS ▓</div>
+                {smtpConnectionStatus === 'testing' && (
+                  <>
+                    <div className="text-yellow-400 text-sm animate-pulse">🔄</div>
+                    <div className="text-yellow-400 font-bold text-xs">TESTING...</div>
+                  </>
+                )}
+                {smtpConnectionStatus === 'online' && (
+                  <>
+                    <div className="text-green-400 text-sm">📡</div>
+                    <div className="text-green-400 font-bold text-xs">ONLINE</div>
+                  </>
+                )}
+                {smtpConnectionStatus === 'offline' && (
+                  <>
+                    <div className="text-red-400 text-sm">⚠️</div>
+                    <div className="text-red-400 font-bold text-xs">OFFLINE</div>
+                  </>
+                )}
+              </div>
           </div>
         </div>
 
@@ -1322,7 +1409,7 @@ export default function OriginalEmailSender() {
                 <div className="flex justify-center gap-4">
                   <Button
                     onClick={handleSendEmails}
-                    disabled={isLoading}
+                    disabled={isLoading || smtpConnectionStatus !== 'online'}
                     className="min-w-[110px] bg-[#ef4444] hover:bg-[#dc2626] text-white relative"
                   >
                     {isLoading ? (
@@ -1653,8 +1740,6 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
               </div>
-            </div>         
-        </div>
           </div>
 
         {/* Settings Overlay */}
