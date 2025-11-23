@@ -1711,10 +1711,18 @@ export default function OriginalEmailSender() {
               </details>
 
 
-            {/* HTML Convert Settings - Moved to Front */}
-            <div className="mt-3 bg-[#131316] rounded-lg p-3 border border-[#26262b]">
-      
-              <div className="grid grid-cols-1 gap-3">
+            {/* HTML Convert Settings - Dropdown Design */}
+            <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
+              <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
+                <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+                  🔄 HTML Convert
+                  {(advancedSettings.zipUse || advancedSettings.htmlImgBody || advancedSettings.qrcode || advancedSettings.randomMetadata || advancedSettings.calendarMode || advancedSettings.htmlConvert) && 
+                    <span className="text-xs text-green-500">●</span>
+                  }
+                </h3>
+                <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
+              </summary>
+              <div className="p-3 space-y-3 border-t border-[#26262b]">
                 <div>
                   <Label className="text-xs text-[green] mb-2 block">CONVERSION FORMATS | Click to generate as attachments.</Label>
                   <div className="flex flex-wrap gap-3">
@@ -1804,10 +1812,8 @@ export default function OriginalEmailSender() {
                     placeholder="Optional"
                   />
                 </div>
-
-                </div>
               </div>
-            </div>
+            </details>
           </div>
         </div>
            </div>
