@@ -1155,7 +1155,7 @@ export default function OriginalEmailSender() {
                         <SelectValue placeholder="-- Off --" />
                       </SelectTrigger>
                       <SelectContent className="bg-[#131316] border-[#26262b]">
-                        <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
+                        <SelectItem value="off" className="text-white focus:text-white">-- Turned Off --</SelectItem>
                         {templateFiles.map(file => (
                           <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
                         ))}
@@ -1318,7 +1318,7 @@ export default function OriginalEmailSender() {
                       <SelectValue placeholder="-- Off --" />
                     </SelectTrigger>
                     <SelectContent className="bg-[#131316] border-[#26262b]">
-                      <SelectItem value="off" className="text-white focus:text-white">-- Off --</SelectItem>
+                      <SelectItem value="off" className="text-white focus:text-white">-- Turned Off --</SelectItem>
                       {templateFiles.map(file => (
                         <SelectItem key={file} value={file} className="text-white focus:text-white">{file}</SelectItem>
                       ))}
