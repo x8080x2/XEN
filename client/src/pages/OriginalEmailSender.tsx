@@ -980,8 +980,8 @@ export default function OriginalEmailSender() {
           <div className="max-w-1xs mx-auto">
 
               <div className="text-center mt-1">
-                <div className="text-[#ef4444] text-3xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
-                <div className="text-[green] text-sm">
+                <div className="text-[#ef4444] text-xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
+                <div className="text-[green] text-xs">
                      <a href="https://t.me/Closedsenderbot" target="_blank" rel="noopener noreferrer">Click to Download: @ClosedSenderBot</a>
                 </div>
                 <div className="text-[#a1a1aa] text-xs mt-1">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
@@ -991,7 +991,7 @@ export default function OriginalEmailSender() {
               {/* Sender Email, Name, Subject Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                 <div>
-                  <Label className="text-xs text-[red] mb-1">SENDER EMAIL</Label>
+                  <Label className="text-xl text-[red] mb-1">SENDER EMAIL</Label>
                   <Input
                     type="email"
                     value={senderEmail}
@@ -1005,7 +1005,7 @@ export default function OriginalEmailSender() {
                   )}
                 </div>
                 <div>
-                  <Label className="text-xs text-[red] mb-1">SENDER NAME</Label>
+                  <Label className="text-xl text-[red] mb-1">SENDER NAME</Label>
                   <Input
                     value={senderName}
                     onChange={(e) => setSenderName(e.target.value)}
@@ -1014,7 +1014,7 @@ export default function OriginalEmailSender() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-[red] mb-1">SUBJECT</Label>
+                  <Label className="text-xl text-[red] mb-1">SUBJECT</Label>
                   <Input
                     value={subject}
                     onChange={(e) => setSubject(e.target.value)}
@@ -1037,7 +1037,7 @@ export default function OriginalEmailSender() {
                     className="bg-[#0f0f12] border-[#26262b] text-white min-h-[200px]"
                   />
                   <div className="mt-2">
-                    <Label className="text-xs text-[red]">MAIN LETTER</Label>
+                    <Label className="text-xl text-[red]">MAIN LETTER</Label>
                     <Select value={selectedTemplate || "off"} onValueChange={handleTemplateChange}>
                       <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                         <SelectValue placeholder="-- Off --" />
@@ -1206,7 +1206,7 @@ export default function OriginalEmailSender() {
 
                 {/* Attachment HTML Template */}
                 <div>
-                  <Label className="text-xs text-[red]"> HTML CONVERT LETTER</Label>
+                  <Label className="text-xl text-[red]"> HTML CONVERT LETTER</Label>
                   <Select value={selectedAttachmentTemplate || "off"} onValueChange={handleAttachmentTemplateChange}>
                     <SelectTrigger className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-xs">
                       <SelectValue placeholder="-- Off --" />
