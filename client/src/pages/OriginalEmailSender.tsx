@@ -980,8 +980,8 @@ export default function OriginalEmailSender() {
           <div className="max-w-1xs mx-auto">
 
               <div className="text-center mt-1">
-                <div className="text-[#ef4444] text-xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
-                <div className="text-[green] text-xs">
+                <div className="text-[#ef4444] text-3xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
+                <div className="text-[green] text-sm">
                      <a href="https://t.me/Closedsenderbot" target="_blank" rel="noopener noreferrer">Click to Download: @ClosedSenderBot</a>
                 </div>
                 <div className="text-[#a1a1aa] text-xs mt-1">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
