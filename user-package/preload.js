@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Config and SMTP operations
   loadConfig: () => ipcRenderer.invoke('load-config'),
   loadLeads: () => ipcRenderer.invoke('load-leads'),
+  saveConfig: (config) => ipcRenderer.invoke('save-config', config),
+  saveLeads: (leads) => ipcRenderer.invoke('save-leads', leads),
   smtpList: () => ipcRenderer.invoke('smtp-list'),
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp-toggle-rotation', enabled),
   smtpAdd: (smtpData) => ipcRenderer.invoke('smtp-add', smtpData),
