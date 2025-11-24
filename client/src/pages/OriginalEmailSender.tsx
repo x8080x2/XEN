@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -192,10 +192,9 @@ export default function OriginalEmailSender() {
 
   // Consolidated progress update function
   const updateProgress = useCallback((progressData: EmailProgress) => {
-    flushSync(() => {
-      console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
+    console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
 
-      setEmailLogs(prev => [...prev, progressData]);
+    setEmailLogs(prev => [...prev, progressData]);
 
       if (progressData.totalRecipients) {
         const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
@@ -212,7 +211,6 @@ export default function OriginalEmailSender() {
       } else {
         setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
       }
-    });
   }, []);
   const [smtpData, setSmtpData] = useState({
     smtpConfigs: [] as any[],
@@ -862,15 +860,13 @@ export default function OriginalEmailSender() {
           if (data.logs && data.logs.length > 0) {
             for (const log of data.logs) {
               if (log.type === 'complete') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
-                  setCurrentEmailStatus("");
-                  if (log.failedEmails && log.failedEmails.length > 0) {
-                    setFailedEmails(log.failedEmails);
-                  }
-                });
+                setIsLoading(false);
+                setProgress(100);
+                setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                setCurrentEmailStatus("");
+                if (log.failedEmails && log.failedEmails.length > 0) {
+                  setFailedEmails(log.failedEmails);
+                }
                 
                 // Stop polling
                 if ((window as any).pollingInterval) {
@@ -878,10 +874,8 @@ export default function OriginalEmailSender() {
                   (window as any).pollingInterval = null;
                 }
               } else if (log.type === 'error') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setStatusText(`Error: ${log.error}`);
-                });
+                setIsLoading(false);
+                setStatusText(`Error: ${log.error}`);
                 
                 // Stop polling
                 if ((window as any).pollingInterval) {
