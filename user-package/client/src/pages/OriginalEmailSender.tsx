@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
 import { useToast } from "@/hooks/use-toast";
+import { replitApiService } from "@/services/replitApiService";
 
 interface EmailProgress {
   recipient: string;
@@ -975,40 +976,61 @@ export default function OriginalEmailSender() {
           smtpHost: formDataObj.smtpHost
         });
 
-        // Get current SMTP data for rotation
+        // Get current SMTP data from local config
         const currentSmtpData = await window.electronAPI.smtpList();
         const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
-        const userSmtpRotationEnabled = currentSmtpData.rotationEnabled || false;
-        const currentSmtpIndex = userSmtpConfigs.findIndex((s: any) => s.id === currentSmtpData.currentSmtp?.id) || 0;
+        const currentSmtp = currentSmtpData.currentSmtp || userSmtpConfigs[0];
+
+        if (!currentSmtp) {
+          throw new Error('No SMTP configuration found. Please configure SMTP settings.');
+        }
 
         console.log('[Desktop] SMTP config loaded:', {
-          configCount: userSmtpConfigs.length,
-          rotationEnabled: userSmtpRotationEnabled,
-          currentIndex: currentSmtpIndex
+          smtpHost: currentSmtp.host,
+          fromEmail: currentSmtp.fromEmail
         });
 
-        // Send via Electron
-        const result = await window.electronAPI.sendEmail({
-          formDataObj,
-          userSmtpConfigs,
-          userSmtpRotationEnabled,
-          currentSmtpIndex
-        });
+        // Send via Backend API (not Electron)
+        console.log('[Desktop] Sending to backend API...');
+        
+        const emailData = {
+          recipients: formDataObj.recipients,
+          subject: formDataObj.subject,
+          htmlContent: formDataObj.html,
+          smtpConfig: {
+            host: currentSmtp.host,
+            port: currentSmtp.port,
+            user: currentSmtp.user,
+            pass: currentSmtp.pass,
+            fromEmail: currentSmtp.fromEmail,
+            fromName: currentSmtp.fromName || senderName,
+            replyTo: currentSmtp.replyTo || ''
+          },
+          settings: {
+            ...advancedSettings,
+            useAIEnabled: aiEnabled,
+            useAISubject: aiEnabled && useAISubject,
+            useAISenderName: aiEnabled && useAISenderName,
+            attachments: formDataObj.attachments
+          }
+        };
+
+        const result = await replitApiService.sendEmailsJob(emailData);
 
         console.log('[Desktop] Send result:', result);
 
         if (!result.success) {
-          throw new Error(result.error || 'Failed to start email sending');
+          throw new Error(result.message || 'Failed to start email sending');
         }
 
         setStatusText("Email sending started. Receiving live updates...");
 
-        // Start polling for progress
+        // Start polling for progress from backend
         let lastLogCount = 0;
         
         const pollProgress = async () => {
           try {
-            const data = await window.electronAPI.getEmailProgress(lastLogCount);
+            const data = await replitApiService.checkJobStatus(lastLogCount);
             
             if (data.logs && data.logs.length > 0) {
               for (const log of data.logs) {
