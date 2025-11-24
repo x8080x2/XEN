@@ -682,14 +682,25 @@ export default function OriginalEmailSender() {
     }
   };
 
+  // Helper to check if a value is meaningful (not empty, not just whitespace)
+  const isMeaningfulValue = (value: any): boolean => {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (typeof value === 'number') return true;
+    if (typeof value === 'boolean') return true;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
+    return true;
+  };
+
   // Helper function to recursively deep merge configs, with localStorage taking priority for non-empty values
   const deepMergeConfigs = (fileConfig: any, localConfig: any): any => {
-    // If localConfig is not an object or is null, return fileConfig
+    // If localConfig is not a plain object, use it only if meaningful, otherwise use fileConfig
     if (typeof localConfig !== 'object' || localConfig === null || Array.isArray(localConfig)) {
-      return localConfig !== undefined && localConfig !== null ? localConfig : fileConfig;
+      return isMeaningfulValue(localConfig) ? localConfig : fileConfig;
     }
     
-    // If fileConfig is not an object or is null, return localConfig
+    // If fileConfig is not a plain object, use localConfig
     if (typeof fileConfig !== 'object' || fileConfig === null || Array.isArray(fileConfig)) {
       return localConfig;
     }
@@ -702,28 +713,17 @@ export default function OriginalEmailSender() {
       const localValue = localConfig[key];
       const fileValue = fileConfig[key];
       
-      // Skip undefined or null localStorage values - keep file defaults
-      if (localValue === undefined || localValue === null) {
+      // Skip if localStorage value is not meaningful - keep file defaults
+      if (!isMeaningfulValue(localValue)) {
         continue;
       }
       
-      // Special handling for SMTP: field-by-field merge, only non-empty strings
-      if (key === 'SMTP' && typeof localValue === 'object' && !Array.isArray(localValue)) {
-        result[key] = { ...(fileValue || {}) };
-        for (const smtpKey in localValue) {
-          const smtpValue = localValue[smtpKey];
-          // Only overwrite if localStorage has a non-empty value
-          if (smtpValue && smtpValue !== '') {
-            result[key][smtpKey] = smtpValue;
-          }
-        }
-      }
-      // For nested objects (not arrays), recursively merge
-      else if (typeof localValue === 'object' && !Array.isArray(localValue) && 
-               typeof fileValue === 'object' && !Array.isArray(fileValue) && fileValue !== null) {
+      // For nested plain objects, recursively merge
+      if (typeof localValue === 'object' && !Array.isArray(localValue) && 
+          typeof fileValue === 'object' && !Array.isArray(fileValue) && fileValue !== null) {
         result[key] = deepMergeConfigs(fileValue, localValue);
       }
-      // For arrays, primitives, or when file value isn't an object, localStorage wins
+      // For arrays, primitives, or mismatched types, localStorage wins (we already checked it's meaningful)
       else {
         result[key] = localValue;
       }
