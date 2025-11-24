@@ -781,7 +781,87 @@ export default function OriginalEmailSender() {
     setCurrentEmailStatus("");
     setCurrentSmtpInfo(null);
 
+    // Close any existing event source before starting a new one
+    if ((window as any).currentEventSource) {
+      (window as any).currentEventSource.close();
+      (window as any).currentEventSource = null;
+    }
+
     try {
+      // CRITICAL FIX: Establish SSE connection BEFORE starting email sending
+      // This ensures we don't miss any progress updates
+      const eventSource = new EventSource('/api/original/progress');
+      (window as any).currentEventSource = eventSource;
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[TIMING] SSE data received at', Date.now(), data);
+          
+          if (data.logs && data.logs.length > 0) {
+            for (const log of data.logs) {
+              if (log.type === 'complete') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setProgress(100);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                  setCurrentEmailStatus("");
+                  if (log.failedEmails && log.failedEmails.length > 0) {
+                    setFailedEmails(log.failedEmails);
+                  }
+                });
+                eventSource.close();
+                (window as any).currentEventSource = null;
+              } else if (log.type === 'error') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setStatusText(`Error: ${log.error}`);
+                });
+                eventSource.close();
+                (window as any).currentEventSource = null;
+              } else {
+                // Regular progress update
+                const progressData: EmailProgress = {
+                  recipient: log.recipient || 'Unknown',
+                  subject: log.subject || subject || 'No Subject',
+                  status: log.status || 'fail',
+                  error: log.error || undefined,
+                  timestamp: log.timestamp || new Date().toISOString(),
+                  totalSent: log.totalSent,
+                  totalFailed: log.totalFailed,
+                  totalRecipients: log.totalRecipients,
+                  smtp: log.smtp,
+                  type: 'progress'
+                };
+
+                updateProgress(progressData);
+              }
+            }
+          }
+          
+          // Close connection when sending is complete
+          if (!data.inProgress && data.inProgress !== undefined) {
+            eventSource.close();
+            (window as any).currentEventSource = null;
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.error('Error parsing SSE data:', err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        console.error('SSE connection error:', err);
+        eventSource.close();
+        (window as any).currentEventSource = null;
+        setIsLoading(false);
+        setStatusText('Connection lost. Please refresh and try again.');
+      };
+
+      // Wait a brief moment to ensure SSE connection is established
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Now prepare and send the email request
       const formData = new FormData();
 
       // Add all form data - exact match to original args
@@ -815,7 +895,9 @@ export default function OriginalEmailSender() {
         }
       }
 
-      // Start email sending
+      setStatusText("Sending emails...");
+
+      // Start email sending - SSE connection is already listening
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
@@ -829,74 +911,15 @@ export default function OriginalEmailSender() {
 
       setStatusText("Email sending started. Receiving live updates...");
 
-      // Use Server-Sent Events for real-time updates
-      const eventSource = new EventSource('/api/original/progress');
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.logs && data.logs.length > 0) {
-            for (const log of data.logs) {
-              if (log.type === 'complete') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
-                  setCurrentEmailStatus("");
-                  if (log.failedEmails && log.failedEmails.length > 0) {
-                    setFailedEmails(log.failedEmails);
-                  }
-                });
-                eventSource.close();
-              } else if (log.type === 'error') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setStatusText(`Error: ${log.error}`);
-                });
-                eventSource.close();
-              } else {
-                // Regular progress update
-                const progressData: EmailProgress = {
-                  recipient: log.recipient || 'Unknown',
-                  subject: log.subject || subject || 'No Subject',
-                  status: log.status || 'fail',
-                  error: log.error || undefined,
-                  timestamp: log.timestamp || new Date().toISOString(),
-                  totalSent: log.totalSent,
-                  totalFailed: log.totalFailed,
-                  totalRecipients: log.totalRecipients,
-                  smtp: log.smtp,
-                  type: 'progress'
-                };
-
-                updateProgress(progressData);
-              }
-            }
-          }
-          
-          // Close connection when sending is complete
-          if (!data.inProgress && data.inProgress !== undefined) {
-            eventSource.close();
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.error('Error parsing SSE data:', err);
-        }
-      };
-
-      eventSource.onerror = (err) => {
-        console.error('SSE connection error:', err);
-        eventSource.close();
-        setIsLoading(false);
-        setStatusText('Connection lost. Please refresh and try again.');
-      };
-
-      // Store event source for cleanup
-      (window as any).currentEventSource = eventSource
-
     } catch (error: any) {
       console.error('Email sending error:', error);
+      
+      // Close SSE connection on error
+      if ((window as any).currentEventSource) {
+        (window as any).currentEventSource.close();
+        (window as any).currentEventSource = null;
+      }
+      
       setIsLoading(false);
       setStatusText(`Error: ${error instanceof Error ? error.message : String(error)}`);
       setEmailLogs(prev => [...prev, {
