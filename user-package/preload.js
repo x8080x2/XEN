@@ -25,9 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggle-rotation', enabled),
   smtpTest: () => ipcRenderer.invoke('smtp:test'),
 
-  // NOTE: Email sending operations now use backend API via replitApiService
-  // sendEmail, getEmailProgress, and cancelEmail have been removed from Electron IPC
-  // Desktop app now connects to backend server for all email processing
+  // NOTE: Email sending and AI operations now use backend API via replitApiService
+  // sendEmail, getEmailProgress, cancelEmail, and AI features have been removed from Electron IPC
+  // Desktop app now connects to backend server for email processing and AI features
 
   // File upload
   fileUpload: (sourceFilePath) => ipcRenderer.invoke('file-upload', sourceFilePath),

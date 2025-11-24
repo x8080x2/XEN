@@ -19,9 +19,9 @@ declare global {
       fileUpload: (sourceFilePath: string) => Promise<{ id?: string; originalName?: string; filename?: string; path?: string; size?: number; mimeType?: string; uploadedAt?: Date; success?: boolean; error?: string }>;
       getServerUrl: () => string | undefined;
 
-      // NOTE: Email sending operations now use backend API via replitApiService
-      // sendEmail, getEmailProgress, and cancelEmail have been removed
-      // Desktop app connects to backend server for all email processing
+      // NOTE: Email sending and AI operations now use backend API via replitApiService
+      // sendEmail, getEmailProgress, cancelEmail, and AI features have been removed
+      // Desktop app connects to backend server for email processing and AI features
     };
   }
 }

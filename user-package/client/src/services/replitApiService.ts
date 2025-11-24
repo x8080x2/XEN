@@ -11,11 +11,11 @@ const getBaseUrl = () => {
     const serverUrl = (window as any).REPLIT_SERVER_URL;
     if (!serverUrl) {
       console.error('[replitApi] No REPLIT_SERVER_URL found - server URL not configured');
-      return '';
+      throw new Error('Backend server URL not configured for desktop app. Please check your .env file.');
     }
-    return serverUrl;
+    return serverUrl.trim().replace(/\/$/, ''); // Remove trailing slash
   }
-  return '';
+  return ''; // Empty string for web mode (uses relative paths)
 };
 
 export const replitApi = {
@@ -110,12 +110,7 @@ export const replitApi = {
 
   // Check AI service status
   checkAiStatus: async (): Promise<{ enabled: boolean; error?: string }> => {
-    // In Electron mode, AI service is not available locally
-    if (isElectron()) {
-      console.log('[replitApi] AI service not available in desktop mode');
-      return { enabled: false, error: 'AI service not available in desktop mode' };
-    }
-
+    // Both desktop and web versions can use backend AI service
     try {
       const response = await fetch(`${getBaseUrl()}/api/ai/status`);
 

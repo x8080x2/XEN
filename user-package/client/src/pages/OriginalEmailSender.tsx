@@ -11,6 +11,23 @@ import { SMTPManager } from "@/components/SMTPManager";
 import { useToast } from "@/hooks/use-toast";
 import { replitApiService } from "@/services/replitApiService";
 
+// Helper function to construct API URLs for both desktop and web versions
+const getApiUrl = (path: string): string => {
+  // Desktop mode: use configured backend server URL
+  if (typeof window !== 'undefined' && window.electronAPI?.getServerUrl) {
+    const serverUrl = window.electronAPI.getServerUrl();
+    if (!serverUrl) {
+      console.error('[getApiUrl] No REPLIT_SERVER_URL configured for desktop mode');
+      throw new Error('Backend server URL not configured. Please check your .env file.');
+    }
+    // Remove leading slash from path and construct full URL
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${serverUrl}/${cleanPath}`;
+  }
+  // Web mode: use relative path (same origin)
+  return path;
+};
+
 interface EmailProgress {
   recipient: string;
   subject: string;
@@ -376,19 +393,14 @@ export default function OriginalEmailSender() {
 
     const initializeAI = async () => {
       try {
-        // Skip AI auto-initialization in desktop Electron version
-        if (window.electronAPI) {
-          console.log('[Desktop] Skipping AI auto-initialization - not available in desktop version');
-          return;
-        }
-
-        const configResponse = await fetch('/api/config/load');
+        // Desktop version can also use backend AI service
+        const configResponse = await fetch(getApiUrl('/api/config/load'));
         const configData = await configResponse.json();
 
         if (!mounted) return;
 
         if (configData.success && configData.config?.GOOGLE_AI_KEY) {
-          const aiResponse = await fetch('/api/ai/initialize', {
+          const aiResponse = await fetch(getApiUrl('/api/ai/initialize'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ apiKey: configData.config.GOOGLE_AI_KEY })
@@ -418,14 +430,8 @@ export default function OriginalEmailSender() {
 
   const checkAIStatus = async () => {
     try {
-      // Skip AI features in desktop Electron version (requires server)
-      if (window.electronAPI) {
-        console.log('[Desktop] AI features not available in desktop version');
-        setAiStatus({ initialized: false, hasApiKey: false, provider: '' });
-        return;
-      }
-      
-      const response = await fetch('/api/ai/status');
+      // Both desktop and web versions can use backend AI service
+      const response = await fetch(getApiUrl('/api/ai/status'));
       const data = await response.json();
       setAiStatus(data);
       // Don't automatically enable AI, let user control it with checkbox
@@ -435,17 +441,12 @@ export default function OriginalEmailSender() {
   };
 
   const initializeAI = async () => {
-    // Skip AI features in desktop Electron version (requires server)
-    if (window.electronAPI) {
-      setStatusText('AI features are not available in desktop version');
-      return;
-    }
-
+    // Both desktop and web versions can use backend AI service
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
       try {
-        // Call backend to deinitialize AI service (web version only)
-        const response = await fetch('/api/ai/deinitialize', {
+        // Call backend to deinitialize AI service
+        const response = await fetch(getApiUrl('/api/ai/deinitialize'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -459,8 +460,8 @@ export default function OriginalEmailSender() {
             localStorage.removeItem('google_ai_key');
           }
 
-          // Clear from config file (web version only)
-          await fetch('/api/config/save', {
+          // Clear from config file
+          await fetch(getApiUrl('/api/config/save'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ GOOGLE_AI_KEY: '' })
@@ -474,14 +475,14 @@ export default function OriginalEmailSender() {
       return;
     }
 
-    // If AI is not initialized, proceed with initialization (web version only)
+    // If AI is not initialized, proceed with initialization
     if (!aiApiKey) {
       setStatusText('Please enter Google AI API key');
       return;
     }
 
     try {
-      const response = await fetch('/api/ai/initialize', {
+      const response = await fetch(getApiUrl('/api/ai/initialize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: aiApiKey })
@@ -494,8 +495,8 @@ export default function OriginalEmailSender() {
           localStorage.setItem('google_ai_key', aiApiKey);
         }
 
-        // Save to setup.ini (web version only)
-        await fetch('/api/config/save', {
+        // Save to setup.ini
+        await fetch(getApiUrl('/api/config/save'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
