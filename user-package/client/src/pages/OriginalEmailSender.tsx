@@ -1060,135 +1060,7 @@ export default function OriginalEmailSender() {
 
         (window as any).pollingInterval = setInterval(pollProgress, 300);
         pollProgress();
-      }rName
-      };
-
-      // Start email sending via Electron
-      let result;
-      if (window.electronAPI?.sendEmail) {
-        result = await window.electronAPI.sendEmail(emailData);
-      } else {
-        // Fallback to server API if Electron API not available
-        const formData = new FormData();
-        Object.entries(emailData).forEach(([key, value]) => {
-          if (key === 'recipients') {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, String(value));
-          }
-        });
-
-        if (selectedFiles) {
-          for (let i = 0; i < selectedFiles.length; i++) {
-            formData.append('attachments', selectedFiles[i]);
-          }
-        }
-
-        const response = await fetch('/api/original/sendMail', {
-          method: 'POST',
-          body: formData,
-        });
-        result = await response.json();
       }
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to start email sending');
-      }
-
-      setStatusText("Email sending started. Receiving live updates...");
-
-      // Start polling for progress updates
-      let lastLogCount = 0;
-      
-      const pollProgress = async () => {
-        try {
-          let data;
-          if (window.electronAPI?.getEmailProgress) {
-            data = await window.electronAPI.getEmailProgress(lastLogCount);
-          } else {
-            const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
-              cache: 'no-store'
-            });
-            
-            if (!progressRes.ok) {
-              console.error('Progress request failed:', progressRes.status);
-              return;
-            }
-            
-            data = await progressRes.json();
-          }
-          
-          if (data.logs && data.logs.length > 0) {
-            for (const log of data.logs) {
-              if (log.type === 'complete') {
-                setIsLoading(false);
-                setProgress(100);
-                setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
-                setCurrentEmailStatus("");
-                if (log.failedEmails && log.failedEmails.length > 0) {
-                  setFailedEmails(log.failedEmails);
-                }
-                
-                // Stop polling
-                if ((window as any).pollingInterval) {
-                  clearInterval((window as any).pollingInterval);
-                  (window as any).pollingInterval = null;
-                }
-              } else if (log.type === 'error') {
-                setIsLoading(false);
-                setStatusText(`Error: ${log.error}`);
-                
-                // Stop polling
-                if ((window as any).pollingInterval) {
-                  clearInterval((window as any).pollingInterval);
-                  (window as any).pollingInterval = null;
-                }
-              } else {
-                // Regular progress update
-                const progressData: EmailProgress = {
-                  recipient: log.recipient || 'Unknown',
-                  subject: log.subject || subject || 'No Subject',
-                  status: log.status || 'fail',
-                  error: log.error || undefined,
-                  timestamp: log.timestamp || new Date().toISOString(),
-                  totalSent: log.totalSent,
-                  totalFailed: log.totalFailed,
-                  totalRecipients: log.totalRecipients,
-                  smtp: log.smtp,
-                  type: 'progress'
-                };
-
-                updateProgress(progressData);
-              }
-            }
-            
-            lastLogCount = data.total;
-          }
-          
-          // Stop polling when sending is complete
-          if (!data.inProgress) {
-            if ((window as any).pollingInterval) {
-              clearInterval((window as any).pollingInterval);
-              (window as any).pollingInterval = null;
-            }
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.error('Error polling progress:', err);
-          console.error('Error details:', {
-            message: err instanceof Error ? err.message : 'Unknown error',
-            stack: err instanceof Error ? err.stack : undefined,
-            type: typeof err,
-            err
-          });
-        }
-      };
-
-      // Poll every 300ms for smooth updates
-      (window as any).pollingInterval = setInterval(pollProgress, 300);
-      
-      // Also poll immediately
-      pollProgress();
 
     } catch (error: any) {
       console.error('Email sending error:', error);
@@ -1230,8 +1102,6 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
-    }
-  };ror);
     }
   };
 
