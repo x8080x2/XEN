@@ -262,7 +262,7 @@ class ElectronReplitApiService {
       : emailData.recipients.map((r: any) => (r.email || r).trim()).join('\n')
     );
     formData.append('subject', emailData.subject || '');
-    formData.append('htmlContent', emailData.htmlContent || emailData.html || '');
+    formData.append('html', emailData.htmlContent || emailData.html || '');
     formData.append('senderName', emailData.smtpConfig?.fromName || emailData.smtpConfig?.senderName || '');
     formData.append('senderEmail', emailData.smtpConfig?.fromEmail || emailData.smtpConfig?.user || '');
     formData.append('replyTo', emailData.smtpConfig?.replyTo || '');
