@@ -264,12 +264,45 @@ class ElectronReplitApiService {
     formData.append('userSmtpConfigs', JSON.stringify(smtpConfigs));
     formData.append('smtpRotationEnabled', 'false'); // Single SMTP for now
 
-    // Add settings if provided
+    // Add settings if provided (excluding attachments which are handled separately)
     if (emailData.settings) {
       Object.keys(emailData.settings).forEach(key => {
+        // Skip attachments - they'll be added as binary files below
+        if (key === 'attachments') return;
+        
         const value = emailData.settings[key];
         formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
       });
+    }
+
+    // Add attachments as binary files (not JSON)
+    // Backend expects them as multipart 'attachments' fields
+    if (emailData.settings?.attachments && Array.isArray(emailData.settings.attachments)) {
+      for (const attachment of emailData.settings.attachments) {
+        if (attachment.content && attachment.filename) {
+          // Convert base64 back to Blob if needed
+          if (typeof attachment.content === 'string' && attachment.encoding === 'base64') {
+            try {
+              // Decode base64 to binary
+              const binaryString = atob(attachment.content);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
+              const blob = new Blob([bytes], { type: attachment.contentType || 'application/octet-stream' });
+              const file = new File([blob], attachment.filename, { type: attachment.contentType });
+              formData.append('attachments', file);
+              console.log('[ReplitAPI] Added attachment as File:', attachment.filename);
+            } catch (e) {
+              console.error('[ReplitAPI] Failed to decode base64 attachment:', attachment.filename, e);
+            }
+          } else if (attachment.content instanceof Blob || attachment.content instanceof File) {
+            // Already a Blob/File, append directly
+            formData.append('attachments', attachment.content, attachment.filename);
+            console.log('[ReplitAPI] Added attachment as Blob/File:', attachment.filename);
+          }
+        }
+      }
     }
 
     console.log('[ReplitAPI] Sending email job with config:', {
@@ -277,7 +310,8 @@ class ElectronReplitApiService {
         ? emailData.recipients.split('\n').length 
         : emailData.recipients.length,
       smtpHost: emailData.smtpConfig?.host,
-      hasSmtpConfigs: smtpConfigs.length > 0
+      hasSmtpConfigs: smtpConfigs.length > 0,
+      attachmentCount: emailData.settings?.attachments?.length || 0
     });
 
     const response = await fetch(this.getApiEndpoint('api/original/sendMail'), {

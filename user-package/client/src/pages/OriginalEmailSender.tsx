@@ -1218,15 +1218,48 @@ export default function OriginalEmailSender() {
       }
       
       setIsLoading(false);
-      setStatusText(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      
+      // Provide clear error messages for backend connectivity issues
+      let errorMessage = '';
+      const isElectron = window.electronAPI !== undefined;
+      
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        // Network/fetch error - backend is unreachable
+        if (isElectron) {
+          const serverUrl = (window as any).REPLIT_SERVER_URL || 'not configured';
+          errorMessage = `Cannot connect to backend server (${serverUrl}). Please check:\n` +
+                        `1. Server URL is correct in .env file\n` +
+                        `2. Backend server is running\n` +
+                        `3. Your internet connection`;
+        } else {
+          errorMessage = 'Cannot connect to backend server. Please check if the server is running.';
+        }
+      } else if (error.message && error.message.includes('Failed to start email sending')) {
+        // Backend rejected the request
+        errorMessage = `Backend error: ${error.message}`;
+      } else {
+        // Generic error
+        errorMessage = error instanceof Error ? error.message : String(error);
+      }
+      
+      setStatusText(`Error: ${errorMessage}`);
       setEmailLogs(prev => [...prev, {
         type: 'error',
-        message: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+        message: `❌ Error: ${errorMessage}`,
         timestamp: new Date().toISOString(),
         recipient: "N/A",
         subject: "N/A",
         status: "fail"
       }]);
+      
+      // Show toast notification for desktop users
+      if (isElectron) {
+        toast({
+          title: "Email Sending Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     }
   };
 
