@@ -586,14 +586,14 @@ export default function OriginalEmailSender() {
 
   const checkSmtpStatus = async () => {
     if (smtpCheckingRef.current) return;
-    
+
     smtpCheckingRef.current = true;
     setSmtpChecking(true);
     try {
       const response = await fetch("/api/smtp/test");
       const data = await response.json();
       setSmtpOnline(data.online);
-      
+
       if (!data.online) {
         console.log('[SMTP Status] OFFLINE:', data.error);
       } else {
@@ -936,7 +936,7 @@ export default function OriginalEmailSender() {
         <div className="w-36 bg-[#131316] border-r border-[#26262b] min-h-screen">
           <div className="p-3">
             <div className="flex flex-col items-center mb-4">
-             
+
 
               {/* Decorative Elements */}
 
@@ -1606,7 +1606,7 @@ export default function OriginalEmailSender() {
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
                     🔄 HTML Convert
-                    {(advancedSettings.zipUse || advancedSettings.htmlImgBody || advancedSettings.qrcode || advancedSettings.randomMetadata || advancedSettings.calendarMode || advancedSettings.htmlConvert) && 
+                    {(advancedSettings.zipUse || advancedSettings.htmlImgBody || advancedSettings.qrcode || advancedSettings.randomMetadata || advancedSettings.calendarMode || advancedSettings.htmlConvert) &&
                       <span className="text-xs text-green-500">●</span>
                     }
                   </h3>
@@ -1694,7 +1694,7 @@ export default function OriginalEmailSender() {
                 </div>
               </details>
               </div>
-            </div>         
+            </div>
         </div>
           </div>
 
