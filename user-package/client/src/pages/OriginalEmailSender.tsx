@@ -1093,121 +1093,13 @@ export default function OriginalEmailSender() {
         pollProgress();
 
       } else {
-        // Web version - use fetch to Express server directly
-        const formData = new FormData();
-
-        formData.append('senderEmail', senderEmail);
-        formData.append('senderName', senderName || '');
-        formData.append('subject', subject);
-        formData.append('html', mainHtml);
-        formData.append('attachmentHtml', attachmentHtml || '');
-        formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
-
-        formData.append('smtpHost', smtpSettings.host);
-        formData.append('smtpPort', smtpSettings.port);
-        formData.append('smtpUser', smtpSettings.user);
-        formData.append('smtpPass', smtpSettings.pass);
-
-        Object.entries(advancedSettings).forEach(([key, value]) => {
-          formData.append(key, String(value));
-        });
-
-        formData.append('useAIEnabled', String(aiEnabled));
-        formData.append('useAISubject', String(aiEnabled && useAISubject));
-        formData.append('useAISenderName', String(aiEnabled && useAISenderName));
-
-        if (selectedFiles) {
-          for (let i = 0; i < selectedFiles.length; i++) {
-            formData.append('attachments', selectedFiles[i]);
-          }
-        }
-
-        const response = await fetch('/api/original/sendMail', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const result = await response.json();
-
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to start email sending');
-        }
-
-        setStatusText("Email sending started. Receiving live updates...");
-
-        let lastLogCount = 0;
-        
-        const pollProgress = async () => {
-          try {
-            const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
-              cache: 'no-store'
-            });
-            
-            if (!progressRes.ok) {
-              console.error('Progress request failed:', progressRes.status);
-              return;
-            }
-            
-            const data = await progressRes.json();
-            
-            if (data.logs && data.logs.length > 0) {
-              for (const log of data.logs) {
-                if (log.type === 'complete') {
-                  setIsLoading(false);
-                  setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
-                  setCurrentEmailStatus("");
-                  if (log.failedEmails && log.failedEmails.length > 0) {
-                    setFailedEmails(log.failedEmails);
-                  }
-                  
-                  if ((window as any).pollingInterval) {
-                    clearInterval((window as any).pollingInterval);
-                    (window as any).pollingInterval = null;
-                  }
-                } else if (log.type === 'error') {
-                  setIsLoading(false);
-                  setStatusText(`Error: ${log.error}`);
-                  
-                  if ((window as any).pollingInterval) {
-                    clearInterval((window as any).pollingInterval);
-                    (window as any).pollingInterval = null;
-                  }
-                } else {
-                  const progressData: EmailProgress = {
-                    recipient: log.recipient || 'Unknown',
-                    subject: log.subject || subject || 'No Subject',
-                    status: log.status || 'fail',
-                    error: log.error || undefined,
-                    timestamp: log.timestamp || new Date().toISOString(),
-                    totalSent: log.totalSent,
-                    totalFailed: log.totalFailed,
-                    totalRecipients: log.totalRecipients,
-                    smtp: log.smtp,
-                    type: 'progress'
-                  };
-
-                  updateProgress(progressData);
-                }
-              }
-              
-              lastLogCount = data.total;
-            }
-            
-            if (!data.inProgress) {
-              if ((window as any).pollingInterval) {
-                clearInterval((window as any).pollingInterval);
-                (window as any).pollingInterval = null;
-              }
-              setIsLoading(false);
-            }
-          } catch (err) {
-            console.error('Error polling progress:', err);
-          }
-        };
-
-        (window as any).pollingInterval = setInterval(pollProgress, 300);
-        pollProgress();
+        // ⛔ STRICT REQUIREMENT: Desktop version MUST run in Electron environment
+        // No web fallback allowed - must connect to remote backend server
+        throw new Error(
+          'This desktop application must be run in Electron environment. ' +
+          'It requires connection to a remote backend server (configured via REPLIT_SERVER_URL in .env file). ' +
+          'Local email sending is not supported in desktop mode.'
+        );
       }
 
     } catch (error: any) {
@@ -1268,16 +1160,18 @@ export default function OriginalEmailSender() {
     try {
       const isElectron = window.electronAPI !== undefined;
       
-      if (isElectron) {
-        // Desktop: Use backend API to cancel sending
-        await replitApiService.cancelSending();
-      } else {
-        // Web: Use local backend endpoint
-        await fetch('/api/original/cancel', { method: 'POST' });
+      if (!isElectron) {
+        throw new Error(
+          'Desktop application must be run in Electron environment to cancel email sending. ' +
+          'This requires connection to the remote backend server.'
+        );
       }
       
+      // STRICT: Cancel ONLY via remote backend API
+      await replitApiService.cancelSending();
+      
       setIsLoading(false);
-      setStatusText("Email sending cancelled");
+      setStatusText("Email sending cancelled on remote backend");
       setCurrentEmailStatus("Campaign cancelled");
       setProgress(0);
       setProgressDetails("");
@@ -1288,6 +1182,7 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
+      setStatusText(`Failed to cancel: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

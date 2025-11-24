@@ -4,6 +4,21 @@ This is a full-stack email sender application with both web and desktop (Electro
 
 # Recent Changes
 
+**November 24, 2025 - CRITICAL: Enforced Strict Backend-Only Email Sending in Desktop Version**
+- **Removed ALL web fallback code from desktop email sending operations**
+- Desktop version now **STRICTLY REQUIRES** Electron environment and remote backend connection
+- Removed 116 lines of duplicate email sending logic (lines 1095-1211 in user-package/client/src/pages/OriginalEmailSender.tsx)
+- Updated `handleSendEmails()` to throw error if not running in Electron mode
+- Updated `cancelSending()` to throw error if not running in Electron mode
+- Desktop version now **CANNOT** send emails locally - must connect to remote backend server
+- Added clear error messages explaining REPLIT_SERVER_URL configuration requirement
+- **Impact**: Desktop app will fail immediately with helpful error if backend server is not configured
+- **Behavior**:
+  - Desktop MUST have: Electron API + REPLIT_SERVER_URL configured
+  - Desktop MUST connect to: Remote backend server for ALL email sending
+  - Desktop CANNOT: Send emails via local backend or web mode
+  - Web version: Unchanged, still sends via local backend
+
 **November 24, 2025 - Desktop AI Feature Parity**
 - Enabled AI features in desktop version to execute identically to web version
 - Added `getApiUrl()` helper function that constructs proper URLs for both platforms:
