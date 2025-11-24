@@ -923,7 +923,7 @@ export default function OriginalEmailSender() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
       {/* Window Controls */}
-      <div className="flex justify-end items-center h-8 bg-[#131316] border-b border-[#26262b] px-4">
+      <div className="flex justify-end items-center h-8  border-b border-[#26262b] px-4">
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-[#3f3f46] hover:bg-[#52525b] cursor-pointer"></div>
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
@@ -932,7 +932,7 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-36 bg-[#131316] border-r border-[#26262b] min-h-screen">
+        <div className="w-36  border-r border-[#26262b] min-h-screen">
           <div className="p-3">
             <div className="flex flex-col items-center mb-4">
 
