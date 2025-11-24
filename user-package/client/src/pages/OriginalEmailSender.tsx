@@ -375,6 +375,12 @@ export default function OriginalEmailSender() {
 
     const initializeAI = async () => {
       try {
+        // Skip AI auto-initialization in desktop Electron version
+        if (window.electronAPI) {
+          console.log('[Desktop] Skipping AI auto-initialization - not available in desktop version');
+          return;
+        }
+
         const configResponse = await fetch('/api/config/load');
         const configData = await configResponse.json();
 
@@ -411,6 +417,13 @@ export default function OriginalEmailSender() {
 
   const checkAIStatus = async () => {
     try {
+      // Skip AI features in desktop Electron version (requires server)
+      if (window.electronAPI) {
+        console.log('[Desktop] AI features not available in desktop version');
+        setAiStatus({ initialized: false, hasApiKey: false, provider: null });
+        return;
+      }
+      
       const response = await fetch('/api/ai/status');
       const data = await response.json();
       setAiStatus(data);
@@ -421,6 +434,12 @@ export default function OriginalEmailSender() {
   };
 
   const initializeAI = async () => {
+    // Skip AI features in desktop Electron version (requires server)
+    if (window.electronAPI) {
+      setStatusText('AI features are not available in desktop version');
+      return;
+    }
+
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
       try {
@@ -513,12 +532,18 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.smtpToggleRotation) {
+        data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
+      } else {
+        const response = await fetch("/api/smtp/toggle-rotation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -540,12 +565,18 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.smtpAdd) {
+        data = await window.electronAPI.smtpAdd(newSmtp);
+      } else {
+        const response = await fetch("/api/smtp/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSmtp)
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -570,8 +601,14 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.smtpDelete) {
+        data = await window.electronAPI.smtpDelete(smtpId);
+      } else {
+        const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -587,12 +624,17 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("/api/smtp/rotate", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      let data;
+      if (window.electronAPI?.smtpRotate) {
+        data = await window.electronAPI.smtpRotate();
+      } else {
+        const response = await fetch("/api/smtp/rotate", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        data = await response.json();
+      }
 
-      const data = await response.json();
       if (data.success && data.currentSmtp) {
         setSmtpData(prev => ({
           ...prev,
@@ -623,8 +665,14 @@ export default function OriginalEmailSender() {
     smtpCheckingRef.current = true;
     setSmtpChecking(true);
     try {
-      const response = await fetch("/api/smtp/test");
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.smtpTest) {
+        data = await window.electronAPI.smtpTest();
+      } else {
+        const response = await fetch("/api/smtp/test");
+        data = await response.json();
+      }
+      
       setSmtpOnline(data.online);
 
       if (!data.online) {
@@ -773,15 +821,8 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
+        // Use consolidated loadTemplateContent function which has Electron support
+        bodyHtml = await loadTemplateContent(`files/${selectedTemplate}`);
       } catch (error) {
         console.error('Failed to load template:', error);
         bodyHtml = '';
