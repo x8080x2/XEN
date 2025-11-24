@@ -208,6 +208,9 @@ export function setupOriginalEmailRoutes(app: Express) {
           smtp: progress.smtp || null
         });
       }).then((result) => {
+        // Mark sending as complete FIRST
+        sendingInProgress = false;
+        
         // Add completion log
         progressLogs.push({
           type: 'complete',
@@ -218,14 +221,15 @@ export function setupOriginalEmailRoutes(app: Express) {
           details: result.details,
           failedEmails: result.failedEmails || []
         });
-        sendingInProgress = false;
       }).catch((error: any) => {
+        // Mark sending as complete FIRST
+        sendingInProgress = false;
+        
         // Add error log
         progressLogs.push({
           type: 'error',
           error: error.message || 'Unknown error occurred'
         });
-        sendingInProgress = false;
       });
 
       // Return immediate response for polling mode
