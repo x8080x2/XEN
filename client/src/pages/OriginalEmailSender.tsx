@@ -827,17 +827,17 @@ export default function OriginalEmailSender() {
         throw new Error(result.error || 'Failed to start email sending');
       }
 
-      setStatusText("Email sending started. Checking for updates...");
+      setStatusText("Email sending started. Receiving live updates...");
 
-      // Poll for progress updates
-      let logIndex = 0;
-      const pollInterval = setInterval(async () => {
+      // Use Server-Sent Events for real-time updates
+      const eventSource = new EventSource('/api/original/progress');
+      
+      eventSource.onmessage = (event) => {
         try {
-          const progressResponse = await fetch(`/api/original/progress?since=${logIndex}`);
-          const progressData = await progressResponse.json();
-
-          if (progressData.logs && progressData.logs.length > 0) {
-            for (const log of progressData.logs) {
+          const data = JSON.parse(event.data);
+          
+          if (data.logs && data.logs.length > 0) {
+            for (const log of data.logs) {
               if (log.type === 'complete') {
                 flushSync(() => {
                   setIsLoading(false);
@@ -848,13 +848,13 @@ export default function OriginalEmailSender() {
                     setFailedEmails(log.failedEmails);
                   }
                 });
-                clearInterval(pollInterval);
+                eventSource.close();
               } else if (log.type === 'error') {
                 flushSync(() => {
                   setIsLoading(false);
                   setStatusText(`Error: ${log.error}`);
                 });
-                clearInterval(pollInterval);
+                eventSource.close();
               } else {
                 // Regular progress update
                 const progressData: EmailProgress = {
@@ -873,18 +873,27 @@ export default function OriginalEmailSender() {
                 updateProgress(progressData);
               }
             }
-            logIndex = progressData.total;
           }
-
-          // Stop polling if not in progress (completion detected)
-          if (!progressData.inProgress) {
-            clearInterval(pollInterval);
+          
+          // Close connection when sending is complete
+          if (!data.inProgress && data.inProgress !== undefined) {
+            eventSource.close();
             setIsLoading(false);
           }
         } catch (err) {
-          console.error('Error polling progress:', err);
+          console.error('Error parsing SSE data:', err);
         }
-      }, 500); // Poll every 500ms
+      };
+
+      eventSource.onerror = (err) => {
+        console.error('SSE connection error:', err);
+        eventSource.close();
+        setIsLoading(false);
+        setStatusText('Connection lost. Please refresh and try again.');
+      };
+
+      // Store event source for cleanup
+      (window as any).currentEventSource = eventSource
 
     } catch (error: any) {
       console.error('Email sending error:', error);

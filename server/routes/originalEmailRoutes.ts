@@ -193,10 +193,25 @@ export function setupOriginalEmailRoutes(app: Express) {
       progressLogs.length = 0;
       sendingInProgress = true;
 
+      // Helper function to broadcast to SSE clients
+      const broadcastProgress = (data: any) => {
+        const clients = (global as any).sseClients as Map<number, any>;
+        if (clients && clients.size > 0) {
+          const message = `data: ${JSON.stringify(data)}\n\n`;
+          clients.forEach((clientRes) => {
+            try {
+              clientRes.write(message);
+            } catch (err) {
+              // Client disconnected, will be cleaned up
+            }
+          });
+        }
+      };
+
       // Start sending emails with progress tracking
       advancedEmailService.sendMail(args, (progress) => {
         // Store progress in memory for polling
-        progressLogs.push({
+        const progressData = {
           recipient: progress.recipient || 'Unknown',
           subject: progress.subject || args.subject || 'No Subject',
           status: progress.status,
@@ -206,13 +221,22 @@ export function setupOriginalEmailRoutes(app: Express) {
           totalFailed: progress.totalFailed,
           totalRecipients: progress.totalRecipients,
           smtp: progress.smtp || null
+        };
+        
+        progressLogs.push(progressData);
+        
+        // Broadcast to SSE clients immediately
+        broadcastProgress({
+          logs: [progressData],
+          total: progressLogs.length,
+          inProgress: sendingInProgress
         });
       }).then((result) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
         
         // Add completion log
-        progressLogs.push({
+        const completionLog = {
           type: 'complete',
           success: result.success,
           sent: result.sent,
@@ -220,15 +244,33 @@ export function setupOriginalEmailRoutes(app: Express) {
           error: result.error,
           details: result.details,
           failedEmails: result.failedEmails || []
+        };
+        
+        progressLogs.push(completionLog);
+        
+        // Broadcast completion to SSE clients
+        broadcastProgress({
+          logs: [completionLog],
+          total: progressLogs.length,
+          inProgress: false
         });
       }).catch((error: any) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
         
         // Add error log
-        progressLogs.push({
+        const errorLog = {
           type: 'error',
           error: error.message || 'Unknown error occurred'
+        };
+        
+        progressLogs.push(errorLog);
+        
+        // Broadcast error to SSE clients
+        broadcastProgress({
+          logs: [errorLog],
+          total: progressLogs.length,
+          inProgress: false
         });
       });
 
@@ -245,16 +287,46 @@ export function setupOriginalEmailRoutes(app: Express) {
     }
   });
 
-  // New endpoint to poll for progress
+  // Server-Sent Events endpoint for real-time progress
   app.get("/api/original/progress", (req, res) => {
-    const since = parseInt(req.query.since as string) || 0;
-    const newLogs = progressLogs.slice(since);
+    // Support both SSE and polling for backward compatibility
+    const useSSE = req.headers.accept?.includes('text/event-stream');
     
-    res.json({
-      logs: newLogs,
-      total: progressLogs.length,
-      inProgress: sendingInProgress
-    });
+    if (useSSE) {
+      // Set up SSE connection
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.flushHeaders();
+
+      // Send initial state
+      res.write(`data: ${JSON.stringify({
+        logs: progressLogs,
+        total: progressLogs.length,
+        inProgress: sendingInProgress
+      })}\n\n`);
+
+      // Store the response object to send updates
+      const clientId = Date.now();
+      const clients = (global as any).sseClients || new Map();
+      (global as any).sseClients = clients;
+      clients.set(clientId, res);
+
+      // Clean up on disconnect
+      req.on('close', () => {
+        clients.delete(clientId);
+      });
+    } else {
+      // Polling mode (backward compatible)
+      const since = parseInt(req.query.since as string) || 0;
+      const newLogs = progressLogs.slice(since);
+      
+      res.json({
+        logs: newLogs,
+        total: progressLogs.length,
+        inProgress: sendingInProgress
+      });
+    }
   });
 
   // Cancel send endpoint
