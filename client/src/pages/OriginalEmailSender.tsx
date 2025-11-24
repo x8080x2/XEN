@@ -9,6 +9,27 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 
+// Platform detection helper - checks for Electron environment
+const isDesktopMode = (): boolean => {
+  return typeof window !== 'undefined' && !!window.electronAPI;
+};
+
+// Type definition for Electron API (matches user-package/client/src/types/electron.d.ts)
+declare global {
+  interface Window {
+    electronAPI?: {
+      readFile: (filepath: string) => Promise<string>;
+      loadConfig: () => Promise<any>;
+      loadLeads: () => Promise<any>;
+      smtpList: () => Promise<any>;
+      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean; currentSmtp?: any }>;
+      smtpAdd: (smtpData: any) => Promise<{ success: boolean; smtpId?: string; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
+      smtpDelete: (smtpId: string) => Promise<{ success: boolean; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
+      smtpRotate: () => Promise<{ success: boolean; currentSmtp?: any; rotationEnabled?: boolean; error?: string }>;
+    };
+  }
+}
+
 interface EmailProgress {
   recipient: string;
   subject: string;
@@ -266,16 +287,23 @@ export default function OriginalEmailSender() {
     }
   }, [currentEmailStatus]);
 
-  // Consolidated template loading function
+  // Consolidated template loading function - supports both web and desktop modes
   const loadTemplateContent = useCallback(async (templatePath: string): Promise<string> => {
     try {
-      const response = await fetch('/api/original/readFile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filepath: templatePath })
-      });
-      const data = await response.json();
-      return data.success ? (data.content || '') : '';
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC to read local file
+        const content = await window.electronAPI!.readFile(templatePath);
+        return content || '';
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filepath: templatePath })
+        });
+        const data = await response.json();
+        return data.success ? (data.content || '') : '';
+      }
     } catch (error) {
       console.error('Failed to load template:', error);
       return '';
@@ -465,8 +493,16 @@ export default function OriginalEmailSender() {
   // SMTP Management Functions
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC to read local smtp.ini
+        data = await window.electronAPI!.smtpList();
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch("/api/smtp/list");
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(data);
         checkSmtpStatus();
@@ -478,12 +514,20 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC
+        data = await window.electronAPI!.smtpToggleRotation(!smtpData.rotationEnabled);
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch("/api/smtp/toggle-rotation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -505,12 +549,20 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC
+        data = await window.electronAPI!.smtpAdd(newSmtp);
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch("/api/smtp/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSmtp)
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -535,8 +587,16 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC
+        data = await window.electronAPI!.smtpDelete(smtpId);
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -552,12 +612,19 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("/api/smtp/rotate", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC
+        data = await window.electronAPI!.smtpRotate();
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch("/api/smtp/rotate", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        data = await response.json();
+      }
+      
       if (data.success && data.currentSmtp) {
         setSmtpData(prev => ({
           ...prev,
@@ -572,7 +639,7 @@ export default function OriginalEmailSender() {
       } else {
         throw new Error(data.error || 'Failed to rotate SMTP');
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('SMTP rotation error:', error);
       toast({
         title: "Error",
@@ -606,12 +673,19 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Load configuration from files - exact clone from main.js
+  // Load configuration from files - supports both web and desktop modes
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      const response = await fetch('/api/config/load');
-      const data = await response.json();
+      let data;
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC to read local config
+        data = await window.electronAPI!.loadConfig();
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch('/api/config/load');
+        data = await response.json();
+      }
 
       if (data.success && data.config) {
         const config = data.config;
@@ -674,10 +748,18 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
+        // Auto-load leads from files/leads.txt - supports both web and desktop modes
         try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
+          let leadsData;
+          if (isDesktopMode()) {
+            // Desktop mode: use Electron IPC to read local leads.txt
+            leadsData = await window.electronAPI!.loadLeads();
+          } else {
+            // Web mode: fetch from server
+            const leadsResponse = await fetch('/api/config/loadLeads');
+            leadsData = await leadsResponse.json();
+          }
+          
           if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
             setRecipients(leadsData.leads);
           }
@@ -727,15 +809,8 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-        });
-        const data = await response.json();
-        bodyHtml = data.success ? (data.content || '') : '';
+        // Use loadTemplateContent which has platform detection for both web and desktop
+        bodyHtml = await loadTemplateContent(`files/${selectedTemplate}`);
       } catch (error) {
         console.error('Failed to load template:', error);
         bodyHtml = '';
@@ -796,6 +871,11 @@ export default function OriginalEmailSender() {
       formData.append('smtpPort', smtpSettings.port);
       formData.append('smtpUser', smtpSettings.user);
       formData.append('smtpPass', smtpSettings.pass);
+
+      // Desktop mode: include SMTP configs so backend knows this is a desktop request
+      if (isDesktopMode() && smtpData.smtpConfigs.length > 0) {
+        formData.append('userSmtpConfigs', JSON.stringify(smtpData.smtpConfigs));
+      }
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
