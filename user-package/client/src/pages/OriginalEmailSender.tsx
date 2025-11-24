@@ -283,51 +283,25 @@ export default function OriginalEmailSender() {
 
   const loadTemplates = async () => {
     try {
-      // Try Electron API first for desktop
-      if (window.electronAPI?.listFiles) {
-        const files = await window.electronAPI.listFiles('files');
-        const htmlFiles = files.filter((f: string) => f.endsWith('.html'));
-        setTemplateFiles(htmlFiles);
-        console.log('[Templates] Loaded from Electron:', htmlFiles);
-        return;
-      }
-
-      // Fallback to web API
       const response = await fetch('/api/original/listFiles');
       const data = await response.json();
       if (data.files) {
         setTemplateFiles(data.files);
-        console.log('[Templates] Loaded from API:', data.files);
       }
     } catch (error) {
       console.error('Failed to load templates:', error);
-      setTemplateFiles([]);
     }
   };
 
   const loadLogoFiles = async () => {
     try {
-      // Try Electron API first for desktop
-      if (window.electronAPI?.listFiles) {
-        const files = await window.electronAPI.listFiles('files/logo');
-        const imageFiles = files.filter((f: string) => 
-          /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f)
-        );
-        setLogoFiles(imageFiles);
-        console.log('[Logo Files] Loaded from Electron:', imageFiles);
-        return;
-      }
-
-      // Fallback to web API
       const response = await fetch('/api/original/listLogoFiles');
       const data = await response.json();
       if (data.files) {
         setLogoFiles(data.files);
-        console.log('[Logo Files] Loaded from API:', data.files);
       }
     } catch (error) {
       console.error('Error loading logo files:', error);
-      setLogoFiles([]);
     }
   };
 

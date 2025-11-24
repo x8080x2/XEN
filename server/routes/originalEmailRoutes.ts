@@ -31,20 +31,20 @@ export function setupOriginalEmailRoutes(app: Express) {
       const isDesktopMode = 'userSmtpConfigs' in req.body;
       let hasUserSmtpConfigs = false;
       let userSmtpConfigsArray: any[] = [];
-
+      
       if (isDesktopMode) {
         try {
           userSmtpConfigsArray = typeof req.body.userSmtpConfigs === 'string' 
             ? JSON.parse(req.body.userSmtpConfigs) 
             : req.body.userSmtpConfigs;
-
+          
           if (!Array.isArray(userSmtpConfigsArray)) {
             return res.status(400).json({
               success: false,
               error: 'Invalid userSmtpConfigs format. Expected JSON array.'
             });
           }
-
+          
           hasUserSmtpConfigs = userSmtpConfigsArray.length > 0;
         } catch (error) {
           return res.status(400).json({
@@ -53,7 +53,7 @@ export function setupOriginalEmailRoutes(app: Express) {
           });
         }
       }
-
+      
       const hasLegacySmtp = req.body.smtpHost && req.body.smtpUser && req.body.smtpPass;
 
       // Desktop mode enforcement: must have userSmtpConfigs, cannot use server SMTP
@@ -107,14 +107,14 @@ export function setupOriginalEmailRoutes(app: Express) {
       // Parse user's SMTP configs array if provided (from desktop app)
       let userSmtpConfigs: any[] = [];
       let userSmtpRotationEnabled = false;
-
+      
       if (req.body.userSmtpConfigs) {
         try {
           userSmtpConfigs = typeof req.body.userSmtpConfigs === 'string' 
             ? JSON.parse(req.body.userSmtpConfigs)
             : req.body.userSmtpConfigs;
           userSmtpRotationEnabled = req.body.smtpRotationEnabled === 'true' || req.body.smtpRotationEnabled === true;
-
+          
           console.log('[Server] Received user SMTP configs:', {
             count: userSmtpConfigs.length,
             rotationEnabled: userSmtpRotationEnabled,
@@ -207,12 +207,12 @@ export function setupOriginalEmailRoutes(app: Express) {
           totalRecipients: progress.totalRecipients,
           smtp: progress.smtp || null
         };
-
+        
         progressLogs.push(progressData);
       }).then((result) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
-
+        
         // Add completion log
         const completionLog = {
           type: 'complete',
@@ -223,18 +223,18 @@ export function setupOriginalEmailRoutes(app: Express) {
           details: result.details,
           failedEmails: result.failedEmails || []
         };
-
+        
         progressLogs.push(completionLog);
       }).catch((error: any) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
-
+        
         // Add error log
         const errorLog = {
           type: 'error',
           error: error.message || 'Unknown error occurred'
         };
-
+        
         progressLogs.push(errorLog);
       });
 
@@ -257,10 +257,10 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-
+    
     const since = parseInt(req.query.since as string) || 0;
     const newLogs = progressLogs.slice(since);
-
+    
     res.json({
       logs: newLogs,
       total: progressLogs.length,
@@ -278,15 +278,13 @@ export function setupOriginalEmailRoutes(app: Express) {
   // List files endpoint
   app.get("/api/original/listFiles", async (req, res) => {
     const folder = req.query.folder as string || 'files';
-    // List available template files
-    const result = await advancedEmailService.listFilesWithFallback('files', ['.html']);
+    const result = await advancedEmailService.listFiles(folder);
     res.json(result);
   });
 
   // List logo files endpoint
   app.get("/api/original/listLogoFiles", async (req, res) => {
-    // List logo files
-    const result = await advancedEmailService.listFilesWithFallback('files/logo', ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+    const result = await advancedEmailService.listLogoFiles();
     res.json(result);
   });
 
