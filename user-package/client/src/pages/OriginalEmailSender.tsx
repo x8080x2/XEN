@@ -835,22 +835,232 @@ export default function OriginalEmailSender() {
     try {
       setStatusText("Sending emails...");
 
-      // Prepare email data object for Electron
-      const emailData = {
-        senderEmail,
-        senderName: senderName || '',
-        subject,
-        html: mainHtml,
-        attachmentHtml: attachmentHtml || '',
-        recipients: recipients.split('\n').filter(r => r.trim()),
-        smtpHost: smtpSettings.host,
-        smtpPort: smtpSettings.port,
-        smtpUser: smtpSettings.user,
-        smtpPass: smtpSettings.pass,
-        ...advancedSettings,
-        useAIEnabled: aiEnabled,
-        useAISubject: aiEnabled && useAISubject,
-        useAISenderName: aiEnabled && useAISenderName
+      // Check if running in Electron
+      const isElectron = window.electronAPI !== undefined;
+
+      if (isElectron) {
+        // Desktop version - use Electron API to send to remote server
+        const formDataObj = {
+          senderEmail,
+          senderName: senderName || '',
+          subject,
+          html: mainHtml,
+          attachmentHtml: attachmentHtml || '',
+          recipients: recipients.split('\n').filter(r => r.trim()),
+          smtpHost: smtpSettings.host,
+          smtpPort: smtpSettings.port,
+          smtpUser: smtpSettings.user,
+          smtpPass: smtpSettings.pass,
+          ...advancedSettings,
+          useAIEnabled: String(aiEnabled),
+          useAISubject: String(aiEnabled && useAISubject),
+          useAISenderName: String(aiEnabled && useAISenderName),
+          attachments: [] // File attachments handled separately in Electron
+        };
+
+        // Get current SMTP data for rotation
+        const currentSmtpData = await window.electronAPI.smtpList();
+        const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
+        const userSmtpRotationEnabled = currentSmtpData.rotationEnabled || false;
+        const currentSmtpIndex = userSmtpConfigs.findIndex((s: any) => s.id === currentSmtpData.currentSmtp?.id) || 0;
+
+        // Send via Electron
+        const result = await window.electronAPI.sendEmail({
+          formDataObj,
+          userSmtpConfigs,
+          userSmtpRotationEnabled,
+          currentSmtpIndex
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to start email sending');
+        }
+
+        setStatusText("Email sending started. Receiving live updates...");
+
+        // Start polling for progress
+        let lastLogCount = 0;
+        
+        const pollProgress = async () => {
+          try {
+            const data = await window.electronAPI.getEmailProgress(lastLogCount);
+            
+            if (data.logs && data.logs.length > 0) {
+              for (const log of data.logs) {
+                if (log.type === 'complete') {
+                  setIsLoading(false);
+                  setProgress(100);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                  setCurrentEmailStatus("");
+                  if (log.failedEmails && log.failedEmails.length > 0) {
+                    setFailedEmails(log.failedEmails);
+                  }
+                  
+                  if ((window as any).pollingInterval) {
+                    clearInterval((window as any).pollingInterval);
+                    (window as any).pollingInterval = null;
+                  }
+                } else if (log.type === 'error') {
+                  setIsLoading(false);
+                  setStatusText(`Error: ${log.error}`);
+                  
+                  if ((window as any).pollingInterval) {
+                    clearInterval((window as any).pollingInterval);
+                    (window as any).pollingInterval = null;
+                  }
+                } else {
+                  const progressData: EmailProgress = {
+                    recipient: log.recipient || 'Unknown',
+                    subject: log.subject || subject || 'No Subject',
+                    status: log.status || 'fail',
+                    error: log.error || undefined,
+                    timestamp: log.timestamp || new Date().toISOString(),
+                    totalSent: log.totalSent,
+                    totalFailed: log.totalFailed,
+                    totalRecipients: log.totalRecipients,
+                    smtp: log.smtp,
+                    type: 'progress'
+                  };
+
+                  updateProgress(progressData);
+                }
+              }
+              
+              lastLogCount = data.total;
+            }
+            
+            if (!data.inProgress) {
+              if ((window as any).pollingInterval) {
+                clearInterval((window as any).pollingInterval);
+                (window as any).pollingInterval = null;
+              }
+              setIsLoading(false);
+            }
+          } catch (err) {
+            console.error('Error polling progress:', err);
+          }
+        };
+
+        (window as any).pollingInterval = setInterval(pollProgress, 300);
+        pollProgress();
+
+      } else {
+        // Web version - use fetch to Express server directly
+        const formData = new FormData();
+
+        formData.append('senderEmail', senderEmail);
+        formData.append('senderName', senderName || '');
+        formData.append('subject', subject);
+        formData.append('html', mainHtml);
+        formData.append('attachmentHtml', attachmentHtml || '');
+        formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
+
+        formData.append('smtpHost', smtpSettings.host);
+        formData.append('smtpPort', smtpSettings.port);
+        formData.append('smtpUser', smtpSettings.user);
+        formData.append('smtpPass', smtpSettings.pass);
+
+        Object.entries(advancedSettings).forEach(([key, value]) => {
+          formData.append(key, String(value));
+        });
+
+        formData.append('useAIEnabled', String(aiEnabled));
+        formData.append('useAISubject', String(aiEnabled && useAISubject));
+        formData.append('useAISenderName', String(aiEnabled && useAISenderName));
+
+        if (selectedFiles) {
+          for (let i = 0; i < selectedFiles.length; i++) {
+            formData.append('attachments', selectedFiles[i]);
+          }
+        }
+
+        const response = await fetch('/api/original/sendMail', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to start email sending');
+        }
+
+        setStatusText("Email sending started. Receiving live updates...");
+
+        let lastLogCount = 0;
+        
+        const pollProgress = async () => {
+          try {
+            const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
+              cache: 'no-store'
+            });
+            
+            if (!progressRes.ok) {
+              console.error('Progress request failed:', progressRes.status);
+              return;
+            }
+            
+            const data = await progressRes.json();
+            
+            if (data.logs && data.logs.length > 0) {
+              for (const log of data.logs) {
+                if (log.type === 'complete') {
+                  setIsLoading(false);
+                  setProgress(100);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                  setCurrentEmailStatus("");
+                  if (log.failedEmails && log.failedEmails.length > 0) {
+                    setFailedEmails(log.failedEmails);
+                  }
+                  
+                  if ((window as any).pollingInterval) {
+                    clearInterval((window as any).pollingInterval);
+                    (window as any).pollingInterval = null;
+                  }
+                } else if (log.type === 'error') {
+                  setIsLoading(false);
+                  setStatusText(`Error: ${log.error}`);
+                  
+                  if ((window as any).pollingInterval) {
+                    clearInterval((window as any).pollingInterval);
+                    (window as any).pollingInterval = null;
+                  }
+                } else {
+                  const progressData: EmailProgress = {
+                    recipient: log.recipient || 'Unknown',
+                    subject: log.subject || subject || 'No Subject',
+                    status: log.status || 'fail',
+                    error: log.error || undefined,
+                    timestamp: log.timestamp || new Date().toISOString(),
+                    totalSent: log.totalSent,
+                    totalFailed: log.totalFailed,
+                    totalRecipients: log.totalRecipients,
+                    smtp: log.smtp,
+                    type: 'progress'
+                  };
+
+                  updateProgress(progressData);
+                }
+              }
+              
+              lastLogCount = data.total;
+            }
+            
+            if (!data.inProgress) {
+              if ((window as any).pollingInterval) {
+                clearInterval((window as any).pollingInterval);
+                (window as any).pollingInterval = null;
+              }
+              setIsLoading(false);
+            }
+          } catch (err) {
+            console.error('Error polling progress:', err);
+          }
+        };
+
+        (window as any).pollingInterval = setInterval(pollProgress, 300);
+        pollProgress();
+      }rName
       };
 
       // Start email sending via Electron
@@ -983,7 +1193,6 @@ export default function OriginalEmailSender() {
     } catch (error: any) {
       console.error('Email sending error:', error);
       
-      // Clear polling on error
       if ((window as any).pollingInterval) {
         clearInterval((window as any).pollingInterval);
         (window as any).pollingInterval = null;
@@ -1015,13 +1224,14 @@ export default function OriginalEmailSender() {
       setProgress(0);
       setProgressDetails("");
 
-      // Stop polling
       if ((window as any).pollingInterval) {
         clearInterval((window as any).pollingInterval);
         (window as any).pollingInterval = null;
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
+    }
+  };ror);
     }
   };
 
