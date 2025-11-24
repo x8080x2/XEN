@@ -110,41 +110,49 @@ class ElectronReplitApiService {
     }
   }
 
-  // Send emails via server-sent events (streaming)
-  async sendEmails(emailData: any): Promise<EventSource> {
-    const url = this.getEmailSendEndpoint();
-    const eventSource = new EventSource(url, {
-      // Note: EventSource doesn't support POST body directly
-      // The server endpoint should handle this appropriately
-    });
-
-    console.log(`[ReplitAPI] Starting email sending stream: ${url}`);
-    return eventSource;
-  }
-
-  // Send emails via job-based system (alternative)
-  async sendEmailsJob(emailData: any): Promise<{ jobId: string }> {
-    const response = await fetch(this.getApiEndpoint('api/emails/send'), {
+  // Send emails using the backend's /api/original/sendMail endpoint
+  async sendEmailsJob(emailData: any): Promise<{ success: boolean; message: string }> {
+    // Convert emailData to FormData format expected by backend
+    const formData = new FormData();
+    
+    // Add all email data fields
+    formData.append('recipients', emailData.recipients.map((r: any) => r.email || r).join('\n'));
+    formData.append('subject', emailData.subject || '');
+    formData.append('htmlContent', emailData.htmlContent || '');
+    formData.append('senderName', emailData.smtpConfig?.senderName || '');
+    formData.append('replyTo', emailData.smtpConfig?.replyTo || '');
+    
+    // Add SMTP configuration for desktop mode
+    formData.append('userSmtpConfigs', JSON.stringify(emailData.smtpConfig ? [emailData.smtpConfig] : []));
+    
+    // Add settings if provided
+    if (emailData.settings) {
+      Object.keys(emailData.settings).forEach(key => {
+        formData.append(key, emailData.settings[key]);
+      });
+    }
+    
+    const response = await fetch(this.getApiEndpoint('api/original/sendMail'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(emailData)
+      body: formData
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to start email job: ${response.status} ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Failed to start email sending: ${response.status} ${errorText}`);
     }
 
     const result = await response.json();
-    console.log(`[ReplitAPI] Email job started: ${result.jobId}`);
+    console.log(`[ReplitAPI] Email sending started:`, result);
     return result;
   }
 
-  // Check job status
-  async checkJobStatus(jobId: string): Promise<any> {
-    const response = await fetch(this.getApiEndpoint(`api/emails/status/${jobId}`));
+  // Check email sending progress
+  async checkJobStatus(since: number = 0): Promise<any> {
+    const response = await fetch(this.getApiEndpoint(`api/original/progress?since=${since}`));
     
     if (!response.ok) {
-      throw new Error(`Failed to check job status: ${response.status} ${response.statusText}`);
+      throw new Error(`Failed to check progress: ${response.status} ${response.statusText}`);
     }
 
     return response.json();

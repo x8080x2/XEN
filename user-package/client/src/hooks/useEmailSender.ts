@@ -114,12 +114,12 @@ export function useEmailSender() {
         host: formData.smtpHost,
         port: formData.smtpPort,
         user: formData.smtpUser,
-        password: formData.smtpPassword,
-        senderName: formData.senderName,
-        replyTo: formData.replyTo
+        pass: formData.smtpPassword,
+        fromEmail: formData.senderEmail || formData.smtpUser,
+        fromName: formData.senderName
       };
 
-      // Use the Replit API service to send emails via job system
+      // Use the Replit API service to send emails
       const result = await replitApiService.sendEmailsJob({
         recipients: data.recipients,
         subject: data.subject,
@@ -130,12 +130,13 @@ export function useEmailSender() {
       });
       
       return {
-        jobId: result.jobId,
+        success: result.success,
         totalRecipients: data.recipients.length
       };
     },
     onSuccess: (data) => {
-      setCurrentJobId(data.jobId);
+      // Start polling progress since there's no jobId
+      setCurrentJobId('polling');
       setProgress({ total: data.totalRecipients, sent: 0, failed: 0, percentage: 0 });
       addLog(`Started sending ${data.totalRecipients} emails`);
       toast({
@@ -153,40 +154,56 @@ export function useEmailSender() {
     },
   });
 
-  // Poll job status
-  const { data: jobStatus } = useQuery<JobStatus>({
-    queryKey: ['replitJobStatus', currentJobId],
+  // Poll progress status
+  const { data: progressStatus } = useQuery<any>({
+    queryKey: ['replitProgress', currentJobId],
     queryFn: async () => {
       if (!currentJobId) return null;
-      return await replitApiService.checkJobStatus(currentJobId);
+      return await replitApiService.checkJobStatus(0);
     },
-    enabled: !!currentJobId,
+    enabled: !!currentJobId && currentJobId !== 'complete',
     refetchInterval: 1000, // Poll every second
   });
 
-  // Update progress when job status changes
+  // Update progress when status changes
   useEffect(() => {
-    if (jobStatus) {
-      const { sent, failed, total, status, logs: jobLogs } = jobStatus;
-      const percentage = total > 0 ? Math.round((sent + failed) / total * 100) : 0;
+    if (progressStatus) {
+      const { logs: progressLogs, inProgress } = progressStatus;
 
-      setProgress({ total, sent, failed, percentage });
-
-      // Add new logs
-      if (jobLogs && jobLogs.length > logs.length) {
-        const newLogs = jobLogs.slice(logs.length);
-        newLogs.forEach((log: any) => {
-          addLog(log.message, log.status);
+      // Process progress logs to update metrics
+      if (progressLogs && progressLogs.length > 0) {
+        progressLogs.forEach((log: any) => {
+          if (log.message) {
+            addLog(log.message, log.status || 'success');
+            
+            // Extract progress from log messages
+            if (log.message.includes('Sent:') || log.message.includes('Failed:')) {
+              const sentMatch = log.message.match(/Sent:\s*(\d+)/);
+              const failedMatch = log.message.match(/Failed:\s*(\d+)/);
+              if (sentMatch || failedMatch) {
+                setProgress(prev => {
+                  const sent = sentMatch ? parseInt(sentMatch[1]) : prev.sent;
+                  const failed = failedMatch ? parseInt(failedMatch[1]) : prev.failed;
+                  const percentage = prev.total > 0 ? Math.round((sent + failed) / prev.total * 100) : 0;
+                  return { ...prev, sent, failed, percentage };
+                });
+              }
+            }
+          }
         });
       }
 
-      // Check if job is complete
-      if (status === 'completed' || status === 'failed') {
-        setCurrentJobId(null);
-        queryClient.invalidateQueries({ queryKey: ['replitJobStatus'] });
+      // Check if sending is complete
+      if (!inProgress && currentJobId === 'polling') {
+        setCurrentJobId('complete');
+        addLog('Email sending completed', 'success');
+        toast({
+          title: "Sending complete",
+          description: "All emails have been sent",
+        });
       }
     }
-  }, [jobStatus, logs.length, addLog, queryClient]);
+  }, [progressStatus, addLog, currentJobId, toast]);
 
   const startSending = useCallback(async (data: EmailSendRequest) => {
     setLogs([]); // Clear previous logs
