@@ -7,8 +7,13 @@ const isElectron = () => {
 
 const getBaseUrl = () => {
   if (isElectron()) {
-    // In Electron, use the server URL from environment
-    return window.REPLIT_SERVER_URL || 'http://localhost:5000';
+    // In Electron, use the server URL from environment (set by main.js)
+    const serverUrl = (window as any).REPLIT_SERVER_URL;
+    if (!serverUrl) {
+      console.error('[replitApi] No REPLIT_SERVER_URL found - server URL not configured');
+      return '';
+    }
+    return serverUrl;
   }
   return '';
 };
@@ -67,13 +72,18 @@ export const replitApi = {
       return result;
     }
 
-    const response = await fetch(`${getBaseUrl()}/api/config/load`);
+    try {
+      const response = await fetch(`${getBaseUrl()}/api/config/load`);
 
-    if (!response.ok) {
-      throw new Error(`Failed to load config: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load config: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('[replitApi] Failed to load config:', error);
+      return { success: false, config: {} };
     }
-
-    return await response.json();
   },
 
   // Test SMTP connection
@@ -84,13 +94,18 @@ export const replitApi = {
       return await window.electronAPI.smtpTest();
     }
 
-    const response = await fetch(`${getBaseUrl()}/api/smtp/test`);
+    try {
+      const response = await fetch(`${getBaseUrl()}/api/smtp/test`);
 
-    if (!response.ok) {
-      throw new Error(`Failed to test SMTP: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to test SMTP: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('[replitApi] SMTP test failed:', error);
+      return { online: false, error: 'SMTP test failed' };
     }
-
-    return await response.json();
   },
 
   // Check AI service status
@@ -101,13 +116,18 @@ export const replitApi = {
       return { enabled: false, error: 'AI service not available in desktop mode' };
     }
 
-    const response = await fetch(`${getBaseUrl()}/api/ai/status`);
+    try {
+      const response = await fetch(`${getBaseUrl()}/api/ai/status`);
 
-    if (!response.ok) {
-      throw new Error(`Failed to check AI status: ${response.statusText}`);
+      if (!response.ok) {
+        throw new Error(`Failed to check AI status: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('[replitApi] AI status check failed:', error);
+      return { enabled: false, error: 'AI service check failed' };
     }
-
-    return await response.json();
   },
 };
 
