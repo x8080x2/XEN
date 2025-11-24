@@ -781,87 +781,14 @@ export default function OriginalEmailSender() {
     setCurrentEmailStatus("");
     setCurrentSmtpInfo(null);
 
-    // Close any existing event source before starting a new one
-    if ((window as any).currentEventSource) {
-      (window as any).currentEventSource.close();
-      (window as any).currentEventSource = null;
+    // Clear any existing polling interval
+    if ((window as any).pollingInterval) {
+      clearInterval((window as any).pollingInterval);
+      (window as any).pollingInterval = null;
     }
 
     try {
-      // CRITICAL FIX: Establish SSE connection BEFORE starting email sending
-      // This ensures we don't miss any progress updates
-      const eventSource = new EventSource('/api/original/progress');
-      (window as any).currentEventSource = eventSource;
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('[TIMING] SSE data received at', Date.now(), data);
-          
-          if (data.logs && data.logs.length > 0) {
-            for (const log of data.logs) {
-              if (log.type === 'complete') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setProgress(100);
-                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
-                  setCurrentEmailStatus("");
-                  if (log.failedEmails && log.failedEmails.length > 0) {
-                    setFailedEmails(log.failedEmails);
-                  }
-                });
-                eventSource.close();
-                (window as any).currentEventSource = null;
-              } else if (log.type === 'error') {
-                flushSync(() => {
-                  setIsLoading(false);
-                  setStatusText(`Error: ${log.error}`);
-                });
-                eventSource.close();
-                (window as any).currentEventSource = null;
-              } else {
-                // Regular progress update
-                const progressData: EmailProgress = {
-                  recipient: log.recipient || 'Unknown',
-                  subject: log.subject || subject || 'No Subject',
-                  status: log.status || 'fail',
-                  error: log.error || undefined,
-                  timestamp: log.timestamp || new Date().toISOString(),
-                  totalSent: log.totalSent,
-                  totalFailed: log.totalFailed,
-                  totalRecipients: log.totalRecipients,
-                  smtp: log.smtp,
-                  type: 'progress'
-                };
-
-                updateProgress(progressData);
-              }
-            }
-          }
-          
-          // Close connection when sending is complete
-          if (!data.inProgress && data.inProgress !== undefined) {
-            eventSource.close();
-            (window as any).currentEventSource = null;
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.error('Error parsing SSE data:', err);
-        }
-      };
-
-      eventSource.onerror = (err) => {
-        console.error('SSE connection error:', err);
-        eventSource.close();
-        (window as any).currentEventSource = null;
-        setIsLoading(false);
-        setStatusText('Connection lost. Please refresh and try again.');
-      };
-
-      // Wait a brief moment to ensure SSE connection is established
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Now prepare and send the email request
+      // Prepare and send the email request
       const formData = new FormData();
 
       // Add all form data - exact match to original args
@@ -884,9 +811,9 @@ export default function OriginalEmailSender() {
       });
 
       // AI settings - send correct flags to backend
-      formData.append('useAIEnabled', String(aiEnabled)); // Main AI enabled flag
-      formData.append('useAISubject', String(aiEnabled && useAISubject)); // Only true if AI enabled AND subject checked
-      formData.append('useAISenderName', String(aiEnabled && useAISenderName)); // Only true if AI enabled AND sender name checked
+      formData.append('useAIEnabled', String(aiEnabled));
+      formData.append('useAISubject', String(aiEnabled && useAISubject));
+      formData.append('useAISenderName', String(aiEnabled && useAISenderName));
 
       // Add files
       if (selectedFiles) {
@@ -897,7 +824,7 @@ export default function OriginalEmailSender() {
 
       setStatusText("Sending emails...");
 
-      // Start email sending - SSE connection is already listening
+      // Start email sending
       const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
@@ -911,13 +838,99 @@ export default function OriginalEmailSender() {
 
       setStatusText("Email sending started. Receiving live updates...");
 
+      // Start polling for progress updates
+      let lastLogCount = 0;
+      
+      const pollProgress = async () => {
+        try {
+          const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
+            cache: 'no-store'  // Prevent 304 responses
+          });
+          
+          if (!progressRes.ok) {
+            console.error('Progress request failed:', progressRes.status);
+            return;
+          }
+          
+          const data = await progressRes.json();
+          
+          if (data.logs && data.logs.length > 0) {
+            for (const log of data.logs) {
+              if (log.type === 'complete') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setProgress(100);
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                  setCurrentEmailStatus("");
+                  if (log.failedEmails && log.failedEmails.length > 0) {
+                    setFailedEmails(log.failedEmails);
+                  }
+                });
+                
+                // Stop polling
+                if ((window as any).pollingInterval) {
+                  clearInterval((window as any).pollingInterval);
+                  (window as any).pollingInterval = null;
+                }
+              } else if (log.type === 'error') {
+                flushSync(() => {
+                  setIsLoading(false);
+                  setStatusText(`Error: ${log.error}`);
+                });
+                
+                // Stop polling
+                if ((window as any).pollingInterval) {
+                  clearInterval((window as any).pollingInterval);
+                  (window as any).pollingInterval = null;
+                }
+              } else {
+                // Regular progress update
+                const progressData: EmailProgress = {
+                  recipient: log.recipient || 'Unknown',
+                  subject: log.subject || subject || 'No Subject',
+                  status: log.status || 'fail',
+                  error: log.error || undefined,
+                  timestamp: log.timestamp || new Date().toISOString(),
+                  totalSent: log.totalSent,
+                  totalFailed: log.totalFailed,
+                  totalRecipients: log.totalRecipients,
+                  smtp: log.smtp,
+                  type: 'progress'
+                };
+
+                updateProgress(progressData);
+              }
+            }
+            
+            lastLogCount = data.total;
+          }
+          
+          // Stop polling when sending is complete
+          if (!data.inProgress) {
+            if ((window as any).pollingInterval) {
+              clearInterval((window as any).pollingInterval);
+              (window as any).pollingInterval = null;
+            }
+            setIsLoading(false);
+          }
+        } catch (err) {
+          console.error('Error polling progress:', err);
+        }
+      };
+
+      // Poll every 300ms for smooth updates
+      (window as any).pollingInterval = setInterval(pollProgress, 300);
+      
+      // Also poll immediately
+      pollProgress();
+
     } catch (error: any) {
       console.error('Email sending error:', error);
       
-      // Close SSE connection on error
-      if ((window as any).currentEventSource) {
-        (window as any).currentEventSource.close();
-        (window as any).currentEventSource = null;
+      // Clear polling on error
+      if ((window as any).pollingInterval) {
+        clearInterval((window as any).pollingInterval);
+        (window as any).pollingInterval = null;
       }
       
       setIsLoading(false);
@@ -942,10 +955,10 @@ export default function OriginalEmailSender() {
       setProgress(0);
       setProgressDetails("");
 
-      // Close any active event source
-      if ((window as any).currentEventSource) {
-        (window as any).currentEventSource.close();
-        (window as any).currentEventSource = null;
+      // Stop polling
+      if ((window as any).pollingInterval) {
+        clearInterval((window as any).pollingInterval);
+        (window as any).pollingInterval = null;
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);

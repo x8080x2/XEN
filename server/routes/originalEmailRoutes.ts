@@ -193,21 +193,6 @@ export function setupOriginalEmailRoutes(app: Express) {
       progressLogs.length = 0;
       sendingInProgress = true;
 
-      // Helper function to broadcast to SSE clients
-      const broadcastProgress = (data: any) => {
-        const clients = (global as any).sseClients as Map<number, any>;
-        if (clients && clients.size > 0) {
-          const message = `data: ${JSON.stringify(data)}\n\n`;
-          clients.forEach((clientRes) => {
-            try {
-              clientRes.write(message);
-            } catch (err) {
-              // Client disconnected, will be cleaned up
-            }
-          });
-        }
-      };
-
       // Start sending emails with progress tracking
       advancedEmailService.sendMail(args, (progress) => {
         // Store progress in memory for polling
@@ -224,13 +209,6 @@ export function setupOriginalEmailRoutes(app: Express) {
         };
         
         progressLogs.push(progressData);
-        
-        // Broadcast to SSE clients immediately
-        broadcastProgress({
-          logs: [progressData],
-          total: progressLogs.length,
-          inProgress: sendingInProgress
-        });
       }).then((result) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
@@ -247,13 +225,6 @@ export function setupOriginalEmailRoutes(app: Express) {
         };
         
         progressLogs.push(completionLog);
-        
-        // Broadcast completion to SSE clients
-        broadcastProgress({
-          logs: [completionLog],
-          total: progressLogs.length,
-          inProgress: false
-        });
       }).catch((error: any) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
@@ -265,13 +236,6 @@ export function setupOriginalEmailRoutes(app: Express) {
         };
         
         progressLogs.push(errorLog);
-        
-        // Broadcast error to SSE clients
-        broadcastProgress({
-          logs: [errorLog],
-          total: progressLogs.length,
-          inProgress: false
-        });
       });
 
       // Return immediate response for polling mode
@@ -287,46 +251,21 @@ export function setupOriginalEmailRoutes(app: Express) {
     }
   });
 
-  // Server-Sent Events endpoint for real-time progress
+  // Polling endpoint for progress updates
   app.get("/api/original/progress", (req, res) => {
-    // Support both SSE and polling for backward compatibility
-    const useSSE = req.headers.accept?.includes('text/event-stream');
+    // Prevent caching to ensure fresh progress updates
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
-    if (useSSE) {
-      // Set up SSE connection
-      res.setHeader('Content-Type', 'text/event-stream');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-      res.flushHeaders();
-
-      // Send initial state
-      res.write(`data: ${JSON.stringify({
-        logs: progressLogs,
-        total: progressLogs.length,
-        inProgress: sendingInProgress
-      })}\n\n`);
-
-      // Store the response object to send updates
-      const clientId = Date.now();
-      const clients = (global as any).sseClients || new Map();
-      (global as any).sseClients = clients;
-      clients.set(clientId, res);
-
-      // Clean up on disconnect
-      req.on('close', () => {
-        clients.delete(clientId);
-      });
-    } else {
-      // Polling mode (backward compatible)
-      const since = parseInt(req.query.since as string) || 0;
-      const newLogs = progressLogs.slice(since);
-      
-      res.json({
-        logs: newLogs,
-        total: progressLogs.length,
-        inProgress: sendingInProgress
-      });
-    }
+    const since = parseInt(req.query.since as string) || 0;
+    const newLogs = progressLogs.slice(since);
+    
+    res.json({
+      logs: newLogs,
+      total: progressLogs.length,
+      inProgress: sendingInProgress
+    });
   });
 
   // Cancel send endpoint
