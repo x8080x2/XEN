@@ -421,7 +421,7 @@ export default function OriginalEmailSender() {
       // Skip AI features in desktop Electron version (requires server)
       if (window.electronAPI) {
         console.log('[Desktop] AI features not available in desktop version');
-        setAiStatus({ initialized: false, hasApiKey: false, provider: null });
+        setAiStatus({ initialized: false, hasApiKey: false, provider: '' });
         return;
       }
       
@@ -453,7 +453,7 @@ export default function OriginalEmailSender() {
 
         if (data.success) {
           setAiEnabled(false); // Disable AI features
-          setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
+          setAiStatus({ initialized: false, hasApiKey: false, provider: '' }); // Reset status
           setStatusText('AI service turned off successfully');
           if (typeof localStorage !== 'undefined') {
             localStorage.removeItem('google_ai_key');
@@ -977,7 +977,7 @@ export default function OriginalEmailSender() {
         });
 
         // Get current SMTP data from local config
-        const currentSmtpData = await window.electronAPI.smtpList();
+        const currentSmtpData = await window.electronAPI!.smtpList();
         const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
         const currentSmtp = currentSmtpData.currentSmtp || userSmtpConfigs[0];
 
@@ -1265,11 +1265,16 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      if (window.electronAPI?.cancelEmail) {
-        await window.electronAPI.cancelEmail();
+      const isElectron = window.electronAPI !== undefined;
+      
+      if (isElectron) {
+        // Desktop: Use backend API to cancel sending
+        await replitApiService.cancelSending();
       } else {
+        // Web: Use local backend endpoint
         await fetch('/api/original/cancel', { method: 'POST' });
       }
+      
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("Campaign cancelled");

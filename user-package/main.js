@@ -7,7 +7,6 @@ const http = require('http');
 const os = require('os');
 const crypto = require('crypto');
 const axios = require('axios'); // Import axios for HTTP requests
-const nodemailer = require('nodemailer'); // Import nodemailer for email sending
 
 // Load environment variables
 require('dotenv').config();

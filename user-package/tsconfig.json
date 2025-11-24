@@ -18,8 +18,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../client/src/*"],
-      "@desktop/*": ["./client/src/*"]
+      "@/*": ["./client/src/*"]
     }
   },
   "include": [
