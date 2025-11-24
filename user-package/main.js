@@ -935,6 +935,97 @@ function parseValue(value) {
   return value;
 }
 
+// Save config handler - saves to config.ini file
+ipcMain.handle('save-config', async (event, config) => {
+  try {
+    console.log(`[Electron] Saving config to file:`, config);
+    
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let configPath = null;
+
+    // Find existing config.ini or create in first basePath
+    for (const basePath of basePaths) {
+      const testPath = path.resolve(basePath, 'config', 'config.ini');
+      if (existsSync(testPath)) {
+        configPath = testPath;
+        break;
+      }
+    }
+
+    // If no existing file, create in first basePath
+    if (!configPath) {
+      configPath = path.resolve(basePaths[0], 'config', 'config.ini');
+      await fs.mkdir(path.dirname(configPath), { recursive: true });
+    }
+
+    // Convert config object to INI format
+    let iniContent = '';
+    
+    // Add [SETTINGS] section
+    iniContent += '[SETTINGS]\n';
+    if (config.EMAILPERSECOND !== undefined) iniContent += `EMAILPERSECOND=${config.EMAILPERSECOND}\n`;
+    if (config.SLEEP !== undefined) iniContent += `SLEEP=${config.SLEEP}\n`;
+    if (config.QRCODE !== undefined) iniContent += `QRCODE=${config.QRCODE ? '1' : '0'}\n`;
+    if (config.RANDOM_METADATA !== undefined) iniContent += `RANDOM_METADATA=${config.RANDOM_METADATA ? '1' : '0'}\n`;
+    if (config.HTML2IMG_BODY !== undefined) iniContent += `HTML2IMG_BODY=${config.HTML2IMG_BODY ? '1' : '0'}\n`;
+    if (config.ZIP_USE !== undefined) iniContent += `ZIP_USE=${config.ZIP_USE ? '1' : '0'}\n`;
+    if (config.PROXY_USE !== undefined) iniContent += `PROXY_USE=${config.PROXY_USE ? '1' : '0'}\n`;
+
+    await fs.writeFile(configPath, iniContent, 'utf-8');
+    console.log(`[Electron] Config saved successfully to ${configPath}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error(`[Electron] Failed to save config:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Save leads handler - saves to files/leads.txt
+ipcMain.handle('save-leads', async (event, leads) => {
+  try {
+    console.log(`[Electron] Saving ${leads.length} leads to file`);
+    
+    const basePaths = [
+      __dirname,
+      process.cwd(),
+      path.resolve(__dirname, '..')
+    ];
+
+    let leadsPath = null;
+
+    // Find existing leads.txt or create in first basePath
+    for (const basePath of basePaths) {
+      const testPath = path.resolve(basePath, 'files', 'leads.txt');
+      if (existsSync(testPath)) {
+        leadsPath = testPath;
+        break;
+      }
+    }
+
+    // If no existing file, create in first basePath
+    if (!leadsPath) {
+      leadsPath = path.resolve(basePaths[0], 'files', 'leads.txt');
+      await fs.mkdir(path.dirname(leadsPath), { recursive: true });
+    }
+
+    // Write leads array to file (one per line)
+    const leadsContent = leads.join('\n');
+    await fs.writeFile(leadsPath, leadsContent, 'utf-8');
+    console.log(`[Electron] ${leads.length} leads saved successfully to ${leadsPath}`);
+
+    return { success: true };
+  } catch (error) {
+    console.error(`[Electron] Failed to save leads:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Security: Prevent new window creation
 app.on('web-contents-created', (event, contents) => {
   contents.on('new-window', (event, navigationUrl) => {
