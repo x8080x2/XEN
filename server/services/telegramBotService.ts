@@ -732,18 +732,36 @@ class TelegramBotService {
       const userPackagePath = path.join(process.cwd(), 'user-package');
       
       archive.directory(userPackagePath, false, (entry) => {
+        // Exclude .env.example
         if (entry.name === '.env.example') {
           return false;
         }
-        if (entry.name === 'node_modules' || entry.prefix?.includes('node_modules')) {
+        
+        // Exclude node_modules at any level
+        if (entry.name === 'node_modules' || 
+            entry.prefix?.includes('node_modules') ||
+            entry.name.includes('node_modules')) {
           return false;
         }
-        if (entry.name === 'dist' || entry.prefix?.includes('dist')) {
+        
+        // Exclude dist folders at any level
+        if (entry.name === 'dist' || 
+            entry.name === 'dist-electron' ||
+            entry.prefix?.includes('/dist') ||
+            entry.prefix?.includes('/dist-electron')) {
           return false;
         }
-        if (entry.name === 'dist-electron' || entry.prefix?.includes('dist-electron')) {
+        
+        // Exclude package-lock.json (can be regenerated)
+        if (entry.name === 'package-lock.json') {
           return false;
         }
+        
+        // Exclude any .log files
+        if (entry.name.endsWith('.log')) {
+          return false;
+        }
+        
         return entry;
       });
 
