@@ -268,6 +268,14 @@ export default function OriginalEmailSender() {
   // Consolidated template loading function
   const loadTemplateContent = useCallback(async (templatePath: string): Promise<string> => {
     try {
+      // Use Electron API if available
+      if (window.electronAPI?.readFile) {
+        console.log('[Desktop] Loading template via Electron:', templatePath);
+        const content = await window.electronAPI.readFile(templatePath);
+        return content || '';
+      }
+      
+      // Fallback to server API for web version
       const response = await fetch('/api/original/readFile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -283,6 +291,15 @@ export default function OriginalEmailSender() {
 
   const loadTemplates = async () => {
     try {
+      // Use Electron API if available
+      if (window.electronAPI?.listFiles) {
+        console.log('[Desktop] Loading templates via Electron');
+        const files = await window.electronAPI.listFiles('files');
+        setTemplateFiles(files || []);
+        return;
+      }
+      
+      // Fallback to server API for web version
       const response = await fetch('/api/original/listFiles');
       const data = await response.json();
       if (data.files) {
@@ -295,6 +312,15 @@ export default function OriginalEmailSender() {
 
   const loadLogoFiles = async () => {
     try {
+      // Use Electron API if available
+      if (window.electronAPI?.listFiles) {
+        console.log('[Desktop] Loading logo files via Electron');
+        const files = await window.electronAPI.listFiles('files/logo');
+        setLogoFiles(files || []);
+        return;
+      }
+      
+      // Fallback to server API for web version
       const response = await fetch('/api/original/listLogoFiles');
       const data = await response.json();
       if (data.files) {
