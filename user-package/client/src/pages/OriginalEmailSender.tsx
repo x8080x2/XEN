@@ -469,8 +469,13 @@ export default function OriginalEmailSender() {
   // SMTP Management Functions
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
+      let data;
+      if (window.electronAPI?.smtpList) {
+        data = await window.electronAPI.smtpList();
+      } else {
+        const response = await fetch("/api/smtp/list");
+        data = await response.json();
+      }
       if (data.success) {
         setSmtpData(data);
         checkSmtpStatus();
@@ -614,8 +619,14 @@ export default function OriginalEmailSender() {
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      const response = await fetch('/api/config/load');
-      const data = await response.json();
+      // Use Electron API if available, otherwise fall back to server API
+      let data;
+      if (window.electronAPI?.loadConfig) {
+        data = await window.electronAPI.loadConfig();
+      } else {
+        const response = await fetch('/api/config/load');
+        data = await response.json();
+      }
 
       if (data.success && data.config) {
         const config = data.config;
@@ -680,8 +691,13 @@ export default function OriginalEmailSender() {
 
         // Auto-load leads from files/leads.txt - exact clone from main.js line 562
         try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
+          let leadsData;
+          if (window.electronAPI?.loadLeads) {
+            leadsData = await window.electronAPI.loadLeads();
+          } else {
+            const leadsResponse = await fetch('/api/config/loadLeads');
+            leadsData = await leadsResponse.json();
+          }
           if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
             setRecipients(leadsData.leads);
           }
