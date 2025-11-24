@@ -496,7 +496,7 @@ let smtpRotationEnabled = false;
 let currentSmtpIndex = 0;
 
 // SMTP toggle rotation handler
-ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
+ipcMain.handle('smtp:toggle-rotation', async (event, enabled) => {
   try {
     console.log(`[Electron] Toggling SMTP rotation to: ${enabled}`);
     smtpRotationEnabled = enabled;
@@ -554,7 +554,7 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
 });
 
 // SMTP rotate handler
-ipcMain.handle('smtp-rotate', async () => {
+ipcMain.handle('smtp:rotate', async () => {
   try {
     console.log(`[Electron] Rotating SMTP server`);
 
@@ -629,7 +629,8 @@ ipcMain.handle('smtp-rotate', async () => {
 });
 
 // SMTP list handler
-ipcMain.handle('smtp-list', async () => {
+// SMTP list handler - note the handler name matches preload.js
+ipcMain.handle('smtp:list', async () => {
   try {
     console.log(`[Electron] Loading SMTP configurations`);
 
@@ -725,7 +726,7 @@ function parseIniFile(content) {
 }
 
 // SMTP add handler
-ipcMain.handle('smtp-add', async (event, smtpData) => {
+ipcMain.handle('smtp:add', async (event, smtpData) => {
   try {
     console.log(`[Electron] Adding new SMTP config:`, smtpData);
 
@@ -789,7 +790,7 @@ ipcMain.handle('smtp-add', async (event, smtpData) => {
 });
 
 // SMTP delete handler
-ipcMain.handle('smtp-delete', async (event, smtpId) => {
+ipcMain.handle('smtp:delete', async (event, smtpId) => {
   try {
     console.log(`[Electron] Deleting SMTP config: ${smtpId}`);
 
@@ -956,8 +957,9 @@ function loadSmtpConfig() {
 // SMTP Test endpoint
 ipcMain.handle('smtp:test', async () => {
   try {
-    // Use the actual smtp-list handler to get current config
-    const smtpData = await ipcMain.invoke('smtp-list');
+    // Use the actual smtp:list handler to get current config
+    const smtpListHandler = ipcMain.listeners('smtp:list')[0];
+    const smtpData = smtpListHandler ? await smtpListHandler() : { success: false };
 
     if (!smtpData.success || !smtpData.currentSmtp) {
       return { online: false, error: 'No SMTP configured or failed to load' };
@@ -1063,7 +1065,8 @@ ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userS
     if (userSmtpRotationEnabled && userSmtpConfigs.length > 1) {
       try {
         console.log('[Electron] Attempting to rotate SMTP server after successful send...');
-        const rotateResult = await ipcMain.invoke('smtp-rotate');
+        const smtpRotateHandler = ipcMain.listeners('smtp:rotate')[0];
+        const rotateResult = smtpRotateHandler ? await smtpRotateHandler() : { success: false, error: 'Handler not found' };
         if (rotateResult.success) {
           progressLogs.push({ timestamp: new Date().toISOString(), message: `SMTP rotated successfully to: ${rotateResult.currentSmtp.fromEmail}` });
           console.log(`[Electron] SMTP rotated to: ${rotateResult.currentSmtp.fromEmail}`);
