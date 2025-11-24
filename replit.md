@@ -2,6 +2,22 @@
 
 This is a full-stack email sender application with both web and desktop (Electron) versions. The application provides advanced email campaign management with features like SMTP rotation, template management, AI-powered subject/sender generation, license management via Telegram bot, and comprehensive tracking. It's built as a monorepo containing a web application (Express + React) and a packaged desktop application (Electron wrapper) that connects to the web server.
 
+# Recent Changes
+
+**November 24, 2025 - Desktop AI Feature Parity**
+- Enabled AI features in desktop version to execute identically to web version
+- Added `getApiUrl()` helper function that constructs proper URLs for both platforms:
+  - Desktop: full backend URL via `window.electronAPI.getServerUrl()` (e.g., https://server.com/api/ai/status)
+  - Web: relative path (e.g., /api/ai/status) for same-origin requests
+- Updated all AI-related fetch calls to use `getApiUrl()`:
+  - AI status checking (`/api/ai/status`)
+  - AI initialization (`/api/ai/initialize`)
+  - AI deinitialization (`/api/ai/deinitialize`)
+  - Configuration loading/saving (`/api/config/load`, `/api/config/save`)
+- Enhanced error handling: throws clear error if `REPLIT_SERVER_URL` is not configured for desktop app
+- Both desktop and web now send identical AI settings to backend (useAIEnabled, useAISubject, useAISenderName)
+- Desktop app requires `REPLIT_SERVER_URL` environment variable to be set in `.env` file
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
