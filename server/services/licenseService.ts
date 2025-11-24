@@ -136,6 +136,10 @@ class LicenseService {
     const normalizedKey = this.normalizeLicenseKey(licenseKey);
     return await storage.getLicenseByKey(normalizedKey);
   }
+
+  async updateLicense(id: string, updates: Partial<License>): Promise<License> {
+    return await storage.updateLicense(id, updates);
+  }
 }
 
 export const licenseService = new LicenseService();
