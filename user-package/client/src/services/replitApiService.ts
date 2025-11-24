@@ -129,9 +129,18 @@ export const replitApi = {
 // Electron-only Replit API service - no web fallbacks
 class ElectronReplitApiService {
   private baseUrl: string | null = null;
+  private initialized: boolean = false;
 
   constructor() {
-    this.initializeServerUrl();
+    // Don't initialize in constructor - wait until first use (lazy initialization)
+    // This allows window.REPLIT_SERVER_URL to be set by Electron main process
+  }
+
+  private ensureInitialized(): void {
+    if (!this.initialized) {
+      this.initializeServerUrl();
+      this.initialized = true;
+    }
   }
 
   private initializeServerUrl(): void {
@@ -166,6 +175,7 @@ class ElectronReplitApiService {
 
   // Get current server URL
   getServerUrl(): string {
+    this.ensureInitialized();
     if (!this.baseUrl) {
       throw new Error('No server URL configured');
     }
@@ -174,6 +184,7 @@ class ElectronReplitApiService {
 
   // Get API endpoint with automatic path construction
   getApiEndpoint(path: string): string {
+    this.ensureInitialized();
     if (!this.baseUrl) {
       throw new Error('No server URL configured');
     }
@@ -197,6 +208,9 @@ class ElectronReplitApiService {
 
   // Test connection to server
   async testConnection(url?: string): Promise<{ success: boolean; message: string; url: string }> {
+    if (!url) {
+      this.ensureInitialized();
+    }
     const testUrl = url || this.baseUrl;
 
     if (!testUrl) {
