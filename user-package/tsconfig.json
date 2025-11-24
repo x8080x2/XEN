@@ -16,17 +16,15 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "baseUrl": "./client/src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/pages/*": ["./pages/*"]
+      "@/*": ["../client/src/*"],
+      "@desktop/*": ["./client/src/*"]
     }
   },
   "include": [
-    "client/**/*"
+    "client/**/*",
+    "../client/src/**/*"
   ],
   "exclude": [
     "node_modules",
