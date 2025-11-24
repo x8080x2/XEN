@@ -201,6 +201,70 @@ class TelegramBotService {
       );
     });
 
+    this.bot.onText(/\/myid/, async (msg) => {
+      const chatId = msg.chat.id;
+      const userId = msg.from?.id;
+      const username = msg.from?.username || msg.from?.first_name || 'User';
+
+      if (!userId) return;
+
+      await this.bot?.sendMessage(
+        chatId,
+        `👤 *Your Telegram Info*\n\n` +
+        `User ID: \`${userId}\`\n` +
+        `Username: ${username}\n\n` +
+        `Copy your User ID to update licenses.`,
+        { parse_mode: 'Markdown' }
+      );
+    });
+
+    this.bot.onText(/\/claimlicenses/, async (msg) => {
+      const chatId = msg.chat.id;
+      const userId = msg.from?.id;
+
+      if (!userId) return;
+
+      if (!await this.checkAdminAccess(userId, chatId)) {
+        return;
+      }
+
+      try {
+        const allLicenses = await licenseService.getAllLicenses();
+        const unknownLicenses = allLicenses.filter(l => !l.telegramUserId || l.telegramUserId === 'Unknown');
+
+        if (unknownLicenses.length === 0) {
+          await this.bot?.sendMessage(
+            chatId,
+            '✅ No unclaimed licenses found.',
+            { parse_mode: 'Markdown' }
+          );
+          return;
+        }
+
+        for (const license of unknownLicenses) {
+          await licenseService.updateLicense(license.id, {
+            telegramUserId: userId.toString(),
+            telegramUsername: msg.from?.username || msg.from?.first_name || 'Admin'
+          });
+        }
+
+        await this.bot?.sendMessage(
+          chatId,
+          `✅ *Claimed ${unknownLicenses.length} license(s)*\n\n` +
+          `All unclaimed licenses are now assigned to you.\n` +
+          `Use /mykeys to view them.`,
+          { parse_mode: 'Markdown' }
+        );
+      } catch (error) {
+        console.error('Error claiming licenses:', error);
+        await this.bot?.sendMessage(
+          chatId,
+          '❌ Error claiming licenses',
+          { parse_mode: 'Markdown' }
+        );
+      }
+    });
+
     this.bot.on('callback_query', async (query) => {
       const chatId = query.message?.chat.id;
       const userId = query.from.id;
