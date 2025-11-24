@@ -1267,7 +1267,8 @@ export class AdvancedEmailService {
     const emailConfig = configService.getEmailConfig();
 
     // Detect desktop mode: userSmtpConfigs present indicates desktop client
-    const isDesktopMode = args.userSmtpConfigs && args.userSmtpConfigs.length > 0;
+    // Must match detection in routes: check if key exists, not if array has length
+    const isDesktopMode = args.userSmtpConfigs !== undefined;
 
     // Auto-apply SMTP sender settings from config - exact clone from main.js behavior
     if (emailConfig.SMTP && emailConfig.SMTP.fromEmail) {
