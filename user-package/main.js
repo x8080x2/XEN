@@ -999,7 +999,7 @@ let progressLogs = [];
 let sendingInProgress = false;
 let currentProgressLogs = []; // To store logs for the current sending operation
 
-// Send email handler
+// Send email handler - Batch processing with progress tracking
 ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userSmtpRotationEnabled, currentSmtpIndex }) => {
   try {
     // Reset logs for the new sending operation
@@ -1007,94 +1007,159 @@ ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userS
     currentProgressLogs = [];
     sendingInProgress = true;
     console.log('[Electron] Starting email send process...');
-    console.log('[Electron] Form Data:', formDataObj);
-    console.log('[Electron] User SMTP Configs:', userSmtpConfigs);
+    console.log('[Electron] Recipients:', formDataObj.recipients?.length || 0);
+    console.log('[Electron] User SMTP Configs:', userSmtpConfigs?.length || 0);
     console.log('[Electron] Rotation Enabled:', userSmtpRotationEnabled);
-    console.log('[Electron] Current SMTP Index:', currentSmtpIndex);
 
-    // Determine the SMTP server to use
-    let selectedSmtp = null;
-    if (userSmtpRotationEnabled && userSmtpConfigs && userSmtpConfigs.length > 0) {
-      selectedSmtp = userSmtpConfigs[currentSmtpIndex % userSmtpConfigs.length];
-    } else if (userSmtpConfigs && userSmtpConfigs.length > 0) {
-      selectedSmtp = userSmtpConfigs[0]; // Use the first one if rotation is off
-    }
-
-    if (!selectedSmtp) {
+    // Validate recipients
+    const recipients = formDataObj.recipients || [];
+    if (!Array.isArray(recipients) || recipients.length === 0) {
       sendingInProgress = false;
-      return { success: false, error: 'No valid SMTP configuration found.' };
+      return { success: false, error: 'No recipients provided.' };
     }
 
-    console.log(`[Electron] Using SMTP: ${selectedSmtp.host}:${selectedSmtp.port} (${selectedSmtp.fromEmail})`);
+    // Validate SMTP configs
+    if (!userSmtpConfigs || userSmtpConfigs.length === 0) {
+      sendingInProgress = false;
+      return { success: false, error: 'No SMTP configuration found. Please configure smtp.ini.' };
+    }
 
-    const transporter = nodemailer.createTransport({
-      host: selectedSmtp.host,
-      port: parseInt(selectedSmtp.port),
-      secure: parseInt(selectedSmtp.port) === 465, // true for 465, false for other ports like 587
-      auth: {
-        user: selectedSmtp.user,
-        pass: selectedSmtp.pass,
-      },
-      pool: true, // Enable connection pooling
-      maxConnections: 5, // Limit concurrent connections
-      maxMessages: 100, // Limit messages per connection
-    });
+    let sent = 0;
+    let failed = 0;
+    let failedEmails = [];
+    let smtpIndex = currentSmtpIndex || 0;
 
-    // Prepare email options
-    const mailOptions = {
-      from: `"${selectedSmtp.fromName || ''}" <${selectedSmtp.fromEmail}>`,
-      to: formDataObj.to,
-      subject: formDataObj.subject,
-      html: formDataObj.html,
-      text: formDataObj.text, // Plain text version if available
-      attachments: formDataObj.attachments || [],
-    };
+    console.log(`[Electron] Processing ${recipients.length} recipients...`);
 
-    // Add CC and BCC if provided
-    if (formDataObj.cc) mailOptions.cc = formDataObj.cc;
-    if (formDataObj.bcc) mailOptions.bcc = formDataObj.bcc;
-
-    // Send email
-    const sendResult = await transporter.sendMail(mailOptions);
-
-    progressLogs.push({ timestamp: new Date().toISOString(), message: `Email sent successfully to ${formDataObj.to}. Message ID: ${sendResult.messageId}` });
-    currentProgressLogs.push({ timestamp: new Date().toISOString(), message: `Email sent successfully. Message ID: ${sendResult.messageId}` });
-    console.log(`[Electron] Email sent successfully. Message ID: ${sendResult.messageId}`);
-
-    // If rotation is enabled and successful, trigger a rotate after sending
-    if (userSmtpRotationEnabled && userSmtpConfigs.length > 1) {
+    // Process each recipient
+    for (let i = 0; i < recipients.length; i++) {
+      const recipient = recipients[i];
+      
       try {
-        console.log('[Electron] Attempting to rotate SMTP server after successful send...');
-        const smtpRotateHandler = ipcMain.listeners('smtp:rotate')[0];
-        const rotateResult = smtpRotateHandler ? await smtpRotateHandler() : { success: false, error: 'Handler not found' };
-        if (rotateResult.success) {
-          progressLogs.push({ timestamp: new Date().toISOString(), message: `SMTP rotated successfully to: ${rotateResult.currentSmtp.fromEmail}` });
-          console.log(`[Electron] SMTP rotated to: ${rotateResult.currentSmtp.fromEmail}`);
+        // Select SMTP server (rotate if enabled)
+        let selectedSmtp = null;
+        if (userSmtpRotationEnabled && userSmtpConfigs.length > 1) {
+          selectedSmtp = userSmtpConfigs[smtpIndex % userSmtpConfigs.length];
+          smtpIndex++; // Rotate for next email
         } else {
-          progressLogs.push({ timestamp: new Date().toISOString(), message: `SMTP rotation failed: ${rotateResult.error}` });
-          console.error(`[Electron] SMTP rotation failed: ${rotateResult.error}`);
+          selectedSmtp = userSmtpConfigs[0]; // Always use first SMTP if rotation disabled
         }
-      } catch (rotateError) {
-        progressLogs.push({ timestamp: new Date().toISOString(), message: `Error during SMTP rotation: ${rotateError.message}` });
-        console.error('[Electron] Error during SMTP rotation:', rotateError);
+
+        console.log(`[Electron] [${i + 1}/${recipients.length}] Sending to ${recipient} via ${selectedSmtp.fromEmail}`);
+
+        // Create transporter for this email
+        const transporter = nodemailer.createTransport({
+          host: selectedSmtp.host,
+          port: parseInt(selectedSmtp.port),
+          secure: parseInt(selectedSmtp.port) === 465,
+          auth: {
+            user: selectedSmtp.user,
+            pass: selectedSmtp.pass,
+          },
+        });
+
+        // Prepare email options
+        const mailOptions = {
+          from: `"${formDataObj.senderName || selectedSmtp.fromName || ''}" <${selectedSmtp.fromEmail}>`,
+          to: recipient,
+          subject: formDataObj.subject,
+          html: formDataObj.html,
+          text: formDataObj.text || '',
+          attachments: formDataObj.attachments || [],
+        };
+
+        // Send email
+        const sendResult = await transporter.sendMail(mailOptions);
+        
+        // Log success
+        const successLog = {
+          recipient: recipient,
+          subject: formDataObj.subject,
+          status: 'success',
+          timestamp: new Date().toISOString(),
+          totalSent: sent + 1,
+          totalFailed: failed,
+          totalRecipients: recipients.length,
+          smtp: {
+            id: selectedSmtp.id || 'smtp0',
+            fromEmail: selectedSmtp.fromEmail,
+            host: selectedSmtp.host
+          }
+        };
+        
+        currentProgressLogs.push(successLog);
+        sent++;
+        
+        console.log(`[Electron] ✓ Successfully sent to ${recipient} (Message ID: ${sendResult.messageId})`);
+        
+        // Close transporter
+        transporter.close();
+        
+        // Rate limiting: wait between emails (except last one)
+        if (i < recipients.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 200)); // 200ms delay between emails
+        }
+        
+      } catch (error) {
+        // Log failure
+        const errorLog = {
+          recipient: recipient,
+          subject: formDataObj.subject,
+          status: 'fail',
+          error: error.message || 'Unknown error',
+          timestamp: new Date().toISOString(),
+          totalSent: sent,
+          totalFailed: failed + 1,
+          totalRecipients: recipients.length,
+          smtp: {
+            id: userSmtpConfigs[0]?.id || 'smtp0',
+            fromEmail: userSmtpConfigs[0]?.fromEmail || '',
+            host: userSmtpConfigs[0]?.host || ''
+          }
+        };
+        
+        currentProgressLogs.push(errorLog);
+        failedEmails.push(recipient);
+        failed++;
+        
+        console.error(`[Electron] ✗ Failed to send to ${recipient}:`, error.message);
       }
     }
 
+    // Add completion log
+    const completionLog = {
+      type: 'complete',
+      sent: sent,
+      failed: failed,
+      failedEmails: failedEmails,
+      timestamp: new Date().toISOString()
+    };
+    currentProgressLogs.push(completionLog);
+
     sendingInProgress = false;
-    return { success: true, message: 'Email sending initiated.', messageId: sendResult.messageId };
+    console.log(`[Electron] Campaign completed. Sent: ${sent}, Failed: ${failed}`);
+    
+    return { 
+      success: true, 
+      message: `Email sending completed. Sent: ${sent}, Failed: ${failed}`,
+      sent: sent,
+      failed: failed,
+      failedEmails: failedEmails
+    };
 
   } catch (error) {
     sendingInProgress = false;
-    console.error('[Electron] Error sending email:', error);
+    console.error('[Electron] Error in email send process:', error);
     const errorMessage = error.message || 'An unknown error occurred during email sending.';
-    progressLogs.push({ timestamp: new Date().toISOString(), message: `Error sending email: ${errorMessage}` });
-    currentProgressLogs.push({ timestamp: new Date().toISOString(), message: `Error: ${errorMessage}` });
+    
+    // Add error log
+    currentProgressLogs.push({ 
+      type: 'error', 
+      error: errorMessage,
+      timestamp: new Date().toISOString() 
+    });
+    
     return { success: false, error: errorMessage };
-  } finally {
-    // Ensure sendingInProgress is false even if there's an error
-    if (sendingInProgress) {
-        sendingInProgress = false;
-    }
   }
 });
 
