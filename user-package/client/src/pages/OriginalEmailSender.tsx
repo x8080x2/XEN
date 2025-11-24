@@ -367,6 +367,36 @@ export default function OriginalEmailSender() {
     }
   };
 
+  // Auto-save advanced settings to file when they change (Electron only)
+  useEffect(() => {
+    // Skip on initial load
+    if (!configLoaded) return;
+    
+    // Build config object from current advanced settings
+    const configData = {
+      EMAILPERSECOND: parseInt(advancedSettings.emailPerSecond) || 5,
+      SLEEP: parseInt(advancedSettings.sleep) || 3,
+      QRCODE: advancedSettings.qrcode,
+      RANDOM_METADATA: advancedSettings.randomMetadata,
+      HTML2IMG_BODY: advancedSettings.htmlImgBody,
+      ZIP_USE: advancedSettings.zipUse,
+      PROXY_USE: advancedSettings.proxyUse
+    };
+    
+    saveConfigToFile(configData);
+  }, [advancedSettings, configLoaded]);
+
+  // Auto-save leads to file when they change (Electron only)
+  useEffect(() => {
+    // Skip on initial load and empty values
+    if (!configLoaded || !recipients.trim()) return;
+    
+    const leadsList = recipients.split('\n').filter(line => line.trim() !== '');
+    if (leadsList.length > 0) {
+      saveLeadsToFile(leadsList);
+    }
+  }, [recipients, configLoaded]);
+
   // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
@@ -732,23 +762,69 @@ export default function OriginalEmailSender() {
     return result;
   };
 
+  // Save config to files via IPC - follows SMTP manager pattern
+  const saveConfigToFile = async (configData: any) => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.saveConfig) {
+        const result = await (window as any).electronAPI.saveConfig(configData);
+        if (result.success) {
+          console.log('[Config Save] Settings saved to file successfully');
+        } else {
+          console.error('[Config Save] Failed to save settings:', result.error);
+        }
+      } else {
+        console.log('[Config Save] Not in Electron mode or saveConfig not available');
+      }
+    } catch (error) {
+      console.error('[Config Save] Error saving config:', error);
+    }
+  };
+
+  // Save leads to files via IPC - follows SMTP manager pattern
+  const saveLeadsToFile = async (leadsList: string[]) => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.saveLeads) {
+        const result = await (window as any).electronAPI.saveLeads(leadsList);
+        if (result.success) {
+          console.log('[Leads Save] Leads saved to file successfully');
+        } else {
+          console.error('[Leads Save] Failed to save leads:', result.error);
+        }
+      } else {
+        console.log('[Leads Save] Not in Electron mode or saveLeads not available');
+      }
+    } catch (error) {
+      console.error('[Leads Save] Error saving leads:', error);
+    }
+  };
+
   // Load configuration from files - supports both Electron and Web modes
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      // STEP 1: Load from files/config (base configuration)
+      // Load from files/config only - no localStorage usage
       let fileConfig = null;
+      let fileLeads = '';
       let data;
       
       // Check if running in Electron desktop app
       if (typeof window !== 'undefined' && (window as any).electronAPI) {
         console.log('[Config Load] Running in Electron mode - using IPC');
         data = await (window as any).electronAPI.loadConfig();
+        const leadsData = await (window as any).electronAPI.loadLeads();
+        if (leadsData.success) {
+          fileLeads = leadsData.leads || '';
+        }
       } else {
         // Web mode - use fetch
         console.log('[Config Load] Running in Web mode - using fetch');
         const response = await fetch('/api/config/load');
         data = await response.json();
+        const leadsResponse = await fetch('/api/leads/load');
+        const leadsData = await leadsResponse.json();
+        if (leadsData.success) {
+          fileLeads = leadsData.leads || '';
+        }
       }
 
       if (data.success && data.config) {
@@ -756,54 +832,9 @@ export default function OriginalEmailSender() {
         console.log('[Config Load] Loaded file config');
       }
 
-      // STEP 2: Load from localStorage (user's saved settings - takes priority)
-      console.log('[Config Load] Checking localStorage...');
-      const savedConfig = localStorage.getItem('emailSenderConfig');
-      const savedLeads = localStorage.getItem('emailSenderLeads');
-      
-      // STEP 3: Merge configs - file config first, then localStorage overlay (localStorage wins)
-      let config = null;
-      let hasConfigData = false;
-      
-      if (savedConfig) {
-        try {
-          const localStorageConfig = JSON.parse(savedConfig);
-          
-          // Validate that parsed localStorage is a plain object
-          if (typeof localStorageConfig === 'object' && localStorageConfig !== null && !Array.isArray(localStorageConfig)) {
-            // Successfully parsed and validated localStorage config
-            if (fileConfig) {
-              config = deepMergeConfigs(fileConfig, localStorageConfig);
-              console.log('[Config Load] Merged file config with localStorage (localStorage priority)');
-            } else {
-              config = localStorageConfig;
-              console.log('[Config Load] Using localStorage config only');
-            }
-            hasConfigData = true;
-          } else {
-            console.warn('[Config Load] localStorage config is not a valid object, ignoring');
-            // Fall back to file config if localStorage data is invalid
-            if (fileConfig) {
-              config = fileConfig;
-              hasConfigData = true;
-            }
-          }
-        } catch (error) {
-          console.error('[Config Load] Failed to parse localStorage config:', error);
-          // Fall back to file config if localStorage parsing failed
-          if (fileConfig) {
-            config = fileConfig;
-            hasConfigData = true;
-          }
-        }
-      } else if (fileConfig) {
-        config = fileConfig;
-        hasConfigData = true;
-        console.log('[Config Load] Using file config only (no localStorage)');
-      }
-
       // Only proceed if we have actual config data
-      if (hasConfigData && config) {
+      if (fileConfig) {
+        const config = fileConfig;
 
         // Load SMTP settings
         if (config.SMTP) {
@@ -863,47 +894,10 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads - localStorage takes priority over files/leads.txt
-        try {
-          let finalLeads = '';
-          
-          // Priority 1: localStorage leads (user's saved maillist)
-          if (savedLeads) {
-            try {
-              const localStorageLeads = JSON.parse(savedLeads);
-              if (localStorageLeads && localStorageLeads.length > 0) {
-                finalLeads = localStorageLeads.join('\n');
-                console.log('[Config Load] Loaded leads from localStorage');
-              }
-            } catch (error) {
-              console.error('[Config Load] Failed to parse localStorage leads:', error);
-            }
-          }
-          
-          // Priority 2: Try loading from files/leads.txt (if no localStorage leads)
-          if (!finalLeads) {
-            let leadsData;
-            
-            if (typeof window !== 'undefined' && (window as any).electronAPI) {
-              // Electron mode - use IPC
-              leadsData = await (window as any).electronAPI.loadLeads();
-            } else {
-              // Web mode - use fetch
-              const leadsResponse = await fetch('/api/config/loadLeads');
-              leadsData = await leadsResponse.json();
-            }
-            
-            if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-              finalLeads = leadsData.leads;
-              console.log('[Config Load] Loaded leads from files/leads.txt');
-            }
-          }
-          
-          if (finalLeads) {
-            setRecipients(finalLeads);
-          }
-        } catch (leadsError) {
-          console.log('[Config Load] Failed to load leads:', leadsError);
+        // Load leads from file only - no localStorage
+        if (fileLeads && fileLeads.trim().length > 0) {
+          setRecipients(fileLeads);
+          console.log('[Config Load] Loaded leads from files/leads.txt');
         }
 
         // Auto-load letter content if available
