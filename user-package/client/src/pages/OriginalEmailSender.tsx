@@ -271,12 +271,21 @@ export default function OriginalEmailSender() {
   // Consolidated template loading function
   const loadTemplateContent = useCallback(async (templatePath: string): Promise<string> => {
     try {
-      const response = await fetch('/api/original/readFile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filepath: templatePath })
-      });
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        const content = await (window as any).electronAPI.readFile(templatePath);
+        data = { success: content !== null && content !== undefined, content };
+      } else {
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filepath: templatePath })
+        });
+        data = await response.json();
+      }
+      
       return data.success ? (data.content || '') : '';
     } catch (error) {
       console.error('Failed to load template:', error);
@@ -286,8 +295,17 @@ export default function OriginalEmailSender() {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/original/listFiles');
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        const files = await (window as any).electronAPI.listFiles('files');
+        data = { files };
+      } else {
+        const response = await fetch('/api/original/listFiles');
+        data = await response.json();
+      }
+      
       if (data.files) {
         setTemplateFiles(data.files);
       }
@@ -298,8 +316,17 @@ export default function OriginalEmailSender() {
 
   const loadLogoFiles = async () => {
     try {
-      const response = await fetch('/api/original/listLogoFiles');
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        const files = await (window as any).electronAPI.listFiles('files/logo');
+        data = { files };
+      } else {
+        const response = await fetch('/api/original/listLogoFiles');
+        data = await response.json();
+      }
+      
       if (data.files) {
         setLogoFiles(data.files);
       }
@@ -352,8 +379,15 @@ export default function OriginalEmailSender() {
 
     const initializeAI = async () => {
       try {
-        const configResponse = await fetch('/api/config/load');
-        const configData = await configResponse.json();
+        let configData;
+        
+        // Use Electron IPC or fetch based on environment
+        if (typeof window !== 'undefined' && (window as any).electronAPI) {
+          configData = await (window as any).electronAPI.loadConfig();
+        } else {
+          const configResponse = await fetch('/api/config/load');
+          configData = await configResponse.json();
+        }
 
         if (!mounted) return;
 
@@ -467,8 +501,16 @@ export default function OriginalEmailSender() {
   // SMTP Management Functions
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        data = await (window as any).electronAPI.smtpList();
+      } else {
+        const response = await fetch("/api/smtp/list");
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(data);
         checkSmtpStatus();
@@ -480,12 +522,20 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        data = await (window as any).electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
+      } else {
+        const response = await fetch("/api/smtp/toggle-rotation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -507,12 +557,20 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        data = await (window as any).electronAPI.smtpAdd(newSmtp);
+      } else {
+        const response = await fetch("/api/smtp/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSmtp)
+        });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -537,8 +595,16 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
-      const data = await response.json();
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        data = await (window as any).electronAPI.smtpDelete(smtpId);
+      } else {
+        const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+        data = await response.json();
+      }
+      
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -554,12 +620,19 @@ export default function OriginalEmailSender() {
 
   const rotateSmtp = async () => {
     try {
-      const response = await fetch("/api/smtp/rotate", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      let data;
+      
+      // Use Electron IPC or fetch based on environment
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        data = await (window as any).electronAPI.smtpRotate();
+      } else {
+        const response = await fetch("/api/smtp/rotate", {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        data = await response.json();
+      }
 
-      const data = await response.json();
       if (data.success && data.currentSmtp) {
         setSmtpData(prev => ({
           ...prev,
@@ -749,14 +822,23 @@ export default function OriginalEmailSender() {
     // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        const response = await fetch('/api/original/readFile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
-        });
-        const data = await response.json();
+        let data;
+        
+        // Use Electron IPC or fetch based on environment
+        if (typeof window !== 'undefined' && (window as any).electronAPI) {
+          const content = await (window as any).electronAPI.readFile(`files/${selectedTemplate}`);
+          data = { success: content !== null && content !== undefined, content };
+        } else {
+          const response = await fetch('/api/original/readFile', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
+          });
+          data = await response.json();
+        }
+        
         bodyHtml = data.success ? (data.content || '') : '';
       } catch (error) {
         console.error('Failed to load template:', error);
