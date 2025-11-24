@@ -710,7 +710,7 @@ export default function OriginalEmailSender() {
 
   const handleSendEmails = async () => {
     // Validation logic - exact clone from sender.html lines 1307-1321
-    const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
+    const recipientList = recipients.split('\n').map(email => email.trim()).filter(email => email !== '');
 
     if (!recipientList.length) {
       setStatusText('Please enter at least one recipient.');
