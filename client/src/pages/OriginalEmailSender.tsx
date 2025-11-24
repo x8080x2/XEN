@@ -14,6 +14,26 @@ const isDesktopMode = (): boolean => {
   return typeof window !== 'undefined' && !!window.electronAPI;
 };
 
+// Get server URL for desktop mode - returns empty string for web mode (uses relative URLs)
+const getServerUrl = (): string => {
+  if (!isDesktopMode()) return '';
+  
+  // Desktop mode: get server URL from window (set by Electron main process)
+  const serverUrl = (window as any).REPLIT_SERVER_URL;
+  if (serverUrl) {
+    return serverUrl.replace(/\/$/, ''); // Remove trailing slash
+  }
+  
+  console.warn('[Desktop] REPLIT_SERVER_URL not set - API calls may fail');
+  return '';
+};
+
+// Helper to build API URLs - uses absolute URL for desktop, relative for web
+const apiUrl = (path: string): string => {
+  const serverUrl = getServerUrl();
+  return serverUrl ? `${serverUrl}${path}` : path;
+};
+
 // Type definition for Electron API (matches user-package/client/src/types/electron.d.ts)
 declare global {
   interface Window {
@@ -312,10 +332,18 @@ export default function OriginalEmailSender() {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/original/listFiles');
-      const data = await response.json();
-      if (data.files) {
-        setTemplateFiles(data.files);
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC to list local template files
+        const files = await window.electronAPI!.listFiles('files');
+        setTemplateFiles(files || []);
+        console.log(`[Desktop] Loaded ${files?.length || 0} templates from local files/`);
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch('/api/original/listFiles');
+        const data = await response.json();
+        if (data.files) {
+          setTemplateFiles(data.files);
+        }
       }
     } catch (error) {
       console.error('Failed to load templates:', error);
@@ -324,10 +352,18 @@ export default function OriginalEmailSender() {
 
   const loadLogoFiles = async () => {
     try {
-      const response = await fetch('/api/original/listLogoFiles');
-      const data = await response.json();
-      if (data.files) {
-        setLogoFiles(data.files);
+      if (isDesktopMode()) {
+        // Desktop mode: use Electron IPC to list local logo files
+        const files = await window.electronAPI!.listFiles('files/logo');
+        setLogoFiles(files || []);
+        console.log(`[Desktop] Loaded ${files?.length || 0} logos from local files/logo/`);
+      } else {
+        // Web mode: fetch from server
+        const response = await fetch('/api/original/listLogoFiles');
+        const data = await response.json();
+        if (data.files) {
+          setLogoFiles(data.files);
+        }
       }
     } catch (error) {
       console.error('Error loading logo files:', error);
@@ -378,13 +414,13 @@ export default function OriginalEmailSender() {
 
     const initializeAI = async () => {
       try {
-        const configResponse = await fetch('/api/config/load');
+        const configResponse = await fetch(apiUrl('/api/config/load'));
         const configData = await configResponse.json();
 
         if (!mounted) return;
 
         if (configData.success && configData.config?.GOOGLE_AI_KEY) {
-          const aiResponse = await fetch('/api/ai/initialize', {
+          const aiResponse = await fetch(apiUrl('/api/ai/initialize'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ apiKey: configData.config.GOOGLE_AI_KEY })
@@ -409,7 +445,7 @@ export default function OriginalEmailSender() {
 
   const checkAIStatus = async () => {
     try {
-      const response = await fetch('/api/ai/status');
+      const response = await fetch(apiUrl('/api/ai/status'));
       const data = await response.json();
       setAiStatus(data);
       // Don't automatically enable AI, let user control it with checkbox
@@ -423,7 +459,7 @@ export default function OriginalEmailSender() {
     if (aiStatus.initialized) {
       try {
         // Call backend to deinitialize AI service
-        const response = await fetch('/api/ai/deinitialize', {
+        const response = await fetch(apiUrl('/api/ai/deinitialize'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -436,7 +472,7 @@ export default function OriginalEmailSender() {
           localStorage.removeItem('google_ai_key'); // Remove key from local storage
 
           // Clear from config file but keep the key in the input field for easy re-initialization
-          await fetch('/api/config/save', {
+          await fetch(apiUrl('/api/config/save'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ GOOGLE_AI_KEY: '' })
@@ -457,7 +493,7 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      const response = await fetch('/api/ai/initialize', {
+      const response = await fetch(apiUrl('/api/ai/initialize'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: aiApiKey })
@@ -469,7 +505,7 @@ export default function OriginalEmailSender() {
         localStorage.setItem('google_ai_key', aiApiKey);
 
         // Save to setup.ini
-        await fetch('/api/config/save', {
+        await fetch(apiUrl('/api/config/save'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
@@ -655,7 +691,7 @@ export default function OriginalEmailSender() {
     smtpCheckingRef.current = true;
     setSmtpChecking(true);
     try {
-      const response = await fetch("/api/smtp/test");
+      const response = await fetch(apiUrl("/api/smtp/test"));
       const data = await response.json();
       setSmtpOnline(data.online);
 
@@ -894,8 +930,12 @@ export default function OriginalEmailSender() {
         }
       }
 
-      // Start email sending
-      const response = await fetch('/api/original/sendMail', {
+      // Start email sending - use absolute URL for desktop mode
+      const serverUrl = getServerUrl();
+      const sendUrl = serverUrl ? `${serverUrl}/api/original/sendMail` : '/api/original/sendMail';
+      console.log(`[Send] Posting to: ${sendUrl}`);
+      
+      const response = await fetch(sendUrl, {
         method: 'POST',
         body: formData,
       });
@@ -912,7 +952,11 @@ export default function OriginalEmailSender() {
       let logIndex = 0;
       const pollInterval = setInterval(async () => {
         try {
-          const progressResponse = await fetch(`/api/original/progress?since=${logIndex}`);
+          // Use absolute URL for desktop mode
+          const progressUrl = serverUrl 
+            ? `${serverUrl}/api/original/progress?since=${logIndex}` 
+            : `/api/original/progress?since=${logIndex}`;
+          const progressResponse = await fetch(progressUrl);
           const progressData = await progressResponse.json();
 
           if (progressData.logs && progressData.logs.length > 0) {
@@ -982,7 +1026,7 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      await fetch('/api/original/cancel', { method: 'POST' });
+      await fetch(apiUrl('/api/original/cancel'), { method: 'POST' });
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("Campaign cancelled");
