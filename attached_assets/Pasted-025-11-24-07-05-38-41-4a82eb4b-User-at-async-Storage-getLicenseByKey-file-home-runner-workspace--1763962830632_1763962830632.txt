@@ -1,0 +1,170 @@
+025-11-24 07:05:38.41
+4a82eb4b
+User
+at async Storage.getLicenseByKey (file:///home/runner/workspace/dist/index.js:223:27)
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+sourceError: undefined
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+}
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+License verification error: NeonDbError: relation "licenses" does not exist
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+hint: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+detail: undefined,
+
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+at async NeonHttpPreparedQuery.execute (file:///home/runner/workspace/node_modules/drizzle-orm/neon-http/session.js:40:20)
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+at async LicenseService.verifyLicense (file:///home/runner/workspace/dist/index.js:3115:25)
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+routine: 'parserOpenTable',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+internalQuery: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+internalPosition: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+severity: 'ERROR',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+dataType: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+at async file:///home/runner/workspace/dist/index.js:4603:22 {
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+at execute (file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1556:55)
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+table: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+position: '143',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+where: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+file: 'parse_relation.c',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+line: '1449',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+schema: undefined,
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+code: '42P01',
+2025-11-24 07:05:38.41
+4a82eb4b
+User
+constraint: undefined,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+at Async.drainQueues [as _onImmediate] (/home/runner/workspace/node_modules/bluebird/js/release/async.js:15:14)
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+} reason: TelegramError: ETELEGRAM: 403 Forbidden: bot was blocked by the user
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+statusMessage: 'Forbidden',
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+caseless: [Caseless],
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+method: null,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+response: IncomingMessage {
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+}
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+at /home/runner/workspace/node_modules/node-telegram-bot-api/src/telegram.js:316:15
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+upgrade: false,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+response: IncomingMessage {
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+_maxListeners: undefined,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+rawTrailers: [],
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+at _drainQueue (/home/runner/workspace/node_modules/bluebird/js/release/async.js:86:9)
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+at _drainQueue (/home/runner/workspace/node_modules/bluebird/js/release/async.js:86:9)
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+_dumped: false,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+socket: null,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+[Symbol(kCapture)]: false,
+2025-11-24 07:05:42.06
+4a82eb4b
+User
+toJSON: [Function: responseToJSON],
+
