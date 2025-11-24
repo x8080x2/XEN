@@ -25,10 +25,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggle-rotation', enabled),
   smtpTest: () => ipcRenderer.invoke('smtp:test'),
 
-  // Email sending operations
-  sendEmail: (formData) => ipcRenderer.invoke('email:send', formData),
-  getEmailProgress: (since) => ipcRenderer.invoke('email:progress', since),
-  cancelEmail: () => ipcRenderer.invoke('email:cancel'),
+  // NOTE: Email sending operations now use backend API via replitApiService
+  // sendEmail, getEmailProgress, and cancelEmail have been removed from Electron IPC
+  // Desktop app now connects to backend server for all email processing
 
   // File upload
   fileUpload: (sourceFilePath) => ipcRenderer.invoke('file-upload', sourceFilePath),
