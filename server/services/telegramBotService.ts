@@ -503,7 +503,28 @@ class TelegramBotService {
     const isAdmin = this.isAdmin(userId);
     try {
       const allLicenses = await licenseService.getAllLicenses();
-      const userLicenses = allLicenses.filter(l => l.telegramUserId === userId.toString());
+      let userLicenses = allLicenses.filter(l => l.telegramUserId === userId.toString());
+
+      // Auto-claim unknown licenses for admins if they have no licenses
+      if (userLicenses.length === 0 && isAdmin) {
+        const unknownLicenses = allLicenses.filter(l => !l.telegramUserId || l.telegramUserId === 'Unknown');
+        
+        if (unknownLicenses.length > 0) {
+          // Claim all unknown licenses
+          for (const license of unknownLicenses) {
+            await licenseService.updateLicense(license.id, {
+              telegramUserId: userId.toString(),
+              telegramUsername: 'Admin'
+            });
+          }
+          
+          // Refresh the user's licenses
+          const updatedLicenses = await licenseService.getAllLicenses();
+          userLicenses = updatedLicenses.filter(l => l.telegramUserId === userId.toString());
+          
+          console.log(`[Telegram Bot] Auto-claimed ${unknownLicenses.length} unknown licenses for admin ${userId}`);
+        }
+      }
 
       if (userLicenses.length === 0) {
         await this.bot?.sendMessage(
