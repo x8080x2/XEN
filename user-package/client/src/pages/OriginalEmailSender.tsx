@@ -839,7 +839,9 @@ export default function OriginalEmailSender() {
       const isElectron = window.electronAPI !== undefined;
 
       if (isElectron) {
-        // Desktop version - use Electron API to send to remote server
+        // Desktop version - use Electron API to send emails directly
+        console.log('[Desktop] Starting email send via Electron...');
+        
         const formDataObj = {
           senderEmail,
           senderName: senderName || '',
@@ -855,14 +857,26 @@ export default function OriginalEmailSender() {
           useAIEnabled: String(aiEnabled),
           useAISubject: String(aiEnabled && useAISubject),
           useAISenderName: String(aiEnabled && useAISenderName),
-          attachments: [] // File attachments handled separately in Electron
+          attachments: []
         };
+
+        console.log('[Desktop] Form data prepared:', {
+          recipientCount: formDataObj.recipients.length,
+          hasHtml: !!formDataObj.html,
+          smtpHost: formDataObj.smtpHost
+        });
 
         // Get current SMTP data for rotation
         const currentSmtpData = await window.electronAPI.smtpList();
         const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
         const userSmtpRotationEnabled = currentSmtpData.rotationEnabled || false;
         const currentSmtpIndex = userSmtpConfigs.findIndex((s: any) => s.id === currentSmtpData.currentSmtp?.id) || 0;
+
+        console.log('[Desktop] SMTP config loaded:', {
+          configCount: userSmtpConfigs.length,
+          rotationEnabled: userSmtpRotationEnabled,
+          currentIndex: currentSmtpIndex
+        });
 
         // Send via Electron
         const result = await window.electronAPI.sendEmail({
@@ -871,6 +885,8 @@ export default function OriginalEmailSender() {
           userSmtpRotationEnabled,
           currentSmtpIndex
         });
+
+        console.log('[Desktop] Send result:', result);
 
         if (!result.success) {
           throw new Error(result.error || 'Failed to start email sending');

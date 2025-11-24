@@ -1006,21 +1006,27 @@ ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userS
     progressLogs = [];
     currentProgressLogs = [];
     sendingInProgress = true;
+    console.log('[Electron] ========================================');
     console.log('[Electron] Starting email send process...');
     console.log('[Electron] Recipients:', formDataObj.recipients?.length || 0);
     console.log('[Electron] User SMTP Configs:', userSmtpConfigs?.length || 0);
     console.log('[Electron] Rotation Enabled:', userSmtpRotationEnabled);
+    console.log('[Electron] Subject:', formDataObj.subject);
+    console.log('[Electron] HTML length:', formDataObj.html?.length || 0);
+    console.log('[Electron] ========================================');
 
     // Validate recipients
     const recipients = formDataObj.recipients || [];
     if (!Array.isArray(recipients) || recipients.length === 0) {
       sendingInProgress = false;
+      console.error('[Electron] ERROR: No recipients provided');
       return { success: false, error: 'No recipients provided.' };
     }
 
     // Validate SMTP configs
     if (!userSmtpConfigs || userSmtpConfigs.length === 0) {
       sendingInProgress = false;
+      console.error('[Electron] ERROR: No SMTP configuration found');
       return { success: false, error: 'No SMTP configuration found. Please configure smtp.ini.' };
     }
 
