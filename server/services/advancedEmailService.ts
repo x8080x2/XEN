@@ -1281,16 +1281,21 @@ export class AdvancedEmailService {
       // Desktop users MUST provide their own SMTP via userSmtpConfigs
       if (!args.smtpHost && emailConfig.SMTP.host) {
         if (isDesktopMode) {
-          console.error('[Desktop Mode] Desktop users must provide SMTP credentials via local smtp.ini - server SMTP not allowed');
-          throw new Error('Desktop mode requires local SMTP configuration. Please configure smtp.ini in your user-package/config directory.');
+          // Check if desktop has provided userSmtpConfigs
+          if (!args.userSmtpConfigs || args.userSmtpConfigs.length === 0) {
+            console.error('[Desktop Mode] Desktop users must provide SMTP credentials via local smtp.ini - server SMTP not allowed');
+            throw new Error('Desktop mode requires local SMTP configuration. Please configure smtp.ini in your user-package/config directory.');
+          }
+          // Desktop mode with userSmtpConfigs is valid - SMTP will come from userSmtpConfigs array
+          console.log('[Desktop Mode] Using user-provided SMTP configurations from userSmtpConfigs');
+        } else {
+          // Web users can use server SMTP
+          args.smtpHost = emailConfig.SMTP.host;
+          args.smtpPort = emailConfig.SMTP.port || '587';
+          args.smtpUser = emailConfig.SMTP.user;
+          args.smtpPass = emailConfig.SMTP.pass;
+          console.log('[Web Mode] Auto-applied SMTP settings from server config');
         }
-        
-        // Web users can use server SMTP
-        args.smtpHost = emailConfig.SMTP.host;
-        args.smtpPort = emailConfig.SMTP.port || '587';
-        args.smtpUser = emailConfig.SMTP.user;
-        args.smtpPass = emailConfig.SMTP.pass;
-        console.log('[Web Mode] Auto-applied SMTP settings from server config');
       }
     }
 
