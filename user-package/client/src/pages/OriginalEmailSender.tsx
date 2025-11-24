@@ -150,7 +150,7 @@ export default function OriginalEmailSender() {
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
+  const [aiApiKey, setAiApiKey] = useState('');  // Loaded from file config, not localStorage
   const [aiEnabled, setAiEnabled] = useState(false);
   const [useAISubject, setUseAISubject] = useState(false);
   const [useAISenderName, setUseAISenderName] = useState(false);
@@ -466,14 +466,9 @@ export default function OriginalEmailSender() {
           setAiEnabled(false); // Disable AI features
           setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
           setStatusText('AI service turned off successfully');
-          localStorage.removeItem('google_ai_key'); // Remove key from local storage
 
           // Clear from config file but keep the key in the input field for easy re-initialization
-          await fetch('/api/config/save', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ GOOGLE_AI_KEY: '' })
-          });
+          await saveAIKeyToConfig('');
         } else {
           setStatusText('Failed to turn off AI service');
         }
@@ -498,15 +493,8 @@ export default function OriginalEmailSender() {
       const data = await response.json();
 
       if (data.success) {
-        // Save to localStorage and config file
-        localStorage.setItem('google_ai_key', aiApiKey);
-
-        // Save to setup.ini
-        await fetch('/api/config/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
-        });
+        // Save AI key to config file using IPC for desktop, API for web
+        await saveAIKeyToConfig(aiApiKey);
 
         // Let user control AI enabled state via checkbox
         setStatusText('AI initialized successfully and saved to config');
@@ -739,6 +727,31 @@ export default function OriginalEmailSender() {
       }
     } catch (error) {
       console.error('[Leads Save] Error saving leads:', error);
+    }
+  };
+
+  // Save AI key to config file - uses IPC for desktop, API for web
+  const saveAIKeyToConfig = async (aiKey: string) => {
+    try {
+      if (typeof window !== 'undefined' && (window as any).electronAPI?.saveConfig) {
+        // Desktop mode - use IPC
+        const result = await (window as any).electronAPI.saveConfig({ GOOGLE_AI_KEY: aiKey });
+        if (result.success) {
+          console.log('[AI Key Save] AI key saved to config file via IPC');
+        } else {
+          console.error('[AI Key Save] Failed to save AI key:', result.error);
+        }
+      } else {
+        // Web mode - use API
+        await fetch('/api/config/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ GOOGLE_AI_KEY: aiKey })
+        });
+        console.log('[AI Key Save] AI key saved to config file via API');
+      }
+    } catch (error) {
+      console.error('[AI Key Save] Error saving AI key:', error);
     }
   };
 

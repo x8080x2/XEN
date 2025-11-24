@@ -32,6 +32,11 @@ Preferred communication style: Simple, everyday language.
 - Real-time progress tracking via SSE for email sending operations
 - Desktop app syncs styles from web app using `sync-styles.js` script
 - Shared component library between web and desktop versions
+- **Desktop Storage Strategy**: All settings persistence in desktop app uses file-based IPC handlers (NO localStorage)
+  - Config settings saved to `config/config.ini` via `saveConfig` IPC
+  - Email leads saved to `files/leads.txt` via `saveLeads` IPC
+  - Auto-save on settings changes using React useEffect hooks
+  - Follows same pattern as SMTP Manager for consistency
 
 ### Backend Architecture
 
