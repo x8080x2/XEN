@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { SMTPManager } from "@/components/SMTPManager";
 import { useToast } from "@/hooks/use-toast";
+import { localFileService } from "@/lib/localFileService";
 
 interface EmailProgress {
   recipient: string;
@@ -681,10 +682,62 @@ export default function OriginalEmailSender() {
     }
   };
 
+  // Helper function to recursively deep merge configs, with localStorage taking priority for non-empty values
+  const deepMergeConfigs = (fileConfig: any, localConfig: any): any => {
+    // If localConfig is not an object or is null, return fileConfig
+    if (typeof localConfig !== 'object' || localConfig === null || Array.isArray(localConfig)) {
+      return localConfig !== undefined && localConfig !== null ? localConfig : fileConfig;
+    }
+    
+    // If fileConfig is not an object or is null, return localConfig
+    if (typeof fileConfig !== 'object' || fileConfig === null || Array.isArray(fileConfig)) {
+      return localConfig;
+    }
+    
+    // Start with a copy of fileConfig to preserve all its fields
+    const result = { ...fileConfig };
+    
+    // Recursively merge each property from localConfig
+    for (const key in localConfig) {
+      const localValue = localConfig[key];
+      const fileValue = fileConfig[key];
+      
+      // Skip undefined or null localStorage values - keep file defaults
+      if (localValue === undefined || localValue === null) {
+        continue;
+      }
+      
+      // Special handling for SMTP: field-by-field merge, only non-empty strings
+      if (key === 'SMTP' && typeof localValue === 'object' && !Array.isArray(localValue)) {
+        result[key] = { ...(fileValue || {}) };
+        for (const smtpKey in localValue) {
+          const smtpValue = localValue[smtpKey];
+          // Only overwrite if localStorage has a non-empty value
+          if (smtpValue && smtpValue !== '') {
+            result[key][smtpKey] = smtpValue;
+          }
+        }
+      }
+      // For nested objects (not arrays), recursively merge
+      else if (typeof localValue === 'object' && !Array.isArray(localValue) && 
+               typeof fileValue === 'object' && !Array.isArray(fileValue) && fileValue !== null) {
+        result[key] = deepMergeConfigs(fileValue, localValue);
+      }
+      // For arrays, primitives, or when file value isn't an object, localStorage wins
+      else {
+        result[key] = localValue;
+      }
+    }
+    
+    return result;
+  };
+
   // Load configuration from files - supports both Electron and Web modes
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
+      // STEP 1: Load from files/config (base configuration)
+      let fileConfig = null;
       let data;
       
       // Check if running in Electron desktop app
@@ -699,7 +752,58 @@ export default function OriginalEmailSender() {
       }
 
       if (data.success && data.config) {
-        const config = data.config;
+        fileConfig = data.config;
+        console.log('[Config Load] Loaded file config');
+      }
+
+      // STEP 2: Load from localStorage (user's saved settings - takes priority)
+      console.log('[Config Load] Checking localStorage...');
+      const savedConfig = localStorage.getItem('emailSenderConfig');
+      const savedLeads = localStorage.getItem('emailSenderLeads');
+      
+      // STEP 3: Merge configs - file config first, then localStorage overlay (localStorage wins)
+      let config = null;
+      let hasConfigData = false;
+      
+      if (savedConfig) {
+        try {
+          const localStorageConfig = JSON.parse(savedConfig);
+          
+          // Validate that parsed localStorage is a plain object
+          if (typeof localStorageConfig === 'object' && localStorageConfig !== null && !Array.isArray(localStorageConfig)) {
+            // Successfully parsed and validated localStorage config
+            if (fileConfig) {
+              config = deepMergeConfigs(fileConfig, localStorageConfig);
+              console.log('[Config Load] Merged file config with localStorage (localStorage priority)');
+            } else {
+              config = localStorageConfig;
+              console.log('[Config Load] Using localStorage config only');
+            }
+            hasConfigData = true;
+          } else {
+            console.warn('[Config Load] localStorage config is not a valid object, ignoring');
+            // Fall back to file config if localStorage data is invalid
+            if (fileConfig) {
+              config = fileConfig;
+              hasConfigData = true;
+            }
+          }
+        } catch (error) {
+          console.error('[Config Load] Failed to parse localStorage config:', error);
+          // Fall back to file config if localStorage parsing failed
+          if (fileConfig) {
+            config = fileConfig;
+            hasConfigData = true;
+          }
+        }
+      } else if (fileConfig) {
+        config = fileConfig;
+        hasConfigData = true;
+        console.log('[Config Load] Using file config only (no localStorage)');
+      }
+
+      // Only proceed if we have actual config data
+      if (hasConfigData && config) {
 
         // Load SMTP settings
         if (config.SMTP) {
@@ -759,22 +863,44 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads from files/leads.txt
+        // Auto-load leads - localStorage takes priority over files/leads.txt
         try {
-          let leadsData;
+          let finalLeads = '';
           
-          if (typeof window !== 'undefined' && (window as any).electronAPI) {
-            // Electron mode - use IPC
-            leadsData = await (window as any).electronAPI.loadLeads();
-          } else {
-            // Web mode - use fetch
-            const leadsResponse = await fetch('/api/config/loadLeads');
-            leadsData = await leadsResponse.json();
+          // Priority 1: localStorage leads (user's saved maillist)
+          if (savedLeads) {
+            try {
+              const localStorageLeads = JSON.parse(savedLeads);
+              if (localStorageLeads && localStorageLeads.length > 0) {
+                finalLeads = localStorageLeads.join('\n');
+                console.log('[Config Load] Loaded leads from localStorage');
+              }
+            } catch (error) {
+              console.error('[Config Load] Failed to parse localStorage leads:', error);
+            }
           }
           
-          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-            setRecipients(leadsData.leads);
-            console.log('[Config Load] Loaded leads successfully');
+          // Priority 2: Try loading from files/leads.txt (if no localStorage leads)
+          if (!finalLeads) {
+            let leadsData;
+            
+            if (typeof window !== 'undefined' && (window as any).electronAPI) {
+              // Electron mode - use IPC
+              leadsData = await (window as any).electronAPI.loadLeads();
+            } else {
+              // Web mode - use fetch
+              const leadsResponse = await fetch('/api/config/loadLeads');
+              leadsData = await leadsResponse.json();
+            }
+            
+            if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+              finalLeads = leadsData.leads;
+              console.log('[Config Load] Loaded leads from files/leads.txt');
+            }
+          }
+          
+          if (finalLeads) {
+            setRecipients(finalLeads);
           }
         } catch (leadsError) {
           console.log('[Config Load] Failed to load leads:', leadsError);
@@ -794,7 +920,10 @@ export default function OriginalEmailSender() {
         setTimeout(() => setStatusText("Ready to send emails"), 2000);
         setConfigLoaded(true);
       } else {
-        setStatusText('Failed to load configuration');
+        // No config data available, but mark as loaded to prevent repeated attempts
+        console.log('[Config Load] No configuration data available');
+        setStatusText('No configuration files found - using defaults');
+        setConfigLoaded(true);
       }
     } catch (error) {
       console.error('Config load error:', error);

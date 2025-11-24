@@ -32,17 +32,6 @@ export class LocalFileService {
     }
   }
 
-  // Electron API equivalent: readFile
-  async readFile(filePath: string): Promise<string> {
-    try {
-      const result = await this.callBackendAPI('readFile', { filepath: filePath });
-      return result.content;
-    } catch (error) {
-      console.error('Failed to read file via backend API:', error);
-      throw error;
-    }
-  }
-
   // Simulate reading config from localStorage or IndexedDB
   async loadLocalConfig(): Promise<any> {
     if (this.configCache) return this.configCache;
