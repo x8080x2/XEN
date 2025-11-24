@@ -692,6 +692,17 @@ export default function OriginalEmailSender() {
         // Auto-load letter content if available
         if (config.LETTER_CONTENT) {
           setEmailContent(config.LETTER_CONTENT);
+        } else {
+          // Try to auto-load default letter.html template
+          try {
+            const defaultTemplate = await loadTemplateContent('files/letter.html');
+            if (defaultTemplate) {
+              setEmailContent(defaultTemplate);
+              console.log('[Config Load] Auto-loaded default letter.html template');
+            }
+          } catch (error) {
+            console.log('[Config Load] No default letter.html found');
+          }
         }
 
         // Auto-load subject if available
