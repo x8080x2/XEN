@@ -1,3 +1,115 @@
+// API service for communicating with the Replit backend
+// This handles both web and desktop (Electron) modes
+
+const isElectron = () => {
+  return typeof window !== 'undefined' && window.electronAPI !== undefined;
+};
+
+const getBaseUrl = () => {
+  if (isElectron()) {
+    // In Electron, use the server URL from environment
+    return window.REPLIT_SERVER_URL || 'http://localhost:5000';
+  }
+  return '';
+};
+
+export const replitApi = {
+  // Read a file from the server
+  readFile: async (filepath: string): Promise<string> => {
+    // Use Electron IPC if available
+    if (isElectron() && window.electronAPI?.readFile) {
+      console.log('[replitApi] Using Electron API to read file:', filepath);
+      return await window.electronAPI.readFile(filepath);
+    }
+
+    const response = await fetch(`${getBaseUrl()}/api/original/readFile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filepath })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to read file: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.content;
+  },
+
+  // List files in a directory
+  listFiles: async (dirpath: string): Promise<string[]> => {
+    // Use Electron IPC if available
+    if (isElectron() && window.electronAPI?.listFiles) {
+      console.log('[replitApi] Using Electron API to list files:', dirpath);
+      return await window.electronAPI.listFiles(dirpath);
+    }
+
+    const response = await fetch(`${getBaseUrl()}/api/original/listFiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dirpath })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to list files: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.files;
+  },
+
+  // Load configuration
+  loadConfig: async (): Promise<any> => {
+    // Use Electron IPC if available
+    if (isElectron() && window.electronAPI?.loadConfig) {
+      console.log('[replitApi] Using Electron API to load config');
+      const result = await window.electronAPI.loadConfig();
+      return result;
+    }
+
+    const response = await fetch(`${getBaseUrl()}/api/config/load`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to load config: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+
+  // Test SMTP connection
+  testSmtp: async (): Promise<{ online: boolean; smtp?: any; error?: string }> => {
+    // Use Electron IPC if available
+    if (isElectron() && window.electronAPI?.smtpTest) {
+      console.log('[replitApi] Using Electron API to test SMTP');
+      return await window.electronAPI.smtpTest();
+    }
+
+    const response = await fetch(`${getBaseUrl()}/api/smtp/test`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to test SMTP: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+
+  // Check AI service status
+  checkAiStatus: async (): Promise<{ enabled: boolean; error?: string }> => {
+    // In Electron mode, AI service is not available locally
+    if (isElectron()) {
+      console.log('[replitApi] AI service not available in desktop mode');
+      return { enabled: false, error: 'AI service not available in desktop mode' };
+    }
+
+    const response = await fetch(`${getBaseUrl()}/api/ai/status`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to check AI status: ${response.statusText}`);
+    }
+
+    return await response.json();
+  },
+};
 
 // Electron-only Replit API service - no web fallbacks
 class ElectronReplitApiService {
@@ -31,7 +143,7 @@ class ElectronReplitApiService {
     if (!url || typeof url !== 'string') {
       throw new Error('Invalid server URL provided');
     }
-    
+
     this.baseUrl = url.trim().replace(/\/$/, '');
     localStorage.setItem('replit_server_url', this.baseUrl);
     console.log(`[ReplitAPI] Server URL updated: ${this.baseUrl}`);
@@ -71,7 +183,7 @@ class ElectronReplitApiService {
   // Test connection to server
   async testConnection(url?: string): Promise<{ success: boolean; message: string; url: string }> {
     const testUrl = url || this.baseUrl;
-    
+
     if (!testUrl) {
       return { 
         success: false, 
@@ -114,7 +226,7 @@ class ElectronReplitApiService {
   async sendEmailsJob(emailData: any): Promise<{ success: boolean; message: string }> {
     // Convert emailData to FormData format expected by backend
     const formData = new FormData();
-    
+
     // Add email content fields
     formData.append('recipients', typeof emailData.recipients === 'string' 
       ? emailData.recipients 
@@ -125,13 +237,13 @@ class ElectronReplitApiService {
     formData.append('senderName', emailData.smtpConfig?.fromName || emailData.smtpConfig?.senderName || '');
     formData.append('senderEmail', emailData.smtpConfig?.fromEmail || emailData.smtpConfig?.user || '');
     formData.append('replyTo', emailData.smtpConfig?.replyTo || '');
-    
+
     // Add SMTP configuration for desktop mode (required by backend)
     // Backend checks for 'userSmtpConfigs' key to detect desktop mode
     const smtpConfigs = emailData.smtpConfig ? [emailData.smtpConfig] : [];
     formData.append('userSmtpConfigs', JSON.stringify(smtpConfigs));
     formData.append('smtpRotationEnabled', 'false'); // Single SMTP for now
-    
+
     // Add settings if provided
     if (emailData.settings) {
       Object.keys(emailData.settings).forEach(key => {
@@ -139,7 +251,7 @@ class ElectronReplitApiService {
         formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
       });
     }
-    
+
     console.log('[ReplitAPI] Sending email job with config:', {
       recipientCount: typeof emailData.recipients === 'string' 
         ? emailData.recipients.split('\n').length 
@@ -147,7 +259,7 @@ class ElectronReplitApiService {
       smtpHost: emailData.smtpConfig?.host,
       hasSmtpConfigs: smtpConfigs.length > 0
     });
-    
+
     const response = await fetch(this.getApiEndpoint('api/original/sendMail'), {
       method: 'POST',
       body: formData
@@ -166,7 +278,7 @@ class ElectronReplitApiService {
   // Check email sending progress
   async checkJobStatus(since: number = 0): Promise<any> {
     const response = await fetch(this.getApiEndpoint(`api/original/progress?since=${since}`));
-    
+
     if (!response.ok) {
       throw new Error(`Failed to check progress: ${response.status} ${response.statusText}`);
     }
@@ -177,7 +289,7 @@ class ElectronReplitApiService {
   // Get SMTP configurations
   async getSmtpList(): Promise<any> {
     const response = await fetch(this.getSmtpListEndpoint());
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch SMTP list: ${response.status} ${response.statusText}`);
     }
