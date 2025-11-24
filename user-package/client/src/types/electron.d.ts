@@ -1,4 +1,3 @@
-
 declare global {
   interface Window {
     electronAPI?: {
@@ -17,6 +16,11 @@ declare global {
       smtpDelete: (smtpId: string) => Promise<{ success: boolean; smtpConfigs?: any[]; currentSmtp?: any; error?: string }>;
       smtpRotate: () => Promise<{ success: boolean; currentSmtp?: any; rotationEnabled?: boolean; error?: string }>;
       fileUpload: (sourceFilePath: string) => Promise<{ id?: string; originalName?: string; filename?: string; path?: string; size?: number; mimeType?: string; uploadedAt?: Date; success?: boolean; error?: string }>;
+
+      // Email sending
+      sendEmail: (formData: any) => Promise<any>;
+      getEmailProgress: (since: number) => Promise<any>;
+      cancelEmail: () => Promise<any>;
     };
   }
 }

@@ -18,15 +18,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
   loadLeads: () => ipcRenderer.invoke('load-leads'),
   saveConfig: (config) => ipcRenderer.invoke('save-config', config),
   saveLeads: (leads) => ipcRenderer.invoke('save-leads', leads),
-  smtpList: () => ipcRenderer.invoke('smtp-list'),
-  smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp-toggle-rotation', enabled),
-  smtpAdd: (smtpData) => ipcRenderer.invoke('smtp-add', smtpData),
-  smtpDelete: (smtpId) => ipcRenderer.invoke('smtp-delete', smtpId),
-  smtpRotate: () => ipcRenderer.invoke('smtp-rotate'),
-  
+  smtpList: () => ipcRenderer.invoke('smtp:list'),
+  smtpAdd: (config) => ipcRenderer.invoke('smtp:add', config),
+  smtpDelete: (id) => ipcRenderer.invoke('smtp:delete', id),
+  smtpRotate: () => ipcRenderer.invoke('smtp:rotate'),
+  smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggle-rotation', enabled),
+  smtpTest: () => ipcRenderer.invoke('smtp:test'),
+
+  // Email sending operations
+  sendEmail: (formData) => ipcRenderer.invoke('email:send', formData),
+  getEmailProgress: (since) => ipcRenderer.invoke('email:progress', since),
+  cancelEmail: () => ipcRenderer.invoke('email:cancel'),
+
   // File upload
   fileUpload: (sourceFilePath) => ipcRenderer.invoke('file-upload', sourceFilePath),
-  
+
   // Server configuration
   getServerUrl: () => process.env.REPLIT_SERVER_URL
 });

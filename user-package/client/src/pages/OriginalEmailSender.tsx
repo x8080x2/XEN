@@ -833,49 +833,53 @@ export default function OriginalEmailSender() {
     }
 
     try {
-      // Prepare and send the email request
-      const formData = new FormData();
-
-      // Add all form data - exact match to original args
-      formData.append('senderEmail', senderEmail);
-      formData.append('senderName', senderName || '');
-      formData.append('subject', subject);
-      formData.append('html', mainHtml);
-      formData.append('attachmentHtml', attachmentHtml || '');
-      formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
-
-      // SMTP settings
-      formData.append('smtpHost', smtpSettings.host);
-      formData.append('smtpPort', smtpSettings.port);
-      formData.append('smtpUser', smtpSettings.user);
-      formData.append('smtpPass', smtpSettings.pass);
-
-      // Advanced settings
-      Object.entries(advancedSettings).forEach(([key, value]) => {
-        formData.append(key, String(value));
-      });
-
-      // AI settings - send correct flags to backend
-      formData.append('useAIEnabled', String(aiEnabled));
-      formData.append('useAISubject', String(aiEnabled && useAISubject));
-      formData.append('useAISenderName', String(aiEnabled && useAISenderName));
-
-      // Add files
-      if (selectedFiles) {
-        for (let i = 0; i < selectedFiles.length; i++) {
-          formData.append('attachments', selectedFiles[i]);
-        }
-      }
-
       setStatusText("Sending emails...");
 
-      // Start email sending
-      const response = await fetch('/api/original/sendMail', {
-        method: 'POST',
-        body: formData,
-      });
+      // Prepare email data object for Electron
+      const emailData = {
+        senderEmail,
+        senderName: senderName || '',
+        subject,
+        html: mainHtml,
+        attachmentHtml: attachmentHtml || '',
+        recipients: recipients.split('\n').filter(r => r.trim()),
+        smtpHost: smtpSettings.host,
+        smtpPort: smtpSettings.port,
+        smtpUser: smtpSettings.user,
+        smtpPass: smtpSettings.pass,
+        ...advancedSettings,
+        useAIEnabled: aiEnabled,
+        useAISubject: aiEnabled && useAISubject,
+        useAISenderName: aiEnabled && useAISenderName
+      };
 
-      const result = await response.json();
+      // Start email sending via Electron
+      let result;
+      if (window.electronAPI?.sendEmail) {
+        result = await window.electronAPI.sendEmail(emailData);
+      } else {
+        // Fallback to server API if Electron API not available
+        const formData = new FormData();
+        Object.entries(emailData).forEach(([key, value]) => {
+          if (key === 'recipients') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        });
+
+        if (selectedFiles) {
+          for (let i = 0; i < selectedFiles.length; i++) {
+            formData.append('attachments', selectedFiles[i]);
+          }
+        }
+
+        const response = await fetch('/api/original/sendMail', {
+          method: 'POST',
+          body: formData,
+        });
+        result = await response.json();
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to start email sending');
@@ -888,16 +892,21 @@ export default function OriginalEmailSender() {
       
       const pollProgress = async () => {
         try {
-          const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
-            cache: 'no-store'  // Prevent 304 responses
-          });
-          
-          if (!progressRes.ok) {
-            console.error('Progress request failed:', progressRes.status);
-            return;
+          let data;
+          if (window.electronAPI?.getEmailProgress) {
+            data = await window.electronAPI.getEmailProgress(lastLogCount);
+          } else {
+            const progressRes = await fetch(`/api/original/progress?since=${lastLogCount}`, {
+              cache: 'no-store'
+            });
+            
+            if (!progressRes.ok) {
+              console.error('Progress request failed:', progressRes.status);
+              return;
+            }
+            
+            data = await progressRes.json();
           }
-          
-          const data = await progressRes.json();
           
           if (data.logs && data.logs.length > 0) {
             for (const log of data.logs) {
@@ -995,7 +1004,11 @@ export default function OriginalEmailSender() {
 
   const cancelSending = async () => {
     try {
-      await fetch('/api/original/cancel', { method: 'POST' });
+      if (window.electronAPI?.cancelEmail) {
+        await window.electronAPI.cancelEmail();
+      } else {
+        await fetch('/api/original/cancel', { method: 'POST' });
+      }
       setIsLoading(false);
       setStatusText("Email sending cancelled");
       setCurrentEmailStatus("Campaign cancelled");

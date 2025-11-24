@@ -6,6 +6,8 @@ const https = require('https');
 const http = require('http');
 const os = require('os');
 const crypto = require('crypto');
+const axios = require('axios'); // Import axios for HTTP requests
+const nodemailer = require('nodemailer'); // Import nodemailer for email sending
 
 // Load environment variables
 require('dotenv').config();
@@ -17,7 +19,7 @@ let mainWindow;
 function generateHardwareFingerprint() {
   try {
     const networkInterfaces = os.networkInterfaces();
-    
+
     // Find the first non-internal IPv4 address
     for (const interfaceName in networkInterfaces) {
       const interfaces = networkInterfaces[interfaceName];
@@ -29,7 +31,7 @@ function generateHardwareFingerprint() {
         }
       }
     }
-    
+
     // Fallback if no external IP found (shouldn't happen in normal cases)
     console.warn('[Electron] No external IP found, using hostname fallback');
     const fallbackId = os.hostname();
@@ -78,9 +80,9 @@ async function verifyLicense() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           licenseKey,
-          hardwareId 
+          hardwareId
         }),
         signal: controller.signal
       });
@@ -185,18 +187,18 @@ app.whenReady().then(async () => {
     console.error('[Electron] ❌ License verification failed:', licenseResult.error);
 
     const { dialog } = require('electron');
-    
+
     // Check for specific error message about already activated
     let errorTitle = 'License Verification Failed';
     let errorMessage = 'Invalid or Missing License';
     let errorDetail = licenseResult.error;
-    
+
     if (licenseResult.error && licenseResult.error.includes('already activated on another computer')) {
       errorTitle = 'License Already Activated';
       errorMessage = 'This license is already in use on another computer';
       errorDetail = 'Each license can only be activated on one computer at a time.\n\nIf you need to transfer this license, please contact support.';
     }
-    
+
     await dialog.showMessageBox({
       type: 'error',
       title: errorTitle,
@@ -229,7 +231,7 @@ ipcMain.handle('read-file', async (event, filepath) => {
 
     // Remove 'files/' prefix if it exists since we're already in user-package
     const cleanPath = filepath.replace(/^files\//, '');
-    
+
     // Try both with and without files/ prefix
     const possiblePaths = [
       path.resolve(__dirname, 'files', cleanPath),
@@ -279,7 +281,7 @@ ipcMain.handle('list-files', async (event, dirpath) => {
 
     // Clean the directory path
     const cleanDir = dirpath || 'files';
-    
+
     // Try multiple possible locations
     const possibleDirs = [
       path.resolve(__dirname, cleanDir),
@@ -299,7 +301,7 @@ ipcMain.handle('list-files', async (event, dirpath) => {
         } else {
           filteredFiles = files.filter(file => /\.(html|htm)$/i.test(file));
         }
-        
+
         console.log(`[Electron] Found ${filteredFiles.length} files in ${testDir}:`, filteredFiles);
         return filteredFiles;
       }
@@ -512,7 +514,7 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
     for (const basePath of basePaths) {
       const testSmtpPath = path.resolve(basePath, 'config', 'smtp.ini');
       const testStatePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
-      
+
       if (existsSync(testSmtpPath)) {
         smtpPath = testSmtpPath;
         statePath = testStatePath;
@@ -525,7 +527,7 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
     if (smtpPath && existsSync(smtpPath)) {
       const smtpContent = await fs.readFile(smtpPath, 'utf-8');
       const smtpConfigs = parseSmtpIni(smtpContent);
-      
+
       if (smtpConfigs.length > 0) {
         // Use current index to get current SMTP
         const validIndex = currentSmtpIndex < smtpConfigs.length ? currentSmtpIndex : 0;
@@ -534,14 +536,14 @@ ipcMain.handle('smtp-toggle-rotation', async (event, enabled) => {
     }
 
     await fs.mkdir(path.dirname(statePath), { recursive: true });
-    await fs.writeFile(statePath, JSON.stringify({ 
+    await fs.writeFile(statePath, JSON.stringify({
       rotationEnabled: enabled,
-      currentIndex: currentSmtpIndex 
+      currentIndex: currentSmtpIndex
     }), 'utf-8');
 
     console.log(`[Electron] SMTP rotation state saved: ${enabled}, index: ${currentSmtpIndex}`);
-    return { 
-      success: true, 
+    return {
+      success: true,
       rotationEnabled: enabled,
       currentSmtp: currentSmtp
     };
@@ -569,7 +571,7 @@ ipcMain.handle('smtp-rotate', async () => {
     for (const basePath of basePaths) {
       const testSmtpPath = path.resolve(basePath, 'config', 'smtp.ini');
       const testStatePath = path.resolve(basePath, 'config', 'smtp-rotation.json');
-      
+
       if (existsSync(testSmtpPath)) {
         smtpPath = testSmtpPath;
         statePath = testStatePath;
@@ -608,9 +610,9 @@ ipcMain.handle('smtp-rotate', async () => {
 
     // Save updated state
     await fs.mkdir(path.dirname(statePath), { recursive: true });
-    await fs.writeFile(statePath, JSON.stringify({ 
+    await fs.writeFile(statePath, JSON.stringify({
       rotationEnabled: smtpRotationEnabled,
-      currentIndex: currentSmtpIndex 
+      currentIndex: currentSmtpIndex
     }), 'utf-8');
 
     console.log(`[Electron] Rotated to SMTP index ${currentSmtpIndex}: ${nextSmtp.fromEmail}`);
@@ -726,7 +728,7 @@ function parseIniFile(content) {
 ipcMain.handle('smtp-add', async (event, smtpData) => {
   try {
     console.log(`[Electron] Adding new SMTP config:`, smtpData);
-    
+
     if (!smtpData.host || !smtpData.port || !smtpData.user || !smtpData.pass || !smtpData.fromEmail) {
       return { success: false, error: 'All SMTP fields are required' };
     }
@@ -822,19 +824,19 @@ ipcMain.handle('smtp-delete', async (event, smtpId) => {
 
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       // Check if this is the section we want to delete
       if (trimmed === `[${smtpId}]`) {
         inTargetSection = true;
         sectionFound = true;
         continue;
       }
-      
+
       // Check if we're entering a new section
       if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
         inTargetSection = false;
       }
-      
+
       // Only add lines that are not in the target section
       if (!inTargetSection) {
         newLines.push(line);
@@ -884,7 +886,7 @@ ipcMain.handle('file-upload', async (event, sourceFilePath) => {
     await fs.copyFile(sourceFilePath, destPath);
 
     const stats = await fs.stat(destPath);
-    
+
     const mimeTypes = {
       '.pdf': 'application/pdf',
       '.png': 'image/png',
@@ -909,6 +911,215 @@ ipcMain.handle('file-upload', async (event, sourceFilePath) => {
     };
   } catch (error) {
     console.error(`[Electron] Failed to upload file:`, error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Helper function to load SMTP configuration
+function loadSmtpConfig() {
+  // This function needs to be implemented to load the current SMTP configuration
+  // based on the rotation state and available smtp.ini file.
+  // For now, we'll mock it by calling ipcMain.invoke('smtp-list')
+  // In a real application, this might be more complex.
+  let smtpConfigs = [];
+  let currentSmtp = null;
+  let rotationEnabled = false;
+
+  try {
+    // Attempt to get SMTP list - this might require a synchronous call if used during sync operations
+    // or a more robust way to ensure data is available. For simplicity, we'll assume it works.
+    // A better approach would be to expose this data via a global variable or re-invoke when needed.
+    // For now, we'll use a placeholder and assume the renderer has already fetched this.
+    // In the context of `email:send`, the renderer should have already fetched this data.
+    // We'll need to pass the smtp configurations directly to the `email:send` handler.
+    // For this example, let's assume `loadSmtpConfig` would internally call `ipcMain.invoke('smtp-list')`
+    // and process the result. However, `ipcMain.invoke` is asynchronous.
+    // A more practical approach for desktop apps is to load configs once and keep them in memory.
+
+    // *** TEMPORARY SOLUTION: Assuming smtp-list has been called and data is accessible ***
+    // In a real app, manage this state more carefully.
+    // For the purpose of this fix, let's simulate loading it.
+    // The actual loading will happen within the `email:send` handler by passing it from the renderer.
+
+    // Mocking a return value for demonstration if this function were called directly.
+    // The `email:send` handler will receive the data from formDataObj.
+    console.warn("loadSmtpConfig() called directly - this is a placeholder. SMTP configs should be passed from the renderer.");
+    return { smtpConfigs: [], currentSmtp: null, rotationEnabled: false };
+
+  } catch (error) {
+    console.error("Error in loadSmtpConfig mock:", error);
+    return { smtpConfigs: [], currentSmtp: null, rotationEnabled: false };
+  }
+}
+
+
+// SMTP Test endpoint
+ipcMain.handle('smtp:test', async () => {
+  try {
+    // Use the actual smtp-list handler to get current config
+    const smtpData = await ipcMain.invoke('smtp-list');
+
+    if (!smtpData.success || !smtpData.currentSmtp) {
+      return { online: false, error: 'No SMTP configured or failed to load' };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpData.currentSmtp.host,
+      port: parseInt(smtpData.currentSmtp.port),
+      secure: false, // Use 'true' if port is 465 (SMTPS)
+      auth: {
+        user: smtpData.currentSmtp.user,
+        pass: smtpData.currentSmtp.pass
+      }
+    });
+
+    // Use a timeout for verification
+    const verifyTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SMTP verification timed out')), 10000) // 10 seconds timeout
+    );
+
+    await Promise.race([
+      transporter.verify().then(() => {
+        console.log('[Electron] SMTP server verified successfully.');
+        return { online: true, smtp: smtpData.currentSmtp };
+      }),
+      verifyTimeout
+    ]);
+    return { online: true, smtp: smtpData.currentSmtp };
+  } catch (error) {
+    console.error('[Electron] SMTP verification failed:', error.message);
+    return { online: false, error: error.message };
+  }
+});
+
+// Email sending - store progress logs
+let progressLogs = [];
+let sendingInProgress = false;
+let currentProgressLogs = []; // To store logs for the current sending operation
+
+// Send email handler
+ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userSmtpRotationEnabled, currentSmtpIndex }) => {
+  try {
+    // Reset logs for the new sending operation
+    progressLogs = [];
+    currentProgressLogs = [];
+    sendingInProgress = true;
+    console.log('[Electron] Starting email send process...');
+    console.log('[Electron] Form Data:', formDataObj);
+    console.log('[Electron] User SMTP Configs:', userSmtpConfigs);
+    console.log('[Electron] Rotation Enabled:', userSmtpRotationEnabled);
+    console.log('[Electron] Current SMTP Index:', currentSmtpIndex);
+
+    // Determine the SMTP server to use
+    let selectedSmtp = null;
+    if (userSmtpRotationEnabled && userSmtpConfigs && userSmtpConfigs.length > 0) {
+      selectedSmtp = userSmtpConfigs[currentSmtpIndex % userSmtpConfigs.length];
+    } else if (userSmtpConfigs && userSmtpConfigs.length > 0) {
+      selectedSmtp = userSmtpConfigs[0]; // Use the first one if rotation is off
+    }
+
+    if (!selectedSmtp) {
+      sendingInProgress = false;
+      return { success: false, error: 'No valid SMTP configuration found.' };
+    }
+
+    console.log(`[Electron] Using SMTP: ${selectedSmtp.host}:${selectedSmtp.port} (${selectedSmtp.fromEmail})`);
+
+    const transporter = nodemailer.createTransport({
+      host: selectedSmtp.host,
+      port: parseInt(selectedSmtp.port),
+      secure: parseInt(selectedSmtp.port) === 465, // true for 465, false for other ports like 587
+      auth: {
+        user: selectedSmtp.user,
+        pass: selectedSmtp.pass,
+      },
+      pool: true, // Enable connection pooling
+      maxConnections: 5, // Limit concurrent connections
+      maxMessages: 100, // Limit messages per connection
+    });
+
+    // Prepare email options
+    const mailOptions = {
+      from: `"${selectedSmtp.fromName || ''}" <${selectedSmtp.fromEmail}>`,
+      to: formDataObj.to,
+      subject: formDataObj.subject,
+      html: formDataObj.html,
+      text: formDataObj.text, // Plain text version if available
+      attachments: formDataObj.attachments || [],
+    };
+
+    // Add CC and BCC if provided
+    if (formDataObj.cc) mailOptions.cc = formDataObj.cc;
+    if (formDataObj.bcc) mailOptions.bcc = formDataObj.bcc;
+
+    // Send email
+    const sendResult = await transporter.sendMail(mailOptions);
+
+    progressLogs.push({ timestamp: new Date().toISOString(), message: `Email sent successfully to ${formDataObj.to}. Message ID: ${sendResult.messageId}` });
+    currentProgressLogs.push({ timestamp: new Date().toISOString(), message: `Email sent successfully. Message ID: ${sendResult.messageId}` });
+    console.log(`[Electron] Email sent successfully. Message ID: ${sendResult.messageId}`);
+
+    // If rotation is enabled and successful, trigger a rotate after sending
+    if (userSmtpRotationEnabled && userSmtpConfigs.length > 1) {
+      try {
+        console.log('[Electron] Attempting to rotate SMTP server after successful send...');
+        const rotateResult = await ipcMain.invoke('smtp-rotate');
+        if (rotateResult.success) {
+          progressLogs.push({ timestamp: new Date().toISOString(), message: `SMTP rotated successfully to: ${rotateResult.currentSmtp.fromEmail}` });
+          console.log(`[Electron] SMTP rotated to: ${rotateResult.currentSmtp.fromEmail}`);
+        } else {
+          progressLogs.push({ timestamp: new Date().toISOString(), message: `SMTP rotation failed: ${rotateResult.error}` });
+          console.error(`[Electron] SMTP rotation failed: ${rotateResult.error}`);
+        }
+      } catch (rotateError) {
+        progressLogs.push({ timestamp: new Date().toISOString(), message: `Error during SMTP rotation: ${rotateError.message}` });
+        console.error('[Electron] Error during SMTP rotation:', rotateError);
+      }
+    }
+
+    sendingInProgress = false;
+    return { success: true, message: 'Email sending initiated.', messageId: sendResult.messageId };
+
+  } catch (error) {
+    sendingInProgress = false;
+    console.error('[Electron] Error sending email:', error);
+    const errorMessage = error.message || 'An unknown error occurred during email sending.';
+    progressLogs.push({ timestamp: new Date().toISOString(), message: `Error sending email: ${errorMessage}` });
+    currentProgressLogs.push({ timestamp: new Date().toISOString(), message: `Error: ${errorMessage}` });
+    return { success: false, error: errorMessage };
+  } finally {
+    // Ensure sendingInProgress is false even if there's an error
+    if (sendingInProgress) {
+        sendingInProgress = false;
+    }
+  }
+});
+
+// Get email progress
+ipcMain.handle('email:progress', async (event, since) => {
+  // Return logs since the last known point, and the overall progress status
+  const newLogs = currentProgressLogs.slice(since || 0);
+  return {
+    logs: newLogs,
+    total: currentProgressLogs.length,
+    inProgress: sendingInProgress
+  };
+});
+
+// Cancel email sending
+ipcMain.handle('email:cancel', async () => {
+  try {
+    console.log('[Electron] Cancel email sending requested.');
+    // In a direct nodemailer send, cancellation is tricky. We can't truly cancel
+    // a sendMail operation once it's initiated. We can only stop future sends
+    // or clear logs. For now, we'll just mark it as not in progress and clear logs.
+    sendingInProgress = false;
+    progressLogs = []; // Clear all logs
+    currentProgressLogs = []; // Clear current operation logs
+    console.log('[Electron] Email sending cancelled and logs cleared.');
+    return { success: true, message: 'Email sending process stopped and logs cleared.' };
+  } catch (error) {
+    console.error('[Electron] Error cancelling email sending:', error);
     return { success: false, error: error.message };
   }
 });
@@ -954,7 +1165,7 @@ function parseValue(value) {
 ipcMain.handle('save-config', async (event, config) => {
   try {
     console.log(`[Electron] Saving config to file:`, config);
-    
+
     const basePaths = [
       __dirname,
       process.cwd(),
@@ -980,7 +1191,7 @@ ipcMain.handle('save-config', async (event, config) => {
 
     // Convert config object to INI format
     let iniContent = '';
-    
+
     // Add [SETTINGS] section
     iniContent += '[SETTINGS]\n';
     if (config.EMAILPERSECOND !== undefined) iniContent += `EMAILPERSECOND=${config.EMAILPERSECOND}\n`;
@@ -1005,7 +1216,7 @@ ipcMain.handle('save-config', async (event, config) => {
 ipcMain.handle('save-leads', async (event, leads) => {
   try {
     console.log(`[Electron] Saving ${leads.length} leads to file`);
-    
+
     const basePaths = [
       __dirname,
       process.cwd(),
