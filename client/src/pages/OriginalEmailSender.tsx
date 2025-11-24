@@ -377,6 +377,11 @@ export default function OriginalEmailSender() {
 
     return () => {
       mounted = false;
+      // Cleanup polling interval on component unmount
+      if ((window as any).pollingInterval) {
+        clearInterval((window as any).pollingInterval);
+        (window as any).pollingInterval = null;
+      }
     };
   }, []);
 
@@ -915,6 +920,12 @@ export default function OriginalEmailSender() {
           }
         } catch (err) {
           console.error('Error polling progress:', err);
+          console.error('Error details:', {
+            message: err instanceof Error ? err.message : 'Unknown error',
+            stack: err instanceof Error ? err.stack : undefined,
+            type: typeof err,
+            err
+          });
         }
       };
 
