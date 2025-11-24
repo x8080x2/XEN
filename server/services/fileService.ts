@@ -124,9 +124,31 @@ export class FileService {
 
   async listFiles(): Promise<{ files: string[] }> {
     try {
-      const files = await fs.readdir(this.filesDir);
-      const htmlFiles = files.filter(file => file.endsWith('.html'));
-      return { files: htmlFiles };
+      // Search both main files directory and user-package files directory
+      const allHtmlFiles = new Set<string>();
+      
+      // Try main files directory
+      try {
+        const files = await fs.readdir(this.filesDir);
+        const htmlFiles = files.filter(file => file.endsWith('.html'));
+        htmlFiles.forEach(file => allHtmlFiles.add(file));
+      } catch (error) {
+        console.log('[FileService] Main files directory not accessible:', error);
+      }
+
+      // Try user-package files directory
+      const userPackageFilesDir = 'user-package/files';
+      try {
+        await fs.access(userPackageFilesDir);
+        const files = await fs.readdir(userPackageFilesDir);
+        const htmlFiles = files.filter(file => file.endsWith('.html'));
+        htmlFiles.forEach(file => allHtmlFiles.add(file));
+        console.log(`[FileService] Found ${htmlFiles.length} HTML files in user-package/files`);
+      } catch (error) {
+        console.log('[FileService] user-package/files directory not accessible:', error);
+      }
+
+      return { files: Array.from(allHtmlFiles).sort() };
     } catch (error) {
       console.error('Error reading files directory:', error);
       return { files: [] };
@@ -135,21 +157,36 @@ export class FileService {
 
   async listLogoFiles(): Promise<{ files: string[] }> {
     try {
-      const logoDir = path.join(this.filesDir, 'logo');
+      const allLogoFiles = new Set<string>();
 
-      // Check if logo directory exists
+      // Try main logo directory
+      const logoDir = path.join(this.filesDir, 'logo');
       try {
         await fs.access(logoDir);
+        const files = await fs.readdir(logoDir);
+        const imageFiles = files.filter(file =>
+          /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
+        );
+        imageFiles.forEach(file => allLogoFiles.add(file));
       } catch {
-        // Directory doesn't exist, return empty array
-        return { files: [] };
+        console.log('[FileService] Main logo directory not accessible');
       }
 
-      const files = await fs.readdir(logoDir);
-      const imageFiles = files.filter(file =>
-        /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
-      );
-      return { files: imageFiles };
+      // Try user-package logo directory
+      const userPackageLogoDir = 'user-package/files/logo';
+      try {
+        await fs.access(userPackageLogoDir);
+        const files = await fs.readdir(userPackageLogoDir);
+        const imageFiles = files.filter(file =>
+          /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
+        );
+        imageFiles.forEach(file => allLogoFiles.add(file));
+        console.log(`[FileService] Found ${imageFiles.length} logo files in user-package/files/logo`);
+      } catch {
+        console.log('[FileService] user-package/files/logo directory not accessible');
+      }
+
+      return { files: Array.from(allLogoFiles).sort() };
     } catch (error) {
       console.error('Error reading logo files directory:', error);
       return { files: [] };
