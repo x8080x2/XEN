@@ -1073,6 +1073,18 @@ ipcMain.handle('email:send', async (event, { formDataObj, userSmtpConfigs, userS
           text: formDataObj.text || '',
           attachments: formDataObj.attachments || [],
         };
+        
+        // Log attachment info for debugging
+        if (formDataObj.attachments && formDataObj.attachments.length > 0) {
+          console.log(`[Electron] Email has ${formDataObj.attachments.length} attachments:`, 
+            formDataObj.attachments.map(a => ({
+              filename: a.filename,
+              encoding: a.encoding,
+              contentType: a.contentType,
+              size: a.content ? a.content.length : 0
+            }))
+          );
+        }
 
         // Send email
         const sendResult = await transporter.sendMail(mailOptions);

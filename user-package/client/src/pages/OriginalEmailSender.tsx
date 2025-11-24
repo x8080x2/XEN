@@ -443,7 +443,7 @@ export default function OriginalEmailSender() {
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
       try {
-        // Call backend to deinitialize AI service
+        // Call backend to deinitialize AI service (web version only)
         const response = await fetch('/api/ai/deinitialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
@@ -454,9 +454,11 @@ export default function OriginalEmailSender() {
           setAiEnabled(false); // Disable AI features
           setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
           setStatusText('AI service turned off successfully');
-          localStorage.removeItem('google_ai_key'); // Remove key from local storage
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('google_ai_key');
+          }
 
-          // Clear from config file but keep the key in the input field for easy re-initialization
+          // Clear from config file (web version only)
           await fetch('/api/config/save', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -471,7 +473,7 @@ export default function OriginalEmailSender() {
       return;
     }
 
-    // If AI is not initialized, proceed with initialization
+    // If AI is not initialized, proceed with initialization (web version only)
     if (!aiApiKey) {
       setStatusText('Please enter Google AI API key');
       return;
@@ -487,9 +489,11 @@ export default function OriginalEmailSender() {
 
       if (data.success) {
         // Save to localStorage and config file
-        localStorage.setItem('google_ai_key', aiApiKey);
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('google_ai_key', aiApiKey);
+        }
 
-        // Save to setup.ini
+        // Save to setup.ini (web version only)
         await fetch('/api/config/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -533,7 +537,11 @@ export default function OriginalEmailSender() {
   const toggleSmtpRotation = async () => {
     try {
       let data;
-      if (window.electronAPI?.smtpToggleRotation) {
+      if (window.electronAPI) {
+        if (!window.electronAPI.smtpToggleRotation) {
+          setStatusText('SMTP rotation toggle not available in desktop version');
+          return;
+        }
         data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
       } else {
         const response = await fetch("/api/smtp/toggle-rotation", {
@@ -544,7 +552,7 @@ export default function OriginalEmailSender() {
         data = await response.json();
       }
       
-      if (data.success) {
+      if (data && data.success) {
         setSmtpData(prev => ({
           ...prev,
           rotationEnabled: data.rotationEnabled,
@@ -554,6 +562,7 @@ export default function OriginalEmailSender() {
         setTimeout(() => setStatusText(""), 3000);
       }
     } catch (error) {
+      console.error('SMTP rotation error:', error);
       setStatusText('Failed to toggle SMTP rotation');
     }
   };
@@ -566,7 +575,11 @@ export default function OriginalEmailSender() {
 
     try {
       let data;
-      if (window.electronAPI?.smtpAdd) {
+      if (window.electronAPI) {
+        if (!window.electronAPI.smtpAdd) {
+          setStatusText('SMTP add not available in desktop version');
+          return;
+        }
         data = await window.electronAPI.smtpAdd(newSmtp);
       } else {
         const response = await fetch("/api/smtp/add", {
@@ -577,7 +590,7 @@ export default function OriginalEmailSender() {
         data = await response.json();
       }
       
-      if (data.success) {
+      if (data && data.success) {
         setSmtpData(prev => ({
           ...prev,
           smtpConfigs: data.smtpConfigs
@@ -590,6 +603,7 @@ export default function OriginalEmailSender() {
         checkSmtpStatus();
       }
     } catch (error) {
+      console.error('SMTP add error:', error);
       setStatusText('Failed to add SMTP configuration');
     }
   };
@@ -602,14 +616,18 @@ export default function OriginalEmailSender() {
 
     try {
       let data;
-      if (window.electronAPI?.smtpDelete) {
+      if (window.electronAPI) {
+        if (!window.electronAPI.smtpDelete) {
+          setStatusText('SMTP delete not available in desktop version');
+          return;
+        }
         data = await window.electronAPI.smtpDelete(smtpId);
       } else {
         const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
         data = await response.json();
       }
       
-      if (data.success) {
+      if (data && data.success) {
         setSmtpData(prev => ({
           ...prev,
           smtpConfigs: data.smtpConfigs,
@@ -618,6 +636,7 @@ export default function OriginalEmailSender() {
         setStatusText(`SMTP ${smtpId} deleted successfully`);
       }
     } catch (error) {
+      console.error('SMTP delete error:', error);
       setStatusText('Failed to delete SMTP configuration');
     }
   };
@@ -625,7 +644,15 @@ export default function OriginalEmailSender() {
   const rotateSmtp = async () => {
     try {
       let data;
-      if (window.electronAPI?.smtpRotate) {
+      if (window.electronAPI) {
+        if (!window.electronAPI.smtpRotate) {
+          toast({
+            title: "Error",
+            description: "SMTP rotation not available in desktop version",
+            variant: "destructive"
+          });
+          return;
+        }
         data = await window.electronAPI.smtpRotate();
       } else {
         const response = await fetch("/api/smtp/rotate", {
@@ -635,7 +662,7 @@ export default function OriginalEmailSender() {
         data = await response.json();
       }
 
-      if (data.success && data.currentSmtp) {
+      if (data && data.success && data.currentSmtp) {
         setSmtpData(prev => ({
           ...prev,
           currentSmtp: data.currentSmtp,
@@ -647,7 +674,7 @@ export default function OriginalEmailSender() {
         });
         checkSmtpStatus();
       } else {
-        throw new Error(data.error || 'Failed to rotate SMTP');
+        throw new Error((data && data.error) || 'Failed to rotate SMTP');
       }
     } catch (error: any) {
       console.error('SMTP rotation error:', error);
@@ -666,19 +693,26 @@ export default function OriginalEmailSender() {
     setSmtpChecking(true);
     try {
       let data;
-      if (window.electronAPI?.smtpTest) {
+      if (window.electronAPI) {
+        if (!window.electronAPI.smtpTest) {
+          console.log('[SMTP Status] Check not available in desktop version');
+          setSmtpOnline(null);
+          return;
+        }
         data = await window.electronAPI.smtpTest();
       } else {
         const response = await fetch("/api/smtp/test");
         data = await response.json();
       }
       
-      setSmtpOnline(data.online);
+      if (data) {
+        setSmtpOnline(data.online);
 
-      if (!data.online) {
-        console.log('[SMTP Status] OFFLINE:', data.error);
-      } else {
-        console.log('[SMTP Status] ONLINE:', data.smtp);
+        if (!data.online) {
+          console.log('[SMTP Status] OFFLINE:', data.error);
+        } else {
+          console.log('[SMTP Status] ONLINE:', data.smtp);
+        }
       }
     } catch (error) {
       console.error('[SMTP Status] Check failed:', error);
@@ -883,6 +917,40 @@ export default function OriginalEmailSender() {
         // Desktop version - use Electron API to send emails directly
         console.log('[Desktop] Starting email send via Electron...');
         
+        // Process file attachments for Electron
+        const attachmentsData = [];
+        if (selectedFiles && selectedFiles.length > 0) {
+          console.log('[Desktop] Processing', selectedFiles.length, 'file attachments...');
+          
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            try {
+              // Read file as base64
+              const reader = new FileReader();
+              const fileData = await new Promise<string>((resolve, reject) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+              });
+              
+              // Extract base64 content (remove data:mime;base64, prefix)
+              // This ensures clean base64 without the data URL scheme
+              const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
+              
+              attachmentsData.push({
+                filename: file.name,
+                content: base64Content,
+                encoding: 'base64',
+                contentType: file.type || 'application/octet-stream'
+              });
+              
+              console.log('[Desktop] Processed attachment:', file.name);
+            } catch (error) {
+              console.error('[Desktop] Failed to process attachment:', file.name, error);
+            }
+          }
+        }
+        
         const formDataObj = {
           senderEmail,
           senderName: senderName || '',
@@ -898,7 +966,7 @@ export default function OriginalEmailSender() {
           useAIEnabled: String(aiEnabled),
           useAISubject: String(aiEnabled && useAISubject),
           useAISenderName: String(aiEnabled && useAISenderName),
-          attachments: []
+          attachments: attachmentsData
         };
 
         console.log('[Desktop] Form data prepared:', {
