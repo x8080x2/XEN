@@ -20,8 +20,13 @@ interface EmailProgress {
   totalSent?: number;
   totalFailed?: number;
   totalRecipients?: number;
-  smtp?: { id: string, fromEmail: string, host: string }; // Added SMTP info
-  type?: string; // For progress updates from polling
+  type: string; // Added for SSE data type
+  message?: string; // Added for error messages
+  smtp?: { // Added to store SMTP info
+    id: string;
+    fromEmail: string;
+    host: string;
+  };
 }
 
 interface SMTPSettings {
@@ -47,30 +52,29 @@ export default function OriginalEmailSender() {
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
   const [attachmentHtml, setAttachmentHtml] = useState("");
 
-  // AbortController for proper email sending cancellation (Mode 1)
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Attachment template change handler - local file reading only (Mode 1)
+  // Attachment template change handler - using consolidated template loading
   const handleAttachmentTemplateChange = async (template: string) => {
     setSelectedAttachmentTemplate(template);
 
     if (template && template !== 'off') {
       try {
-        if (window.electronAPI?.readFile) {
-          // Read actual file content from local file system
-          const content = await window.electronAPI.readFile(`./files/${template}`);
+        const content = await loadTemplateContent(`files/${template}`);
+        if (content) {
           setAttachmentHtml(content);
-          console.log('[Mode 1] Attachment template loaded from local file:', template);
+          setStatusText(`✓ Loaded attachment template: ${template}`);
+          setTimeout(() => setStatusText(""), 3000);
         } else {
-          console.error('Electron API not available - Mode 1 requires local file system access');
+          setStatusText(`✗ Failed to load template: ${template}`);
           setAttachmentHtml('');
         }
       } catch (error) {
         console.error('Error loading attachment template:', error);
+        setStatusText(`✗ Error loading template: ${error instanceof Error ? error.message : 'Unknown error'}`);
         setAttachmentHtml('');
       }
     } else {
       setAttachmentHtml('');
+      setStatusText('');
     }
   };
 
@@ -101,11 +105,6 @@ export default function OriginalEmailSender() {
       attachments: []
     };
   });
-
-  // Auto-save form data to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('emailFormData', JSON.stringify(formData));
-  }, [formData]);
 
   const [advancedSettings, setAdvancedSettings] = useState(() => {
     const saved = localStorage.getItem('emailAdvancedSettings');
@@ -156,14 +155,14 @@ export default function OriginalEmailSender() {
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
-  // AI Feature States - Match web version exactly
+  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
   const [aiEnabled, setAiEnabled] = useState(false);
   const [useAISubject, setUseAISubject] = useState(false);
   const [useAISenderName, setUseAISenderName] = useState(false);
-  const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
   const [aiStatus, setAiStatus] = useState({ initialized: false, hasApiKey: false, provider: 'gemini' });
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
+  const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
 
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -175,7 +174,7 @@ export default function OriginalEmailSender() {
   // Copy failed emails to clipboard
   const copyFailedEmails = async () => {
     if (failedEmails.length === 0) return;
-    
+
     const emailText = failedEmails.join('\n');
     try {
       await navigator.clipboard.writeText(emailText);
@@ -192,6 +191,30 @@ export default function OriginalEmailSender() {
     }
   };
 
+  // Consolidated progress update function
+  const updateProgress = useCallback((progressData: EmailProgress) => {
+    flushSync(() => {
+      console.log(`[TIMING] UI updating at ${Date.now()}, recipient: ${progressData.recipient}`);
+
+      setEmailLogs(prev => [...prev, progressData]);
+
+      if (progressData.totalRecipients) {
+        const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
+        setProgress(currentProgress);
+        setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
+      }
+
+      if (progressData.smtp) {
+        setCurrentSmtpInfo(progressData.smtp);
+      }
+
+      if (progressData.status === 'success') {
+        setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
+      } else {
+        setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
+      }
+    });
+  }, []);
   const [smtpData, setSmtpData] = useState({
     smtpConfigs: [] as any[],
     currentSmtp: null as any,
@@ -200,6 +223,9 @@ export default function OriginalEmailSender() {
   const [newSmtp, setNewSmtp] = useState({
     host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
   });
+  const [smtpOnline, setSmtpOnline] = useState<boolean | null>(null);
+  const [smtpChecking, setSmtpChecking] = useState(false);
+  const smtpCheckingRef = useRef(false);
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -242,41 +268,43 @@ export default function OriginalEmailSender() {
     }
   }, [currentEmailStatus]);
 
+  // Consolidated template loading function
+  const loadTemplateContent = useCallback(async (templatePath: string): Promise<string> => {
+    try {
+      const response = await fetch('/api/original/readFile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filepath: templatePath })
+      });
+      const data = await response.json();
+      return data.success ? (data.content || '') : '';
+    } catch (error) {
+      console.error('Failed to load template:', error);
+      return '';
+    }
+  }, []);
+
   const loadTemplates = async () => {
     try {
-      if (window.electronAPI?.listFiles) {
-        // Mode 1 - use local files only
-        const files = await window.electronAPI.listFiles('files');
-        const htmlFiles = files.filter((file: string) => file.endsWith('.html'));
-        setTemplateFiles(htmlFiles);
-        console.log('[Mode 1] Loaded templates from local files:', htmlFiles);
-      } else {
-        console.error('Mode 1 requires Electron API for local file access');
-        setTemplateFiles([]);
+      const response = await fetch('/api/original/listFiles');
+      const data = await response.json();
+      if (data.files) {
+        setTemplateFiles(data.files);
       }
     } catch (error) {
-      console.error('Failed to load local templates:', error);
-      setTemplateFiles([]);
+      console.error('Failed to load templates:', error);
     }
   };
 
   const loadLogoFiles = async () => {
     try {
-      if (window.electronAPI?.listFiles) {
-        // Mode 1 - use local files only
-        const files = await window.electronAPI.listFiles('files/logo');
-        const imageFiles = files.filter((file: string) =>
-          /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(file)
-        );
-        setLogoFiles(imageFiles);
-        console.log('[Mode 1] Loaded logos from local files:', imageFiles);
-      } else {
-        console.error('Mode 1 requires Electron API for local file access');
-        setLogoFiles([]);
+      const response = await fetch('/api/original/listLogoFiles');
+      const data = await response.json();
+      if (data.files) {
+        setLogoFiles(data.files);
       }
     } catch (error) {
-      console.error('Failed to load local logos:', error);
-      setLogoFiles([]);
+      console.error('Error loading logo files:', error);
     }
   };
 
@@ -295,64 +323,81 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Template change handler - local file reading only (Mode 1)
+  // Template change handler - using consolidated template loading
   const handleTemplateChange = async (template: string) => {
     setSelectedTemplate(template);
 
-    // Load template content from local files only
     if (template && template !== 'off') {
-      try {
-        if (window.electronAPI?.readFile) {
-          // Read actual file content from local file system
-          const content = await window.electronAPI.readFile(`./files/${template}`);
-          setEmailContent(content);
-          setStatusText(`✓ Loaded template: ${template}`);
-          console.log('[Mode 1] Template loaded from local file:', template);
-        } else {
-          setStatusText('Error: Mode 1 requires local file system access');
-          console.error('Electron API not available - Mode 1 requires local file system access');
-          setEmailContent('');
-        }
-
-        setTimeout(() => setStatusText(''), 3000);
-      } catch (error) {
-        setStatusText(`Error loading template: ${error}`);
-        console.error('Template loading error:', error);
+      const content = await loadTemplateContent(`files/${template}`);
+      if (content) {
+        setEmailContent(content);
+        setStatusText('');
+      } else {
         setEmailContent('');
+        setStatusText('Error loading template content.');
       }
     }
   };
 
-  // Auto-load configuration on startup
+  // Auto-load configuration on startup - exact clone from main.js line 308
   useEffect(() => {
     loadConfigFromFiles();
-    loadLeadsFromFile(); // Load leads separately to avoid duplication
-    fetchSmtpData(); // Add SMTP data loading
-    checkAIStatus(); // Check AI status
+    fetchSmtpData();
+    checkAIStatus();
   }, []); // Run once on component mount
 
-  // Check AI status from Replit server - Match web version
+  // Auto-load AI key from config and initialize AI service
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeAI = async () => {
+      try {
+        const configResponse = await fetch('/api/config/load');
+        const configData = await configResponse.json();
+
+        if (!mounted) return;
+
+        if (configData.success && configData.config?.GOOGLE_AI_KEY) {
+          const aiResponse = await fetch('/api/ai/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: configData.config.GOOGLE_AI_KEY })
+          });
+
+          const aiData = await aiResponse.json();
+          if (mounted && aiData.success) {
+            setAiEnabled(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to auto-initialize AI:', error);
+      }
+    };
+
+    initializeAI();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const checkAIStatus = async () => {
     try {
-      const { replitApiService } = await import('../services/replitApiService');
-      const response = await fetch(replitApiService.getApiEndpoint('/api/ai/status'));
-      if (response.ok) {
-        const data = await response.json();
-        setAiStatus(data);
-        // Don't automatically enable AI, let user control it
-      }
+      const response = await fetch('/api/ai/status');
+      const data = await response.json();
+      setAiStatus(data);
+      // Don't automatically enable AI, let user control it with checkbox
     } catch (error) {
-      console.error('[AI] Failed to check status:', error);
+      console.error('Failed to check AI status:', error);
     }
   };
 
-  // Initialize AI with API key - Match web version with deinitialize support
   const initializeAI = async () => {
     // If AI is already initialized, this button acts as a toggle to turn it OFF
     if (aiStatus.initialized) {
       try {
-        const { replitApiService } = await import('../services/replitApiService');
-        const response = await fetch(replitApiService.getApiEndpoint('/api/ai/deinitialize'), {
+        // Call backend to deinitialize AI service
+        const response = await fetch('/api/ai/deinitialize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
         });
@@ -360,76 +405,73 @@ export default function OriginalEmailSender() {
 
         if (data.success) {
           setAiEnabled(false); // Disable AI features
-          setUseAISubject(false);
-          setUseAISenderName(false);
-          setAiStatus({ initialized: false, hasApiKey: false, provider: 'gemini' }); // Reset status
+          setAiStatus({ initialized: false, hasApiKey: false, provider: null }); // Reset status
           setStatusText('AI service turned off successfully');
-          localStorage.removeItem('google_ai_key'); // Remove key from localStorage
+          localStorage.removeItem('google_ai_key'); // Remove key from local storage
+
+          // Clear from config file but keep the key in the input field for easy re-initialization
+          await fetch('/api/config/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ GOOGLE_AI_KEY: '' })
+          });
         } else {
           setStatusText('Failed to turn off AI service');
         }
       } catch (error) {
-        console.error('[AI] Deinitialization failed:', error);
-        setStatusText('Failed to turn off AI service');
+        setStatusText('Error turning off AI service');
       }
       return;
     }
 
-    // Initialize AI
+    // If AI is not initialized, proceed with initialization
     if (!aiApiKey) {
       setStatusText('Please enter Google AI API key');
       return;
     }
 
     try {
-      const { replitApiService } = await import('../services/replitApiService');
-      const response = await fetch(replitApiService.getApiEndpoint('/api/ai/initialize'), {
+      const response = await fetch('/api/ai/initialize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey: aiApiKey })
       });
+      const data = await response.json();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          // Save to localStorage like web version
-          localStorage.setItem('google_ai_key', aiApiKey);
+      if (data.success) {
+        // Save to localStorage and config file
+        localStorage.setItem('google_ai_key', aiApiKey);
 
-          setStatusText('AI initialized successfully and saved');
-          await checkAIStatus();
-          setAiEnabled(true); // Enable AI after successful initialization
-        } else {
-          setStatusText('AI initialization failed');
-        }
+        // Save to setup.ini
+        await fetch('/api/config/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ GOOGLE_AI_KEY: aiApiKey })
+        });
+
+        // Let user control AI enabled state via checkbox
+        setStatusText('AI initialized successfully and saved to config');
+        await checkAIStatus();
+        setAiEnabled(true); // Enable AI after successful initialization
       } else {
-        setStatusText('AI initialization failed: Server error');
+        setStatusText('AI initialization failed');
       }
     } catch (error) {
-      console.error('[AI] Initialization failed:', error);
       setStatusText('Failed to initialize AI');
     }
   };
 
-
   // Prevent multiple config loads during development hot reloads
   const [configLoaded, setConfigLoaded] = useState(false);
 
-  // SMTP Management Functions - Mode 1 local access only
+  // SMTP Management Functions
   const fetchSmtpData = async () => {
     try {
-      if (window.electronAPI?.smtpList) {
-        // Use Electron API for SMTP data
-        const data = await window.electronAPI.smtpList();
-        if (data.success) {
-          setSmtpData({
-            smtpConfigs: data.smtpConfigs || [],
-            currentSmtp: data.currentSmtp || null,
-            rotationEnabled: data.rotationEnabled || false
-          });
-          console.log('[Mode 1] SMTP data loaded from local config:', data);
-        }
-      } else {
-        console.error('Mode 1 requires Electron API for local SMTP config access');
+      const response = await fetch("/api/smtp/list");
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(data);
+        checkSmtpStatus();
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
@@ -438,177 +480,152 @@ export default function OriginalEmailSender() {
 
   const toggleSmtpRotation = async () => {
     try {
-      const newRotationState = !smtpData.rotationEnabled;
-
-      if (window.electronAPI?.smtpToggleRotation) {
-        const result = await window.electronAPI.smtpToggleRotation(newRotationState);
-        if (result.success) {
-          setSmtpData(prev => ({
-            ...prev,
-            rotationEnabled: newRotationState,
-            currentSmtp: newRotationState && prev.smtpConfigs.length > 0
-              ? prev.smtpConfigs[0]
-              : prev.currentSmtp
-          }));
-          setStatusText(`SMTP rotation ${newRotationState ? 'enabled' : 'disabled'}`);
-          setTimeout(() => setStatusText(""), 3000);
-        } else {
-          throw new Error('Failed to save rotation state');
-        }
-      } else {
-        console.error('Electron API not available for SMTP rotation');
-        setStatusText('Error: Electron API not available');
+      const response = await fetch("/api/smtp/toggle-rotation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          rotationEnabled: data.rotationEnabled,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
         setTimeout(() => setStatusText(""), 3000);
       }
     } catch (error) {
-      console.error('Failed to toggle SMTP rotation:', error);
       setStatusText('Failed to toggle SMTP rotation');
-      setTimeout(() => setStatusText(""), 3000);
     }
   };
 
   const addNewSmtp = async () => {
-    // Validate only required fields - username/password are optional for relay servers
-    if (!newSmtp.host || !newSmtp.port || !newSmtp.fromEmail) {
-      setStatusText('Error: Please fill in Host, Port, and From Email');
-      setTimeout(() => setStatusText(""), 3000);
+    if (!newSmtp.host || !newSmtp.port || !newSmtp.user || !newSmtp.pass || !newSmtp.fromEmail) {
+      setStatusText('All SMTP fields are required');
       return;
     }
 
     try {
-      if (window.electronAPI?.smtpAdd) {
-        console.log('[Desktop] Adding new SMTP config:', newSmtp);
-        const data = await window.electronAPI.smtpAdd(newSmtp);
-        
-        if (data.success) {
-          // Update SMTP data with new list
-          setSmtpData({
-            smtpConfigs: data.smtpConfigs || [],
-            currentSmtp: data.currentSmtp || null,
-            rotationEnabled: smtpData.rotationEnabled
-          });
-          
-          // Clear form
-          setNewSmtp({
-            host: "",
-            port: "587",
-            user: "",
-            pass: "",
-            fromEmail: "",
-            fromName: ""
-          });
-          
-          setStatusText(`✓ SMTP config ${data.smtpId} added successfully`);
-          setTimeout(() => setStatusText(""), 3000);
-          console.log('[Desktop] SMTP config added successfully:', data.smtpId);
-        } else {
-          throw new Error(data.error || 'Failed to add SMTP configuration');
-        }
-      } else {
-        setStatusText('Error: Electron API not available');
-        setTimeout(() => setStatusText(""), 3000);
+      const response = await fetch("/api/smtp/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newSmtp)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          smtpConfigs: data.smtpConfigs
+        }));
+        setNewSmtp({
+          host: "", port: "587", user: "", pass: "", fromEmail: "", fromName: ""
+        });
+        setStatusText(`SMTP ${data.smtpId} added successfully`);
+        fetchSmtpData();
+        checkSmtpStatus();
       }
-    } catch (error: any) {
-      console.error('[Desktop] Error adding SMTP:', error);
-      setStatusText(`Error: ${error.message || 'Failed to add SMTP'}`);
-      setTimeout(() => setStatusText(""), 3000);
+    } catch (error) {
+      setStatusText('Failed to add SMTP configuration');
     }
   };
 
   const deleteSmtp = async (smtpId: string) => {
-    // Prevent deleting the last SMTP config
     if (smtpData.smtpConfigs.length <= 1) {
-      setStatusText('Error: Cannot delete the last SMTP configuration');
-      setTimeout(() => setStatusText(""), 3000);
+      setStatusText('Cannot delete the last SMTP configuration');
       return;
     }
 
     try {
-      if (window.electronAPI?.smtpDelete) {
-        console.log('[Desktop] Deleting SMTP config:', smtpId);
-        const data = await window.electronAPI.smtpDelete(smtpId);
-        
-        if (data.success) {
-          // Update SMTP data with new list
-          setSmtpData({
-            smtpConfigs: data.smtpConfigs || [],
-            currentSmtp: data.currentSmtp || null,
-            rotationEnabled: smtpData.rotationEnabled
-          });
-          
-          setStatusText(`✓ SMTP config ${smtpId} deleted successfully`);
-          setTimeout(() => setStatusText(""), 3000);
-          console.log('[Desktop] SMTP config deleted successfully:', smtpId);
-        } else {
-          throw new Error(data.error || 'Failed to delete SMTP configuration');
-        }
-      } else {
-        setStatusText('Error: Electron API not available');
-        setTimeout(() => setStatusText(""), 3000);
+      const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
+      const data = await response.json();
+      if (data.success) {
+        setSmtpData(prev => ({
+          ...prev,
+          smtpConfigs: data.smtpConfigs,
+          currentSmtp: data.currentSmtp
+        }));
+        setStatusText(`SMTP ${smtpId} deleted successfully`);
       }
-    } catch (error: any) {
-      console.error('[Desktop] Error deleting SMTP:', error);
-      setStatusText(`Error: ${error.message || 'Failed to delete SMTP'}`);
-      setTimeout(() => setStatusText(""), 3000);
+    } catch (error) {
+      setStatusText('Failed to delete SMTP configuration');
     }
   };
 
   const rotateSmtp = async () => {
     try {
-      if (window.electronAPI?.smtpRotate) {
-        console.log('[Desktop] Rotating to next SMTP server');
-        const data = await window.electronAPI.smtpRotate();
-        
-        if (data.success) {
-          // Update current SMTP
-          setSmtpData(prev => ({
-            ...prev,
-            currentSmtp: data.currentSmtp || null,
-            rotationEnabled: data.rotationEnabled ?? prev.rotationEnabled
-          }));
-          
-          setStatusText(`✓ Rotated to ${data.currentSmtp?.fromEmail || 'next SMTP'}`);
-          setTimeout(() => setStatusText(""), 3000);
-          console.log('[Desktop] SMTP rotated successfully to:', data.currentSmtp?.id);
-        } else {
-          throw new Error(data.error || 'Failed to rotate SMTP');
-        }
+      const response = await fetch("/api/smtp/rotate", {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+      if (data.success && data.currentSmtp) {
+        setSmtpData(prev => ({
+          ...prev,
+          currentSmtp: data.currentSmtp,
+          rotationEnabled: data.rotationEnabled
+        }));
+        toast({
+          title: "SMTP Rotated",
+          description: `Now using: ${data.currentSmtp.fromEmail} (${data.currentSmtp.id})`,
+        });
+        checkSmtpStatus();
       } else {
-        setStatusText('Error: Electron API not available');
-        setTimeout(() => setStatusText(""), 3000);
+        throw new Error(data.error || 'Failed to rotate SMTP');
       }
     } catch (error: any) {
-      console.error('[Desktop] Error rotating SMTP:', error);
-      setStatusText(`Error: ${error.message || 'Failed to rotate SMTP'}`);
-      setTimeout(() => setStatusText(""), 3000);
+      console.error('SMTP rotation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to rotate SMTP",
+        variant: "destructive"
+      });
     }
   };
 
-  // Load configuration from files - Mode 1 local access only
+  const checkSmtpStatus = async () => {
+    if (smtpCheckingRef.current) return;
+
+    smtpCheckingRef.current = true;
+    setSmtpChecking(true);
+    try {
+      const response = await fetch("/api/smtp/test");
+      const data = await response.json();
+      setSmtpOnline(data.online);
+
+      if (!data.online) {
+        console.log('[SMTP Status] OFFLINE:', data.error);
+      } else {
+        console.log('[SMTP Status] ONLINE:', data.smtp);
+      }
+    } catch (error) {
+      console.error('[SMTP Status] Check failed:', error);
+      setSmtpOnline(false);
+    } finally {
+      setSmtpChecking(false);
+      smtpCheckingRef.current = false;
+    }
+  };
+
+  // Load configuration from files - exact clone from main.js
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      let data;
-      if (window.electronAPI?.loadConfig) {
-        // Mode 1 - use Electron API for config loading only
-        data = await window.electronAPI.loadConfig();
-        console.log('[Mode 1] Config loaded from local config files');
-      } else {
-        console.error('Mode 1 requires Electron API for local config access');
-        return;
-      }
+      const response = await fetch('/api/config/load');
+      const data = await response.json();
 
       if (data.success && data.config) {
         const config = data.config;
 
-        // Load SMTP settings - check both SMTP object and direct config properties
+        // Load SMTP settings
         if (config.SMTP) {
           const smtpConfig = {
-            host: config.SMTP.host || config.HOST || '',
-            port: config.SMTP.port || config.PORT || '587',
-            user: config.SMTP.user || config.USER || '',
-            pass: config.SMTP.pass || config.PASS || '',
-            fromEmail: config.SMTP.fromEmail || config.SMTP || '',
+            host: config.SMTP.host || '',
+            port: config.SMTP.port || '587',
+            user: config.SMTP.user || '',
+            pass: config.SMTP.pass || '',
+            fromEmail: config.SMTP.fromEmail || '',
             fromName: config.SMTP.fromName || ''
           };
           setSMTPSettings(smtpConfig);
@@ -616,29 +633,8 @@ export default function OriginalEmailSender() {
           // Auto-set sender email from SMTP config - exact clone from main.js behavior
           if (smtpConfig.fromEmail) {
             setSenderEmail(smtpConfig.fromEmail);
-            console.log('[Config Load] Auto-set sender email:', smtpConfig.fromEmail);
           }
-          if (smtpConfig.fromName) {
-            setSenderName(smtpConfig.fromName);
-            console.log('[Config Load] Auto-set sender name:', smtpConfig.fromName);
-          }
-        } else if (config.HOST && config.USER && config.PASS && config.SMTP) {
-          // Direct config properties (from setup.ini)
-          const smtpConfig = {
-            host: config.HOST,
-            port: config.PORT || '587',
-            user: config.USER,
-            pass: config.PASS,
-            fromEmail: config.SMTP,
-            fromName: ''
-          };
-          setSMTPSettings(smtpConfig);
 
-          // Auto-set sender email from SMTP config
-          if (smtpConfig.fromEmail) {
-            setSenderEmail(smtpConfig.fromEmail);
-            console.log('[Config Load] Auto-set sender email from setup.ini:', smtpConfig.fromEmail);
-          }
         }
 
         // Load advanced settings with delivery protection
@@ -680,18 +676,25 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Note: Leads loading is handled by separate loadLeadsFromFile() call
+        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
+        try {
+          const leadsResponse = await fetch('/api/config/loadLeads');
+          const leadsData = await leadsResponse.json();
+          if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
+            setRecipients(leadsData.leads);
+          }
+        } catch (leadsError) {
+          console.log('[Config Load] Failed to load leads:', leadsError);
+        }
 
         // Auto-load letter content if available
         if (config.LETTER_CONTENT) {
           setEmailContent(config.LETTER_CONTENT);
-          console.log('[Config Load] Auto-loaded letter content from config');
         }
 
         // Auto-load subject if available
         if (config.SUBJECT) {
           setSubject(config.SUBJECT);
-          console.log('[Config Load] Auto-loaded subject from config');
         }
 
         setStatusText('Configuration and maillist loaded automatically');
@@ -706,54 +709,8 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Load leads from file - Mode 1 local access only
-  const loadLeadsFromFile = async () => {
-    try {
-      let leadsData;
-      if (window.electronAPI?.loadLeads) {
-        // Mode 1 - use Electron API for leads.txt only
-        leadsData = await window.electronAPI.loadLeads();
-        console.log('[Mode 1] Leads loaded from local leads.txt file');
-      } else {
-        console.error('Mode 1 requires Electron API for local file access');
-        return;
-      }
-
-      if (leadsData && leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
-        setRecipients(leadsData.leads);
-        const leadCount = leadsData.leads.split('\n').filter(Boolean).length;
-        console.log(`[Mode 1] Auto-loaded ${leadCount} leads from local leads.txt`);
-      } else {
-        console.log('[Mode 1] No leads.txt found locally or it\'s empty, starting with empty recipients');
-      }
-    } catch (error) {
-      console.error('[Mode 1] Error loading leads from local file:', error);
-      setStatusText('Failed to load leads from local file');
-    }
-  };
-
-  // Function to update progress and logs, forcing immediate UI updates
-  const updateProgress = (progressData: EmailProgress) => {
-    flushSync(() => {
-      setEmailLogs(prev => [...prev, progressData]);
-
-      if (progressData.totalRecipients) {
-        const currentProgress = ((progressData.totalSent || 0) + (progressData.totalFailed || 0)) / progressData.totalRecipients * 100;
-        setProgress(currentProgress);
-        setProgressDetails(`Sent: ${progressData.totalSent || 0}, Failed: ${progressData.totalFailed || 0}, Total: ${progressData.totalRecipients}`);
-      }
-
-      if (progressData.status === 'success') {
-        setStatusText(`✓ Successfully sent to ${progressData.recipient}`);
-        setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
-      } else {
-        setStatusText(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
-        setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error || 'Unknown error'}`);
-      }
-    });
-  };
-
   const handleSendEmails = async () => {
+    // Validation logic - exact clone from sender.html lines 1307-1321
     const recipientList = recipients.split('\n').filter(email => email.trim() !== '');
 
     if (!recipientList.length) {
@@ -769,17 +726,18 @@ export default function OriginalEmailSender() {
     // HTML content validation - exact clone from main.js lines 568-581 & sender.html 1275-1286
     let bodyHtml = '';
 
-    // Priority 1: Selected template file (Mode 1 - local only)
+    // Priority 1: Selected template file (bodyHtmlFile equivalent)
     if (selectedTemplate && selectedTemplate !== 'off') {
       try {
-        if (window.electronAPI?.readFile) {
-          // Mode 1 - read from local file system only
-          bodyHtml = await window.electronAPI.readFile(`./files/${selectedTemplate}`);
-          console.log('[Mode 1] Template loaded for sending:', selectedTemplate);
-        } else {
-          console.error('Mode 1 requires Electron API for local file system access');
-          bodyHtml = '';
-        }
+        const response = await fetch('/api/original/readFile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ filepath: `files/${selectedTemplate}` })
+        });
+        const data = await response.json();
+        bodyHtml = data.success ? (data.content || '') : '';
       } catch (error) {
         console.error('Failed to load template:', error);
         bodyHtml = '';
@@ -789,20 +747,11 @@ export default function OriginalEmailSender() {
     else if (emailContent.trim()) {
       bodyHtml = emailContent.trim();
     }
-    // Priority 3: Default letter fallback (Mode 1 - local only)
+    // Priority 3: Default letter fallback (C.LETTER equivalent)
     else {
-      try {
-        if (window.electronAPI?.readFile) {
-          // Mode 1 - read from local file system only
-          bodyHtml = await window.electronAPI.readFile('./files/letter.html');
-          console.log('[Mode 1] Default letter loaded for sending');
-        } else {
-          console.error('Mode 1 requires Electron API for local file system access');
-          bodyHtml = '';
-        }
-      } catch (error) {
-        console.log('No default letter.html found locally');
-        bodyHtml = '';
+      bodyHtml = await loadTemplateContent('files/letter.html');
+      if (!bodyHtml) {
+        console.log('No default letter.html found');
       }
     }
 
@@ -817,7 +766,7 @@ export default function OriginalEmailSender() {
     // Attachment HTML handling - exact clone from main.js lines 583-605
     let attachmentHtmlContent = '';
     if (attachmentHtml && attachmentHtml.trim()) {
-      // Use direct attachment HTML (args.html equivalent)
+      // Use direct attachment HTML (args.attachmentHtml equivalent)
       attachmentHtmlContent = attachmentHtml.trim();
     } else {
       // Fallback to bodyHtml (main.js line 586)
@@ -831,57 +780,31 @@ export default function OriginalEmailSender() {
     setFailedEmails([]);
     setProgressDetails("");
     setCurrentEmailStatus("");
+    setCurrentSmtpInfo(null);
 
     try {
       const formData = new FormData();
 
       // Add all form data - exact match to original args
       formData.append('senderEmail', senderEmail);
-      formData.append('senderName', senderName);
+      formData.append('senderName', senderName || '');
       formData.append('subject', subject);
       formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
       formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-      // Send ALL user SMTP configs to server for rotation support
-      console.log('[Desktop] Sending user SMTP configs:', {
-        count: smtpData.smtpConfigs.length,
-        rotationEnabled: smtpData.rotationEnabled,
-        configs: smtpData.smtpConfigs.map(c => ({
-          id: c.id,
-          host: c.host,
-          port: c.port,
-          user: c.user === '' ? '(empty)' : c.user,
-          pass: c.pass === '' ? '(empty)' : '***',
-          fromEmail: c.fromEmail
-        }))
-      });
-
-      // Send user's SMTP configs as JSON array
-      const smtpConfigsToSend = JSON.stringify(smtpData.smtpConfigs);
-      console.log('[Desktop] SMTP configs JSON string:', smtpConfigsToSend);
-      formData.append('userSmtpConfigs', smtpConfigsToSend);
-      formData.append('smtpRotationEnabled', String(smtpData.rotationEnabled));
-
-      // Also send first SMTP as fallback for backward compatibility
-      const firstSmtp = smtpData.smtpConfigs[0] || smtpSettings;
-      console.log('[Desktop] First SMTP fallback:', {
-        host: firstSmtp.host,
-        port: firstSmtp.port,
-        user: firstSmtp.user === '' ? '(empty)' : firstSmtp.user,
-        pass: firstSmtp.pass === '' ? '(empty)' : '***'
-      });
-      formData.append('smtpHost', String(firstSmtp.host || ''));
-      formData.append('smtpPort', String(firstSmtp.port || '587'));
-      formData.append('smtpUser', String(firstSmtp.user || ''));
-      formData.append('smtpPass', String(firstSmtp.pass || ''));
+      // SMTP settings
+      formData.append('smtpHost', smtpSettings.host);
+      formData.append('smtpPort', smtpSettings.port);
+      formData.append('smtpUser', smtpSettings.user);
+      formData.append('smtpPass', smtpSettings.pass);
 
       // Advanced settings
       Object.entries(advancedSettings).forEach(([key, value]) => {
         formData.append(key, String(value));
       });
 
-      // AI settings - send correct flags to backend (match web version)
+      // AI settings - send correct flags to backend
       formData.append('useAIEnabled', String(aiEnabled)); // Main AI enabled flag
       formData.append('useAISubject', String(aiEnabled && useAISubject)); // Only true if AI enabled AND subject checked
       formData.append('useAISenderName', String(aiEnabled && useAISenderName)); // Only true if AI enabled AND sender name checked
@@ -893,21 +816,10 @@ export default function OriginalEmailSender() {
         }
       }
 
-      // Mode 1 - Always use hosted Replit server for email sending
-      if (!window.electronAPI) {
-        setStatusText('Mode 1 requires Electron API for local file system access');
-        return;
-      }
-
-      // Import and use the configurable Replit API service
-      const { replitApiService } = await import('../services/replitApiService');
-      const serverUrl = replitApiService.getServerUrl(); // Get the base server URL
-
       // Start email sending
-      const response = await fetch(`${serverUrl}/api/original/sendMail`, {
+      const response = await fetch('/api/original/sendMail', {
         method: 'POST',
         body: formData,
-        signal: abortControllerRef.current?.signal // Use the abort signal
       });
 
       const result = await response.json();
@@ -922,12 +834,7 @@ export default function OriginalEmailSender() {
       let logIndex = 0;
       const pollInterval = setInterval(async () => {
         try {
-          const progressResponse = await fetch(`${serverUrl}/api/original/progress?since=${logIndex}`, {
-            signal: abortControllerRef.current?.signal // Pass abort signal to polling requests too
-          });
-          if (!progressResponse.ok) {
-            throw new Error(`Polling request failed with status ${progressResponse.status}`);
-          }
+          const progressResponse = await fetch(`/api/original/progress?since=${logIndex}`);
           const progressData = await progressResponse.json();
 
           if (progressData.logs && progressData.logs.length > 0) {
@@ -947,12 +854,11 @@ export default function OriginalEmailSender() {
                 flushSync(() => {
                   setIsLoading(false);
                   setStatusText(`Error: ${log.error}`);
-                  setCurrentEmailStatus(`Sending failed: ${log.error}`);
                 });
                 clearInterval(pollInterval);
               } else {
                 // Regular progress update
-                const progressLog: EmailProgress = {
+                const progressData: EmailProgress = {
                   recipient: log.recipient || 'Unknown',
                   subject: log.subject || subject || 'No Subject',
                   status: log.status || 'fail',
@@ -965,32 +871,19 @@ export default function OriginalEmailSender() {
                   type: 'progress'
                 };
 
-                updateProgress(progressLog);
+                updateProgress(progressData);
               }
             }
-            logIndex = progressData.total; // Update the index for the next poll
+            logIndex = progressData.total;
           }
 
-          // Stop polling if not in progress and no new logs were received
+          // Stop polling if not in progress
           if (!progressData.inProgress && progressData.logs.length === 0) {
-            clearInterval(pollInterval);
-            setIsLoading(false); // Ensure loading state is false if polling stops without explicit completion
-            if (emailLogs.length === 0) { // Handle case where sending might have been very quick
-                setStatusText("Email sending completed (no logs to display).");
-            }
-          }
-        } catch (err: any) {
-          if (err.name === 'AbortError') {
-            console.log('Polling aborted.');
-            setStatusText('Email sending cancelled.');
-            setCurrentEmailStatus("");
-            clearInterval(pollInterval);
-          } else {
-            console.error('Error polling progress:', err);
-            setStatusText(`Polling error: ${err.message}`);
             clearInterval(pollInterval);
             setIsLoading(false);
           }
+        } catch (err) {
+          console.error('Error polling progress:', err);
         }
       }, 500); // Poll every 500ms
 
@@ -999,41 +892,33 @@ export default function OriginalEmailSender() {
       setIsLoading(false);
       setStatusText(`Error: ${error instanceof Error ? error.message : String(error)}`);
       setEmailLogs(prev => [...prev, {
+        type: 'error',
+        message: `❌ Error: ${error instanceof Error ? error.message : String(error)}`,
+        timestamp: new Date().toISOString(),
         recipient: "N/A",
         subject: "N/A",
-        status: "fail" as const,
-        error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        status: "fail"
       }]);
-    } finally {
-      // Note: isLoading is managed within the polling loop for progressive updates.
-      // This finally block might be redundant if all paths inside try/catch manage isLoading.
     }
   };
 
   const cancelSending = async () => {
-    // Mode 1 - Use both AbortController and server cancel endpoint
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
-
-    // Also call the server cancel endpoint
     try {
-      const { replitApiService } = await import('../services/replitApiService');
-      const serverUrl = replitApiService.getServerUrl();
-      await fetch(`${serverUrl}/api/original/cancel`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      console.log('[Mode 1] Server cancel endpoint called successfully');
-    } catch (error) {
-      console.error('[Mode 1] Failed to call server cancel endpoint:', error);
-    }
+      await fetch('/api/original/cancel', { method: 'POST' });
+      setIsLoading(false);
+      setStatusText("Email sending cancelled");
+      setCurrentEmailStatus("Campaign cancelled");
+      setProgress(0);
+      setProgressDetails("");
 
-    setIsLoading(false);
-    setStatusText("Email sending cancelled");
-    setCurrentEmailStatus("");
+      // Close any active event source
+      if ((window as any).currentEventSource) {
+        (window as any).currentEventSource.close();
+        (window as any).currentEventSource = null;
+      }
+    } catch (error) {
+      console.error('Failed to cancel sending:', error);
+    }
   };
 
   return (
@@ -1048,15 +933,16 @@ export default function OriginalEmailSender() {
 
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-40 bg-[#131316] border-r border-[#26262b] min-h-screen">
-          <div className="p-4">
-            <div className="flex flex-col items-center mb-8">
-           
+        <div className="w-36 bg-[#131316] border-r border-[#26262b] min-h-screen">
+          <div className="p-3">
+            <div className="flex flex-col items-center mb-4">
+
+
               {/* Decorative Elements */}
-             
+
 
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="text-[#ef4444] font-bold">CLS V1 🚸</div>
+                <div className="text-[#ef4444] font-bold">V1 🚸</div>
               </div>
             </div>
 
@@ -1081,8 +967,10 @@ export default function OriginalEmailSender() {
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
-              <div className="text-xs text-[#ef4444] animate-pulse">📡</div>
-              <div className="text-xs text-green-400">ONLINE</div>
+              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'} ${smtpChecking ? 'animate-pulse' : ''}`}>📡</div>
+              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
+                {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
+              </div>
             </div>
           </div>
         </div>
@@ -1090,11 +978,11 @@ export default function OriginalEmailSender() {
         {/* Main Content */}
         <div className="flex-1 p-2 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
-          
-              <div className="text-center mt-1">                
-                <div className="text-[#ef4444] text-xl font-bold">CLS ADVANCED SMART EMAIL SENDER ⚡</div>
+
+              <div className="text-center mt-1">
+                <div className="text-[#ef4444] text-xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
                 <div className="text-[green] text-xs">
-                 <a href="https://t.me/Closedsenderbot" target="_blank" rel="noopener noreferrer">Click to Download: @ClosedSenderBot</a>
+                     <a href="https://t.me/Closedsenderbot" target="_blank" rel="noopener noreferrer">Click to Download: @ClosedSenderBot</a>
                 </div>
                 <div className="text-[#a1a1aa] text-xs mt-1">═══════════════════════════════════════════════════════════════════════════════════════════════════</div>
               </div>
@@ -1277,7 +1165,7 @@ export default function OriginalEmailSender() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                 {/* Attachment Files */}
                 <div>
-                  <Label className="text-sm text-[#a1a1aa] mb-1">Attachment Files</Label>
+                  <Label className="text-sm text-[#a1a1aa] mb-2">Attachment Files</Label>
                   <div className="space-y-2">
                     <Button
                       variant="outline"
@@ -1294,16 +1182,22 @@ export default function OriginalEmailSender() {
                       className="hidden"
                     />
                     {selectedFiles && selectedFiles.length > 0 && (
-                      <div className="flex items-center justify-between bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2">
-                        <span className="text-xs text-[#a1a1aa]">
-                          {selectedFiles.length} file(s) selected
-                        </span>
-                        <button
-                          onClick={removeAttachment}
-                          className="text-[#ef4444] hover:text-[#dc2626] text-sm"
-                        >
-                          ×
-                        </button>
+                      <div className="bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2 space-y-1">
+                        {Array.from(selectedFiles).map((file, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <span className="text-xs text-[#a1a1aa] truncate">
+                              📎 {file.name}
+                            </span>
+                            {index === 0 && (
+                              <button
+                                onClick={removeAttachment}
+                                className="text-[#ef4444] hover:text-[#dc2626] text-sm ml-2"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                     <div className="text-xs text-[#75798b]">Supports various file formats</div>
@@ -1457,7 +1351,7 @@ export default function OriginalEmailSender() {
 
               {/* Action Buttons with ASCII Frame */}
               <div className="mt-2">
-                <div className="text-[#ef4444] font-mono text-xs text-center mb-3 opacity-60">
+                <div className="text-[#ef4444] font-mono text-xs text-center mb-2 opacity-60">
                   ◆◇◆◇◆◇◆◇◆◇◆ MISSION CONTROL ◆◇◆◇◆◇◆◇◆◇◆
                 </div>
                 <div className="flex justify-center gap-4">
@@ -1493,12 +1387,12 @@ export default function OriginalEmailSender() {
                     ⚙️ SETTINGS
                   </Button>
                 </div>
-                
+
               </div>
-           
+
 
             {/* SMTP Settings */}
-            <div className="mt-1  p-1">
+            <div className="mt-1 p-1">
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2">
                   <input
@@ -1563,14 +1457,14 @@ export default function OriginalEmailSender() {
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
                       />
                       <Input
-                        placeholder="Username (optional)"
+                        placeholder="Username"
                         value={newSmtp.user}
                         onChange={(e) => setNewSmtp({...newSmtp, user: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
                       />
                       <Input
                         type="password"
-                        placeholder="Password (optional)"
+                        placeholder="Password"
                         value={newSmtp.pass}
                         onChange={(e) => setNewSmtp({...newSmtp, pass: e.target.value})}
                         className="bg-[#0f0f12] border-[#26262b] text-white h-7 text-xs"
@@ -1628,10 +1522,8 @@ export default function OriginalEmailSender() {
                   </div>
                 </div>
               </details>
-            </div>
 
-
-            {/* AI Content Generation - Compact Dropdown Design */}
+              {/* AI Content Generation - Compact Dropdown Design */}
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
@@ -1709,70 +1601,59 @@ export default function OriginalEmailSender() {
                   )}
                 </div>
               </details>
-
-
-            {/* HTML Convert Settings - Dropdown Design */}
-            <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
-              <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
-                <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
-                  🔄 HTML Convert
-                  {(advancedSettings.zipUse || advancedSettings.htmlImgBody || advancedSettings.qrcode || advancedSettings.randomMetadata || advancedSettings.calendarMode || advancedSettings.htmlConvert) && 
-                    <span className="text-xs text-green-500">●</span>
-                  }
-                </h3>
-                <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
-              </summary>
-              <div className="p-3 space-y-3 border-t border-[#26262b]">
-                <div>
-                  <Label className="text-xs text-[green] mb-2 block">CONVERSION FORMATS | Click to generate as attachments.</Label>
-                  <div className="flex flex-wrap gap-3">
-                    {/* Feature Toggle Buttons - All 5 Together */}
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <Button
-                        type="button"
-                        onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
-                        className={`${advancedSettings.zipUse ? 'bg-emerald-600 hover:bg-emerald-700 border-emerald-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                        data-testid="toggle-zip-attachment"
-                      >
-                        📦 ZIP
-                        {advancedSettings.zipUse && <span className="ml-2 text-xs">✓</span>}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
-                        className={`${advancedSettings.htmlImgBody ? 'bg-slate-600 hover:bg-slate-700 border-slate-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                        data-testid="toggle-html-to-img"
-                      >
-                        HTML-TO-IMG
-                        {advancedSettings.htmlImgBody && <span className="ml-2 text-xs">✓</span>}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
-                        className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700 border-red-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                        data-testid="toggle-qr-code"
-                      >
-                        QRCODE
-                        {advancedSettings.qrcode && <span className="ml-2 text-xs">✓</span>}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
-                        className={`${advancedSettings.randomMetadata ? 'bg-cyan-600 hover:bg-cyan-700 border-cyan-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                        data-testid="toggle-random-metadata"
-                      >
-                        🎲 Metadata
-                        {advancedSettings.randomMetadata && <span className="ml-2 text-xs">✓</span>}
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
-                        className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700 border-purple-500' : 'bg-[#1e1e22] hover:bg-[#2a2a2f] border-[#3a3a3f]'} text-white text-sm font-medium px-4 py-2.5 rounded-lg transition-all border-2`}
-                        data-testid="toggle-calendar-mode"
-                      >
-                        CALENDAR
-                        {advancedSettings.calendarMode && <span className="ml-2 text-xs">✓</span>}
-                      </Button>
+              {/* HTML Convert Settings - Dropdown Design */}
+              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
+                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
+                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+                    🔄 HTML Convert
+                    {(advancedSettings.zipUse || advancedSettings.htmlImgBody || advancedSettings.qrcode || advancedSettings.randomMetadata || advancedSettings.calendarMode || advancedSettings.htmlConvert) &&
+                      <span className="text-xs text-green-500">●</span>
+                    }
+                  </h3>
+                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 space-y-3 border-t border-[#26262b]">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button
+                      type="button"
+                      onClick={() => setAdvancedSettings({...advancedSettings, zipUse: !advancedSettings.zipUse})}
+                      className={`${advancedSettings.zipUse ? 'bg-green-600 hover:bg-green-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                    >
+                      ZIP
+                      {advancedSettings.zipUse && <span className="ml-1 text-xs">✓</span>}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setAdvancedSettings({...advancedSettings, htmlImgBody: !advancedSettings.htmlImgBody})}
+                      className={`${advancedSettings.htmlImgBody ? 'bg-orange-600 hover:bg-orange-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                    >
+                      🌫️ HTML-TO-IMG
+                      {advancedSettings.htmlImgBody && <span className="ml-1 text-xs">✓</span>}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setAdvancedSettings({...advancedSettings, qrcode: !advancedSettings.qrcode})}
+                      className={`${advancedSettings.qrcode ? 'bg-red-600 hover:bg-red-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                    >
+                      QRCODE
+                      {advancedSettings.qrcode && <span className="ml-1 text-xs">✓</span>}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setAdvancedSettings({...advancedSettings, randomMetadata: !advancedSettings.randomMetadata})}
+                      className={`${advancedSettings.randomMetadata ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                    >
+                      🍬 Metadata
+                      {advancedSettings.randomMetadata && <span className="ml-1 text-xs">✓</span>}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => setAdvancedSettings({...advancedSettings, calendarMode: !advancedSettings.calendarMode})}
+                      className={`${advancedSettings.calendarMode ? 'bg-purple-600 hover:bg-purple-700' : 'bg-[#26262b] hover:bg-[#333338]'} text-white text-xs px-3 py-2 rounded-md transition-colors`}
+                    >
+                      CALENDAR
+                      {advancedSettings.calendarMode && <span className="ml-1 text-xs">✓</span>}
+                    </Button>
                     {[
                       { format: 'pdf', label: '📄 PDF', color: 'bg-red-600 hover:bg-red-700' },
                       { format: 'png', label: '🖼️ PNG', color: 'bg-blue-600 hover:bg-blue-700' },
@@ -1800,23 +1681,22 @@ export default function OriginalEmailSender() {
                       );
                     })}
                   </div>
-
+                  <div>
+                    <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
+                    <Input
+                      type="password"
+                      value={advancedSettings.zipPassword}
+                      onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
+                      className="bg-[#0f0f12] border-[#26262b] text-white h-8 text-sm"
+                      placeholder="Optional"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-[red] mb-1 block">ZIP PASSWORD FOR ATTACHMENT</Label>
-                  <Input
-                    type="password"
-                    value={advancedSettings.zipPassword}
-                    onChange={(e) => setAdvancedSettings({...advancedSettings, zipPassword: e.target.value})}
-                    className="bg-[#0f0f12] border-[#26262b] text-white"
-                    placeholder="Optional"
-                  />
-                </div>
+              </details>
               </div>
-            </details>
-          </div>
+            </div>
         </div>
-           </div>
+          </div>
 
         {/* Settings Overlay */}
         {showSettings && (
@@ -1950,7 +1830,7 @@ export default function OriginalEmailSender() {
                     </div>
                   </div>
                   <div className="mt-4">
-                    <Label className="text-sm text-[red]">MIDDLE TEXT </Label>
+                    <Label className="text-sm text-[red]">QR MIDDLE TEXT </Label>
                     <Input
                       value={advancedSettings.hiddenText}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, hiddenText: e.target.value})}
@@ -1962,7 +1842,7 @@ export default function OriginalEmailSender() {
 
 
                 <div>
-                  <Label className="text-sm text-[red]">QR-LINK</Label>
+                  <Label className="text-sm text-[red]">QRLINK </Label>
                   <Input
                     value={advancedSettings.qrLink}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, qrLink: e.target.value})}
@@ -1972,7 +1852,7 @@ export default function OriginalEmailSender() {
                 </div>
 
                 <div>
-                  <Label className="text-sm text-[red]">LINK : USE {"{link}"} placeholder </Label>
+                  <Label className="text-sm text-[red]">LINK: USE {"{link}"} placeholder </Label>
                   <Input
                     value={advancedSettings.linkPlaceholder}
                     onChange={(e) => setAdvancedSettings({...advancedSettings, linkPlaceholder: e.target.value})}
@@ -1986,7 +1866,7 @@ export default function OriginalEmailSender() {
                 <div className="grid grid-cols-2 gap-4">
 
                   <div>
-                    <Label className="text-sm text-[red]"> FILE NAME</Label>
+                    <Label className="text-sm text-[red]">FILE NAME</Label>
                     <Input
                       value={advancedSettings.fileName}
                       onChange={(e) => setAdvancedSettings({...advancedSettings, fileName: e.target.value})}
@@ -2000,7 +1880,7 @@ export default function OriginalEmailSender() {
 
                 {/* Domain Logo Settings Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-red mt-6 mb-4">🏢 DOMAIN LOGO </h3>
+                  <h3 className="text-lg font-medium text-red mb-3">DOMAIN-LOGO </h3>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label className="text-sm text-[red]">LOGO SIZE</Label>
@@ -2016,7 +1896,7 @@ export default function OriginalEmailSender() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-sm text-[red]">RETRY</Label>
+                    <Label className="text-sm text-[red]">RETRY </Label>
                     <Input
                       type="number"
                       min="0"
