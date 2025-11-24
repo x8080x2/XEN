@@ -115,22 +115,38 @@ class ElectronReplitApiService {
     // Convert emailData to FormData format expected by backend
     const formData = new FormData();
     
-    // Add all email data fields
-    formData.append('recipients', emailData.recipients.map((r: any) => r.email || r).join('\n'));
+    // Add email content fields
+    formData.append('recipients', typeof emailData.recipients === 'string' 
+      ? emailData.recipients 
+      : emailData.recipients.map((r: any) => r.email || r).join('\n')
+    );
     formData.append('subject', emailData.subject || '');
-    formData.append('htmlContent', emailData.htmlContent || '');
-    formData.append('senderName', emailData.smtpConfig?.senderName || '');
+    formData.append('htmlContent', emailData.htmlContent || emailData.html || '');
+    formData.append('senderName', emailData.smtpConfig?.fromName || emailData.smtpConfig?.senderName || '');
+    formData.append('senderEmail', emailData.smtpConfig?.fromEmail || emailData.smtpConfig?.user || '');
     formData.append('replyTo', emailData.smtpConfig?.replyTo || '');
     
-    // Add SMTP configuration for desktop mode
-    formData.append('userSmtpConfigs', JSON.stringify(emailData.smtpConfig ? [emailData.smtpConfig] : []));
+    // Add SMTP configuration for desktop mode (required by backend)
+    // Backend checks for 'userSmtpConfigs' key to detect desktop mode
+    const smtpConfigs = emailData.smtpConfig ? [emailData.smtpConfig] : [];
+    formData.append('userSmtpConfigs', JSON.stringify(smtpConfigs));
+    formData.append('smtpRotationEnabled', 'false'); // Single SMTP for now
     
     // Add settings if provided
     if (emailData.settings) {
       Object.keys(emailData.settings).forEach(key => {
-        formData.append(key, emailData.settings[key]);
+        const value = emailData.settings[key];
+        formData.append(key, typeof value === 'string' ? value : JSON.stringify(value));
       });
     }
+    
+    console.log('[ReplitAPI] Sending email job with config:', {
+      recipientCount: typeof emailData.recipients === 'string' 
+        ? emailData.recipients.split('\n').length 
+        : emailData.recipients.length,
+      smtpHost: emailData.smtpConfig?.host,
+      hasSmtpConfigs: smtpConfigs.length > 0
+    });
     
     const response = await fetch(this.getApiEndpoint('api/original/sendMail'), {
       method: 'POST',

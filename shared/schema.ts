@@ -3,6 +3,20 @@ import { pgTable, varchar, integer, timestamp, text } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
+// Shared SMTP Configuration schema for desktop-server communication
+export const smtpConfigSchema = z.object({
+  host: z.string().min(1, "SMTP host is required"),
+  port: z.number().int().positive("Port must be a positive number"),
+  user: z.string().min(1, "SMTP user is required"),
+  pass: z.string().min(1, "SMTP password is required"),
+  fromEmail: z.string().email().optional(),
+  fromName: z.string().optional(),
+  replyTo: z.string().email().optional(),
+  id: z.string().optional(), // For SMTP manager with multiple configs
+});
+
+export type SmtpConfig = z.infer<typeof smtpConfigSchema>;
+
 // User Schema
 export const userSchema = z.object({
   id: z.string(),

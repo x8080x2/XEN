@@ -12,19 +12,25 @@ This document explains the previously "unwired" flows in your application and ho
 - `user-package/client/src/lib/queryClient.ts` threw errors for direct API requests
 - Desktop app had no way to communicate with the backend server
 - Error: "Direct API requests not supported in desktop app"
+- Desktop app was trying to use `/api/emails/send` endpoint that didn't exist
 
 **Solution Implemented:**
 - ✅ Created `replitApiService.ts` - dedicated service for desktop-to-server communication
 - ✅ Configured server URL management with multiple fallback sources
-- ✅ All API endpoints properly routed through the service
+- ✅ Updated to use `/api/original/sendMail` endpoint (actual backend implementation)
+- ✅ Fixed progress polling to use `/api/original/progress` endpoint
 - ✅ Desktop app now successfully communicates with Replit backend
 
 **How It Works:**
 ```javascript
-// Desktop app queries server via replitApiService
+// Desktop app sends emails via backend's original endpoint
 const result = await replitApiService.sendEmailsJob(emailData);
-const status = await replitApiService.checkJobStatus(jobId);
+// Polls progress (not job-based, uses streaming logs)
+const status = await replitApiService.checkJobStatus(0);
 ```
+
+**Key Change:**
+The backend uses the **original streaming-based email sending** (`/api/original/sendMail`), not a job-based queue system. The desktop app has been updated to match this architecture.
 
 ---
 
@@ -131,7 +137,8 @@ curl -X POST https://your-app.replit.app/api/ai/initialize \
 **Solution Implemented:**
 - ✅ `TELEGRAM_BOT_TOKEN` configured in Replit Secrets
 - ✅ `TELEGRAM_ADMIN_CHAT_IDS` configured for admin access
-- ✅ Webhook set up and operational
+- ✅ Webhook route exists at `/api/telegram/webhook` (line 40-49 in routes.ts)
+- ✅ Webhook tested and operational (returns 200 OK)
 - ✅ Bot commands fully functional
 
 **Verified Commands:**
@@ -145,7 +152,8 @@ curl -X POST https://your-app.replit.app/api/ai/initialize \
 **Current Status:**
 ```
 ✅ Telegram bot admin access configured for 1 user(s)
-✅ Telegram webhook set to: https://xen-1-cls8080.replit.app/api/telegram/webhook
+✅ Telegram webhook at: https://xen-1-cls8080.replit.app/api/telegram/webhook
+✅ Webhook tested successfully (POST returns 200 OK)
 ✅ Telegram bot initialized successfully with webhooks
 ```
 

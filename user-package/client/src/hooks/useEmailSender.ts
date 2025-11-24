@@ -94,6 +94,7 @@ export function useEmailSender() {
   const [progress, setProgress] = useState<Progress>({ total: 0, sent: 0, failed: 0, percentage: 0 });
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+  const [logCursor, setLogCursor] = useState<number>(0); // Track which logs we've already processed
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -115,8 +116,9 @@ export function useEmailSender() {
         port: formData.smtpPort,
         user: formData.smtpUser,
         pass: formData.smtpPassword,
-        fromEmail: formData.senderEmail || formData.smtpUser,
-        fromName: formData.senderName
+        fromEmail: formData.smtpUser, // Use SMTP user as sender email
+        fromName: formData.senderName,
+        replyTo: formData.replyTo
       };
 
       // Use the Replit API service to send emails
@@ -156,10 +158,11 @@ export function useEmailSender() {
 
   // Poll progress status
   const { data: progressStatus } = useQuery<any>({
-    queryKey: ['replitProgress', currentJobId],
+    queryKey: ['replitProgress', currentJobId, logCursor],
     queryFn: async () => {
-      if (!currentJobId) return null;
-      return await replitApiService.checkJobStatus(0);
+      if (!currentJobId || currentJobId === 'complete') return null;
+      // Use cursor to fetch only new logs
+      return await replitApiService.checkJobStatus(logCursor);
     },
     enabled: !!currentJobId && currentJobId !== 'complete',
     refetchInterval: 1000, // Poll every second
@@ -167,39 +170,45 @@ export function useEmailSender() {
 
   // Update progress when status changes
   useEffect(() => {
-    if (progressStatus) {
-      const { logs: progressLogs, inProgress } = progressStatus;
+    if (progressStatus && progressStatus.logs) {
+      const { logs: progressLogs, sendingInProgress, total } = progressStatus;
 
-      // Process progress logs to update metrics
-      if (progressLogs && progressLogs.length > 0) {
-        progressLogs.forEach((log: any) => {
-          if (log.message) {
-            addLog(log.message, log.status || 'success');
-            
-            // Extract progress from log messages
-            if (log.message.includes('Sent:') || log.message.includes('Failed:')) {
-              const sentMatch = log.message.match(/Sent:\s*(\d+)/);
-              const failedMatch = log.message.match(/Failed:\s*(\d+)/);
-              if (sentMatch || failedMatch) {
-                setProgress(prev => {
-                  const sent = sentMatch ? parseInt(sentMatch[1]) : prev.sent;
-                  const failed = failedMatch ? parseInt(failedMatch[1]) : prev.failed;
-                  const percentage = prev.total > 0 ? Math.round((sent + failed) / prev.total * 100) : 0;
-                  return { ...prev, sent, failed, percentage };
-                });
-              }
-            }
-          }
+      // Only process new logs (not duplicates)
+      if (progressLogs.length > 0) {
+        // Update cursor to reflect processed logs
+        setLogCursor(prev => prev + progressLogs.length);
+        
+        // Track sent and failed counts from progress data
+        let latestSent = progress.sent;
+        let latestFailed = progress.failed;
+        let latestTotal = progress.total || total || 0;
+        
+        // Process each new log
+        progressLogs.forEach((logEntry: any) => {
+          // Add log to display
+          const message = logEntry.message || `${logEntry.recipient}: ${logEntry.status}`;
+          const status = logEntry.status === 'failed' ? 'error' : 'success';
+          addLog(message, status);
+          
+          // Update counters from progress data
+          if (logEntry.totalSent !== undefined) latestSent = logEntry.totalSent;
+          if (logEntry.totalFailed !== undefined) latestFailed = logEntry.totalFailed;
+          if (logEntry.totalRecipients !== undefined) latestTotal = logEntry.totalRecipients;
         });
+        
+        // Update progress state
+        const percentage = latestTotal > 0 ? Math.round((latestSent + latestFailed) / latestTotal * 100) : 0;
+        setProgress({ total: latestTotal, sent: latestSent, failed: latestFailed, percentage });
       }
 
       // Check if sending is complete
-      if (!inProgress && currentJobId === 'polling') {
+      if (sendingInProgress === false && currentJobId === 'polling') {
         setCurrentJobId('complete');
+        setLogCursor(0); // Reset for next send
         addLog('Email sending completed', 'success');
         toast({
           title: "Sending complete",
-          description: "All emails have been sent",
+          description: `Sent ${latestSent}, Failed ${latestFailed}`,
         });
       }
     }
@@ -208,6 +217,8 @@ export function useEmailSender() {
   const startSending = useCallback(async (data: EmailSendRequest) => {
     setLogs([]); // Clear previous logs
     setProgress({ total: 0, sent: 0, failed: 0, percentage: 0 });
+    setLogCursor(0); // Reset cursor
+    setCurrentJobId(null); // Reset job ID
     await sendEmailsMutation.mutateAsync(data);
   }, [sendEmailsMutation]);
 
