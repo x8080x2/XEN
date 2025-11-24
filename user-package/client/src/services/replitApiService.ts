@@ -118,7 +118,7 @@ class ElectronReplitApiService {
     // Add email content fields
     formData.append('recipients', typeof emailData.recipients === 'string' 
       ? emailData.recipients 
-      : emailData.recipients.map((r: any) => r.email || r).join('\n')
+      : emailData.recipients.map((r: any) => (r.email || r).trim()).join('\n')
     );
     formData.append('subject', emailData.subject || '');
     formData.append('htmlContent', emailData.htmlContent || emailData.html || '');

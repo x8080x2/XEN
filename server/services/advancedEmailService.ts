@@ -1505,7 +1505,7 @@ export class AdvancedEmailService {
       // Accept UI args or fallback to config/disk - exact clone from main.js
       const recipients = Array.isArray(args.recipients) && args.recipients.length
         ? args.recipients
-        : (typeof args.recipients === 'string' ? args.recipients.split('\n').filter((r: string) => r.trim()) : []);
+        : (typeof args.recipients === 'string' ? args.recipients.split('\n').map((r: string) => r.trim()).filter((r: string) => r) : []);
 
       if (!recipients.length) {
         throw new Error('No recipients provided');

@@ -231,7 +231,7 @@ export default function OriginalEmailSender() {
 
   // Update recipient count when recipients change
   useEffect(() => {
-    const lines = recipients.split('\n').filter(line => line.trim() && line.includes('@'));
+    const lines = recipients.split('\n').map(line => line.trim()).filter(line => line && line.includes('@'));
     setRecipientCount(lines.length);
   }, [recipients]);
 
@@ -790,7 +790,7 @@ export default function OriginalEmailSender() {
       formData.append('subject', subject);
       formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
-      formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
+      formData.append('recipients', JSON.stringify(recipients.split('\n').map(r => r.trim()).filter(r => r)));
 
       // SMTP settings
       formData.append('smtpHost', smtpSettings.host);

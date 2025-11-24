@@ -90,7 +90,7 @@ export function setupOriginalEmailRoutes(app: Express) {
         try {
           recipients = JSON.parse(recipients);
         } catch {
-          recipients = recipients.split('\n').filter((r: string) => r.trim());
+          recipients = recipients.split('\n').map((r: string) => r.trim()).filter((r: string) => r);
         }
       }
 
