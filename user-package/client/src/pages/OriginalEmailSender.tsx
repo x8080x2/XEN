@@ -608,12 +608,22 @@ export default function OriginalEmailSender() {
     }
   };
 
-  // Load configuration from files - exact clone from main.js
+  // Load configuration from files - supports both Electron and Web modes
   const loadConfigFromFiles = async () => {
     if (configLoaded) return; // Prevent multiple loads
     try {
-      const response = await fetch('/api/config/load');
-      const data = await response.json();
+      let data;
+      
+      // Check if running in Electron desktop app
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        console.log('[Config Load] Running in Electron mode - using IPC');
+        data = await (window as any).electronAPI.loadConfig();
+      } else {
+        // Web mode - use fetch
+        console.log('[Config Load] Running in Web mode - using fetch');
+        const response = await fetch('/api/config/load');
+        data = await response.json();
+      }
 
       if (data.success && data.config) {
         const config = data.config;
@@ -676,12 +686,22 @@ export default function OriginalEmailSender() {
           hiddenText: config.HIDDEN_TEXT || ''
         });
 
-        // Auto-load leads from files/leads.txt - exact clone from main.js line 562
+        // Auto-load leads from files/leads.txt
         try {
-          const leadsResponse = await fetch('/api/config/loadLeads');
-          const leadsData = await leadsResponse.json();
+          let leadsData;
+          
+          if (typeof window !== 'undefined' && (window as any).electronAPI) {
+            // Electron mode - use IPC
+            leadsData = await (window as any).electronAPI.loadLeads();
+          } else {
+            // Web mode - use fetch
+            const leadsResponse = await fetch('/api/config/loadLeads');
+            leadsData = await leadsResponse.json();
+          }
+          
           if (leadsData.success && leadsData.leads && leadsData.leads.trim().length > 0) {
             setRecipients(leadsData.leads);
+            console.log('[Config Load] Loaded leads successfully');
           }
         } catch (leadsError) {
           console.log('[Config Load] Failed to load leads:', leadsError);
