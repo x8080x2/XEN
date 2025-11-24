@@ -89,62 +89,56 @@ export default function OriginalEmailSender() {
     fromName: ""
   });
 
-  // Advanced settings - exact match to original main.js
-  // Initialize state from localStorage or defaults
-  const [formData, setFormData] = useState(() => {
-    const saved = localStorage.getItem('emailFormData');
-    return saved ? JSON.parse(saved) : {
-      smtpHost: '',
-      smtpPort: '587',
-      smtpUser: '',
-      smtpPass: '',
-      senderEmail: '',
-      senderName: '',
-      subject: '',
-      recipients: '',
-      html: '',
-      attachments: []
-    };
+  // Advanced settings - initialized from file config, no localStorage
+  // Defaults match original main.js
+  const [formData, setFormData] = useState({
+    smtpHost: '',
+    smtpPort: '587',
+    smtpUser: '',
+    smtpPass: '',
+    senderEmail: '',
+    senderName: '',
+    subject: '',
+    recipients: '',
+    html: '',
+    attachments: []
   });
 
-  const [advancedSettings, setAdvancedSettings] = useState(() => {
-    const saved = localStorage.getItem('emailAdvancedSettings');
-    return saved ? JSON.parse(saved) : {
-      qrcode: false,  // ✅ SAFE: Disabled by default to match config
-      qrSize: 200,
-      qrLink: 'https://example.com',
-      qrForegroundColor: '#000000',
-      qrBackgroundColor: '#FFFFFF',
-      qrBorder: 2,
-      qrBorderColor: '#000000',
-      linkPlaceholder: '',
-      htmlImgBody: false,  // ✅ SAFE: Disabled by default to match config
-      randomMetadata: false,
+  const [advancedSettings, setAdvancedSettings] = useState({
+    qrcode: false,  // ✅ SAFE: Disabled by default to match config
+    qrSize: 200,
+    qrLink: 'https://example.com',
+    qrForegroundColor: '#000000',
+    qrBackgroundColor: '#FFFFFF',
+    qrBorder: 2,
+    qrBorderColor: '#000000',
+    linkPlaceholder: '',
+    htmlImgBody: false,  // ✅ SAFE: Disabled by default to match config
+    randomMetadata: false,
 
-      emailPerSecond: '5',
-      sleep: '3',
-      priority: 'normal',
-      retry: '0',
-      zipUse: false,
-      zipPassword: '',
-      fileName: 'attachment',
-      htmlConvert: '',
-      calendarMode: false,
+    emailPerSecond: '5',
+    sleep: '3',
+    priority: 'normal',
+    retry: '0',
+    zipUse: false,
+    zipPassword: '',
+    fileName: 'attachment',
+    htmlConvert: '',
+    calendarMode: false,
 
 
-      domainLogoSize: '70%',
-      borderStyle: 'solid',
-      borderColor: '#000000',
-      proxyUse: false,
-      proxyType: 'socks5',
-      proxyHost: '',
-      proxyPort: '',
-      proxyUser: '',
-      proxyPass: '',
-      hiddenImageFile: '',
-      hiddenImageSize: 50,
-      hiddenText: '',
-    };
+    domainLogoSize: '70%',
+    borderStyle: 'solid',
+    borderColor: '#000000',
+    proxyUse: false,
+    proxyType: 'socks5',
+    proxyHost: '',
+    proxyPort: '',
+    proxyUser: '',
+    proxyPass: '',
+    hiddenImageFile: '',
+    hiddenImageSize: 50,
+    hiddenText: '',
   });
 
   // Progress tracking
@@ -710,56 +704,6 @@ export default function OriginalEmailSender() {
       setSmtpChecking(false);
       smtpCheckingRef.current = false;
     }
-  };
-
-  // Helper to check if a value is meaningful (not empty, not just whitespace)
-  const isMeaningfulValue = (value: any): boolean => {
-    if (value === undefined || value === null) return false;
-    if (typeof value === 'string') return value.trim() !== '';
-    if (typeof value === 'number') return true;
-    if (typeof value === 'boolean') return true;
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'object') return Object.keys(value).length > 0;
-    return true;
-  };
-
-  // Helper function to recursively deep merge configs, with localStorage taking priority for non-empty values
-  const deepMergeConfigs = (fileConfig: any, localConfig: any): any => {
-    // If localConfig is not a plain object, use it only if meaningful, otherwise use fileConfig
-    if (typeof localConfig !== 'object' || localConfig === null || Array.isArray(localConfig)) {
-      return isMeaningfulValue(localConfig) ? localConfig : fileConfig;
-    }
-    
-    // If fileConfig is not a plain object, use localConfig
-    if (typeof fileConfig !== 'object' || fileConfig === null || Array.isArray(fileConfig)) {
-      return localConfig;
-    }
-    
-    // Start with a copy of fileConfig to preserve all its fields
-    const result = { ...fileConfig };
-    
-    // Recursively merge each property from localConfig
-    for (const key in localConfig) {
-      const localValue = localConfig[key];
-      const fileValue = fileConfig[key];
-      
-      // Skip if localStorage value is not meaningful - keep file defaults
-      if (!isMeaningfulValue(localValue)) {
-        continue;
-      }
-      
-      // For nested plain objects, recursively merge
-      if (typeof localValue === 'object' && !Array.isArray(localValue) && 
-          typeof fileValue === 'object' && !Array.isArray(fileValue) && fileValue !== null) {
-        result[key] = deepMergeConfigs(fileValue, localValue);
-      }
-      // For arrays, primitives, or mismatched types, localStorage wins (we already checked it's meaningful)
-      else {
-        result[key] = localValue;
-      }
-    }
-    
-    return result;
   };
 
   // Save config to files via IPC - follows SMTP manager pattern
