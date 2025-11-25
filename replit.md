@@ -2,7 +2,11 @@
 
 ## Overview
 
-This is a full-stack email sending application with both web and desktop (Electron) versions. The application allows users to send bulk emails with customizable templates, SMTP rotation, QR code generation, AI-powered content generation, and comprehensive progress tracking. The system includes a Telegram bot for license management and supports both web-based and standalone desktop deployment.
+This is a full-stack email sender application with both web and desktop (Electron) versions. The application enables bulk email sending with advanced features including SMTP rotation, AI-powered content generation, template management, QR code generation, and license-based access control. The system is built with a React frontend, Express backend, and uses PostgreSQL (via Neon) for data persistence.
+
+The application supports two deployment modes:
+- **Web Mode**: Hosted on Replit with all features accessible via browser
+- **Desktop Mode**: Standalone Electron application that connects to the Replit backend server
 
 ## User Preferences
 
@@ -12,120 +16,128 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend Architecture
 
-**Web Application (React + Vite)**
-- **UI Framework**: React with TypeScript using Vite as the build tool
-- **Component Library**: Shadcn UI components built on Radix UI primitives with Tailwind CSS
-- **State Management**: React hooks for local state, TanStack Query for server state
-- **Routing**: Wouter for lightweight client-side routing
-- **Styling**: Tailwind CSS with custom dark theme design system
-- **Design Pattern**: Single-page application with component-based architecture
+**Technology Stack:**
+- React 18 with TypeScript
+- Vite for build tooling and development server
+- TanStack Query (React Query) for server state management
+- Wouter for client-side routing
+- Shadcn/ui component library (Radix UI primitives)
+- Tailwind CSS for styling with custom dark theme
 
-**Desktop Application (Electron)**
-- **Packaging**: Electron wrapper around the React web application
-- **Architecture**: Separate `user-package` directory containing desktop-specific code
-- **IPC Communication**: Electron IPC for file system operations and local configuration
-- **Hybrid Mode**: Desktop app connects to Replit backend server for email processing and AI features
-- **Configuration**: Uses local INI files (`setup.ini`, `smtp.ini`) for SMTP and settings management
+**Design Pattern:**
+- Component-based architecture with separation of UI components and page components
+- Custom hooks for reusable logic (toast notifications, form handling)
+- Shared component library between web and desktop versions
+- Hash-based routing in desktop mode, standard routing in web mode
+
+**Key Components:**
+- `OriginalEmailSender`: Main email sending interface with form controls, progress tracking, and SMTP management
+- `SMTPManager`: Dialog-based SMTP configuration manager with rotation capabilities
+- UI component library in `components/ui/`: Reusable form elements, dialogs, progress bars, toasts
 
 ### Backend Architecture
 
-**Server Framework**
-- **Runtime**: Node.js with Express.js REST API
-- **Language**: TypeScript with ES modules
-- **Build Tool**: esbuild for production bundling
-- **Development**: tsx for TypeScript execution in development mode
+**Technology Stack:**
+- Node.js with Express
+- TypeScript for type safety
+- Drizzle ORM for database operations
+- Neon serverless PostgreSQL
+- Nodemailer for email sending
+- Puppeteer for HTML-to-PDF conversion
+- Google Generative AI (Gemini) for AI features
 
-**Service Layer Pattern**
-- **advancedEmailService**: Core email sending functionality with template processing, QR code generation, attachment handling, and SMTP management
-- **aiService**: Google Gemini integration for AI-powered subject line and sender name generation
-- **fileService**: File upload, validation, and temporary file cleanup with security controls
-- **configService**: INI file parsing and configuration loading for desktop compatibility
-- **licenseService**: License key generation, validation, and hardware fingerprint verification
-- **telegramBotService**: Telegram bot integration for license management and user notifications
+**Design Pattern:**
+- Service-oriented architecture with separation of concerns
+- Route handlers in `server/routes/` for different feature sets
+- Business logic encapsulated in services (`server/services/`)
+- Singleton pattern for shared services (email service, license service, config service)
+- Middleware-based request handling with Vite integration for development
 
-**API Design**
-- RESTful endpoints organized by feature (original email, Electron compatibility, AI)
-- Dual-mode support: web routes (`/api/original/*`) and desktop routes (`/api/electron/*`)
-- HTTP polling for email progress tracking
-- Webhook support for Telegram bot integration
+**Core Services:**
+- `advancedEmailService`: Handles email composition, SMTP rotation, attachment processing, QR code generation, and batch sending
+- `licenseService`: Manages license key generation, validation, hardware fingerprinting, and expiration
+- `telegramBotService`: Telegram bot integration for license management via webhooks
+- `aiService`: Google Gemini integration for generating email subjects and sender names
+- `fileService`: File upload/download handling with security validation
+- `configService`: INI-based configuration loading for desktop compatibility
 
-### Data Storage Solutions
+**API Routes:**
+- `/api/original/*`: Core email sending functionality (exact clone of original implementation)
+- `/api/electron/*`: Desktop-compatible endpoints for file operations
+- `/api/ai/*`: AI service initialization and content generation
+- `/api/smtp/*`: SMTP configuration management
+- `/api/telegram/webhook`: Telegram bot webhook handler
 
-**Database**
-- **ORM**: Drizzle ORM with PostgreSQL dialect
-- **Provider**: Neon Database serverless PostgreSQL via `@neondatabase/serverless`
-- **Schema Location**: `shared/schema.ts` for type-safe database operations
-- **Migration**: Drizzle Kit for schema management and migrations
+### Data Storage
 
-**Database Schema**
-- **users**: User authentication (id, username, email, passwordHash, createdAt)
-- **appSettings**: Per-user configuration storage (userId, settingsType, settingsData)
-- **licenses**: License key management (licenseKey, status, telegramUserId, hardwareId, expiresAt)
-- **emailConfigs**: SMTP configuration storage (userId, name, smtp credentials)
+**Database Schema (PostgreSQL via Neon):**
+- `users`: User accounts with authentication credentials
+- `licenses`: License keys with hardware binding, Telegram integration, expiration tracking
+- `appSettings`: Key-value store for user-specific configuration (SMTP configs, AI settings)
 
-**File Storage**
-- **Local Files**: Template HTML files and logo images stored in `files/` directory
-- **Uploads**: Temporary file storage in `uploads/` directory with automatic cleanup
-- **Desktop Config**: INI-based configuration files in `config/` directory for Electron app
+**Database Access:**
+- Drizzle ORM with Neon serverless driver for connection pooling
+- Schema-first design with TypeScript types generated from schema
+- Transaction support for atomic operations
+- Database URL configured via environment variable
+
+**File Storage:**
+- Local file system for templates (`files/`), logos (`files/logo/`), and uploads (`uploads/`)
+- Configuration files in INI format (`config/setup.ini`, `config/smtp.ini`)
+- Temporary file cleanup with automatic garbage collection
+- Desktop mode supports local file access with fallback to server
 
 ### Authentication and Authorization
 
-**License-Based Access Control**
-- Hardware fingerprint generation using IP address hashing
-- License key validation with status tracking (active, expired, revoked)
-- Telegram user linking for license distribution
-- No traditional user authentication for desktop app (license-based)
+**License-based Access Control:**
+- Hardware fingerprinting using IP-based SHA-256 hashing
+- License activation binds to specific hardware ID
+- Expiration date validation for time-limited licenses
+- Status tracking (active, expired, revoked)
+- Telegram integration for license distribution and management
 
-**Desktop App Security**
-- Environment variable-based license key and server URL configuration
-- Hardware ID verification on license activation
-- Secure IPC communication between Electron main and renderer processes
+**Session Management:**
+- Cookie-based sessions for web version
+- License key verification for desktop version
+- Hardware ID validation on each request in desktop mode
 
 ### External Dependencies
 
-**Third-Party Services**
+**Email Infrastructure:**
+- Nodemailer with SMTP transport
+- Multi-SMTP configuration with automatic rotation
+- Support for attachments, HTML content, and inline images
+- QR code generation with QRCode library
+- Image composition with Jimp
 
-1. **Google AI (Gemini)**
-   - Purpose: AI-powered email content generation
-   - Integration: `@google/generative-ai` SDK
-   - Features: Subject line generation, sender name suggestions
-   - Model: gemini-2.0-flash-exp
+**AI Integration:**
+- Google Generative AI (Gemini 2.0 Flash)
+- Dynamic initialization with API key
+- Subject line and sender name generation based on email content
+- Context-aware generation with industry and recipient data
 
-2. **Neon Database**
-   - Purpose: Serverless PostgreSQL hosting
-   - Integration: `@neondatabase/serverless` driver
-   - Connection: HTTP-based connection pooling via Drizzle ORM
+**File Processing:**
+- Puppeteer for HTML-to-PDF conversion
+- Archiver for ZIP file creation
+- html-docx-js for HTML-to-Word conversion
+- AdmZip for ZIP extraction
+- Multer for multipart form data handling
 
-3. **Telegram Bot API**
-   - Purpose: License management and distribution
-   - Integration: `node-telegram-bot-api`
-   - Features: Webhook-based message processing, admin-only commands, license generation
+**Telegram Bot:**
+- node-telegram-bot-api with webhook mode
+- Admin-based access control via chat IDs
+- License management commands (/generate, /status, /revoke)
+- Desktop app distribution via file uploads
 
-4. **Google Cloud Storage** (Optional)
-   - Package: `@google-cloud/storage`
-   - Purpose: Potential cloud file storage (currently unused in active codebase)
+**Development Tools:**
+- Vite with HMR for development
+- Replit-specific plugins for runtime error overlay and cartographer
+- esbuild for production bundling
+- Drizzle Kit for database migrations
 
-**Email Services**
-- **SMTP**: Direct SMTP connection via `nodemailer`
-- **SMTP Rotation**: Multiple SMTP server support with automatic rotation
-- **Features**: HTML email, attachments, embedded images, QR codes
-
-**UI Component Libraries**
-- **Radix UI**: Headless accessible components (@radix-ui/react-*)
-- **Shadcn UI**: Pre-built component patterns using Radix primitives
-- **Tailwind CSS**: Utility-first styling framework
-- **Lucide Icons**: Icon library for UI elements
-
-**Development Tools**
-- **Vite**: Frontend build tool with HMR
-- **Drizzle Kit**: Database schema management and migrations
-- **TypeScript**: Type-safe development
-- **Replit**: Deployment platform with development environment integration
-
-**Email Processing Libraries**
-- **Puppeteer**: HTML to PDF conversion
-- **QRCode**: QR code generation for tracking
-- **Jimp**: Image manipulation for QR code composition
-- **html-to-text**: Plain text email fallback generation
-- **html-docx-js**: HTML to DOCX conversion for attachments
-- **archiver**: ZIP file creation for bulk attachments
+**Desktop (Electron) Dependencies:**
+- Electron for cross-platform desktop app
+- IPC (Inter-Process Communication) for main-renderer communication
+- Axios for HTTP requests to backend server
+- Environment-based configuration for server URL
+- Hardware fingerprinting for license validation
