@@ -732,65 +732,61 @@ class TelegramBotService {
       const userPackagePath = path.join(process.cwd(), 'user-package');
       console.log(`[Telegram Bot] Creating ZIP from: ${userPackagePath}`);
       
-      let fileCount = 0;
-      archive.directory(userPackagePath, false, (entry) => {
-        const fullPath = entry.prefix ? `${entry.prefix}/${entry.name}` : entry.name;
-        
+      // Helper function to check if a path should be excluded
+      const shouldExclude = (relativePath: string, fileName: string): boolean => {
         // Exclude .env files (we append our own)
-        if (entry.name === '.env' || entry.name === '.env.example') {
-          return false;
-        }
+        if (fileName === '.env' || fileName === '.env.example') return true;
         
         // Exclude .git folder and contents
-        if (entry.name === '.git' || 
-            fullPath.includes('.git/') ||
-            fullPath.startsWith('.git')) {
-          return false;
-        }
+        if (fileName === '.git' || relativePath.includes('.git/') || relativePath.startsWith('.git')) return true;
         
-        // Exclude node_modules at any level
-        if (entry.name === 'node_modules' || 
-            fullPath.includes('node_modules/') ||
-            fullPath.includes('/node_modules')) {
-          return false;
-        }
+        // Exclude node_modules
+        if (fileName === 'node_modules' || relativePath.includes('node_modules/') || relativePath.includes('/node_modules')) return true;
         
-        // Exclude dist folders at any level (including top-level)
-        if (entry.name === 'dist' || 
-            entry.name === 'dist-electron' ||
-            fullPath.includes('/dist/') ||
-            fullPath.includes('/dist-electron/') ||
-            fullPath.startsWith('dist/') ||
-            fullPath.startsWith('dist-electron/')) {
-          return false;
-        }
+        // Exclude dist folders
+        if (fileName === 'dist' || fileName === 'dist-electron' || 
+            relativePath.includes('/dist/') || relativePath.includes('/dist-electron/') ||
+            relativePath.startsWith('dist/') || relativePath.startsWith('dist-electron/')) return true;
         
-        // Exclude package-lock.json (can be regenerated)
-        if (entry.name === 'package-lock.json') {
-          return false;
-        }
+        // Exclude package-lock.json
+        if (fileName === 'package-lock.json') return true;
         
-        // Exclude any .log files
-        if (entry.name.endsWith('.log')) {
-          return false;
-        }
+        // Exclude log files
+        if (fileName.endsWith('.log')) return true;
         
-        // Exclude .DS_Store and other system files
-        if (entry.name === '.DS_Store' || entry.name === 'Thumbs.db') {
-          return false;
-        }
+        // Exclude system files
+        if (fileName === '.DS_Store' || fileName === 'Thumbs.db' || fileName === '.npmignore') return true;
         
-        fileCount++;
-        return entry;
-      });
-      
-      archive.on('finish', () => {
-        if (fileCount === 0) {
-          console.warn(`[Telegram Bot] WARNING: ZIP has 0 files - check user-package path: ${userPackagePath}`);
-        } else {
-          console.log(`[Telegram Bot] ZIP created with ${fileCount} files from user-package`);
+        return false;
+      };
+
+      // Recursive function to walk directory and add files fresh
+      const walkAndAddFiles = async (dir: string, baseDir: string): Promise<number> => {
+        let count = 0;
+        const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          const relativePath = path.relative(baseDir, fullPath);
+          
+          if (shouldExclude(relativePath, entry.name)) {
+            continue;
+          }
+          
+          if (entry.isDirectory()) {
+            count += await walkAndAddFiles(fullPath, baseDir);
+          } else if (entry.isFile()) {
+            // Read file content fresh and add to archive
+            const content = await fs.promises.readFile(fullPath);
+            archive.append(content, { name: relativePath });
+            count++;
+          }
         }
-      });
+        return count;
+      };
+
+      const fileCount = await walkAndAddFiles(userPackagePath, userPackagePath);
+      console.log(`[Telegram Bot] Added ${fileCount} files to ZIP from user-package`);
 
       const serverUrl = process.env.REPLIT_DEV_DOMAIN 
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
