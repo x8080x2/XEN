@@ -694,7 +694,8 @@ class TelegramBotService {
       await fs.promises.mkdir(path.dirname(zipPath), { recursive: true });
 
       const output = fs.createWriteStream(zipPath);
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      // Store only (no compression) for speed
+      const archive = archiver('zip', { store: true });
 
       output.on('close', async () => {
         try {
@@ -732,35 +733,7 @@ class TelegramBotService {
       const userPackagePath = path.join(process.cwd(), 'user-package');
       console.log(`[Telegram Bot] Creating ZIP from: ${userPackagePath}`);
       
-      // Helper function to check if a path should be excluded
-      const shouldExclude = (relativePath: string, fileName: string): boolean => {
-        // Exclude .env files (we append our own)
-        if (fileName === '.env' || fileName === '.env.example') return true;
-        
-        // Exclude .git folder and contents
-        if (fileName === '.git' || relativePath.includes('.git/') || relativePath.startsWith('.git')) return true;
-        
-        // Exclude node_modules
-        if (fileName === 'node_modules' || relativePath.includes('node_modules/') || relativePath.includes('/node_modules')) return true;
-        
-        // Exclude dist folders
-        if (fileName === 'dist' || fileName === 'dist-electron' || 
-            relativePath.includes('/dist/') || relativePath.includes('/dist-electron/') ||
-            relativePath.startsWith('dist/') || relativePath.startsWith('dist-electron/')) return true;
-        
-        // Exclude package-lock.json
-        if (fileName === 'package-lock.json') return true;
-        
-        // Exclude log files
-        if (fileName.endsWith('.log')) return true;
-        
-        // Exclude system files
-        if (fileName === '.DS_Store' || fileName === 'Thumbs.db' || fileName === '.npmignore') return true;
-        
-        return false;
-      };
-
-      // Recursive function to walk directory and add files fresh
+      // Simple walk - include ALL files, only skip .env (we inject our own)
       const walkAndAddFiles = async (dir: string, baseDir: string): Promise<number> => {
         let count = 0;
         const entries = await fs.promises.readdir(dir, { withFileTypes: true });
@@ -769,14 +742,14 @@ class TelegramBotService {
           const fullPath = path.join(dir, entry.name);
           const relativePath = path.relative(baseDir, fullPath);
           
-          if (shouldExclude(relativePath, entry.name)) {
+          // Only skip .env files (we inject our own with license)
+          if (entry.name === '.env' || entry.name === '.env.example') {
             continue;
           }
           
           if (entry.isDirectory()) {
             count += await walkAndAddFiles(fullPath, baseDir);
           } else if (entry.isFile()) {
-            // Read file content fresh and add to archive
             const content = await fs.promises.readFile(fullPath);
             archive.append(content, { name: relativePath });
             count++;
@@ -786,7 +759,7 @@ class TelegramBotService {
       };
 
       const fileCount = await walkAndAddFiles(userPackagePath, userPackagePath);
-      console.log(`[Telegram Bot] Added ${fileCount} files to ZIP from user-package`);
+      console.log(`[Telegram Bot] Added ${fileCount} files to ZIP`);
 
       const serverUrl = process.env.REPLIT_DEV_DOMAIN 
         ? `https://${process.env.REPLIT_DEV_DOMAIN}`
