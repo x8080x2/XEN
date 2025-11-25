@@ -730,25 +730,38 @@ class TelegramBotService {
       archive.pipe(output);
 
       const userPackagePath = path.join(process.cwd(), 'user-package');
+      console.log(`[Telegram Bot] Creating ZIP from: ${userPackagePath}`);
       
+      let fileCount = 0;
       archive.directory(userPackagePath, false, (entry) => {
-        // Exclude .env.example
-        if (entry.name === '.env.example') {
+        const fullPath = entry.prefix ? `${entry.prefix}/${entry.name}` : entry.name;
+        
+        // Exclude .env files (we append our own)
+        if (entry.name === '.env' || entry.name === '.env.example') {
+          return false;
+        }
+        
+        // Exclude .git folder and contents
+        if (entry.name === '.git' || 
+            fullPath.includes('.git/') ||
+            fullPath.startsWith('.git')) {
           return false;
         }
         
         // Exclude node_modules at any level
         if (entry.name === 'node_modules' || 
-            entry.prefix?.includes('node_modules') ||
-            entry.name.includes('node_modules')) {
+            fullPath.includes('node_modules/') ||
+            fullPath.includes('/node_modules')) {
           return false;
         }
         
-        // Exclude dist folders at any level
+        // Exclude dist folders at any level (including top-level)
         if (entry.name === 'dist' || 
             entry.name === 'dist-electron' ||
-            entry.prefix?.includes('/dist') ||
-            entry.prefix?.includes('/dist-electron')) {
+            fullPath.includes('/dist/') ||
+            fullPath.includes('/dist-electron/') ||
+            fullPath.startsWith('dist/') ||
+            fullPath.startsWith('dist-electron/')) {
           return false;
         }
         
@@ -762,7 +775,21 @@ class TelegramBotService {
           return false;
         }
         
+        // Exclude .DS_Store and other system files
+        if (entry.name === '.DS_Store' || entry.name === 'Thumbs.db') {
+          return false;
+        }
+        
+        fileCount++;
         return entry;
+      });
+      
+      archive.on('finish', () => {
+        if (fileCount === 0) {
+          console.warn(`[Telegram Bot] WARNING: ZIP has 0 files - check user-package path: ${userPackagePath}`);
+        } else {
+          console.log(`[Telegram Bot] ZIP created with ${fileCount} files from user-package`);
+        }
       });
 
       const serverUrl = process.env.REPLIT_DEV_DOMAIN 
