@@ -56,16 +56,6 @@ interface SMTPSettings {
 }
 
 export default function OriginalEmailSender() {
-  // Type for Electron attachment files
-  interface ElectronAttachmentFile {
-    name: string;
-    path: string;
-    size: number;
-    type: string;
-    content: string;
-    encoding: string;
-  }
-
   // Form state - exact match to original
   const [senderEmail, setSenderEmail] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -74,7 +64,6 @@ export default function OriginalEmailSender() {
   const [recipients, setRecipients] = useState("");
   const [recipientCount, setRecipientCount] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [electronFiles, setElectronFiles] = useState<ElectronAttachmentFile[]>([]);
   const [templateFiles, setTemplateFiles] = useState<string[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [selectedAttachmentTemplate, setSelectedAttachmentTemplate] = useState("");
@@ -360,34 +349,16 @@ export default function OriginalEmailSender() {
     }
   };
 
-  const handleFileSelect = async () => {
-    // Check if running in Electron - use native file dialog
-    if (window.electronAPI?.selectAttachmentFiles) {
-      console.log('[Desktop] Opening native file dialog for attachments...');
-      try {
-        const result = await window.electronAPI.selectAttachmentFiles();
-        if (result.success && result.files.length > 0) {
-          setElectronFiles(result.files);
-          setSelectedFiles(null); // Clear web files if any
-          console.log('[Desktop] Selected', result.files.length, 'attachment files');
-        }
-      } catch (error) {
-        console.error('[Desktop] Failed to select files:', error);
-      }
-    } else {
-      // Web version - use standard file input
-      fileInputRef.current?.click();
-    }
+  const handleFileSelect = () => {
+    fileInputRef.current?.click();
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFiles(e.target.files);
-    setElectronFiles([]); // Clear electron files if any
   };
 
   const removeAttachment = () => {
     setSelectedFiles(null);
-    setElectronFiles([]);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -949,25 +920,9 @@ export default function OriginalEmailSender() {
         console.log('[Desktop] Starting email send via Electron...');
         
         // Process file attachments for Electron
-        const attachmentsData: Array<{filename: string; content: string; encoding: string; contentType: string}> = [];
-        
-        // First, check if we have files selected via Electron's native dialog (electronFiles)
-        if (electronFiles && electronFiles.length > 0) {
-          console.log('[Desktop] Using', electronFiles.length, 'files from native file dialog...');
-          
-          for (const file of electronFiles) {
-            attachmentsData.push({
-              filename: file.name,
-              content: file.content, // Already base64 encoded from Electron
-              encoding: 'base64',
-              contentType: file.type || 'application/octet-stream'
-            });
-            console.log('[Desktop] Added attachment from native dialog:', file.name, `(${file.size} bytes)`);
-          }
-        }
-        // Fallback to web file input (though this may not work properly in Electron)
-        else if (selectedFiles && selectedFiles.length > 0) {
-          console.log('[Desktop] Processing', selectedFiles.length, 'file attachments via FileReader (fallback)...');
+        const attachmentsData = [];
+        if (selectedFiles && selectedFiles.length > 0) {
+          console.log('[Desktop] Processing', selectedFiles.length, 'file attachments...');
           
           for (let i = 0; i < selectedFiles.length; i++) {
             const file = selectedFiles[i];
@@ -981,6 +936,7 @@ export default function OriginalEmailSender() {
               });
               
               // Extract base64 content (remove data:mime;base64, prefix)
+              // This ensures clean base64 without the data URL scheme
               const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
               
               attachmentsData.push({
@@ -990,14 +946,12 @@ export default function OriginalEmailSender() {
                 contentType: file.type || 'application/octet-stream'
               });
               
-              console.log('[Desktop] Processed attachment via fallback:', file.name);
+              console.log('[Desktop] Processed attachment:', file.name);
             } catch (error) {
               console.error('[Desktop] Failed to process attachment:', file.name, error);
             }
           }
         }
-        
-        console.log('[Desktop] Total attachments prepared:', attachmentsData.length);
         
         const formDataObj = {
           senderEmail,
@@ -1492,27 +1446,6 @@ export default function OriginalEmailSender() {
                       onChange={handleFileChange}
                       className="hidden"
                     />
-                    {/* Display Electron files (native file dialog) */}
-                    {electronFiles && electronFiles.length > 0 && (
-                      <div className="bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2 space-y-1">
-                        {electronFiles.map((file, index) => (
-                          <div key={index} className="flex items-center justify-between">
-                            <span className="text-xs text-[#a1a1aa] truncate">
-                              📎 {file.name} ({(file.size / 1024).toFixed(1)} KB)
-                            </span>
-                            {index === 0 && (
-                              <button
-                                onClick={removeAttachment}
-                                className="text-[#ef4444] hover:text-[#dc2626] text-sm ml-2"
-                              >
-                                ×
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {/* Display Web files (standard file input) */}
                     {selectedFiles && selectedFiles.length > 0 && (
                       <div className="bg-[#0f0f12] border border-[#26262b] rounded px-3 py-2 space-y-1">
                         {Array.from(selectedFiles).map((file, index) => (

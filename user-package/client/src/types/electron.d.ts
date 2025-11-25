@@ -7,18 +7,6 @@ declare global {
       readConfig: (configDir: string) => Promise<any>;
       selectFile: () => Promise<string | null>;
       selectFiles: () => Promise<string[] | null>;
-      selectAttachmentFiles: () => Promise<{
-        success: boolean;
-        files: Array<{
-          name: string;
-          path: string;
-          size: number;
-          type: string;
-          content: string;
-          encoding: string;
-        }>;
-        error?: string;
-      }>;
       // Mode 1 - Local file access methods
       loadConfig: () => Promise<any>;
       loadLeads: () => Promise<any>;

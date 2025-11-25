@@ -12,7 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // File selection dialogs
   selectFile: () => ipcRenderer.invoke('select-file'),
   selectFiles: () => ipcRenderer.invoke('select-files'),
-  selectAttachmentFiles: () => ipcRenderer.invoke('select-attachment-files'),
 
   // Config and SMTP operations
   loadConfig: () => ipcRenderer.invoke('load-config'),
