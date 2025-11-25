@@ -1025,7 +1025,7 @@ export default function OriginalEmailSender() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-2 overflow-y-auto max-h-screen">
+        <div className="flex-1 overflow-y-auto max-h-screen">
           <div className="max-w-1xs mx-auto">
 
               <div className="text-center mt-1">
