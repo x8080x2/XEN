@@ -916,67 +916,9 @@ export default function OriginalEmailSender() {
       const isElectron = window.electronAPI !== undefined;
 
       if (isElectron) {
-        // Desktop version - use Electron API to send emails directly
-        console.log('[Desktop] Starting email send via Electron...');
+        // Desktop version - send via backend API using FormData (same as web version)
+        console.log('[Desktop] Starting email send via backend API...');
         
-        // Process file attachments for Electron
-        const attachmentsData = [];
-        if (selectedFiles && selectedFiles.length > 0) {
-          console.log('[Desktop] Processing', selectedFiles.length, 'file attachments...');
-          
-          for (let i = 0; i < selectedFiles.length; i++) {
-            const file = selectedFiles[i];
-            try {
-              // Read file as base64
-              const reader = new FileReader();
-              const fileData = await new Promise<string>((resolve, reject) => {
-                reader.onload = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-              });
-              
-              // Extract base64 content (remove data:mime;base64, prefix)
-              // This ensures clean base64 without the data URL scheme
-              const base64Content = fileData.includes(',') ? fileData.split(',')[1] : fileData;
-              
-              attachmentsData.push({
-                filename: file.name,
-                content: base64Content,
-                encoding: 'base64',
-                contentType: file.type || 'application/octet-stream'
-              });
-              
-              console.log('[Desktop] Processed attachment:', file.name);
-            } catch (error) {
-              console.error('[Desktop] Failed to process attachment:', file.name, error);
-            }
-          }
-        }
-        
-        const formDataObj = {
-          senderEmail,
-          senderName: senderName || '',
-          subject,
-          html: mainHtml,
-          attachmentHtml: attachmentHtml || '',
-          recipients: recipients.split('\n').filter(r => r.trim()),
-          smtpHost: smtpSettings.host,
-          smtpPort: smtpSettings.port,
-          smtpUser: smtpSettings.user,
-          smtpPass: smtpSettings.pass,
-          ...advancedSettings,
-          useAIEnabled: String(aiEnabled),
-          useAISubject: String(aiEnabled && useAISubject),
-          useAISenderName: String(aiEnabled && useAISenderName),
-          attachments: attachmentsData
-        };
-
-        console.log('[Desktop] Form data prepared:', {
-          recipientCount: formDataObj.recipients.length,
-          hasHtml: !!formDataObj.html,
-          smtpHost: formDataObj.smtpHost
-        });
-
         // Get current SMTP data from local config
         const currentSmtpData = await window.electronAPI!.smtpList();
         const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
@@ -991,32 +933,55 @@ export default function OriginalEmailSender() {
           fromEmail: currentSmtp.fromEmail
         });
 
-        // Send via Backend API (not Electron)
-        console.log('[Desktop] Sending to backend API...');
+        // Build FormData directly (same approach as web version) - no base64 conversion needed
+        const formData = new FormData();
         
-        const emailData = {
-          recipients: formDataObj.recipients,
-          subject: formDataObj.subject,
-          htmlContent: formDataObj.html,
-          smtpConfig: {
-            host: currentSmtp.host,
-            port: currentSmtp.port,
-            user: currentSmtp.user,
-            pass: currentSmtp.pass,
-            fromEmail: currentSmtp.fromEmail,
-            fromName: currentSmtp.fromName || senderName,
-            replyTo: currentSmtp.replyTo || ''
-          },
-          settings: {
-            ...advancedSettings,
-            useAIEnabled: aiEnabled,
-            useAISubject: aiEnabled && useAISubject,
-            useAISenderName: aiEnabled && useAISenderName,
-            attachments: formDataObj.attachments
-          }
-        };
+        // Add all form data fields
+        formData.append('senderEmail', currentSmtp.fromEmail || senderEmail);
+        formData.append('senderName', currentSmtp.fromName || senderName || '');
+        formData.append('subject', subject);
+        formData.append('html', mainHtml);
+        formData.append('attachmentHtml', attachmentHtml || '');
+        formData.append('recipients', JSON.stringify(recipients.split('\n').filter(r => r.trim())));
 
-        const result = await replitApiService.sendEmailsJob(emailData);
+        // SMTP settings from local config
+        formData.append('smtpHost', currentSmtp.host);
+        formData.append('smtpPort', String(currentSmtp.port));
+        formData.append('smtpUser', currentSmtp.user);
+        formData.append('smtpPass', currentSmtp.pass);
+        
+        // Desktop-specific fields (required by backend to detect desktop mode)
+        formData.append('userSmtpConfigs', JSON.stringify(userSmtpConfigs));
+        formData.append('smtpRotationEnabled', String(currentSmtpData.rotationEnabled || false));
+        
+        // Additional SMTP metadata
+        if (currentSmtp.replyTo) {
+          formData.append('replyTo', currentSmtp.replyTo);
+        }
+
+        // Advanced settings
+        Object.entries(advancedSettings).forEach(([key, value]) => {
+          formData.append(key, String(value));
+        });
+
+        // AI settings
+        formData.append('useAIEnabled', String(aiEnabled));
+        formData.append('useAISubject', String(aiEnabled && useAISubject));
+        formData.append('useAISenderName', String(aiEnabled && useAISenderName));
+
+        // Add file attachments directly (no base64 conversion - same as web version)
+        if (selectedFiles && selectedFiles.length > 0) {
+          console.log('[Desktop] Adding', selectedFiles.length, 'file attachments directly...');
+          for (let i = 0; i < selectedFiles.length; i++) {
+            formData.append('attachments', selectedFiles[i]);
+            console.log('[Desktop] Added attachment:', selectedFiles[i].name);
+          }
+        }
+
+        console.log('[Desktop] FormData prepared, sending to backend...');
+
+        // Send directly to backend API using the same endpoint as web version
+        const result = await replitApiService.sendEmailsFormData(formData);
 
         console.log('[Desktop] Send result:', result);
 

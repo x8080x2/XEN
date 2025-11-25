@@ -338,6 +338,26 @@ class ElectronReplitApiService {
     return result;
   }
 
+  // Send emails using pre-built FormData (simpler, same as web version)
+  // This avoids unnecessary base64 conversion for file attachments
+  async sendEmailsFormData(formData: FormData): Promise<{ success: boolean; message: string }> {
+    console.log('[ReplitAPI] Sending email via FormData (direct method)...');
+    
+    const response = await fetch(this.getApiEndpoint('api/original/sendMail'), {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to start email sending: ${response.status} ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`[ReplitAPI] Email sending started (FormData):`, result);
+    return result;
+  }
+
   // Check email sending progress
   async checkJobStatus(since: number = 0): Promise<any> {
     const response = await fetch(this.getApiEndpoint(`api/original/progress?since=${since}`));
