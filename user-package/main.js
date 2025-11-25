@@ -401,6 +401,69 @@ ipcMain.handle('select-files', async () => {
   }
 });
 
+// Select files for attachment and return file info with base64 content
+ipcMain.handle('select-attachment-files', async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: true, files: [] };
+    }
+
+    const files = [];
+    const mimeTypes = {
+      '.pdf': 'application/pdf',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.html': 'text/html',
+      '.htm': 'text/html',
+      '.txt': 'text/plain',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.xls': 'application/vnd.ms-excel',
+      '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      '.zip': 'application/zip',
+      '.mp3': 'audio/mpeg',
+      '.wav': 'audio/wav'
+    };
+
+    for (const filePath of result.filePaths) {
+      try {
+        const fileBuffer = await fs.readFile(filePath);
+        const base64Content = fileBuffer.toString('base64');
+        const fileName = path.basename(filePath);
+        const ext = path.extname(fileName).toLowerCase();
+        const stats = await fs.stat(filePath);
+
+        files.push({
+          name: fileName,
+          path: filePath,
+          size: stats.size,
+          type: mimeTypes[ext] || 'application/octet-stream',
+          content: base64Content,
+          encoding: 'base64'
+        });
+
+        console.log(`[Electron] Read attachment file: ${fileName} (${stats.size} bytes)`);
+      } catch (fileError) {
+        console.error(`[Electron] Failed to read file ${filePath}:`, fileError);
+      }
+    }
+
+    return { success: true, files };
+  } catch (error) {
+    console.error('[Electron] Failed to select attachment files:', error);
+    return { success: false, error: error.message, files: [] };
+  }
+});
+
 // Config loading with fallback support
 ipcMain.handle('load-config', async () => {
   try {

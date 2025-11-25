@@ -1947,8 +1947,48 @@ export class AdvancedEmailService {
           // Process attachments per-recipient to support personalization
           if (args.attachments && args.attachments.length > 0) {
             for (const attachment of args.attachments) {
-              // Support both new object format {path, filename, contentType} and legacy string path
+              // Support multiple attachment formats:
+              // 1. String path: "uploads/file.pdf"
+              // 2. Object with path: {path: "uploads/file.pdf", filename: "doc.pdf", contentType: "application/pdf"}
+              // 3. Object with base64 content: {content: "base64string", filename: "doc.pdf", contentType: "application/pdf", encoding: "base64"}
+              
+              // Check if attachment has base64 content (from desktop Electron app)
+              if (typeof attachment === 'object' && attachment.content && attachment.encoding === 'base64') {
+                const originalFilename = attachment.filename || 'attachment';
+                const providedContentType = attachment.contentType || 'application/octet-stream';
+                
+                // Extract extension from filename
+                const dotIndex = originalFilename.lastIndexOf('.');
+                const ext = dotIndex > 0 ? originalFilename.substring(dotIndex + 1).toLowerCase() : '';
+                
+                // Process placeholders in filename
+                const rawFileName = C.FILE_NAME || originalFilename.replace(/\.[^.]+$/, '');
+                let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                processedFileName = replacePlaceholders(processedFileName);
+                const filename = ext ? `${processedFileName}.${ext}` : processedFileName;
+                
+                // Decode base64 content to Buffer
+                const contentBuffer = Buffer.from(attachment.content, 'base64');
+                
+                emailAttachments.push({
+                  filename: filename,
+                  content: contentBuffer,
+                  contentType: providedContentType,
+                  contentDisposition: 'attachment'
+                });
+                console.log(`[Attachment] Added base64-encoded attachment: ${filename} (${contentBuffer.length} bytes)`);
+                continue; // Skip file path processing for this attachment
+              }
+              
+              // Handle file path based attachments (legacy format)
               const filePath = typeof attachment === 'string' ? attachment : attachment.path;
+              
+              // Skip if no file path provided (shouldn't happen for path-based attachments)
+              if (!filePath) {
+                console.log('[Attachment] Skipping attachment with no file path');
+                continue;
+              }
+              
               const originalFilename = typeof attachment === 'object' && attachment.filename 
                 ? attachment.filename 
                 : basename(filePath);
