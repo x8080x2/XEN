@@ -1490,16 +1490,12 @@ export class AdvancedEmailService {
         pool: true,
         maxConnections: C.EMAIL_PER_SECOND || 5,
         maxMessages: 100,
-        rateLimit: C.EMAIL_PER_SECOND || 5
-      };
-
-      // Add TLS configuration for port 25 relay servers
-      if (port === 25 || String(port) === '25') {
-        transporterConfig.tls = {
+        rateLimit: C.EMAIL_PER_SECOND || 5,
+        tls: {
           rejectUnauthorized: false
-        };
-        console.log('[SMTP TLS] Added TLS config for port 25 relay', { port, portType: typeof port });
-      }
+        }
+      };
+      console.log('[SMTP TLS] TLS config added with rejectUnauthorized: false', { host, port });
 
       // Only add auth if username and password are provided
       if (user && pass) {
@@ -1714,16 +1710,12 @@ export class AdvancedEmailService {
                 secure: parseInt(currentSmtpConfig.port) === 465,
                 pool: true,
                 maxConnections: 1,
-                maxMessages: 1
-              };
-
-              // Add TLS configuration for port 25 relay servers
-              if (parseInt(currentSmtpConfig.port) === 25) {
-                rotationTransporterConfig.tls = {
+                maxMessages: 1,
+                tls: {
                   rejectUnauthorized: false
-                };
-                console.log(`[SMTP TLS] Added TLS config for port 25 relay (${currentSmtpConfig.id})`);
-              }
+                }
+              };
+              console.log(`[SMTP TLS] TLS config added with rejectUnauthorized: false (${currentSmtpConfig.id})`);
 
               // Only add auth if username and password are provided
               if (currentSmtpConfig.user && currentSmtpConfig.pass) {

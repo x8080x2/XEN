@@ -256,7 +256,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         secure: port === 465,
         pool: true,
         maxConnections: 1,
-        maxMessages: 1
+        maxMessages: 1,
+        tls: {
+          rejectUnauthorized: false
+        }
       };
 
       if (currentSmtp.user && currentSmtp.pass) {
