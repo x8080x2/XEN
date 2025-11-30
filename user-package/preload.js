@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpAdd: (config) => ipcRenderer.invoke('smtp:add', config),
   smtpDelete: (id) => ipcRenderer.invoke('smtp:delete', id),
   smtpRotate: () => ipcRenderer.invoke('smtp:rotate'),
-  smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggle-rotation', enabled),
+  smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggleRotation', enabled),
   smtpTest: () => ipcRenderer.invoke('smtp:test'),
 
   // NOTE: Email sending and AI operations now use backend API via replitApiService

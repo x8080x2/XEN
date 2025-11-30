@@ -993,6 +993,50 @@ ipcMain.handle('smtp:test', async () => {
   }
 });
 
+// SMTP test handler - verify SMTP connectivity
+ipcMain.handle('smtp:test', async () => {
+  try {
+    const smtpData = await loadSmtpData();
+    
+    if (!smtpData.currentSmtp) {
+      return { success: false, online: false, error: 'No SMTP configured' };
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: smtpData.currentSmtp.host,
+      port: parseInt(smtpData.currentSmtp.port),
+      secure: false,
+      auth: smtpData.currentSmtp.user && smtpData.currentSmtp.pass ? {
+        user: smtpData.currentSmtp.user,
+        pass: smtpData.currentSmtp.pass
+      } : undefined
+    });
+
+    // Use a timeout for verification
+    const verifyTimeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('SMTP verification timed out')), 10000)
+    );
+
+    await Promise.race([
+      transporter.verify(),
+      verifyTimeout
+    ]);
+    
+    return { 
+      success: true, 
+      online: true, 
+      smtp: {
+        host: smtpData.currentSmtp.host,
+        port: smtpData.currentSmtp.port,
+        fromEmail: smtpData.currentSmtp.fromEmail
+      }
+    };
+  } catch (error) {
+    console.error('[Electron] SMTP test failed:', error.message);
+    return { success: false, online: false, error: error.message };
+  }
+});
+
 // NOTE: Email sending has been moved to the backend server.
 // Desktop app uses replitApiService.sendEmailsJob() to send emails via backend HTTP API.
 // This ensures both web and desktop UIs use the same email processing pipeline.
