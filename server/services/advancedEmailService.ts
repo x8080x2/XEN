@@ -105,17 +105,17 @@ export async function injectDynamicPlaceholders(text: string, user: string, emai
   const domainBase = domain?.split('.')[0] || '';
   const initials = username.split(/[^a-zA-Z]/).map(p => p[0]?.toUpperCase()).join('');
   const userId = Math.abs(username.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)).toString().slice(0, 6);
-  
+
   // Extract full name from username (convert dots/underscores to spaces and capitalize)
   const fullName = username
     .replace(/[._-]/g, ' ')
     .split(' ')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
-  
+
   // Extract first name only (first word from full name)
   const firstName = fullName.split(' ')[0] || username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
-  
+
   // Uppercase full name
   const fullNameUpper = fullName.toUpperCase();
 
@@ -391,7 +391,7 @@ export class AdvancedEmailService {
             instance: browser,
             activePages: 0,
             lastUsed: now,
-            maxPages: 3 // Reduced max pages per browser
+            maxPages: 3 // Reduced pages per browser
           };
           this.browserPool.push(availableBrowser);
           console.info('Created new browser in pool', { poolSize: this.browserPool.length });
@@ -1193,20 +1193,20 @@ export class AdvancedEmailService {
       const stats = statSync(filePath);
       // FIX: Use originalFilename instead of filePath to detect extension (Multer uploads have no extension in path)
       const ext = originalFilename.split('.').pop()?.toLowerCase() || '';
-      
+
       // Check if file is text-based and within size limit
       if (this.isTextBasedFile(ext) && stats.size <= maxFileSizeBytes) {
         console.log(`[Attachment Processing] Reading text file for placeholder replacement: ${originalFilename} (${stats.size} bytes, extension: .${ext})`);
-        
+
         // Read file content as UTF-8
         const rawContent = readFileSync(filePath, 'utf8');
-        
+
         // Apply placeholder replacements (same as email body)
         let processedContent = await injectDynamicPlaceholders(rawContent, recipient, senderEmail, dateStr, timeStr);
         processedContent = replacePlaceholders(processedContent);
-        
+
         console.log(`[Attachment Processing] Placeholders processed for ${originalFilename}`);
-        
+
         // Return as Buffer
         return { content: Buffer.from(processedContent, 'utf8') };
       } else {
@@ -1430,7 +1430,7 @@ export class AdvancedEmailService {
     // User SMTP rotation management for desktop app users
     let userSmtpRotationIndex = 0;
     const useUserSmtpRotation = args.userSmtpConfigs && args.userSmtpConfigs.length > 0;
-    
+
     if (useUserSmtpRotation) {
       console.log('[User SMTP] Desktop app provided', args.userSmtpConfigs.length, 'SMTP configs, rotation:', args.userSmtpRotationEnabled);
     }
@@ -1569,10 +1569,10 @@ export class AdvancedEmailService {
       const attachmentHtmlBase = processedAttachmentHtml;
 
       // Batch processing variables - exact clone from main.js
-      let sent = 0;
-      let failed = 0;
-      const errors: string[] = [];
-      const failedEmails: string[] = [];
+      sent = 0;
+      failed = 0;
+      errors.length = 0; // Clear previous errors
+      failedEmails.length = 0; // Clear previous failed emails
 
       // Batch processing with performance optimizations
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
@@ -1703,7 +1703,7 @@ export class AdvancedEmailService {
 
               // Create individual transporter config - auth is optional
               console.log(`[SMTP Config Debug] SMTP ${currentSmtpConfig.id}: host=${currentSmtpConfig.host}, port=${currentSmtpConfig.port}, user="${currentSmtpConfig.user}", pass="${currentSmtpConfig.pass ? '***' : '(empty)'}"`);
-              
+
               const rotationTransporterConfig: any = {
                 host: currentSmtpConfig.host,
                 port: parseInt(currentSmtpConfig.port),
@@ -1945,18 +1945,18 @@ export class AdvancedEmailService {
                 ? attachment.filename 
                 : basename(filePath);
               const providedContentType = typeof attachment === 'object' ? attachment.contentType : null;
-              
+
               if (existsSync(filePath)) {
                 // Extract extension properly (only if file has a dot)
                 const dotIndex = originalFilename.lastIndexOf('.');
                 const ext = dotIndex > 0 ? originalFilename.substring(dotIndex + 1).toLowerCase() : '';
-                
+
                 // Process placeholders in filename using FILE_NAME setting (same as converted attachments)
                 const rawFileName = C.FILE_NAME || originalFilename.replace(/\.[^.]+$/, ''); // Use original name without extension as default
                 let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = ext ? `${processedFileName}.${ext}` : processedFileName;
-                
+
                 // MIME type mapping for common file types
                 const mimeTypes: Record<string, string> = {
                   'html': 'text/html',
@@ -1979,17 +1979,17 @@ export class AdvancedEmailService {
                   'ppt': 'application/vnd.ms-powerpoint',
                   'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
                 };
-                
+
                 // Use provided contentType from upload, or fall back to extension-based detection
                 const contentType = providedContentType || mimeTypes[ext] || 'application/octet-stream';
-                
+
                 // Check if placeholder processing is enabled (default: true)
                 const enablePlaceholderProcessing = C.PROCESS_ATTACHMENT_PLACEHOLDERS !== false;
-                
+
                 if (enablePlaceholderProcessing) {
                   // Process attachment with placeholder replacement for text files (pass originalFilename for extension detection)
                   const processed = await this.processAttachmentFile(filePath, originalFilename, recipient, fromEmail, dateStr, timeStr);
-                  
+
                   if (processed.content) {
                     // Text file processed with placeholders - use content buffer
                     emailAttachments.push({
