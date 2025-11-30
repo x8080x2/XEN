@@ -897,13 +897,13 @@ ipcMain.handle('file-upload', async (event, sourceFilePath) => {
       '.txt': 'text/plain'
     };
 
-    console.log(`[Electron] File uploaded successfully: ${filename}`);
+    console.log(`[Electron] File uploaded successfully: ${filename} (original: ${originalName})`);
 
     return {
       success: true,
       id: crypto.randomUUID(),
-      originalName: originalName,
-      filename: filename,
+      originalName: originalName, // Keep original filename for display
+      filename: filename, // Generated filename for storage
       path: `uploads/${filename}`,
       size: stats.size,
       mimeType: mimeTypes[ext.toLowerCase()] || 'application/octet-stream',

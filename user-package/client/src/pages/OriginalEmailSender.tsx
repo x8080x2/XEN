@@ -1416,7 +1416,7 @@ export default function OriginalEmailSender() {
                         {Array.from(selectedFiles).map((file, index) => (
                           <div key={index} className="flex items-center justify-between">
                             <span className="text-xs text-[#a1a1aa] truncate">
-                              📎 {file.name}
+                              📎 {(file as any).originalName || file.name}
                             </span>
                             {index === 0 && (
                               <button
