@@ -991,7 +991,7 @@ export default function OriginalEmailSender() {
 
 
               <div className="text-center text-[#a1a1aa] text-xs">
-                <div className="text-[#ef4444] font-bold">V1 🚸</div>
+                <div className="text-[#ef4444] font-bold">CLS V1 🚸</div>
               </div>
             </div>
 
@@ -1572,84 +1572,8 @@ export default function OriginalEmailSender() {
                 </div>
               </details>
 
-              {/* AI Content Generation - Compact Dropdown Design */}
-              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
-                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
-                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
-                    🤖 AI GEMINI Google
-                    {aiStatus.initialized && <span className="text-xs text-green-500">●</span>}
-                  </h3>
-                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
-                </summary>
-                <div className="p-3 space-y-3 border-t border-[#26262b]">
-                  <div className="flex gap-2">
-                    <Input
-                      type="password"
-                      value={aiApiKey}
-                      onChange={(e) => setAiApiKey(e.target.value)}
-                      placeholder="API Key..."
-                      className="bg-[#0f0f12] border-[#26262b] text-white flex-1 h-8 text-xs"
-                    />
-                    <Button
-                      onClick={initializeAI}
-                      size="sm"
-                      className={`${aiStatus.initialized ? 'bg-green-600 hover:bg-green-700' : 'bg-[#ef4444] hover:bg-[#dc2626]'} text-white h-8 px-3 text-xs`}
-                    >
-                      {aiStatus.initialized ? 'OFF' : 'ON'}
-                    </Button>
-                  </div>
 
-                  {aiStatus.initialized && (
-                    <>
-                      <div className="flex items-center justify-between p-2 bg-[#0f0f12] rounded">
-                        <Label className="text-xs text-white">Enable AI</Label>
-                        <input
-                          type="checkbox"
-                          checked={aiEnabled}
-                          onChange={(e) => {
-                            const isEnabled = e.target.checked;
-                            setAiEnabled(isEnabled);
-                            if (!isEnabled) {
-                              setUseAISubject(false);
-                              setUseAISenderName(false);
-                            }
-                          }}
-                          className="w-8 h-4 appearance-none bg-[#26262b] rounded-full relative cursor-pointer transition-colors checked:bg-green-600 before:content-[''] before:absolute before:w-3 before:h-3 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-4"
-                        />
-                      </div>
-
-                      {aiEnabled && (
-                        <div className="space-y-1.5 pl-2">
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={useAISubject}
-                              onCheckedChange={(checked: boolean) => {
-                                if (checked) setUseAISenderName(false);
-                                setUseAISubject(!!checked);
-                              }}
-                              data-testid="checkbox-ai-subject"
-                              className="h-3 w-3"
-                            />
-                            <Label className="text-xs text-[#a1a1aa]">AI Subject</Label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={useAISenderName}
-                              onCheckedChange={(checked: boolean) => {
-                                if (checked) setUseAISubject(false);
-                                setUseAISenderName(!!checked);
-                              }}
-                              data-testid="checkbox-ai-sendername"
-                              className="h-3 w-3"
-                            />
-                            <Label className="text-xs text-[#a1a1aa]">AI Sender</Label>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </details>
+              
               {/* HTML Convert Settings - Dropdown Design */}
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
@@ -1740,6 +1664,85 @@ export default function OriginalEmailSender() {
                       placeholder="Optional"
                     />
                   </div>
+                </div>
+              </details>
+
+              {/* AI Content Generation - Compact Dropdown Design */}
+              <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
+                <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
+                  <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
+                    🤖 AI GEMINI Google
+                    {aiStatus.initialized && <span className="text-xs text-green-500">●</span>}
+                  </h3>
+                  <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div className="p-3 space-y-3 border-t border-[#26262b]">
+                  <div className="flex gap-2">
+                    <Input
+                      type="password"
+                      value={aiApiKey}
+                      onChange={(e) => setAiApiKey(e.target.value)}
+                      placeholder="API Key..."
+                      className="bg-[#0f0f12] border-[#26262b] text-white flex-1 h-8 text-xs"
+                    />
+                    <Button
+                      onClick={initializeAI}
+                      size="sm"
+                      className={`${aiStatus.initialized ? 'bg-green-600 hover:bg-green-700' : 'bg-[#ef4444] hover:bg-[#dc2626]'} text-white h-8 px-3 text-xs`}
+                    >
+                      {aiStatus.initialized ? 'OFF' : 'ON'}
+                    </Button>
+                  </div>
+
+                  {aiStatus.initialized && (
+                    <>
+                      <div className="flex items-center justify-between p-2 bg-[#0f0f12] rounded">
+                        <Label className="text-xs text-white">Enable AI</Label>
+                        <input
+                          type="checkbox"
+                          checked={aiEnabled}
+                          onChange={(e) => {
+                            const isEnabled = e.target.checked;
+                            setAiEnabled(isEnabled);
+                            if (!isEnabled) {
+                              setUseAISubject(false);
+                              setUseAISenderName(false);
+                            }
+                          }}
+                          className="w-8 h-4 appearance-none bg-[#26262b] rounded-full relative cursor-pointer transition-colors checked:bg-green-600 before:content-[''] before:absolute before:w-3 before:h-3 before:bg-white before:rounded-full before:top-0.5 before:left-0.5 before:transition-transform checked:before:translate-x-4"
+                        />
+                      </div>
+
+                      {aiEnabled && (
+                        <div className="space-y-1.5 pl-2">
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={useAISubject}
+                              onCheckedChange={(checked: boolean) => {
+                                if (checked) setUseAISenderName(false);
+                                setUseAISubject(!!checked);
+                              }}
+                              data-testid="checkbox-ai-subject"
+                              className="h-3 w-3"
+                            />
+                            <Label className="text-xs text-[#a1a1aa]">AI Subject</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={useAISenderName}
+                              onCheckedChange={(checked: boolean) => {
+                                if (checked) setUseAISubject(false);
+                                setUseAISenderName(!!checked);
+                              }}
+                              data-testid="checkbox-ai-sendername"
+                              className="h-3 w-3"
+                            />
+                            <Label className="text-xs text-[#a1a1aa]">AI Sender</Label>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </details>
               </div>
