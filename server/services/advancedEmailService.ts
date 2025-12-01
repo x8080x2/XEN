@@ -1572,7 +1572,7 @@ export class AdvancedEmailService {
       sent = 0;
       failed = 0;
       errors.length = 0; // Clear previous errors
-      failedEmails.length = 0; // Clear previous failed emails
+      const failedEmails: string[] = []; // Initialize failed emails tracking array
 
       // Batch processing with performance optimizations
       console.log('[sendMail] Startup time (ms):', Date.now() - sendMailStart);
