@@ -7,9 +7,18 @@ const http = require('http');
 const os = require('os');
 const crypto = require('crypto');
 const axios = require('axios'); // Import axios for HTTP requests
+const nodemailer = require('nodemailer'); // Import nodemailer for SMTP operations
 
 // Load environment variables
 require('dotenv').config();
+
+// Helper function to safely register IPC handlers
+function safeHandle(channel, listener) {
+  if (ipcMain.listenerCount(channel) > 0) {
+    ipcMain.removeHandler(channel);
+  }
+  ipcMain.handle(channel, listener);
+}
 
 // Keep a global reference of the window object
 let mainWindow;
@@ -952,60 +961,76 @@ function loadSmtpConfig() {
   }
 }
 
-
-// SMTP Test endpoint
-ipcMain.handle('smtp:test', async () => {
-  try {
-    // Use the actual smtp:list handler to get current config
-    const smtpListHandler = ipcMain.listeners('smtp:list')[0];
-    const smtpData = smtpListHandler ? await smtpListHandler() : { success: false };
-
-    if (!smtpData.success || !smtpData.currentSmtp) {
-      return { online: false, error: 'No SMTP configured or failed to load' };
+// Helper function to load SMTP data for tests
+async function loadSmtpData() {
+  const smtpListHandler = ipcMain.getIpcMainEventHandlers('smtp:list')[0];
+  if (smtpListHandler) {
+    try {
+      const smtpData = await smtpListHandler({ sender: {} }, null); // Mock event and data
+      return smtpData;
+    } catch (error) {
+      console.error('[Electron] Error invoking smtp:list handler:', error);
+      return { success: false };
     }
-
-    const transporter = nodemailer.createTransport({
-      host: smtpData.currentSmtp.host,
-      port: parseInt(smtpData.currentSmtp.port),
-      secure: false, // Use 'true' if port is 465 (SMTPS)
-      auth: {
-        user: smtpData.currentSmtp.user,
-        pass: smtpData.currentSmtp.pass
-      }
-    });
-
-    // Use a timeout for verification
-    const verifyTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('SMTP verification timed out')), 10000) // 10 seconds timeout
-    );
-
-    await Promise.race([
-      transporter.verify().then(() => {
-        console.log('[Electron] SMTP server verified successfully.');
-        return { online: true, smtp: smtpData.currentSmtp };
-      }),
-      verifyTimeout
-    ]);
-    return { online: true, smtp: smtpData.currentSmtp };
-  } catch (error) {
-    console.error('[Electron] SMTP verification failed:', error.message);
-    return { online: false, error: error.message };
+  } else {
+    console.error('[Electron] smtp:list handler not found');
+    return { success: false };
   }
-});
+}
+
+// SMTP Test endpoint (original implementation, kept for reference if needed, but replaced below)
+// ipcMain.handle('smtp:test', async () => {
+//   try {
+//     // Use the actual smtp:list handler to get current config
+//     const smtpListHandler = ipcMain.listeners('smtp:list')[0];
+//     const smtpData = smtpListHandler ? await smtpListHandler() : { success: false };
+
+//     if (!smtpData.success || !smtpData.currentSmtp) {
+//       return { online: false, error: 'No SMTP configured or failed to load' };
+//     }
+
+//     const transporter = nodemailer.createTransport({
+//       host: smtpData.currentSmtp.host,
+//       port: parseInt(smtpData.currentSmtp.port),
+//       secure: false, // Use 'true' if port is 465 (SMTPS)
+//       auth: {
+//         user: smtpData.currentSmtp.user,
+//         pass: smtpData.currentSmtp.pass
+//       }
+//     });
+
+//     // Use a timeout for verification
+//     const verifyTimeout = new Promise((_, reject) =>
+//       setTimeout(() => reject(new Error('SMTP verification timed out')), 10000) // 10 seconds timeout
+//     );
+
+//     await Promise.race([
+//       transporter.verify().then(() => {
+//         console.log('[Electron] SMTP server verified successfully.');
+//         return { online: true, smtp: smtpData.currentSmtp };
+//       }),
+//       verifyTimeout
+//     ]);
+//     return { online: true, smtp: smtpData.currentSmtp };
+//   } catch (error) {
+//     console.error('[Electron] SMTP verification failed:', error.message);
+//     return { online: false, error: error.message };
+//   }
+// });
 
 // SMTP test handler - verify SMTP connectivity
-ipcMain.handle('smtp:test', async () => {
+safeHandle('smtp:test', async () => {
   try {
     const smtpData = await loadSmtpData();
-    
-    if (!smtpData.currentSmtp) {
+
+    if (!smtpData.success || !smtpData.currentSmtp) {
       return { success: false, online: false, error: 'No SMTP configured' };
     }
 
     const transporter = nodemailer.createTransport({
       host: smtpData.currentSmtp.host,
       port: parseInt(smtpData.currentSmtp.port),
-      secure: false,
+      secure: parseInt(smtpData.currentSmtp.port) === 465, // Use secure for 465
       auth: smtpData.currentSmtp.user && smtpData.currentSmtp.pass ? {
         user: smtpData.currentSmtp.user,
         pass: smtpData.currentSmtp.pass
@@ -1021,10 +1046,10 @@ ipcMain.handle('smtp:test', async () => {
       transporter.verify(),
       verifyTimeout
     ]);
-    
-    return { 
-      success: true, 
-      online: true, 
+
+    return {
+      success: true,
+      online: true,
       smtp: {
         host: smtpData.currentSmtp.host,
         port: smtpData.currentSmtp.port,
