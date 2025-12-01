@@ -1951,9 +1951,9 @@ export class AdvancedEmailService {
                 const dotIndex = originalFilename.lastIndexOf('.');
                 const ext = dotIndex > 0 ? originalFilename.substring(dotIndex + 1).toLowerCase() : '';
 
-                // Process placeholders in filename using FILE_NAME setting (same as converted attachments)
-                const rawFileName = C.FILE_NAME || originalFilename.replace(/\.[^.]+$/, ''); // Use original name without extension as default
-                let processedFileName = await injectDynamicPlaceholders(rawFileName, recipient, fromEmail, dateStr, timeStr);
+                // Use original filename and allow placeholder processing on it
+                const baseFileName = originalFilename.replace(/\.[^.]+$/, ''); // Remove extension
+                let processedFileName = await injectDynamicPlaceholders(baseFileName, recipient, fromEmail, dateStr, timeStr);
                 processedFileName = replacePlaceholders(processedFileName);
                 const filename = ext ? `${processedFileName}.${ext}` : processedFileName;
 
