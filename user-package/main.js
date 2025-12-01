@@ -12,16 +12,33 @@ const nodemailer = require('nodemailer'); // Import nodemailer for SMTP operatio
 // Load environment variables
 require('dotenv').config();
 
+// Track registered handlers to prevent duplicates
+const registeredHandlers = new Set();
+
 // Helper function to safely register IPC handlers
 function safeHandle(channel, listener) {
-  try {
-    // Try to remove any existing handler first
-    ipcMain.removeHandler(channel);
-  } catch (error) {
-    // Handler didn't exist, which is fine
+  // Only register if not already registered
+  if (!registeredHandlers.has(channel)) {
+    ipcMain.handle(channel, listener);
+    registeredHandlers.add(channel);
+    console.log(`[Electron] Registered handler: ${channel}`);
+  } else {
+    console.log(`[Electron] Handler already registered, skipping: ${channel}`);
   }
-  ipcMain.handle(channel, listener);
 }
+
+// Cleanup function to remove all handlers on app quit
+app.on('before-quit', () => {
+  console.log('[Electron] Cleaning up IPC handlers...');
+  registeredHandlers.forEach(channel => {
+    try {
+      ipcMain.removeHandler(channel);
+    } catch (error) {
+      // Ignore errors during cleanup
+    }
+  });
+  registeredHandlers.clear();
+});
 
 // Keep a global reference of the window object
 let mainWindow;
