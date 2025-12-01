@@ -1046,7 +1046,10 @@ safeHandle('smtp:test', async () => {
       auth: smtpData.currentSmtp.user && smtpData.currentSmtp.pass ? {
         user: smtpData.currentSmtp.user,
         pass: smtpData.currentSmtp.pass
-      } : undefined
+      } : undefined,
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     const verifyTimeout = new Promise((_, reject) =>
