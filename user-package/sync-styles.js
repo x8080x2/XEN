@@ -1,49 +1,79 @@
-#!/usr/bin/env node
-
-/**
- * Sync Styles Script
- * Copies the latest styles from the web app to the desktop app
- */
 
 const fs = require('fs');
 const path = require('path');
 
-const webAppStylesPath = path.join(__dirname, '..', 'client', 'src', 'index.css');
-const webAppTailwindPath = path.join(__dirname, '..', 'tailwind.config.ts');
-const desktopStylesPath = path.join(__dirname, 'client', 'src', 'web-app-styles.css');
-const desktopTailwindPath = path.join(__dirname, 'tailwind.config.ts');
-
-try {
-  // Check if web app files exist
-  if (!fs.existsSync(webAppStylesPath)) {
-    console.error('❌ Web app styles not found at:', webAppStylesPath);
-    console.log('💡 Make sure you are running this from the Replit project');
-    process.exit(1);
+const filesToSync = [
+  {
+    src: '../client/src/index.css',
+    dest: './client/src/index.css'
+  },
+  {
+    src: '../client/src/components/ui',
+    dest: './client/src/components/ui',
+    isDir: true
   }
+];
 
-  // Copy the CSS styles
-  fs.copyFileSync(webAppStylesPath, desktopStylesPath);
-  console.log('✅ CSS synced successfully!');
-  console.log('📁 Copied from:', webAppStylesPath);
-  console.log('📁 Copied to:', desktopStylesPath);
+function hasFileChanged(srcPath, destPath) {
+  if (!fs.existsSync(destPath)) return true;
   
-  // Copy the Tailwind config
-  if (fs.existsSync(webAppTailwindPath)) {
-    const tailwindConfig = fs.readFileSync(webAppTailwindPath, 'utf8');
-    // Update the content path for desktop app
-    const updatedConfig = tailwindConfig.replace(
-      'content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"]',
-      'content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"]'
-    );
-    fs.writeFileSync(desktopTailwindPath, updatedConfig);
-    console.log('✅ Tailwind config synced successfully!');
-    console.log('📁 Copied from:', webAppTailwindPath);
-    console.log('📁 Copied to:', desktopTailwindPath);
-  }
+  const srcStats = fs.statSync(srcPath);
+  const destStats = fs.statSync(destPath);
   
-  console.log('\n💡 Now you can build the desktop app with: npm run build');
-  
-} catch (error) {
-  console.error('❌ Error syncing styles:', error.message);
-  process.exit(1);
+  return srcStats.mtimeMs > destStats.mtimeMs;
 }
+
+function syncFile(src, dest) {
+  const srcPath = path.resolve(__dirname, src);
+  const destPath = path.resolve(__dirname, dest);
+  
+  if (!hasFileChanged(srcPath, destPath)) {
+    console.log(`⏭️  Skipped (unchanged): ${src}`);
+    return;
+  }
+  
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.copyFileSync(srcPath, destPath);
+  console.log(`✅ Synced: ${src} → ${dest}`);
+}
+
+function syncDirectory(src, dest) {
+  const srcPath = path.resolve(__dirname, src);
+  const destPath = path.resolve(__dirname, dest);
+  
+  if (!fs.existsSync(srcPath)) {
+    console.log(`❌ Source not found: ${src}`);
+    return;
+  }
+  
+  fs.mkdirSync(destPath, { recursive: true });
+  
+  const files = fs.readdirSync(srcPath);
+  let changed = 0;
+  
+  files.forEach(file => {
+    const srcFile = path.join(srcPath, file);
+    const destFile = path.join(destPath, file);
+    
+    if (fs.statSync(srcFile).isDirectory()) {
+      syncDirectory(path.join(src, file), path.join(dest, file));
+    } else if (hasFileChanged(srcFile, destFile)) {
+      fs.copyFileSync(srcFile, destFile);
+      changed++;
+    }
+  });
+  
+  console.log(`📁 Synced ${changed} files in: ${src}`);
+}
+
+console.log('🔄 Starting sync...\n');
+
+filesToSync.forEach(({ src, dest, isDir }) => {
+  if (isDir) {
+    syncDirectory(src, dest);
+  } else {
+    syncFile(src, dest);
+  }
+});
+
+console.log('\n✨ Sync complete!');
