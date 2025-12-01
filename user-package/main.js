@@ -1050,14 +1050,19 @@ safeHandle('smtp:test', async () => {
       } : undefined,
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      connectionTimeout: 30000, // 30 seconds
+      greetingTimeout: 30000,
+      socketTimeout: 30000
     });
 
     const verifyTimeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('SMTP verification timed out')), 10000)
+      setTimeout(() => reject(new Error('SMTP verification timed out after 30 seconds')), 30000)
     );
 
     try {
+      console.log('[Electron] Testing SMTP connection to:', smtpData.currentSmtp.host);
+      
       await Promise.race([
         transporter.verify(),
         verifyTimeout
