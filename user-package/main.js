@@ -14,8 +14,11 @@ require('dotenv').config();
 
 // Helper function to safely register IPC handlers
 function safeHandle(channel, listener) {
-  if (ipcMain.listenerCount(channel) > 0) {
+  try {
+    // Try to remove any existing handler first
     ipcMain.removeHandler(channel);
+  } catch (error) {
+    // Handler didn't exist, which is fine
   }
   ipcMain.handle(channel, listener);
 }
@@ -233,7 +236,7 @@ app.on('activate', function () {
 });
 
 // IPC handlers for file operations
-ipcMain.handle('read-file', async (event, filepath) => {
+safeHandle('read-file', async (event, filepath) => {
   try {
     console.log(`[Electron] Reading file: ${filepath}`);
 
@@ -263,7 +266,7 @@ ipcMain.handle('read-file', async (event, filepath) => {
   }
 });
 
-ipcMain.handle('write-file', async (event, filepath, content) => {
+safeHandle('write-file', async (event, filepath, content) => {
   try {
     console.log(`[Electron] Writing file: ${filepath}`);
 
@@ -283,7 +286,7 @@ ipcMain.handle('write-file', async (event, filepath, content) => {
   }
 });
 
-ipcMain.handle('list-files', async (event, dirpath) => {
+safeHandle('list-files', async (event, dirpath) => {
   try {
     console.log(`[Electron] Listing files in: ${dirpath}`);
 
@@ -323,7 +326,7 @@ ipcMain.handle('list-files', async (event, dirpath) => {
   }
 });
 
-ipcMain.handle('read-config', async (event, configDir) => {
+safeHandle('read-config', async (event, configDir) => {
   try {
     console.log(`[Electron] Reading config from: ${configDir}`);
 
@@ -370,7 +373,7 @@ ipcMain.handle('read-config', async (event, configDir) => {
   }
 });
 
-ipcMain.handle('select-file', async () => {
+safeHandle('select-file', async () => {
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile'],
@@ -391,7 +394,7 @@ ipcMain.handle('select-file', async () => {
   }
 });
 
-ipcMain.handle('select-files', async () => {
+safeHandle('select-files', async () => {
   try {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile', 'multiSelections'],
@@ -411,7 +414,7 @@ ipcMain.handle('select-files', async () => {
 });
 
 // Config loading with fallback support
-ipcMain.handle('load-config', async () => {
+safeHandle('load-config', async () => {
   try {
     console.log(`[Electron] Loading config files`);
 
@@ -471,7 +474,7 @@ ipcMain.handle('load-config', async () => {
 });
 
 // Load leads file
-ipcMain.handle('load-leads', async () => {
+safeHandle('load-leads', async () => {
   try {
     console.log(`[Electron] Loading leads file`);
 
@@ -504,7 +507,7 @@ let smtpRotationEnabled = false;
 let currentSmtpIndex = 0;
 
 // SMTP toggle rotation handler
-ipcMain.handle('smtp:toggle-rotation', async (event, enabled) => {
+safeHandle('smtp:toggle-rotation', async (event, enabled) => {
   try {
     console.log(`[Electron] Toggling SMTP rotation to: ${enabled}`);
     smtpRotationEnabled = enabled;
@@ -562,7 +565,7 @@ ipcMain.handle('smtp:toggle-rotation', async (event, enabled) => {
 });
 
 // SMTP rotate handler
-ipcMain.handle('smtp:rotate', async () => {
+safeHandle('smtp:rotate', async () => {
   try {
     console.log(`[Electron] Rotating SMTP server`);
 
@@ -638,7 +641,7 @@ ipcMain.handle('smtp:rotate', async () => {
 
 // SMTP list handler
 // SMTP list handler - note the handler name matches preload.js
-ipcMain.handle('smtp:list', async () => {
+safeHandle('smtp:list', async () => {
   try {
     console.log(`[Electron] Loading SMTP configurations`);
 
@@ -734,7 +737,7 @@ function parseIniFile(content) {
 }
 
 // SMTP add handler
-ipcMain.handle('smtp:add', async (event, smtpData) => {
+safeHandle('smtp:add', async (event, smtpData) => {
   try {
     console.log(`[Electron] Adding new SMTP config:`, smtpData);
 
@@ -798,7 +801,7 @@ ipcMain.handle('smtp:add', async (event, smtpData) => {
 });
 
 // SMTP delete handler
-ipcMain.handle('smtp:delete', async (event, smtpId) => {
+safeHandle('smtp:delete', async (event, smtpId) => {
   try {
     console.log(`[Electron] Deleting SMTP config: ${smtpId}`);
 
@@ -876,7 +879,7 @@ ipcMain.handle('smtp:delete', async (event, smtpId) => {
 });
 
 // File upload handler
-ipcMain.handle('file-upload', async (event, sourceFilePath) => {
+safeHandle('file-upload', async (event, sourceFilePath) => {
   try {
     console.log(`[Electron] Uploading file: ${sourceFilePath}`);
 
@@ -1104,7 +1107,7 @@ function parseValue(value) {
 }
 
 // Save config handler - saves to config.ini file
-ipcMain.handle('save-config', async (event, config) => {
+safeHandle('save-config', async (event, config) => {
   try {
     console.log(`[Electron] Saving config to file:`, config);
 
@@ -1155,7 +1158,7 @@ ipcMain.handle('save-config', async (event, config) => {
 });
 
 // Save leads handler - saves to files/leads.txt
-ipcMain.handle('save-leads', async (event, leads) => {
+safeHandle('save-leads', async (event, leads) => {
   try {
     console.log(`[Electron] Saving ${leads.length} leads to file`);
 
