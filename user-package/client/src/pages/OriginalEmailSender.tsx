@@ -695,12 +695,7 @@ export default function OriginalEmailSender() {
     setSmtpChecking(true);
     try {
       let data;
-      if (window.electronAPI) {
-        if (!window.electronAPI.smtpTest) {
-          console.log('[SMTP Status] Check not available in desktop version');
-          setSmtpOnline(null);
-          return;
-        }
+      if (window.electronAPI?.smtpTest) {
         data = await window.electronAPI.smtpTest();
       } else {
         const response = await fetch("/api/smtp/test");
