@@ -1036,6 +1036,7 @@ safeHandle('smtp:test', async () => {
     const smtpData = await loadSmtpData();
 
     if (!smtpData.success || !smtpData.currentSmtp) {
+      console.error('[Electron] ❌ SMTP test failed: No SMTP configured');
       return { success: false, online: false, error: 'No SMTP configured' };
     }
 
@@ -1056,22 +1057,33 @@ safeHandle('smtp:test', async () => {
       setTimeout(() => reject(new Error('SMTP verification timed out')), 10000)
     );
 
-    await Promise.race([
-      transporter.verify(),
-      verifyTimeout
-    ]);
+    try {
+      await Promise.race([
+        transporter.verify(),
+        verifyTimeout
+      ]);
 
-    return {
-      success: true,
-      online: true,
-      smtp: {
+      console.log('[Electron] ✅ SMTP test successful');
+      console.log('[Electron] SMTP ONLINE:', {
         host: smtpData.currentSmtp.host,
         port: smtpData.currentSmtp.port,
         fromEmail: smtpData.currentSmtp.fromEmail
-      }
-    };
+      });
+
+      return {
+        success: true,
+        online: true,
+        smtp: {
+          host: smtpData.currentSmtp.host,
+          port: smtpData.currentSmtp.port,
+          fromEmail: smtpData.currentSmtp.fromEmail
+        }
+      };
+    } finally {
+      transporter.close();
+    }
   } catch (error) {
-    console.error('[Electron] SMTP test failed:', error.message);
+    console.error('[Electron] ❌ SMTP test failed:', error.message);
     return { success: false, online: false, error: error.message };
   }
 });
