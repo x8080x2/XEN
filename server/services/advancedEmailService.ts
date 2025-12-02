@@ -1025,8 +1025,8 @@ export class AdvancedEmailService {
         })()
       `) as { width: number; height: number };
       
-      // Add margins to content size (15px on each side)
-      const margin = 15;
+      // Add margins to content size (12px on each side)
+      const margin = 12;
       const pageWidth = contentSize.width + (margin * 2);
       const pageHeight = contentSize.height + (margin * 2);
       
@@ -1108,8 +1108,8 @@ export class AdvancedEmailService {
           })()
         `) as { width: number; height: number };
         
-        // Add 15px margins to content size
-        const margin = 15;
+        // Add 12px margins to content size
+        const margin = 12;
         const viewportWidth = contentSize.width + (margin * 2);
         const viewportHeight = contentSize.height + (margin * 2);
         
