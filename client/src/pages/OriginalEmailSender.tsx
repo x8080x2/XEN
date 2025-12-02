@@ -1111,7 +1111,7 @@ export default function OriginalEmailSender() {
 
                 {/* Maillist */}
                 <div>
-                  <Label className="text-xs text-[green] mb-1">MAILLIST</Label>
+                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[green] mb-1 font-bold bg-[#ff0a0af0] text-[12px]">MAILLIST</Label>
                   <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
