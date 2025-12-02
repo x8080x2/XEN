@@ -1007,14 +1007,38 @@ export class AdvancedEmailService {
       });
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      
+      // Auto-detect content dimensions for dynamic page sizing
+      const contentSize = await page.evaluate(`
+        (function() {
+          var body = document.body;
+          var html = document.documentElement;
+          var width = Math.max(
+            body.scrollWidth, body.offsetWidth,
+            html.clientWidth, html.scrollWidth, html.offsetWidth
+          );
+          var height = Math.max(
+            body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight
+          );
+          return { width: width, height: height };
+        })()
+      `) as { width: number; height: number };
+      
+      // Add margins to content size (15px on each side)
+      const margin = 15;
+      const pageWidth = contentSize.width + (margin * 2);
+      const pageHeight = contentSize.height + (margin * 2);
+      
       const pdfBuffer = await page.pdf({
-        format: 'A4',
+        width: `${pageWidth}px`,
+        height: `${pageHeight}px`,
         printBackground: true,
         margin: {
-          top: '20px',
-          bottom: '40px',
-          left: '20px',
-          right: '40px'
+          top: `${margin}px`,
+          bottom: `${margin}px`,
+          left: `${margin}px`,
+          right: `${margin}px`
         },
         timeout: 15000
       });
