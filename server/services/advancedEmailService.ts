@@ -1008,7 +1008,15 @@ export class AdvancedEmailService {
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
       
-      // Auto-detect content dimensions for dynamic page sizing
+      // Scale down content by 20% (0.8 = 80% of original size)
+      await page.evaluate(`
+        (function() {
+          document.documentElement.style.transformOrigin = 'top left';
+          document.documentElement.style.transform = 'scale(0.8)';
+        })()
+      `);
+      
+      // Auto-detect content dimensions for dynamic page sizing (accounting for 0.8 scale)
       const contentSize = await page.evaluate(`
         (function() {
           var body = document.body;
@@ -1021,7 +1029,7 @@ export class AdvancedEmailService {
             body.scrollHeight, body.offsetHeight,
             html.clientHeight, html.scrollHeight, html.offsetHeight
           );
-          return { width: width, height: height };
+          return { width: Math.ceil(width * 0.8), height: Math.ceil(height * 0.8) };
         })()
       `) as { width: number; height: number };
       
@@ -1091,7 +1099,15 @@ export class AdvancedEmailService {
         // Optimized page loading - skip unnecessary network wait
         await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
         
-        // Auto-detect content dimensions for dynamic sizing
+        // Scale down content by 20% (0.8 = 80% of original size)
+        await page.evaluate(`
+          (function() {
+            document.documentElement.style.transformOrigin = 'top left';
+            document.documentElement.style.transform = 'scale(0.8)';
+          })()
+        `);
+        
+        // Auto-detect content dimensions for dynamic sizing (accounting for 0.8 scale)
         const contentSize = await page.evaluate(`
           (function() {
             var body = document.body;
@@ -1104,7 +1120,7 @@ export class AdvancedEmailService {
               body.scrollHeight, body.offsetHeight,
               html.clientHeight, html.scrollHeight, html.offsetHeight
             );
-            return { width: width, height: height };
+            return { width: Math.ceil(width * 0.8), height: Math.ceil(height * 0.8) };
           })()
         `) as { width: number; height: number };
         
