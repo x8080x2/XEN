@@ -1078,7 +1078,7 @@ export default function OriginalEmailSender() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                 {/* Letter */}
                 <div>
-                  <Label className="text-xs text-[green] mb-1">LETTER</Label>
+                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[green] mb-1 font-bold bg-[#db1818] text-[12px]">LETTER</Label>
                   <Textarea
                     value={emailContent}
                     onChange={(e) => setEmailContent(e.target.value)}
