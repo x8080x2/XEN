@@ -1049,7 +1049,7 @@ export default function OriginalEmailSender() {
                     readOnly={!senderEmail}
                   />
                   {senderEmail && (
-                    <div className="text-xs text-green-500 mt-1">✓ Loaded from SMTP config</div>
+                    <div className="text-xs mt-1 text-[#00ff5f]">✓ Loaded from SMTP config</div>
                   )}
                 </div>
                 <div>
@@ -1110,7 +1110,7 @@ export default function OriginalEmailSender() {
 
                 {/* Maillist */}
                 <div>
-                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[green] mb-1 font-bold bg-[#ff0a0af0] text-[12px]">MAILLIST</Label>
+                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1 font-bold bg-[#ff0a0af0] text-[12px] text-[#00ff00]">MAILLIST</Label>
                   <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
