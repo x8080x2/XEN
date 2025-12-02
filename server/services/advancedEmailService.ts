@@ -1085,10 +1085,37 @@ export class AdvancedEmailService {
 
       try {
         page = await browser.newPage();
-        await page.setViewport({ width: 1123, height: 1587 });
+        // Set initial viewport, will be adjusted after content load
+        await page.setViewport({ width: 800, height: 600 });
         await page.setCacheEnabled(true);
         // Optimized page loading - skip unnecessary network wait
         await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
+        
+        // Auto-detect content dimensions for dynamic sizing
+        const contentSize = await page.evaluate(`
+          (function() {
+            var body = document.body;
+            var html = document.documentElement;
+            var width = Math.max(
+              body.scrollWidth, body.offsetWidth,
+              html.clientWidth, html.scrollWidth, html.offsetWidth
+            );
+            var height = Math.max(
+              body.scrollHeight, body.offsetHeight,
+              html.clientHeight, html.scrollHeight, html.offsetHeight
+            );
+            return { width: width, height: height };
+          })()
+        `) as { width: number; height: number };
+        
+        // Add 15px margins to content size
+        const margin = 15;
+        const viewportWidth = contentSize.width + (margin * 2);
+        const viewportHeight = contentSize.height + (margin * 2);
+        
+        // Resize viewport to fit content
+        await page.setViewport({ width: viewportWidth, height: viewportHeight });
+        
         // Fast screenshot with optimized settings
         const pngBuffer = await page.screenshot({ 
           fullPage: true,
