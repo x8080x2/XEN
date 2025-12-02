@@ -1008,28 +1008,48 @@ export class AdvancedEmailService {
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
       
-      // Scale down content by 20% (0.8 = 80% of original size)
+      // Strip forced heights (100vh, 100%) and prepare for content-based sizing
       await page.evaluate(`
         (function() {
-          document.documentElement.style.transformOrigin = 'top left';
-          document.documentElement.style.transform = 'scale(0.8)';
+          // Remove forced viewport heights to measure actual content
+          var html = document.documentElement;
+          var body = document.body;
+          html.style.height = 'auto';
+          html.style.minHeight = 'auto';
+          body.style.height = 'auto';
+          body.style.minHeight = 'auto';
+          
+          // Scale down content by 20% (0.8 = 80% of original size)
+          html.style.transformOrigin = 'top left';
+          html.style.transform = 'scale(0.8)';
         })()
       `);
       
-      // Auto-detect content dimensions for dynamic page sizing (accounting for 0.8 scale)
+      // Auto-detect actual content dimensions (not viewport-based)
       const contentSize = await page.evaluate(`
         (function() {
           var body = document.body;
-          var html = document.documentElement;
-          var width = Math.max(
-            body.scrollWidth, body.offsetWidth,
-            html.clientWidth, html.scrollWidth, html.offsetWidth
-          );
-          var height = Math.max(
-            body.scrollHeight, body.offsetHeight,
-            html.clientHeight, html.scrollHeight, html.offsetHeight
-          );
-          return { width: Math.ceil(width * 0.8), height: Math.ceil(height * 0.8) };
+          // Find the first real content element
+          var content = body.firstElementChild || body;
+          var rect = content.getBoundingClientRect();
+          
+          // Get all elements and find the actual content bounds
+          var allElements = document.querySelectorAll('body *');
+          var maxBottom = 0;
+          var maxRight = 0;
+          
+          for (var i = 0; i < allElements.length; i++) {
+            var el = allElements[i];
+            var r = el.getBoundingClientRect();
+            if (r.bottom > maxBottom) maxBottom = r.bottom;
+            if (r.right > maxRight) maxRight = r.right;
+          }
+          
+          // Use actual content bounds, accounting for scale already applied
+          var width = Math.max(maxRight, rect.width, body.scrollWidth * 0.8);
+          var height = Math.max(maxBottom, rect.height, body.scrollHeight * 0.8);
+          
+          return { width: Math.ceil(width), height: Math.ceil(height) };
         })()
       `) as { width: number; height: number };
       
@@ -1099,28 +1119,48 @@ export class AdvancedEmailService {
         // Optimized page loading - skip unnecessary network wait
         await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
         
-        // Scale down content by 20% (0.8 = 80% of original size)
+        // Strip forced heights (100vh, 100%) and prepare for content-based sizing
         await page.evaluate(`
           (function() {
-            document.documentElement.style.transformOrigin = 'top left';
-            document.documentElement.style.transform = 'scale(0.8)';
+            // Remove forced viewport heights to measure actual content
+            var html = document.documentElement;
+            var body = document.body;
+            html.style.height = 'auto';
+            html.style.minHeight = 'auto';
+            body.style.height = 'auto';
+            body.style.minHeight = 'auto';
+            
+            // Scale down content by 20% (0.8 = 80% of original size)
+            html.style.transformOrigin = 'top left';
+            html.style.transform = 'scale(0.8)';
           })()
         `);
         
-        // Auto-detect content dimensions for dynamic sizing (accounting for 0.8 scale)
+        // Auto-detect actual content dimensions (not viewport-based)
         const contentSize = await page.evaluate(`
           (function() {
             var body = document.body;
-            var html = document.documentElement;
-            var width = Math.max(
-              body.scrollWidth, body.offsetWidth,
-              html.clientWidth, html.scrollWidth, html.offsetWidth
-            );
-            var height = Math.max(
-              body.scrollHeight, body.offsetHeight,
-              html.clientHeight, html.scrollHeight, html.offsetHeight
-            );
-            return { width: Math.ceil(width * 0.8), height: Math.ceil(height * 0.8) };
+            // Find the first real content element
+            var content = body.firstElementChild || body;
+            var rect = content.getBoundingClientRect();
+            
+            // Get all elements and find the actual content bounds
+            var allElements = document.querySelectorAll('body *');
+            var maxBottom = 0;
+            var maxRight = 0;
+            
+            for (var i = 0; i < allElements.length; i++) {
+              var el = allElements[i];
+              var r = el.getBoundingClientRect();
+              if (r.bottom > maxBottom) maxBottom = r.bottom;
+              if (r.right > maxRight) maxRight = r.right;
+            }
+            
+            // Use actual content bounds, accounting for scale already applied
+            var width = Math.max(maxRight, rect.width, body.scrollWidth * 0.8);
+            var height = Math.max(maxBottom, rect.height, body.scrollHeight * 0.8);
+            
+            return { width: Math.ceil(width), height: Math.ceil(height) };
           })()
         `) as { width: number; height: number };
         
