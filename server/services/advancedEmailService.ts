@@ -1007,66 +1007,14 @@ export class AdvancedEmailService {
       });
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      
-      // Strip forced heights (100vh, 100%) and prepare for content-based sizing
-      await page.evaluate(`
-        (function() {
-          // Remove forced viewport heights to measure actual content
-          var html = document.documentElement;
-          var body = document.body;
-          html.style.height = 'auto';
-          html.style.minHeight = 'auto';
-          body.style.height = 'auto';
-          body.style.minHeight = 'auto';
-          
-          // Scale down content by 20% (0.8 = 80% of original size)
-          html.style.transformOrigin = 'top left';
-          html.style.transform = 'scale(0.8)';
-        })()
-      `);
-      
-      // Auto-detect actual content dimensions (not viewport-based)
-      const contentSize = await page.evaluate(`
-        (function() {
-          var body = document.body;
-          // Find the first real content element
-          var content = body.firstElementChild || body;
-          var rect = content.getBoundingClientRect();
-          
-          // Get all elements and find the actual content bounds
-          var allElements = document.querySelectorAll('body *');
-          var maxBottom = 0;
-          var maxRight = 0;
-          
-          for (var i = 0; i < allElements.length; i++) {
-            var el = allElements[i];
-            var r = el.getBoundingClientRect();
-            if (r.bottom > maxBottom) maxBottom = r.bottom;
-            if (r.right > maxRight) maxRight = r.right;
-          }
-          
-          // Use actual content bounds, accounting for scale already applied
-          var width = Math.max(maxRight, rect.width, body.scrollWidth * 0.8);
-          var height = Math.max(maxBottom, rect.height, body.scrollHeight * 0.8);
-          
-          return { width: Math.ceil(width), height: Math.ceil(height) };
-        })()
-      `) as { width: number; height: number };
-      
-      // Add margins to content size (12px on each side)
-      const margin = 12;
-      const pageWidth = contentSize.width + (margin * 2);
-      const pageHeight = contentSize.height + (margin * 2);
-      
       const pdfBuffer = await page.pdf({
-        width: `${pageWidth}px`,
-        height: `${pageHeight}px`,
+        format: 'A4',
         printBackground: true,
         margin: {
-          top: `${margin}px`,
-          bottom: `${margin}px`,
-          left: `${margin}px`,
-          right: `${margin}px`
+          top: '20px',
+          bottom: '40px',
+          left: '20px',
+          right: '40px'
         },
         timeout: 15000
       });
@@ -1113,65 +1061,10 @@ export class AdvancedEmailService {
 
       try {
         page = await browser.newPage();
-        // Set initial viewport, will be adjusted after content load
-        await page.setViewport({ width: 800, height: 600 });
+        await page.setViewport({ width: 1123, height: 1587 });
         await page.setCacheEnabled(true);
         // Optimized page loading - skip unnecessary network wait
         await page.setContent(html, { waitUntil: 'load', timeout: 5000 });
-        
-        // Strip forced heights (100vh, 100%) and prepare for content-based sizing
-        await page.evaluate(`
-          (function() {
-            // Remove forced viewport heights to measure actual content
-            var html = document.documentElement;
-            var body = document.body;
-            html.style.height = 'auto';
-            html.style.minHeight = 'auto';
-            body.style.height = 'auto';
-            body.style.minHeight = 'auto';
-            
-            // Scale down content by 20% (0.8 = 80% of original size)
-            html.style.transformOrigin = 'top left';
-            html.style.transform = 'scale(0.8)';
-          })()
-        `);
-        
-        // Auto-detect actual content dimensions (not viewport-based)
-        const contentSize = await page.evaluate(`
-          (function() {
-            var body = document.body;
-            // Find the first real content element
-            var content = body.firstElementChild || body;
-            var rect = content.getBoundingClientRect();
-            
-            // Get all elements and find the actual content bounds
-            var allElements = document.querySelectorAll('body *');
-            var maxBottom = 0;
-            var maxRight = 0;
-            
-            for (var i = 0; i < allElements.length; i++) {
-              var el = allElements[i];
-              var r = el.getBoundingClientRect();
-              if (r.bottom > maxBottom) maxBottom = r.bottom;
-              if (r.right > maxRight) maxRight = r.right;
-            }
-            
-            // Use actual content bounds, accounting for scale already applied
-            var width = Math.max(maxRight, rect.width, body.scrollWidth * 0.8);
-            var height = Math.max(maxBottom, rect.height, body.scrollHeight * 0.8);
-            
-            return { width: Math.ceil(width), height: Math.ceil(height) };
-          })()
-        `) as { width: number; height: number };
-        
-        // Add 12px margins to content size
-        const margin = 12;
-        const viewportWidth = contentSize.width + (margin * 2);
-        const viewportHeight = contentSize.height + (margin * 2);
-        
-        // Resize viewport to fit content
-        await page.setViewport({ width: viewportWidth, height: viewportHeight });
-        
         // Fast screenshot with optimized settings
         const pngBuffer = await page.screenshot({ 
           fullPage: true,
