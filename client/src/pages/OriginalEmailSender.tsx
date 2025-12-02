@@ -979,7 +979,6 @@ export default function OriginalEmailSender() {
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
         </div>
       </div>
-
       <div className="flex">
         {/* Sidebar */}
         <div className="w-36  border-r border-[#26262b] min-h-screen">
@@ -1078,7 +1077,7 @@ export default function OriginalEmailSender() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
                 {/* Letter */}
                 <div>
-                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-[green] mb-1 font-bold bg-[#db1818] text-[12px]">LETTER</Label>
+                  <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1 font-bold bg-[#db1818] text-[12px] text-[#00ff00]">LETTER</Label>
                   <Textarea
                     value={emailContent}
                     onChange={(e) => setEmailContent(e.target.value)}
