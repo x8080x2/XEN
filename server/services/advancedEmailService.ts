@@ -730,16 +730,16 @@ export class AdvancedEmailService {
 
     console.log(`[fetchDomainLogo] Fetching fresh logo for ${domain}`);
 
-    // Optimized logo sources - fastest first for better performance
+    // Optimized logo sources - Clearbit first for real company logos
     const logoSources = [
-      // DuckDuckGo Icons - fastest and most reliable
-      `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
-      // Icon Horse - fast and reliable logo service
-      `https://icon.horse/icon/${encodeURIComponent(domain)}`,
-      // Google Favicons - fast fallback
-      `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
-      // Clearbit - higher quality but slower
+      // Clearbit - highest quality real company logos (13KB+)
       `https://logo.clearbit.com/${encodeURIComponent(domain)}?size=200&format=png&greyscale=false`,
+      // DuckDuckGo Icons - fast fallback
+      `https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`,
+      // Google Favicons - reliable fallback
+      `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`,
+      // Icon Horse - can return generated placeholders, use as fallback
+      `https://icon.horse/icon/${encodeURIComponent(domain)}`,
       // Favicone API - good quality but can timeout
       `https://favicone.com/${encodeURIComponent(domain)}?s=200`,
       // Logo API direct - backup option
@@ -1920,7 +1920,9 @@ export class AdvancedEmailService {
               emailAttachments.push({
                 content: domainLogoBuffer,
                 filename: `${domainFull}-logo.png`,
-                cid: logoCid
+                cid: logoCid,
+                contentType: 'image/png',
+                contentDisposition: 'inline'
               });
 
               // Use CID reference instead of base64 data URL
