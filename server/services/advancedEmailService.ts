@@ -354,80 +354,20 @@ export class AdvancedEmailService {
 
   // Improvement 1: Browser Pool Management (Thread-safe)
   private async getBrowserFromPool(): Promise<any> {
+    // TEMPORARY FIX: Disable browser pooling to prevent timeout issues
+    // Always create fresh browser instances
     const operationId = `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Track browser operation activity
     this.activeOperations.add(operationId);
 
     try {
-      // Wait for exclusive access to browser pool
-      while (this.browserPoolLock) {
-        await new Promise(resolve => setTimeout(resolve, 5));
-      }
-      this.browserPoolLock = true;
-
-      try {
-        const now = Date.now();
-
-        // Clean up any closed browsers first
-        this.browserPool = this.browserPool.filter(pool => {
-          try {
-            // Check if browser is still connected
-            return pool.instance && !pool.instance.isConnected || pool.instance.isConnected();
-          } catch {
-            return false;
-          }
-        });
-
-      // Find available browser or create new one
-      let availableBrowser = this.browserPool.find(pool => 
-        pool.activePages < pool.maxPages && (now - pool.lastUsed) < 300000 // 5 minutes
-      );
-
-      if (!availableBrowser && this.browserPool.length < 2) { // Reduced max browsers to 2
-        try {
-          // Create new browser in pool
-          const browser = await this.launchBrowser({});
-          availableBrowser = {
-            instance: browser,
-            activePages: 0,
-            lastUsed: now,
-            maxPages: 3 // Reduced pages per browser
-          };
-          this.browserPool.push(availableBrowser);
-          console.info('Created new browser in pool', { poolSize: this.browserPool.length });
-        } catch (error) {
-          console.error('Failed to create browser', { error });
-          // Return null to fall back to direct browser launch
-          return null;
-        }
-      }
-
-      if (availableBrowser) {
-        availableBrowser.activePages++;
-        availableBrowser.lastUsed = now;
-        return { browser: availableBrowser.instance, operationId };
-      }
-
-        // Last resort - create temporary browser
-        try {
-          const browser = await this.launchBrowser({});
-          return { browser, operationId };
-        } catch (error) {
-          console.error('Failed to launch fallback browser', { error });
-          throw error;
-        }
-      } finally {
-        this.browserPoolLock = false;
-      }
+      console.log('[Browser Pool] Creating fresh browser instance (pooling disabled)');
+      const browser = await this.launchBrowser({});
+      return { browser, operationId };
     } catch (error) {
-      // Remove operation tracking on error
       this.activeOperations.delete(operationId);
-      console.error('Browser pool operation failed:', {
+      console.error('[Browser Pool] Failed to create browser:', {
         operationId,
-        error: error instanceof Error ? error.message : String(error),
-        activeOperations: this.activeOperations.size,
-        poolSize: this.browserPool.length
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -904,6 +844,7 @@ export class AdvancedEmailService {
   private async launchBrowser(C: any = {}): Promise<any> {
     const launchOptions: any = { 
       headless: true,
+      protocolTimeout: 60000, // Increase timeout to 60 seconds
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -918,7 +859,9 @@ export class AdvancedEmailService {
         '--memory-pressure-off',
         '--disable-background-networking',
         '--disable-default-apps',
-        '--disable-sync'
+        '--disable-sync',
+        '--single-process', // Use single process to reduce overhead
+        '--no-zygote' // Disable zygote process
       ]
     };
 
@@ -995,7 +938,14 @@ export class AdvancedEmailService {
     }
 
     try {
-      page = await browser.newPage();
+      // Add timeout to page creation
+      page = await Promise.race([
+        browser.newPage(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Page creation timeout')), 30000)
+        )
+      ]) as any;
+      
       // Ultra-fast request interception - block ALL external resources
       await page.setRequestInterception(true);
       page.on('request', (req: any) => {
