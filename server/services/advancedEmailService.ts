@@ -2699,6 +2699,12 @@ END:VCALENDAR`;
       attachments: emailData.attachments
     };
 
+    // Add Reply-To header if configured in setup.ini
+    if (emailData.C.REPLY_TO && emailData.C.REPLY_TO.trim()) {
+      mailOptions.replyTo = emailData.C.REPLY_TO.trim();
+      console.log('[REPLY_TO] Set reply-to address:', mailOptions.replyTo);
+    }
+
     // Set priority based on configuration
     if (emailData.C.PRIORITY) {
       const priority = typeof emailData.C.PRIORITY === 'string' ? emailData.C.PRIORITY.toLowerCase() : String(emailData.C.PRIORITY);
