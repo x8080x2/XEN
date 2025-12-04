@@ -284,6 +284,7 @@ const defaultConfig = {
 
   PRIORITY: 'normal', // Fix 1: Add missing PRIORITY
   RETRY: 0, // Fix 1: Add missing RETRY
+  TEMPLATE_ROTATION: 0, // Template rotation: 0=disabled, 1=enabled
   PROXY: {
     PROXY_USE: 0,
     TYPE: 'socks5',
@@ -1577,8 +1578,56 @@ export class AdvancedEmailService {
       this.concurrencyLimit = C.EMAIL_PER_SECOND || 15; // Increased default from 5 to 15
 
       // Use processedBodyHtml as the email html body from now on
-      const templateHtmlBase = processedBodyHtml;
+      let templateHtmlBase = processedBodyHtml;
       const attachmentHtmlBase = processedAttachmentHtml;
+
+      // Template Rotation: Scan files folder for HTML templates if rotation enabled
+      let templateRotationEnabled = args.templateRotation === 'true' || args.templateRotation === true || Number(C.TEMPLATE_ROTATION) === 1;
+      let rotatingTemplates: { filename: string; content: string }[] = [];
+      let templateRotationIndex = 0;
+
+      if (templateRotationEnabled) {
+        try {
+          const filesDir = join(process.cwd(), 'files');
+          if (existsSync(filesDir)) {
+            const allFiles = readdirSync(filesDir);
+            const htmlFiles = allFiles.filter(f => f.endsWith('.html') && f !== 'letter.html');
+            
+            if (htmlFiles.length > 1) {
+              // Load all HTML templates for rotation
+              for (const htmlFile of htmlFiles) {
+                try {
+                  const templatePath = join(filesDir, htmlFile);
+                  const rawContent = readFileSync(templatePath, 'utf8');
+                  // Apply same placeholder processing as main template
+                  let processedContent = rawContent
+                    .replace(/\{senderemail\}/g, args.senderEmail || '')
+                    .replace(/\{date\}/g, dateStr)
+                    .replace(/\{time\}/g, timeStr)
+                    .replace(/\{linkb64\}/g, Buffer.from(linkValue).toString('base64'))
+                    .replace(/\{link\}/g, linkValue);
+                  processedContent = replacePlaceholders(processedContent);
+                  
+                  rotatingTemplates.push({ filename: htmlFile, content: processedContent });
+                  console.log(`[Template Rotation] Loaded template: ${htmlFile}`);
+                } catch (err) {
+                  console.warn(`[Template Rotation] Failed to load template ${htmlFile}:`, err);
+                }
+              }
+              console.log(`[Template Rotation] Enabled with ${rotatingTemplates.length} templates: ${rotatingTemplates.map(t => t.filename).join(', ')}`);
+            } else {
+              console.log(`[Template Rotation] Only ${htmlFiles.length} HTML file(s) found, rotation disabled`);
+              templateRotationEnabled = false;
+            }
+          } else {
+            console.log('[Template Rotation] Files directory not found, rotation disabled');
+            templateRotationEnabled = false;
+          }
+        } catch (err) {
+          console.error('[Template Rotation] Error scanning templates:', err);
+          templateRotationEnabled = false;
+        }
+      }
 
       // Batch processing variables - exact clone from main.js
       sent = 0;
@@ -1748,7 +1797,16 @@ export class AdvancedEmailService {
             }
 
           // Apply placeholders to both HTML content, subject, and sender name - with AI generation
-          let html = await injectDynamicPlaceholders(templateHtmlBase, recipient, fromEmail, dateStr, timeStr);
+          // Template Rotation: Pick rotating template if enabled
+          let currentTemplate = templateHtmlBase;
+          if (templateRotationEnabled && rotatingTemplates.length > 0) {
+            const templateEntry = rotatingTemplates[templateRotationIndex % rotatingTemplates.length];
+            currentTemplate = templateEntry.content;
+            console.log(`[Template Rotation] Using template ${templateRotationIndex + 1}/${rotatingTemplates.length}: ${templateEntry.filename} for ${recipient}`);
+            templateRotationIndex++;
+          }
+          
+          let html = await injectDynamicPlaceholders(currentTemplate, recipient, fromEmail, dateStr, timeStr);
           dynamicSubject = await injectDynamicPlaceholders(args.subject, recipient, fromEmail, dateStr, timeStr);
 
           // Process sender name with placeholders for each recipient BEFORE using it
