@@ -539,29 +539,42 @@ export default function OriginalEmailSender() {
   const toggleSmtpRotation = async () => {
     try {
       let data;
-      if (window.electronAPI) {
-        if (!window.electronAPI.smtpToggleRotation) {
-          setStatusText('SMTP rotation toggle not available in desktop version');
-          return;
-        }
+      if (window.electronAPI?.smtpToggleRotation) {
+        console.log('[Desktop] Toggling SMTP rotation via Electron API');
         data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
+        
+        if (data && data.success) {
+          setSmtpData(prev => ({
+            ...prev,
+            rotationEnabled: data.rotationEnabled,
+            currentSmtp: data.currentSmtp
+          }));
+          setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
+          setTimeout(() => setStatusText(""), 3000);
+          
+          // Refresh SMTP list to get updated state
+          await fetchSmtpData();
+        } else {
+          setStatusText('Failed to toggle SMTP rotation');
+        }
       } else {
+        // Web version - use backend API
         const response = await fetch("/api/smtp/toggle-rotation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
         });
         data = await response.json();
-      }
-      
-      if (data && data.success) {
-        setSmtpData(prev => ({
-          ...prev,
-          rotationEnabled: data.rotationEnabled,
-          currentSmtp: data.currentSmtp
-        }));
-        setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-        setTimeout(() => setStatusText(""), 3000);
+        
+        if (data.success) {
+          setSmtpData(prev => ({
+            ...prev,
+            rotationEnabled: data.rotationEnabled,
+            currentSmtp: data.currentSmtp
+          }));
+          setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
+          setTimeout(() => setStatusText(""), 3000);
+        }
       }
     } catch (error) {
       console.error('SMTP rotation error:', error);
@@ -646,17 +659,11 @@ export default function OriginalEmailSender() {
   const rotateSmtp = async () => {
     try {
       let data;
-      if (window.electronAPI) {
-        if (!window.electronAPI.smtpRotate) {
-          toast({
-            title: "Error",
-            description: "SMTP rotation not available in desktop version",
-            variant: "destructive"
-          });
-          return;
-        }
+      if (window.electronAPI?.smtpRotate) {
+        console.log('[Desktop] Rotating SMTP via Electron API');
         data = await window.electronAPI.smtpRotate();
       } else {
+        // Web version - use backend API
         const response = await fetch("/api/smtp/rotate", {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' }
