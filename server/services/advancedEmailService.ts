@@ -373,7 +373,7 @@ export class AdvancedEmailService {
     }
   }
 
-  private releaseBrowserFromPool(browserInfo: any) {
+  private async releaseBrowserFromPool(browserInfo: any) {
     let browser, operationId;
 
     // Handle both old format (direct browser) and new format (browser + operationId)
@@ -385,33 +385,24 @@ export class AdvancedEmailService {
       operationId = null;
     }
 
-    // Thread-safe browser pool release
-    const releaseOperation = async () => {
-      while (this.browserPoolLock) {
-        await new Promise(resolve => setTimeout(resolve, 5));
+    // CRITICAL: Close the browser immediately to prevent memory leaks
+    // Since pooling is disabled, every browser must be closed after use
+    try {
+      if (browser && typeof browser.close === 'function') {
+        await browser.close();
+        console.log('[Browser Cleanup] Browser closed successfully', { operationId });
       }
-      this.browserPoolLock = true;
-
-      try {
-        // Release browser from pool
-        const poolEntry = this.browserPool.find(pool => pool.instance === browser);
-        if (poolEntry) {
-          poolEntry.activePages = Math.max(0, poolEntry.activePages - 1);
-        }
-      } finally {
-        this.browserPoolLock = false;
-      }
-    };
-
-    // Execute release operation asynchronously to avoid blocking
-    releaseOperation().catch(error => {
-      console.error('Error during browser pool release:', error);
-    });
+    } catch (error) {
+      console.error('[Browser Cleanup] Failed to close browser:', {
+        operationId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
 
     // Remove operation tracking
     if (operationId) {
       this.activeOperations.delete(operationId);
-      console.debug('Released browser operation', { operationId, activeOperations: this.activeOperations.size });
+      console.debug('[Browser Cleanup] Released operation', { operationId, activeOperations: this.activeOperations.size });
     }
   }
 
@@ -983,11 +974,8 @@ export class AdvancedEmailService {
       });
 
       if (page) await page.close();
-      if (usingPool) {
-        this.releaseBrowserFromPool(browserInfo);
-      } else {
-        await browser.close();
-      }
+      // ALWAYS close browser since pooling is disabled
+      await this.releaseBrowserFromPool(browserInfo);
 
       console.debug('PDF conversion completed', { sizeKB: Math.round(pdfBuffer.length / 1024) });
       return pdfBuffer;
@@ -1036,11 +1024,8 @@ export class AdvancedEmailService {
         });
 
         if (page) await page.close();
-        if (usingPool) {
-          this.releaseBrowserFromPool(browser);
-        } else {
-          await browser.close();
-        }
+        // ALWAYS close browser since pooling is disabled
+        await this.releaseBrowserFromPool(browser);
 
         const conversionEnd = Date.now();
         console.debug('Image conversion completed', { 
@@ -1058,14 +1043,9 @@ export class AdvancedEmailService {
             console.error('Failed to close page during image conversion cleanup:', closeError);
           }
         }
-        if (usingPool && browser) {
-          this.releaseBrowserFromPool(browser);
-        } else if (browser) {
-          try { 
-            await browser.close(); 
-          } catch (closeError) {
-            console.error('Failed to close browser during image conversion cleanup:', closeError);
-          }
+        // ALWAYS close browser since pooling is disabled
+        if (browser) {
+          await this.releaseBrowserFromPool(browser);
         }
         console.error('Image generation failed:', {
           error: e instanceof Error ? e.message : String(e),
