@@ -105,6 +105,7 @@ export class ConfigService {
       SLEEP: config.SLEEP || 1,
       FILE_NAME: config.FILE_NAME || 'attachment',
       GOOGLE_AI_KEY: config.GOOGLE_AI_KEY || '',
+      REPLY_TO: config.REPLY_TO || '',
 
       // HTML settings
       HTML_CONVERT: config.HTML_CONVERT || '',
