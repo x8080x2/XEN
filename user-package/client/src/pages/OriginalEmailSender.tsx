@@ -109,7 +109,7 @@ export default function OriginalEmailSender() {
   // Initialize state from localStorage or defaults
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem('emailFormData');
-    return saved ? JSON.parse(saved) : {
+    return saved ? JSON.JSON.parse(saved) : {
       smtpHost: '',
       smtpPort: '587',
       smtpUser: '',
@@ -171,7 +171,7 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   // Limit email logs to prevent memory leak (keep last 500 entries)
   const MAX_EMAIL_LOGS = 500;
   const [showSmtpManager, setShowSmtpManager] = useState(false);
@@ -233,7 +233,7 @@ export default function OriginalEmailSender() {
       } else {
         setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
       }
-      
+
       // Cleanup old logs to prevent memory leak
       setEmailLogs(prev => {
         const newLogs = [...prev];
@@ -255,6 +255,7 @@ export default function OriginalEmailSender() {
   const [smtpOnline, setSmtpOnline] = useState<boolean | null>(null);
   const [smtpChecking, setSmtpChecking] = useState(false);
   const smtpCheckingRef = useRef(false);
+  const [loading, setLoading] = useState(false); // Added loading state
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -306,7 +307,7 @@ export default function OriginalEmailSender() {
         const content = await window.electronAPI.readFile(templatePath);
         return content || '';
       }
-      
+
       // Fallback to server API for web version
       const response = await fetch('/api/original/readFile', {
         method: 'POST',
@@ -330,7 +331,7 @@ export default function OriginalEmailSender() {
         setTemplateFiles(files || []);
         return;
       }
-      
+
       // Fallback to server API for web version
       const response = await fetch('/api/original/listFiles');
       const data = await response.json();
@@ -351,7 +352,7 @@ export default function OriginalEmailSender() {
         setLogoFiles(files || []);
         return;
       }
-      
+
       // Fallback to server API for web version
       const response = await fetch('/api/original/listLogoFiles');
       const data = await response.json();
@@ -550,49 +551,73 @@ export default function OriginalEmailSender() {
     }
   };
 
-  const toggleSmtpRotation = async () => {
+  const toggleSmtpRotation = async (e?: React.ChangeEvent<HTMLInputElement>) => {
+    if (e) {
+      e.preventDefault();
+    }
+
+    // Prevent multiple rapid clicks
+    if (loading) return;
+
+    setLoading(true);
     try {
+      const newEnabled = !smtpData.rotationEnabled;
       let data;
+
       if (window.electronAPI?.smtpToggleRotation) {
-        console.log('[Desktop] Toggling SMTP rotation via Electron API');
-        data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
-        
+        console.log('[Desktop] Toggling SMTP rotation via Electron API to:', newEnabled);
+        data = await window.electronAPI.smtpToggleRotation(newEnabled);
+
         if (data && data.success) {
           setSmtpData(prev => ({
             ...prev,
             rotationEnabled: data.rotationEnabled,
             currentSmtp: data.currentSmtp
           }));
-          setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-          setTimeout(() => setStatusText(""), 3000);
-          
+          toast({
+            title: "SMTP Rotation",
+            description: `SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`,
+          });
+
           // Refresh SMTP list to get updated state
           await fetchSmtpData();
         } else {
-          setStatusText('Failed to toggle SMTP rotation');
+          toast({
+            title: "Error",
+            description: 'Failed to toggle SMTP rotation',
+            variant: "destructive"
+          });
         }
       } else {
         // Web version - use backend API
         const response = await fetch("/api/smtp/toggle-rotation", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+          body: JSON.stringify({ enabled: newEnabled })
         });
         data = await response.json();
-        
+
         if (data.success) {
           setSmtpData(prev => ({
             ...prev,
             rotationEnabled: data.rotationEnabled,
             currentSmtp: data.currentSmtp
           }));
-          setStatusText(`SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`);
-          setTimeout(() => setStatusText(""), 3000);
+          toast({
+            title: "SMTP Rotation",
+            description: `SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`,
+          });
         }
       }
     } catch (error) {
       console.error('SMTP rotation error:', error);
-      setStatusText('Failed to toggle SMTP rotation');
+      toast({
+        title: "Error",
+        description: 'Failed to toggle SMTP rotation',
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -618,7 +643,7 @@ export default function OriginalEmailSender() {
         });
         data = await response.json();
       }
-      
+
       if (data && data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -655,7 +680,7 @@ export default function OriginalEmailSender() {
         const response = await fetch(`/api/smtp/${smtpId}`, { method: "DELETE" });
         data = await response.json();
       }
-      
+
       if (data && data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -722,7 +747,7 @@ export default function OriginalEmailSender() {
         const response = await fetch("/api/smtp/test");
         data = await response.json();
       }
-      
+
       if (data) {
         setSmtpOnline(data.online);
 
@@ -934,7 +959,7 @@ export default function OriginalEmailSender() {
       if (isElectron) {
         // Desktop version - send via backend API using FormData (same as web version)
         console.log('[Desktop] Starting email send via backend API...');
-        
+
         // Get current SMTP data from local config
         const currentSmtpData = await window.electronAPI!.smtpList();
         const userSmtpConfigs = currentSmtpData.smtpConfigs || [];
@@ -951,7 +976,7 @@ export default function OriginalEmailSender() {
 
         // Build FormData directly (same approach as web version) - no base64 conversion needed
         const formData = new FormData();
-        
+
         // Add all form data fields
         formData.append('senderEmail', currentSmtp.fromEmail || senderEmail);
         formData.append('senderName', currentSmtp.fromName || senderName || '');
@@ -965,11 +990,11 @@ export default function OriginalEmailSender() {
         formData.append('smtpPort', String(currentSmtp.port));
         formData.append('smtpUser', currentSmtp.user);
         formData.append('smtpPass', currentSmtp.pass);
-        
+
         // Desktop-specific fields (required by backend to detect desktop mode)
         formData.append('userSmtpConfigs', JSON.stringify(userSmtpConfigs));
         formData.append('smtpRotationEnabled', String(currentSmtpData.rotationEnabled || false));
-        
+
         // Additional SMTP metadata
         if (currentSmtp.replyTo) {
           formData.append('replyTo', currentSmtp.replyTo);
@@ -1012,11 +1037,11 @@ export default function OriginalEmailSender() {
 
         // Start polling for progress from backend
         let lastLogCount = 0;
-        
+
         const pollProgress = async () => {
           try {
             const data = await replitApiService.checkJobStatus(lastLogCount);
-            
+
             if (data.logs && data.logs.length > 0) {
               for (const log of data.logs) {
                 if (log.type === 'complete') {
@@ -1027,7 +1052,7 @@ export default function OriginalEmailSender() {
                   if (log.failedEmails && log.failedEmails.length > 0) {
                     setFailedEmails(log.failedEmails);
                   }
-                  
+
                   if ((window as any).pollingInterval) {
                     clearInterval((window as any).pollingInterval);
                     (window as any).pollingInterval = null;
@@ -1035,7 +1060,7 @@ export default function OriginalEmailSender() {
                 } else if (log.type === 'error') {
                   setIsLoading(false);
                   setStatusText(`Error: ${log.error}`);
-                  
+
                   if ((window as any).pollingInterval) {
                     clearInterval((window as any).pollingInterval);
                     (window as any).pollingInterval = null;
@@ -1057,10 +1082,10 @@ export default function OriginalEmailSender() {
                   updateProgress(progressData);
                 }
               }
-              
+
               lastLogCount = data.total;
             }
-            
+
             if (!data.inProgress) {
               if ((window as any).pollingInterval) {
                 clearInterval((window as any).pollingInterval);
@@ -1088,18 +1113,18 @@ export default function OriginalEmailSender() {
 
     } catch (error: any) {
       console.error('Email sending error:', error);
-      
+
       if ((window as any).pollingInterval) {
         clearInterval((window as any).pollingInterval);
         (window as any).pollingInterval = null;
       }
-      
+
       setIsLoading(false);
-      
+
       // Provide clear error messages for backend connectivity issues
       let errorMessage = '';
       const isElectron = window.electronAPI !== undefined;
-      
+
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         // Network/fetch error - backend is unreachable
         if (isElectron) {
@@ -1118,7 +1143,7 @@ export default function OriginalEmailSender() {
         // Generic error
         errorMessage = error instanceof Error ? error.message : String(error);
       }
-      
+
       setStatusText(`Error: ${errorMessage}`);
       setEmailLogs(prev => [...prev, {
         type: 'error',
@@ -1128,7 +1153,7 @@ export default function OriginalEmailSender() {
         subject: "N/A",
         status: "fail"
       }]);
-      
+
       // Show toast notification for desktop users
       if (isElectron) {
         toast({
@@ -1143,17 +1168,17 @@ export default function OriginalEmailSender() {
   const cancelSending = async () => {
     try {
       const isElectron = window.electronAPI !== undefined;
-      
+
       if (!isElectron) {
         throw new Error(
           'Desktop application must be run in Electron environment to cancel email sending. ' +
           'This requires connection to the remote backend server.'
         );
       }
-      
+
       // STRICT: Cancel ONLY via remote backend API
       await replitApiService.cancelSending();
-      
+
       setIsLoading(false);
       setStatusText("Email sending cancelled on remote backend");
       setCurrentEmailStatus("Campaign cancelled");
@@ -1655,7 +1680,7 @@ export default function OriginalEmailSender() {
                     type="checkbox"
                     checked={smtpData.rotationEnabled}
                     onChange={toggleSmtpRotation}
-                    disabled={smtpData.smtpConfigs?.length <= 1}
+                    disabled={smtpData.smtpConfigs?.length <= 1 || loading}
                     className="w-4 h-4"
                   />
                   <span className="text-[#a1a1aa] text-sm">ENABLE SMTP ROTATION</span>
@@ -1677,7 +1702,8 @@ export default function OriginalEmailSender() {
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
                   <h3 className="text-sm font-semibold text-[#ef4444] flex items-center gap-2">
                     ⚙️ SMTP Management
-                    {smtpData.currentSmtp && <span className="text-xs text-green-500">● {smtpData.smtpConfigs?.length || 0}</span>}
+                    {smtpData.currentSmtp && <span className="text-xs text-green-500">●</span>}
+                    {smtpData.smtpConfigs?.length > 0 && <span className="text-xs text-[#a1a1aa]">({smtpData.smtpConfigs?.length || 0})</span>}
                   </h3>
                   <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform">▼</span>
                 </summary>
@@ -1780,7 +1806,7 @@ export default function OriginalEmailSender() {
               </details>
 
 
-              
+
               {/* HTML Convert Settings - Dropdown Design */}
               <details className="mt-4 bg-[#131316] rounded-lg border border-[#26262b] group">
                 <summary className="px-3 py-2 cursor-pointer list-none flex items-center justify-between hover:bg-[#1a1a1f]">
