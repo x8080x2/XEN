@@ -208,6 +208,9 @@ export function setupOriginalEmailRoutes(app: Express) {
         fileName: req.body.fileName,
         htmlConvert: req.body.htmlConvert,
 
+        // Template rotation setting
+        templateRotation: req.body.templateRotation === 'true' || req.body.templateRotation === true,
+
         // Additional missing parameters with proper conversion
         retry: parseInt(req.body.retry) || 0,
         priority: req.body.priority || '2',
