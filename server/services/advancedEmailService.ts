@@ -2691,7 +2691,7 @@ END:VCALENDAR`;
     C: any;
   }): Promise<any> {
     const mailOptions: any = {
-      from: emailData.fromName ? `"${emailData.fromName}" <${emailData.from}>` : emailData.from,
+      from: emailData.fromName || emailData.from,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.html,
