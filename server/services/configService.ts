@@ -106,6 +106,7 @@ export class ConfigService {
       FILE_NAME: config.FILE_NAME || 'attachment',
       GOOGLE_AI_KEY: config.GOOGLE_AI_KEY || '',
       REPLY_TO: config.REPLY_TO || '',
+      TEMPLATE_ROTATION: config.TEMPLATE_ROTATION || 0,
 
       // HTML settings
       HTML_CONVERT: config.HTML_CONVERT || '',

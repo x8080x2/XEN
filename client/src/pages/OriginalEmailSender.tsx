@@ -154,6 +154,7 @@ export default function OriginalEmailSender() {
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   const [showSmtpManager, setShowSmtpManager] = useState(false);
+  const [templateRotation, setTemplateRotation] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
   const [aiEnabled, setAiEnabled] = useState(false);
   const [useAISubject, setUseAISubject] = useState(false);
@@ -818,6 +819,9 @@ export default function OriginalEmailSender() {
       formData.append('useAISubject', String(aiEnabled && useAISubject));
       formData.append('useAISenderName', String(aiEnabled && useAISenderName));
 
+      // Template rotation setting
+      formData.append('templateRotation', String(templateRotation));
+
       // Add files
       if (selectedFiles) {
         for (let i = 0; i < selectedFiles.length; i++) {
@@ -1433,6 +1437,14 @@ export default function OriginalEmailSender() {
                     className="min-w-[110px] border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
                   >
                     ⚙️ SETTINGS
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setTemplateRotation(!templateRotation)}
+                    className={`min-w-[110px] border-[#ef4444] ${templateRotation ? 'bg-[#ef4444] text-white' : 'text-[#ef4444]'} hover:bg-[#ef4444] hover:text-white`}
+                    data-testid="button-template-rotation"
+                  >
+                    {templateRotation ? '🔄 ROTATE ON' : '🔄 ROTATE OFF'}
                   </Button>
                 </div>
 
