@@ -109,7 +109,7 @@ export default function OriginalEmailSender() {
   // Initialize state from localStorage or defaults
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem('emailFormData');
-    return saved ? JSON.JSON.parse(saved) : {
+    return saved ? JSON.parse(saved) : {
       smtpHost: '',
       smtpPort: '587',
       smtpUser: '',
