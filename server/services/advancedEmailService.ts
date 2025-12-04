@@ -2697,7 +2697,7 @@ END:VCALENDAR`;
       html: emailData.html,
       text: emailData.text,
       attachments: emailData.attachments,
-      replyTo: emailData.from
+      replyTo: emailData.C.REPLY_TO || emailData.from
     };
 
     // Set priority based on configuration

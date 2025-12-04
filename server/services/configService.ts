@@ -129,6 +129,7 @@ export class ConfigService {
       RETRY: config.RETRY || 0,
       RANDOM_METADATA: config.RANDOM_METADATA || 0,
       LINK_PLACEHOLDER: config.LINK_PLACEHOLDER || '{email}',
+      REPLY_TO: config.REPLY_TO || '',
 
       // Domain logo
       DOMAIN_LOGO_SIZE: config.DOMAIN_LOGO_SIZE || '50%',
