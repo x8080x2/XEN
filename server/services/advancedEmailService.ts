@@ -1008,13 +1008,13 @@ export class AdvancedEmailService {
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
       const pdfBuffer = await page.pdf({
-        format: 'A4',
         printBackground: true,
+        preferCSSPageSize: true,
         margin: {
-          top: '20px',
-          bottom: '40px',
-          left: '20px',
-          right: '40px'
+          top: '10px',
+          bottom: '10px',
+          left: '10px',
+          right: '10px'
         },
         timeout: 15000
       });
