@@ -151,10 +151,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/smtp/toggle-rotation", (req, res) => {
+  // SMTP toggle rotation
+  app.post("/api/smtp/toggle-rotation", async (req, res) => {
     try {
       const { enabled } = req.body;
-      configService.setSmtpRotation(enabled);
+      configService.setSmtpRotationEnabled(enabled);
 
       res.json({
         success: true,
@@ -162,7 +163,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentSmtp: configService.getCurrentSmtpConfig()
       });
     } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
+      console.error('[SMTP Toggle Rotation] Error:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
     }
   });
 
@@ -240,7 +245,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/smtp/test", async (req, res) => {
     try {
       const currentSmtp = configService.getCurrentSmtpConfig();
-      
+
       if (!currentSmtp) {
         return res.json({
           success: false,
@@ -383,7 +388,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/licenses/stats", async (req, res) => {
     try {
       const allLicenses = await storage.getAllLicenses();
-      
+
       const stats = {
         total: allLicenses.length,
         active: allLicenses.filter(l => l.status === 'active').length,
