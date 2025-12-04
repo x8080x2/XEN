@@ -153,6 +153,9 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  
+  // Limit email logs to prevent memory leak (keep last 500 entries)
+  const MAX_EMAIL_LOGS = 500;
   const [showSmtpManager, setShowSmtpManager] = useState(false);
   const [templateRotation, setTemplateRotation] = useState(false);
   const [aiApiKey, setAiApiKey] = useState(localStorage.getItem('google_ai_key') || '');
@@ -212,7 +215,17 @@ export default function OriginalEmailSender() {
       } else {
         setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
       }
-  }, []);
+      
+      // Cleanup old logs to prevent memory leak
+      setEmailLogs(prev => {
+        const newLogs = [...prev];
+        if (newLogs.length >= MAX_EMAIL_LOGS) {
+          // Remove oldest 100 entries when limit is reached
+          newLogs.splice(0, 100);
+        }
+        return newLogs;
+      });
+  }, [MAX_EMAIL_LOGS]);
   const [smtpData, setSmtpData] = useState({
     smtpConfigs: [] as any[],
     currentSmtp: null as any,

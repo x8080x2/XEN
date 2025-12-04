@@ -5,7 +5,14 @@ import { configService } from "../services/configService";
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 
-const upload = multer({ dest: 'uploads/' });
+// Configure multer with size limits to prevent DoS
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB max file size
+    files: 10 // Max 10 files per request
+  }
+});
 
 export function setupOriginalEmailRoutes(app: Express) {
 
@@ -14,7 +21,35 @@ export function setupOriginalEmailRoutes(app: Express) {
   let sendingInProgress = false;
 
   // Main sendMail endpoint - supports both polling and SSE
-  app.post("/api/original/sendMail", upload.any(), async (req, res) => {
+  app.post("/api/original/sendMail", (req, res, next) => {
+    upload.any()(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(413).json({
+            success: false,
+            error: 'File too large. Maximum file size is 25MB.'
+          });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+          return res.status(413).json({
+            success: false,
+            error: 'Too many files. Maximum 10 files per upload.'
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          error: `Upload error: ${err.message}`
+        });
+      }
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          error: 'File upload failed'
+        });
+      }
+      next();
+    });
+  }, async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
       console.log('SMTP Settings received:', {

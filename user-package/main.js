@@ -564,12 +564,18 @@ safeHandle('smtp:toggle-rotation', async (event, enabled) => {
     }
 
     await fs.mkdir(path.dirname(statePath), { recursive: true });
-    await fs.writeFile(statePath, JSON.stringify({
+    
+    // Atomic write: write to temp file then rename (prevents corruption)
+    const tempPath = statePath + '.tmp';
+    const stateData = JSON.stringify({
       rotationEnabled: enabled,
       currentIndex: currentSmtpIndex
-    }), 'utf-8');
+    }, null, 2);
+    
+    await fs.writeFile(tempPath, stateData, 'utf-8');
+    await fs.rename(tempPath, statePath);
 
-    console.log(`[Electron] SMTP rotation state saved: ${enabled}, index: ${currentSmtpIndex}`);
+    console.log(`[Electron] SMTP rotation state saved atomically: ${enabled}, index: ${currentSmtpIndex}`);
     return {
       success: true,
       rotationEnabled: enabled,

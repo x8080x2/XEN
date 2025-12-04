@@ -47,6 +47,13 @@ export class FileService {
     this.tempFiles.add(file.path);
     
     try {
+      // Validate file size (25MB limit)
+      const MAX_FILE_SIZE = 25 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        await this.cleanupTempFile(file.path);
+        throw new Error(`File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB (max 25MB)`);
+      }
+      
       // Validate file exists and is accessible
       await fs.access(file.path);
       

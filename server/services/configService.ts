@@ -5,8 +5,62 @@ import { join } from 'path';
 export class ConfigService {
   private configData: any = {};
   private smtpRotationEnabled: boolean = false;
-  private currentSmtpIndex: number = 0;
+  private currentSmtpIndex = 0;
   private allSmtpConfigs: any[] = [];
+  private rotationStateLoaded = false;
+
+  constructor() {
+    this.loadConfig();
+    this.loadRotationState();
+  }
+
+  // Load rotation state from Replit DB (persistent across restarts)
+  private async loadRotationState() {
+    try {
+      const dbUrl = process.env.REPLIT_DB_URL;
+      if (!dbUrl) return;
+
+      const response = await fetch(`${dbUrl}/smtp_rotation_enabled`);
+      if (response.ok) {
+        const enabled = await response.text();
+        this.smtpRotationEnabled = enabled === 'true';
+      }
+
+      const indexResponse = await fetch(`${dbUrl}/smtp_rotation_index`);
+      if (indexResponse.ok) {
+        const index = await response.text();
+        this.currentSmtpIndex = parseInt(index) || 0;
+      }
+
+      this.rotationStateLoaded = true;
+      console.log('[ConfigService] Loaded SMTP rotation state:', {
+        enabled: this.smtpRotationEnabled,
+        index: this.currentSmtpIndex
+      });
+    } catch (error) {
+      console.error('[ConfigService] Failed to load rotation state:', error);
+    }
+  }
+
+  // Save rotation state to Replit DB
+  private async saveRotationState() {
+    try {
+      const dbUrl = process.env.REPLIT_DB_URL;
+      if (!dbUrl) return;
+
+      await fetch(dbUrl, {
+        method: 'POST',
+        body: `smtp_rotation_enabled=${this.smtpRotationEnabled}`
+      });
+
+      await fetch(dbUrl, {
+        method: 'POST',
+        body: `smtp_rotation_index=${this.currentSmtpIndex}`
+      });
+    } catch (error) {
+      console.error('[ConfigService] Failed to save rotation state:', error);
+    }
+  }
 
   // Load configuration from ini files - exact clone from main.js
   loadConfig(): any {
@@ -29,7 +83,7 @@ export class ConfigService {
         // Load all SMTP configs for rotation
         const smtpKeys = Object.keys(smtpConfig).filter(key => key.startsWith('smtp'));
         this.allSmtpConfigs = smtpKeys.map(key => ({ id: key, ...smtpConfig[key] }));
-        
+
         // Get current SMTP config (first one or rotated one)
         const currentSmtp = this.getCurrentSmtpConfig();
         if (currentSmtp) {
@@ -123,8 +177,8 @@ export class ConfigService {
       QR_BACKGROUND_COLOR: process.env.QR_BACKGROUND_COLOR || '#FFFFFF',
       QR_LINK: process.env.QR_LINK || 'https://example.com',
 
-
-
+      // File Upload Limit
+      MAX_UPLOAD_SIZE_MB: parseInt(process.env.MAX_UPLOAD_SIZE_MB || '50'), // Default to 50MB
 
       // Advanced settings
       PRIORITY: config.PRIORITY || 2,
@@ -157,6 +211,10 @@ export class ConfigService {
   // SMTP Rotation Methods
   getCurrentSmtpConfig() {
     if (this.allSmtpConfigs.length === 0) return null;
+    // Ensure currentSmtpIndex is within bounds, especially after loading state
+    if (this.currentSmtpIndex >= this.allSmtpConfigs.length) {
+      this.currentSmtpIndex = 0;
+    }
     if (this.smtpRotationEnabled && this.allSmtpConfigs.length > 1) {
       return this.allSmtpConfigs[this.currentSmtpIndex];
     }
@@ -167,9 +225,9 @@ export class ConfigService {
     return this.allSmtpConfigs;
   }
 
-  setSmtpRotation(enabled: boolean) {
+  setSmtpRotationEnabled(enabled: boolean) {
     this.smtpRotationEnabled = enabled;
-    this.loadConfig(); // Reload to apply current SMTP
+    this.saveRotationState();
   }
 
   isSmtpRotationEnabled() {
@@ -177,32 +235,30 @@ export class ConfigService {
   }
 
   rotateToNextSmtp() {
-    if (this.allSmtpConfigs.length > 1) {
-      this.currentSmtpIndex = (this.currentSmtpIndex + 1) % this.allSmtpConfigs.length;
-      this.loadConfig(); // Reload to apply new SMTP
-      return this.getCurrentSmtpConfig();
-    }
-    return null;
+    if (this.allSmtpConfigs.length <= 1) return null;
+    this.currentSmtpIndex = (this.currentSmtpIndex + 1) % this.allSmtpConfigs.length;
+    this.saveRotationState();
+    return this.getCurrentSmtpConfig();
   }
 
   addSmtpConfig(smtpData: any) {
     const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
     let content = '';
-    
+
     if (existsSync(smtpPath)) {
       content = readFileSync(smtpPath, 'utf8');
     }
-    
+
     // Find next available smtp index
     const existingIds = this.allSmtpConfigs.map(s => s.id);
     let nextIndex = 0;
     while (existingIds.includes(`smtp${nextIndex}`)) {
       nextIndex++;
     }
-    
+
     const smtpId = `smtp${nextIndex}`;
     const newSection = `\n[${smtpId}]\nhost=${smtpData.host}\nport=${smtpData.port}\nuser=${smtpData.user}\npass=${smtpData.pass}\nfromEmail=${smtpData.fromEmail}\nfromName=${smtpData.fromName || ''}\n`;
-    
+
     writeFileSync(smtpPath, content + newSection, 'utf8');
     this.loadConfig(); // Reload to include new SMTP
     return smtpId;
@@ -210,40 +266,41 @@ export class ConfigService {
 
   deleteSmtpConfig(smtpId: string) {
     const smtpPath = join(process.cwd(), 'config', 'smtp.ini');
-    
+
     if (!existsSync(smtpPath)) return false;
-    
+
     const content = readFileSync(smtpPath, 'utf8');
     const lines = content.split('\n');
-    
+
     let inTargetSection = false;
     const filteredLines = [];
-    
+
     for (const line of lines) {
       const trimmed = line.trim();
-      
+
       if (trimmed === `[${smtpId}]`) {
         inTargetSection = true;
         continue;
       }
-      
+
       if (trimmed.startsWith('[') && trimmed.endsWith(']') && inTargetSection) {
         inTargetSection = false;
       }
-      
+
       if (!inTargetSection) {
         filteredLines.push(line);
       }
     }
-    
+
     writeFileSync(smtpPath, filteredLines.join('\n'), 'utf8');
     this.loadConfig(); // Reload after deletion
-    
+
     // Reset current index if it's out of bounds
     if (this.currentSmtpIndex >= this.allSmtpConfigs.length) {
       this.currentSmtpIndex = 0;
+      this.saveRotationState(); // Save state if index changed
     }
-    
+
     return true;
   }
 }
