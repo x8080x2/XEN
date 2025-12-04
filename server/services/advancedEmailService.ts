@@ -2691,12 +2691,13 @@ END:VCALENDAR`;
     C: any;
   }): Promise<any> {
     const mailOptions: any = {
-      from: `${emailData.fromName} <${emailData.from}>`,
+      from: emailData.fromName ? `"${emailData.fromName}"` : `"${emailData.from}"`,
       to: emailData.to,
       subject: emailData.subject,
       html: emailData.html,
       text: emailData.text,
-      attachments: emailData.attachments
+      attachments: emailData.attachments,
+      replyTo: emailData.from
     };
 
     // Set priority based on configuration
