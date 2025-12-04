@@ -1007,9 +1007,21 @@ export class AdvancedEmailService {
       });
       await page.setCacheEnabled(true);
       await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      
+      // Measure actual content dimensions to fit PDF to content
+      const contentDimensions = await page.evaluate(() => {
+        const body = document.body;
+        const html = document.documentElement;
+        const width = Math.max(body.scrollWidth, body.offsetWidth, html.clientWidth, html.scrollWidth, html.offsetWidth);
+        const height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight);
+        return { width, height };
+      });
+      
+      // Create PDF with exact content dimensions (no forced A4/Letter sizing)
       const pdfBuffer = await page.pdf({
         printBackground: true,
-        preferCSSPageSize: true,
+        width: `${contentDimensions.width + 20}px`,
+        height: `${contentDimensions.height + 20}px`,
         margin: {
           top: '10px',
           bottom: '10px',
