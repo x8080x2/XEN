@@ -1,0 +1,142 @@
+User
+4:32:17 PM [express] GET /api/original/progress 200 in 0ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:18.41
+ca42c4f8
+User
+4:32:18 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:18.91
+ca42c4f8
+User
+4:32:18 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:19.41
+ca42c4f8
+User
+4:32:19 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:19.93
+ca42c4f8
+User
+4:32:19 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:20.42
+ca42c4f8
+User
+4:32:20 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:20.91
+ca42c4f8
+User
+4:32:20 PM [express] GET /api/original/progress 200 in 0ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:21.41
+ca42c4f8
+User
+4:32:21 PM [express] GET /api/original/progress 200 in 1ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:21.91
+ca42c4f8
+User
+4:32:21 PM [express] GET /api/original/progress 200 in 2ms :: {"logs":[],"total":2288,"inProgress":t…
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async CdpBrowser._createPageInContext (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Browser.js:193:22)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at CdpPage._create (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Page.js:99:31)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+error: "Network.enable timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.",
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async CdpBrowser.newPage (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Browser.js:175:16)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at FrameManager.initialize (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/FrameManager.js:171:38)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at new Callback (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:102:16)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+}
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+usingPool: true,
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async _AdvancedEmailService.convertHtmlToPdf (file:///home/runner/workspace/dist/index.js:1362:18)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at Connection._rawSend (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:95:26)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at #initialize (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Page.js:287:36)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async CdpBrowserContext.newPage (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/BrowserContext.js:120:20)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at CdpCDPSession.send (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/CdpSession.js:70:33)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async _AdvancedEmailService.sendMail (file:///home/runner/workspace/dist/index.js:2363:38)',
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+hasBrowser: true,
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+stack: "ProtocolError: Network.enable timed out. Increase the 'protocolTimeout' setting in launch/connect calls for a higher timeout if needed.\n" +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async PageTarget.page (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Target.js:204:17)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Target.js:201:32\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at async _AdvancedEmailService.renderHtml (file:///home/runner/workspace/dist/index.js:1505:16)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+PDF conversion failed: {
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at CallbackRegistry.create (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:21:26)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+hasPage: false
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+' at NetworkManager.addClient (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/NetworkManager.js:68:24)\n' +
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+Released browser operation { operationId: 'browser_1764865762310_kx6q30dcl', activeOperations: 0 }
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+at async CdpBrowser._createPageInContext (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Browser.js:193:22)
+2025-12-04 18:32:22.41
+ca42c4f8
+User
+at (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:98:14)
