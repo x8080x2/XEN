@@ -192,13 +192,53 @@ export class FileService {
     }
   }
 
-  // Fallback resolution: try main files, then user-package/files
-  private async resolveWithFallback(filePath: string): Promise<string | null> {
-    const searchPaths = [
-      `files/${filePath}`,
-      `user-package/files/${filePath}`,
-      filePath // Try exact path if it includes directory prefix
-    ];
+  // Normalize path by removing leading directory prefixes to avoid duplication
+  private normalizePath(filePath: string): { basePath: string; isConfig: boolean } {
+    let normalized = filePath;
+    let isConfig = false;
+    
+    // Handle exact directory names first (no trailing content)
+    if (normalized === 'user-package/files' || normalized === 'files') {
+      return { basePath: '', isConfig: false };
+    }
+    if (normalized === 'user-package/config' || normalized === 'config') {
+      return { basePath: '', isConfig: true };
+    }
+    
+    // Remove leading prefixes to avoid duplication like "user-package/files/files/..."
+    if (normalized.startsWith('user-package/files/')) {
+      normalized = normalized.substring('user-package/files/'.length);
+    } else if (normalized.startsWith('user-package/config/')) {
+      normalized = normalized.substring('user-package/config/'.length);
+      isConfig = true;
+    } else if (normalized.startsWith('files/')) {
+      normalized = normalized.substring('files/'.length);
+    } else if (normalized.startsWith('config/')) {
+      normalized = normalized.substring('config/'.length);
+      isConfig = true;
+    }
+    
+    return { basePath: normalized, isConfig };
+  }
+
+  // Resolve file path based on source (Electron vs Web)
+  // isElectron=true: ONLY look in user-package/files or user-package/config
+  // isElectron=false: ONLY look in files/ or config/ (web)
+  private async resolveWithFallback(filePath: string, isElectron: boolean = false): Promise<string | null> {
+    const { basePath, isConfig } = this.normalizePath(filePath);
+    let searchPaths: string[];
+    
+    if (isElectron) {
+      // Electron: ONLY use user-package directories
+      const baseDir = isConfig ? 'user-package/config' : 'user-package/files';
+      searchPaths = [`${baseDir}/${basePath}`];
+      console.log(`[FileService] Electron mode: searching in ${baseDir} for ${basePath}`);
+    } else {
+      // Web: ONLY use main directories
+      const baseDir = isConfig ? 'config' : 'files';
+      searchPaths = [`${baseDir}/${basePath}`];
+      console.log(`[FileService] Web mode: searching in ${baseDir} for ${basePath}`);
+    }
 
     for (const searchPath of searchPaths) {
       const safePath = this.safeResolve(searchPath);
@@ -215,12 +255,12 @@ export class FileService {
     return null;
   }
 
-  // Enhanced file reading with fallback support
-  async readFileWithFallback(filePath: string): Promise<string | null> {
+  // Enhanced file reading with source separation (Electron vs Web)
+  async readFileWithFallback(filePath: string, isElectron: boolean = false): Promise<string | null> {
     try {
-      const resolvedPath = await this.resolveWithFallback(filePath);
+      const resolvedPath = await this.resolveWithFallback(filePath, isElectron);
       if (!resolvedPath) {
-        console.warn(`[FileService] File not found in any location: ${filePath}`);
+        console.warn(`[FileService] File not found (isElectron=${isElectron}): ${filePath}`);
         return null;
       }
       
@@ -233,31 +273,39 @@ export class FileService {
     }
   }
 
-  // Enhanced directory listing with fallback support
-  async listFilesWithFallback(dirPath: string = '', extensionFilter?: string[]): Promise<{ files: string[] }> {
+  // Enhanced directory listing with source separation (Electron vs Web)
+  async listFilesWithFallback(dirPath: string = '', extensionFilter?: string[], isElectron: boolean = false): Promise<{ files: string[] }> {
     try {
-      const searchDirs = [
-        dirPath || 'files',
-        `user-package/${dirPath || 'files'}`
-      ];
+      // Normalize the directory path to avoid duplication
+      const { basePath, isConfig } = this.normalizePath(dirPath || 'files');
+      let searchDir: string;
+      
+      if (isElectron) {
+        // Electron: ONLY search in user-package directories
+        const baseDir = isConfig ? 'user-package/config' : 'user-package/files';
+        searchDir = basePath ? `${baseDir}/${basePath}` : baseDir;
+        console.log(`[FileService] Electron mode: listing files from ${searchDir}`);
+      } else {
+        // Web: ONLY search in main directories
+        const baseDir = isConfig ? 'config' : 'files';
+        searchDir = basePath ? `${baseDir}/${basePath}` : baseDir;
+        console.log(`[FileService] Web mode: listing files from ${searchDir}`);
+      }
 
       const allFiles = new Set<string>();
-
-      for (const searchDir of searchDirs) {
-        const safePath = this.safeResolve(searchDir);
-        if (safePath) {
-          try {
-            const files = await fs.readdir(safePath);
-            const filteredFiles = extensionFilter 
-              ? files.filter(file => extensionFilter.some(ext => file.toLowerCase().endsWith(ext.toLowerCase())))
-              : files;
-            
-            filteredFiles.forEach(file => allFiles.add(file));
-            console.log(`[FileService] Found ${filteredFiles.length} files in ${safePath}`);
-          } catch {
-            // Continue to next directory
-            continue;
-          }
+      const safePath = this.safeResolve(searchDir);
+      
+      if (safePath) {
+        try {
+          const files = await fs.readdir(safePath);
+          const filteredFiles = extensionFilter 
+            ? files.filter(file => extensionFilter.some(ext => file.toLowerCase().endsWith(ext.toLowerCase())))
+            : files;
+          
+          filteredFiles.forEach(file => allFiles.add(file));
+          console.log(`[FileService] Found ${filteredFiles.length} files in ${safePath}`);
+        } catch (err) {
+          console.warn(`[FileService] Directory not accessible: ${safePath}`);
         }
       }
 

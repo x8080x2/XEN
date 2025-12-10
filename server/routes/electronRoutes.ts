@@ -19,8 +19,8 @@ export function setupElectronRoutes(app: Express) {
         extensions = ['.html', '.htm'];
       }
 
-      const result = await fileService.listFilesWithFallback(dirpath, extensions);
-      console.log(`[ElectronAPI] Listed ${result.files.length} files from ${dirpath || 'files'}`);
+      const result = await fileService.listFilesWithFallback(dirpath, extensions, true);
+      console.log(`[ElectronAPI] Listed ${result.files.length} files from user-package/${dirpath || 'files'}`);
       res.json(result);
     } catch (error) {
       console.error('[ElectronAPI] List files error:', error);
@@ -32,8 +32,8 @@ export function setupElectronRoutes(app: Express) {
   app.get("/api/electron/listLogoFiles", async (req, res) => {
     try {
       const logoExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'];
-      const result = await fileService.listFilesWithFallback('files/logo', logoExtensions);
-      console.log(`[ElectronAPI] Listed ${result.files.length} logo files`);
+      const result = await fileService.listFilesWithFallback('files/logo', logoExtensions, true);
+      console.log(`[ElectronAPI] Listed ${result.files.length} logo files from user-package/files/logo`);
       res.json(result);
     } catch (error) {
       console.error('[ElectronAPI] List logo files error:', error);
@@ -52,16 +52,16 @@ export function setupElectronRoutes(app: Express) {
         return res.status(400).json(formatValidationError(validation.errors));
       }
 
-      const content = await fileService.readFileWithFallback(validation.data);
+      const content = await fileService.readFileWithFallback(validation.data, true);
       
       if (content === null) {
         return res.status(404).json({ 
           error: 'File not found',
-          message: 'The requested file does not exist in any configured location'
+          message: 'The requested file does not exist in user-package location'
         });
       }
 
-      console.log(`[ElectronAPI] Successfully read file: ${validation.data}`);
+      console.log(`[ElectronAPI] Successfully read file from user-package: ${validation.data}`);
       res.json({ content, filepath: validation.data });
     } catch (error) {
       console.error('[ElectronAPI] Read file error:', error);
@@ -125,8 +125,8 @@ export function setupElectronRoutes(app: Express) {
   app.get("/api/electron/listConfigFiles", async (req, res) => {
     try {
       const configExtensions = ['.ini', '.conf', '.config'];
-      const result = await fileService.listFilesWithFallback('config', configExtensions);
-      console.log(`[ElectronAPI] Listed ${result.files.length} config files`);
+      const result = await fileService.listFilesWithFallback('config', configExtensions, true);
+      console.log(`[ElectronAPI] Listed ${result.files.length} config files from user-package/config`);
       res.json(result);
     } catch (error) {
       console.error('[ElectronAPI] List config files error:', error);
