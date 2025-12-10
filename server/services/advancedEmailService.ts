@@ -1369,6 +1369,7 @@ export class AdvancedEmailService {
 
     let sent = 0;
     let failed = 0;
+    let totalRecipients = 0; // Will be set after recipients are parsed
     const errors: string[] = [];
 
     // User SMTP rotation management for desktop app users
@@ -1456,6 +1457,9 @@ export class AdvancedEmailService {
       if (!recipients.length) {
         throw new Error('No recipients provided');
       }
+      
+      // Set totalRecipients for progress tracking
+      totalRecipients = recipients.length;
 
       // Load email body HTML - exact clone from main.js
       let bodyHtml = '';
@@ -1684,13 +1688,17 @@ export class AdvancedEmailService {
                 fromEmail: fromEmail,
                 host: smtpHost
               };
+              failed++; // Increment immediately for accurate progress tracking
               progressCallback?.({
                 recipient,
                 subject: args.subject,
                 status: 'fail',
                 error,
                 timestamp: new Date().toISOString(),
-                smtp: smtpInfoInvalid
+                smtp: smtpInfoInvalid,
+                totalRecipients,
+                totalSent: sent,
+                totalFailed: failed
               });
               batchResults.push({ success: false, error, recipient });
               continue;
@@ -2490,6 +2498,13 @@ END:VCALENDAR`;
             emailTransporter.close();
           }
 
+            // Increment counts immediately for accurate progress tracking
+            if (result.success) {
+              sent++;
+            } else {
+              failed++;
+            }
+            
             console.log(`[TIMING] Progress callback invoked at ${Date.now()}, recipient: ${recipient}`);
             progressCallback?.({
               recipient: recipient || 'Unknown',
@@ -2497,19 +2512,26 @@ END:VCALENDAR`;
               status: result.success ? 'success' : 'fail',
               error: result.success ? null : (result.error || 'Unknown error'),
               timestamp: new Date().toISOString(),
-              smtp: smtpInfo
+              smtp: smtpInfo,
+              totalRecipients,
+              totalSent: sent,
+              totalFailed: failed
             });
             batchResults.push(result);
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
             const errorMessage = err && err.message ? err.message : String(err);
+            failed++; // Increment immediately for accurate progress tracking
             progressCallback?.({
               recipient: recipient || 'Unknown',
               subject: dynamicSubject || args.subject || 'No Subject',
               status: 'fail',
               error: errorMessage,
               timestamp: new Date().toISOString(),
-              smtp: smtpInfo
+              smtp: smtpInfo,
+              totalRecipients,
+              totalSent: sent,
+              totalFailed: failed
             });
             batchResults.push({ success: false, error: errorMessage, recipient: recipient || 'Unknown' });
           }
@@ -2527,12 +2549,9 @@ END:VCALENDAR`;
           break;
         }
 
-        // Count results - exact clone
+        // Track errors and failed emails (counts already incremented immediately above)
         batchResults.forEach((result: any) => {
-          if (result.success) {
-            sent++;
-          } else {
-            failed++;
+          if (!result.success) {
             errors.push(`${result.recipient || 'unknown'}: ${result.error || 'Unknown error'}`);
             failedEmails.push(result.recipient || 'unknown');
           }
