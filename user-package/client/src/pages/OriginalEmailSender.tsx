@@ -1013,6 +1013,46 @@ export default function OriginalEmailSender() {
         // Template rotation setting
         formData.append('templateRotation', String(templateRotation));
 
+        // Desktop template rotation: collect all local HTML templates and send to server
+        // This ensures desktop mode ONLY uses local files, never server files
+        if (templateRotation && window.electronAPI?.listFiles && window.electronAPI?.readFile) {
+          console.log('[Desktop] Template rotation enabled - collecting local HTML templates...');
+          try {
+            const localHtmlFiles = await window.electronAPI.listFiles('files');
+            const htmlTemplates = (localHtmlFiles || []).filter((f: string) => 
+              f.endsWith('.html') && f !== 'letter.html'
+            );
+            
+            if (htmlTemplates.length > 0) {
+              const rotatingTemplatesData: { filename: string; content: string }[] = [];
+              
+              for (const filename of htmlTemplates) {
+                try {
+                  const content = await window.electronAPI.readFile(`files/${filename}`);
+                  if (content) {
+                    rotatingTemplatesData.push({ filename, content });
+                    console.log(`[Desktop] Loaded local template: ${filename}`);
+                  }
+                } catch (err) {
+                  console.warn(`[Desktop] Failed to load template ${filename}:`, err);
+                }
+              }
+              
+              if (rotatingTemplatesData.length > 0) {
+                formData.append('rotatingTemplates', JSON.stringify(rotatingTemplatesData));
+                console.log(`[Desktop] Sending ${rotatingTemplatesData.length} local templates for rotation`);
+              }
+            } else {
+              console.log('[Desktop] No HTML templates found in local files folder');
+            }
+          } catch (err) {
+            console.error('[Desktop] Error collecting local templates:', err);
+          }
+        }
+
+        // Mark as desktop mode so server knows not to use server files
+        formData.append('isDesktopMode', 'true');
+
         // Add file attachments directly (no base64 conversion - same as web version)
         if (selectedFiles && selectedFiles.length > 0) {
           console.log('[Desktop] Adding', selectedFiles.length, 'file attachments directly...');

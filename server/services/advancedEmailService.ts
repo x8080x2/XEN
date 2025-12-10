@@ -1522,13 +1522,32 @@ export class AdvancedEmailService {
       let rotatingTemplates: { filename: string; content: string }[] = [];
       let templateRotationIndex = 0;
       let useDesktopTemplates = false;
+      
+      // Check if this is desktop mode (prevents fallback to server files)
+      const isDesktopMode = args.isDesktopMode === 'true' || args.isDesktopMode === true || 
+                            (args.userSmtpConfigs && (typeof args.userSmtpConfigs === 'string' || Array.isArray(args.userSmtpConfigs)));
+
+      // Parse rotatingTemplates if sent as JSON string (from FormData)
+      let parsedRotatingTemplates: any[] = [];
+      if (args.rotatingTemplates) {
+        if (typeof args.rotatingTemplates === 'string') {
+          try {
+            parsedRotatingTemplates = JSON.parse(args.rotatingTemplates);
+            console.log(`[Template Rotation] Parsed ${parsedRotatingTemplates.length} templates from JSON string`);
+          } catch (e) {
+            console.warn('[Template Rotation] Failed to parse rotatingTemplates JSON:', e);
+          }
+        } else if (Array.isArray(args.rotatingTemplates)) {
+          parsedRotatingTemplates = args.rotatingTemplates;
+        }
+      }
 
       // Desktop mode: Check if templates are provided in request from user's local files
-      if (args.rotatingTemplates && Array.isArray(args.rotatingTemplates) && args.rotatingTemplates.length > 0) {
-        console.log(`[Template Rotation] Desktop mode - received ${args.rotatingTemplates.length} templates from client`);
+      if (parsedRotatingTemplates.length > 0) {
+        console.log(`[Template Rotation] Desktop mode - received ${parsedRotatingTemplates.length} templates from client`);
         useDesktopTemplates = true;
         
-        for (const template of args.rotatingTemplates) {
+        for (const template of parsedRotatingTemplates) {
           if (template.filename && template.content) {
             // Apply same placeholder processing as main template
             let processedContent = template.content
@@ -1558,8 +1577,10 @@ export class AdvancedEmailService {
           console.log('[Template Rotation] Desktop mode - no valid templates provided, using server default');
           useDesktopTemplates = false;
         }
-      } else if (templateRotationEnabled) {
-        // Web mode: Scan server files folder for HTML templates (only if rotation enabled via UI/config)
+      } else if (templateRotationEnabled && !isDesktopMode) {
+        // Web mode ONLY: Scan server files folder for HTML templates
+        // NEVER use server files for desktop mode - desktop should only use local files
+        console.log('[Template Rotation] Web mode - scanning server files for templates...');
         try {
           const filesDir = join(process.cwd(), 'files');
           if (existsSync(filesDir)) {
@@ -1600,6 +1621,11 @@ export class AdvancedEmailService {
           console.error('[Template Rotation] Error scanning server templates:', err);
           templateRotationEnabled = false;
         }
+      } else if (templateRotationEnabled && isDesktopMode) {
+        // Desktop mode with rotation enabled but no templates provided - disable rotation
+        // This prevents using server files in desktop mode
+        console.log('[Template Rotation] Desktop mode - rotation enabled but no local templates provided. Server files will NOT be used. Rotation disabled.');
+        templateRotationEnabled = false;
       }
 
       // Batch processing variables - exact clone from main.js
