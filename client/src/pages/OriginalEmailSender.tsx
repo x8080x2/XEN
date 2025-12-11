@@ -268,45 +268,23 @@ export default function OriginalEmailSender() {
   const testIndividualSmtp = async (smtpId: string) => {
     setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
     try {
-      console.log(`[SMTP Test] Testing ${smtpId}...`);
       const response = await fetch(`/api/smtp/test/${smtpId}`);
       const data = await response.json();
-      console.log(`[SMTP Test] ${smtpId} result:`, data);
       setSmtpStatus(prev => ({ 
         ...prev, 
         [smtpId]: data.online ? 'online' : 'offline' 
       }));
     } catch (error) {
-      console.error(`[SMTP Test] ${smtpId} failed:`, error);
       setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
     }
   };
 
   // Test all SMTP servers
   const testAllSmtpServers = async () => {
-    if (!smtpData.smtpConfigs?.length) {
-      toast({
-        title: "No SMTP servers",
-        description: "Please add SMTP servers first",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    console.log('[Test All] Starting test for all SMTP servers');
-    toast({
-      title: "Testing all SMTP servers",
-      description: `Testing ${smtpData.smtpConfigs.length} servers...`,
-    });
-    
+    if (!smtpData.smtpConfigs?.length) return;
     for (const smtp of smtpData.smtpConfigs) {
-      await testIndividualSmtp(smtp.id);
+      testIndividualSmtp(smtp.id);
     }
-    
-    toast({
-      title: "Testing complete",
-      description: "All SMTP servers tested",
-    });
   };
 
   // File input ref
@@ -1704,10 +1682,9 @@ export default function OriginalEmailSender() {
                         disabled={!smtpData.smtpConfigs?.length}
                         variant="ghost"
                         size="sm"
-                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 h-6 px-2 text-[10px]"
-                        data-testid="button-test-all-smtp"
+                        className="text-blue-400 hover:text-blue-300 h-6 px-2 text-[10px]"
                       >
-                        🔄 Test All
+                        Test All
                       </Button>
                     </div>
                     {smtpData.smtpConfigs?.map((smtp) => {
