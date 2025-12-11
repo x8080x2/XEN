@@ -52,17 +52,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/telegram/broadcasts', async (req, res) => {
     try {
       const since = parseInt(req.query.since as string) || 0;
-      const userId = req.query.userId as string || req.headers['x-user-id'] as string; // Support both query param and header
-
-      console.log('[Telegram Broadcast] 🎯 Route hit!', {
-        query: req.query,
-        userId,
-        url: req.url,
-        path: req.path
-      });
+      const userId = req.query.userId as string || req.headers['x-user-id'] as string;
 
       const messages = telegramBotService.getBroadcastsSince(since, userId);
-      console.log(`[Telegram Broadcast] ✅ Returning ${messages.length} messages for user ${userId || 'anonymous'} (since: ${since || 'all'})`);
+      
+      // Only log when there are actual messages to return
+      if (messages.length > 0) {
+        console.log(`[Telegram Broadcast] ✅ Returning ${messages.length} messages for user ${userId || 'anonymous'}`);
+      }
 
       res.status(200).json({
         success: true,
