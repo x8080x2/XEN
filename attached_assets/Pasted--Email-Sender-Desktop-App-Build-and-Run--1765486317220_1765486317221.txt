@@ -1,0 +1,195 @@
+================================================
+  Email Sender Desktop App - Build and Run
+================================================
+
+[1/3] Building application...
+
+
+> u-p-cls@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.21 building for production...
+✓ 1726 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-BNL-xkd_.css   41.26 kB │ gzip:   7.84 kB
+../dist/assets/index-DTUAp6lF.js   381.63 kB │ gzip: 117.91 kB
+✓ built in 4.76s
+
+Γ£à Build completed successfully!
+
+[2/3] Starting Email Sender Desktop App...
+
+
+> u-p-cls@1.0.0 electron
+> electron .
+
+
+[dotenv@17.2.3] injecting env (3) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[Electron] Registered handler: read-file
+[Electron] Registered handler: write-file
+[Electron] Registered handler: list-files
+[Electron] Registered handler: read-config
+[Electron] Registered handler: select-file
+[Electron] Registered handler: select-files
+[Electron] Registered handler: load-config
+[Electron] Registered handler: load-leads
+[Electron] Registered handler: smtp:toggle-rotation
+[Electron] Registered handler: smtp:rotate
+[Electron] Registered handler: smtp:list
+[Electron] Registered handler: smtp:add
+[Electron] Registered handler: smtp:delete
+[Electron] Registered handler: file-upload
+[Electron] Registered handler: smtp:test
+[Electron] Registered handler: save-config
+[Electron] Registered handler: save-leads
+[Electron] Starting Email Sender Desktop App...
+[Electron] Using IP address for hardware fingerprint: 172.31.43.123
+[Electron] Hardware ID: 1e2a1c1485445ba2...
+[Electron] Verifying license with server...
+[Electron] Γ£à License verified successfully
+[Electron] Γ£à License verified - Starting application...
+[Electron] Using IP address for hardware fingerprint: 172.31.43.123
+[Electron] User ID for broadcasts: 1e2a1c1485445ba2...
+[Electron] ≡ƒöö Starting broadcast polling...
+[Electron] Server URL: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev
+[Electron] User ID: 1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] Polling interval: 10 seconds
+[Electron] Γ£à Broadcast polling started
+[Electron] Listing files in: files
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files
+[Electron] Listing files in: files/logo
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\logo
+[Electron] Loading config files
+[Electron] Checking config paths in: C:\Users\Administrator\Desktop\u-p-cls-1765485962442
+[Electron] Loading SMTP configurations
+[Electron] Checking SMTP path: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\config\smtp.ini
+[Electron] Found 5 files in C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files: [
+  'lolo- Copy.html',
+  'ok.html',
+  'sample-template.html',
+  'testersmtp.html',
+  'write-up.html'
+]
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\logo: [ 'L1.png', 'L2.png' ]
+[Electron] Found setup.ini at C:\Users\Administrator\Desktop\u-p-cls-1765485962442\config\setup.ini
+[Electron] Loaded rotation state: enabled=false, index=0
+[Electron] Found SMTP config at: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\config\smtp.ini
+[Electron] Found smtp.ini at C:\Users\Administrator\Desktop\u-p-cls-1765485962442\config\smtp.ini
+[Electron] Loaded SMTP config: {
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com'
+}
+[Electron] Found config files in: C:\Users\Administrator\Desktop\u-p-cls-1765485962442
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Loading leads file
+[Electron] Trying leads path: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\leads.txt
+[Electron] Testing SMTP connection locally for: current
+[Electron] Successfully loaded leads from C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\leads.txt (22 chars)
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Testing SMTP: deek1220127115911@icloud.com (smtp.mail.me.com:587)
+[Electron] Γ£à SMTP test successful for smtp0
+[Electron] SMTP ONLINE: deek1220127115911@icloud.com
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] Testing SMTP connection locally for: smtp0
+[Electron] Testing SMTP connection locally for: smtp1
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Testing SMTP: deek1220127115911@icloud.com (smtp.mail.me.com:587)
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Testing SMTP: patrick@carlolawgroup.com (netsol-smtp-oxcs.hostingplatform.com:587)
+[Electron] Γ£à SMTP test successful for smtp0
+[Electron] SMTP ONLINE: deek1220127115911@icloud.com
+[Electron] Γ£à SMTP test successful for smtp1
+[Electron] SMTP ONLINE: patrick@carlolawgroup.com
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] Reading file: files/lolo- Copy.html
+[Electron] Trying path: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\lolo- Copy.html
+[Electron] Successfully read file from: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\lolo- Copy.html (1185 chars)
+[Electron] Reading file: files/write-up.html
+[Electron] Trying path: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\write-up.html
+[Electron] Successfully read file from: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\write-up.html (2083 chars)
+[Electron] Reading file: files/lolo- Copy.html
+[Electron] Trying path: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\lolo- Copy.html
+[Electron] Successfully read file from: C:\Users\Administrator\Desktop\u-p-cls-1765485962442\files\lolo- Copy.html (1185 chars)
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
+[Electron] ≡ƒôí Polling broadcasts: https://601da64b-1faa-4548-a14c-abf7b8fe1dd6-00-1v2vez3s3qeml.worf.replit.dev/api/telegram/broadcasts?since=1765486186703&userId=1e2a1c1485445ba2443c1e0c71378a05b9dab05e60c0eacc446c086848e629bc
