@@ -1641,16 +1641,28 @@ export class AdvancedEmailService {
       }
       const sleepMs = Math.max(0, (C.SLEEP || 0) * 1000); // Ensure no negative sleep
 
+      // Track batch completion for debugging premature exits
+      let batchesProcessed = 0;
+      let emailsProcessedInCurrentBatch = 0;
+      let campaignStoppedEarly = false;
+      let earlyStopReason = '';
+
+      console.log(`[sendMail] Starting batch loop: ${batches.length} batches, ${totalRecipients} total recipients`);
+
       for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
         // Cancel Check - exit immediately if cancelled
         if (this.isCancelled) {
-          console.log('[sendMail] Campaign cancelled by user, stopping...');
-          this.progressLogs.push({
-            type: 'complete',
-            sent,
-            failed,
-            timestamp: new Date().toISOString(),
-            message: 'Campaign cancelled by user'
+          console.log('[sendMail] Campaign cancelled by user at batch start, stopping...');
+          campaignStoppedEarly = true;
+          earlyStopReason = 'Campaign cancelled by user';
+          // Emit cancellation progress notification
+          progressCallback?.({
+            type: 'cancelled',
+            message: 'Campaign cancelled by user',
+            totalRecipients,
+            totalSent: sent,
+            totalFailed: failed,
+            timestamp: new Date().toISOString()
           });
           break;
         }
@@ -1664,18 +1676,23 @@ export class AdvancedEmailService {
         // Re-check cancel after pause loop
         if (this.isCancelled) {
           console.log('[sendMail] Campaign cancelled after pause, stopping...');
-          this.progressLogs.push({
-            type: 'complete',
-            sent,
-            failed,
-            timestamp: new Date().toISOString(),
-            message: 'Campaign cancelled by user'
+          campaignStoppedEarly = true;
+          earlyStopReason = 'Campaign cancelled after pause';
+          // Emit cancellation progress notification
+          progressCallback?.({
+            type: 'cancelled',
+            message: 'Campaign cancelled after pause',
+            totalRecipients,
+            totalSent: sent,
+            totalFailed: failed,
+            timestamp: new Date().toISOString()
           });
           break;
         }
 
         const batch = batches[batchIndex];
-        console.log(`[Batch ${batchIndex + 1}/${batches.length}] Processing ${batch.length} recipients`);
+        emailsProcessedInCurrentBatch = 0;
+        console.log(`[Batch ${batchIndex + 1}/${batches.length}] Starting - ${batch.length} recipients (Total processed so far: ${sent + failed}/${totalRecipients})`);
 
         // Process emails sequentially within batches to respect rate limiting
         const batchResults = [];
@@ -1683,12 +1700,16 @@ export class AdvancedEmailService {
           // Check for cancellation before each email
           if (this.isCancelled) {
             console.log('[sendMail] Campaign cancelled mid-batch, stopping immediately...');
-            this.progressLogs.push({
-              type: 'complete',
-              sent,
-              failed,
-              timestamp: new Date().toISOString(),
-              message: 'Campaign cancelled by user'
+            campaignStoppedEarly = true;
+            earlyStopReason = 'Campaign cancelled mid-batch';
+            // Emit cancellation progress notification
+            progressCallback?.({
+              type: 'cancelled',
+              message: 'Campaign cancelled mid-batch',
+              totalRecipients,
+              totalSent: sent,
+              totalFailed: failed,
+              timestamp: new Date().toISOString()
             });
             break;
           }
@@ -2541,10 +2562,12 @@ END:VCALENDAR`;
               totalFailed: failed
             });
             batchResults.push(result);
+            emailsProcessedInCurrentBatch++;
           } catch (err: any) {
             console.error('Error sending to', recipient, err && err.stack ? err.stack : err);
             const errorMessage = err && err.message ? err.message : String(err);
             failed++; // Increment immediately for accurate progress tracking
+            emailsProcessedInCurrentBatch++;
             progressCallback?.({
               recipient: recipient || 'Unknown',
               subject: dynamicSubject || args.subject || 'No Subject',
@@ -2566,9 +2589,13 @@ END:VCALENDAR`;
           }
         }
 
+        // Log batch completion status
+        console.log(`[Batch ${batchIndex + 1}/${batches.length}] Completed - processed ${emailsProcessedInCurrentBatch}/${batch.length} emails in this batch`);
+        batchesProcessed++;
+
         // Check if cancelled mid-batch and exit outer loop
-        if (this.isCancelled) {
-          console.log('[sendMail] Exiting batch loop after cancellation');
+        if (this.isCancelled || campaignStoppedEarly) {
+          console.log(`[sendMail] Exiting batch loop - cancelled: ${this.isCancelled}, stoppedEarly: ${campaignStoppedEarly}`);
           break;
         }
 
@@ -2598,20 +2625,81 @@ END:VCALENDAR`;
       transporter.close();
 
       const elapsed = Date.now() - sendMailStart;
-      console.log(`[sendMail] Completed in ${elapsed}ms. Sent: ${sent}, Failed: ${failed}`);
+      const totalProcessed = sent + failed;
+      const allEmailsProcessed = totalProcessed === totalRecipients;
+      
+      // Determine if this was a partial completion (any incomplete processing)
+      // - Cancelled: user explicitly stopped
+      // - Stopped early: some other explicit stop condition
+      // - Unexpected: loop exited without processing all emails and no explicit stop
+      const wasCancelled = this.isCancelled || campaignStoppedEarly;
+      const unexpectedExit = !allEmailsProcessed && !wasCancelled;
+      const isPartialCompletion = !allEmailsProcessed; // Any incomplete = partial
 
-      // Clean up campaign tracking on success
+      // Comprehensive completion logging
+      console.log(`[sendMail] Batch loop finished:`);
+      console.log(`  - Batches processed: ${batchesProcessed}/${batches.length}`);
+      console.log(`  - Emails processed: ${totalProcessed}/${totalRecipients}`);
+      console.log(`  - Sent: ${sent}, Failed: ${failed}`);
+      console.log(`  - Was cancelled: ${wasCancelled}, Reason: ${earlyStopReason || 'N/A'}`);
+      console.log(`  - All emails processed: ${allEmailsProcessed}`);
+      console.log(`  - Is partial completion: ${isPartialCompletion}`);
+      console.log(`  - Unexpected exit: ${unexpectedExit}`);
+      console.log(`  - Duration: ${elapsed}ms`);
+
+      // Detect unexpected incomplete processing (the bug we're fixing)
+      if (unexpectedExit) {
+        console.error(`[sendMail] WARNING: Campaign ended prematurely! Only ${totalProcessed}/${totalRecipients} emails were processed without cancellation or explicit stop.`);
+        console.error(`[sendMail] This indicates a bug - the loop exited unexpectedly.`);
+      }
+
+      // Clean up campaign tracking
       this.activeCampaigns.delete(campaignId);
-      console.info('Campaign completed successfully', { 
+      console.info('Campaign completed', { 
         campaignId, 
         sent, 
-        failed, 
+        failed,
+        totalRecipients,
+        totalProcessed,
+        allEmailsProcessed,
+        batchesProcessed,
+        totalBatches: batches.length,
+        wasCancelled,
+        earlyStopReason,
+        isPartialCompletion,
+        unexpectedExit,
         duration: elapsed,
         activeCampaigns: this.activeCampaigns.size 
       });
 
       const sentCount = sent;
-      return { success: true, sent: sentCount, failed, errors, failedEmails, details: `Sent: ${sent}, Failed: ${failed}` };
+      
+      // Build appropriate details message
+      let details: string;
+      if (wasCancelled) {
+        details = `Cancelled: Sent ${sent}, Failed ${failed} (${totalProcessed}/${totalRecipients} processed before cancellation)`;
+      } else if (unexpectedExit) {
+        details = `WARNING: Unexpected stop! Sent ${sent}, Failed ${failed} (only ${totalProcessed}/${totalRecipients} processed - possible bug)`;
+      } else {
+        details = `Sent: ${sent}, Failed: ${failed}`;
+      }
+      
+      // success = false if cancelled or unexpected exit, true only if fully completed
+      const success = allEmailsProcessed && !wasCancelled;
+      
+      return { 
+        success, 
+        sent: sentCount, 
+        failed, 
+        errors, 
+        failedEmails, 
+        details, 
+        isPartialCompletion, 
+        totalProcessed, 
+        totalRecipients,
+        wasCancelled,
+        unexpectedExit
+      };
     } catch (err: any) {
       // Enhanced error handling and logging
       const errorMessage = err?.message || err?.toString() || 'Unknown sendMail error';
@@ -2622,19 +2710,41 @@ END:VCALENDAR`;
         stack: err?.stack
       };
 
+      const totalProcessed = sent + failed;
+      const isPartialCompletion = totalProcessed < totalRecipients;
+
       console.error('Error during sendMail:', errorDetails);
       console.error('SendMail operation failed', errorDetails);
+      console.error(`[sendMail] CRITICAL: Campaign crashed with error. Sent: ${sent}, Failed: ${failed}, Processed: ${totalProcessed}/${totalRecipients}`);
 
       // Clean up campaign tracking on error
       this.activeCampaigns.delete(campaignId);
       console.info('Campaign failed and cleaned up', { 
         campaignId, 
         error: errorMessage,
+        sent,
+        failed,
+        totalRecipients,
+        totalProcessed,
+        isPartialCompletion,
         duration: Date.now() - sendMailStart,
         activeCampaigns: this.activeCampaigns.size 
       });
 
-      return { success: false, error: errorMessage, details: `Failed: ${errorMessage}` };
+      return { 
+        success: false, 
+        error: errorMessage, 
+        details: `Error: ${errorMessage}. Sent: ${sent}, Failed: ${failed} (${totalProcessed}/${totalRecipients} processed before crash)`,
+        sent,
+        failed,
+        totalRecipients,
+        totalProcessed,
+        isPartialCompletion,
+        wasCancelled: false,
+        unexpectedExit: true,
+        errors: [],
+        failedEmails: []
+      };
     }
   }
 

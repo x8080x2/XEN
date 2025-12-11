@@ -879,7 +879,22 @@ export default function OriginalEmailSender() {
               if (log.type === 'complete') {
                 setIsLoading(false);
                 setProgress(100);
-                setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                
+                // Check for partial completion (indicates a bug or premature exit)
+                if (log.isPartialCompletion) {
+                  const processed = log.totalProcessed || (log.sent + log.failed);
+                  if (log.wasCancelled) {
+                    setStatusText(`Cancelled: Sent ${log.sent}, Failed ${log.failed} (${processed}/${log.totalRecipients} processed before cancellation)`);
+                  } else if (log.unexpectedExit) {
+                    setStatusText(`WARNING: Sending stopped unexpectedly! Only ${processed}/${log.totalRecipients} emails processed. Sent: ${log.sent}, Failed: ${log.failed}`);
+                  } else {
+                    setStatusText(`Stopped early: Only ${processed}/${log.totalRecipients} emails processed. Sent: ${log.sent}, Failed: ${log.failed}`);
+                  }
+                  console.warn('[Polling] Partial completion detected:', log);
+                } else {
+                  setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
+                }
+                
                 setCurrentEmailStatus("");
                 if (log.failedEmails && log.failedEmails.length > 0) {
                   setFailedEmails(log.failedEmails);
@@ -890,6 +905,11 @@ export default function OriginalEmailSender() {
                   clearInterval((window as any).pollingInterval);
                   (window as any).pollingInterval = null;
                 }
+              } else if (log.type === 'cancelled') {
+                // Handle cancellation notification immediately
+                setIsLoading(false);
+                setStatusText(`Cancelling... Sent ${log.totalSent || 0}, Failed ${log.totalFailed || 0}`);
+                console.log('[Polling] Cancellation notification received:', log);
               } else if (log.type === 'error') {
                 setIsLoading(false);
                 setStatusText(`Error: ${log.error}`);

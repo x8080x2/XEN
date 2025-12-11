@@ -247,20 +247,31 @@ export function setupOriginalEmailRoutes(app: Express) {
         };
         
         progressLogs.push(progressData);
-      }).then((result) => {
+      }).then((result: any) => {
         // Mark sending as complete FIRST
         sendingInProgress = false;
         
-        // Add completion log
-        const completionLog = {
+        // Add completion log with partial completion detection
+        const completionLog: any = {
           type: 'complete',
           success: result.success,
           sent: result.sent,
           failed: result.failed,
           error: result.error,
           details: result.details,
-          failedEmails: result.failedEmails || []
+          failedEmails: result.failedEmails || [],
+          totalRecipients: result.totalRecipients,
+          totalProcessed: result.totalProcessed,
+          isPartialCompletion: result.isPartialCompletion || false,
+          wasCancelled: result.wasCancelled || false,
+          unexpectedExit: result.unexpectedExit || false
         };
+        
+        // Log warning if partial completion detected
+        if (result.isPartialCompletion) {
+          const reason = result.wasCancelled ? 'cancelled' : (result.unexpectedExit ? 'unexpected exit' : 'unknown');
+          console.warn(`[Routes] Partial completion detected (${reason}): ${result.totalProcessed}/${result.totalRecipients} emails processed.`);
+        }
         
         progressLogs.push(completionLog);
       }).catch((error: any) => {
@@ -273,6 +284,7 @@ export function setupOriginalEmailRoutes(app: Express) {
           error: error.message || 'Unknown error occurred'
         };
         
+        console.error('[Routes] Email sending caught error:', error);
         progressLogs.push(errorLog);
       });
 
