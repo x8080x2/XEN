@@ -45,7 +45,7 @@ let mainWindow;
 // Broadcast polling variables
 let broadcastCheckInterval = null;
 let lastBroadcastCheck = 0; // Timestamp of last check
-const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; // Unique user ID for this app instance
+let userId = null; // Will be set to hardware fingerprint for persistent user identification
 
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
@@ -247,6 +247,11 @@ app.whenReady().then(async () => {
   }
 
   console.log('[Electron] ✅ License verified - Starting application...');
+  
+  // Set persistent userId based on hardware fingerprint
+  userId = generateHardwareFingerprint();
+  console.log('[Electron] User ID for broadcasts:', userId.substring(0, 16) + '...');
+  
   createWindow();
 });
 
