@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 declare global {
   interface Window {
     electronAPI?: {
-      smtpTest: () => Promise<{ online: boolean; smtp?: any; error?: string }>;
+      smtpTest: (smtpId?: string) => Promise<{ online: boolean; smtpId?: string; smtp?: any; error?: string }>;
       smtpList: () => Promise<{ success: boolean; smtpConfigs: any[]; currentSmtp: any; rotationEnabled: boolean }>;
       smtpRotate: () => Promise<{ success: boolean; currentSmtp: any; rotationEnabled: boolean }>;
       smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean; currentSmtp: any }>;
@@ -67,59 +67,23 @@ export function SMTPManager() {
   const testSmtp = async (smtpId: string) => {
     setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
     try {
-      // Use Electron API if available, otherwise fall back to backend
-      let data;
+      let data: { online: boolean; error?: string } | undefined;
+      
       if (window.electronAPI?.smtpTest) {
-        // Desktop: Save original current SMTP, rotate to target, test, then restore
-        const originalSmtpId = smtpData.currentSmtp?.id;
-        
-        // Rotate to the target SMTP
-        let attempts = 0;
-        while (smtpData.currentSmtp?.id !== smtpId && attempts < smtpData.smtpConfigs.length) {
-          const rotateResult = await window.electronAPI.smtpRotate();
-          if (rotateResult.success && rotateResult.currentSmtp) {
-            // Update local state
-            smtpData.currentSmtp = rotateResult.currentSmtp;
-            if (rotateResult.currentSmtp.id === smtpId) {
-              break;
-            }
-          }
-          attempts++;
-        }
-
-        // Test the target SMTP
-        data = await window.electronAPI.smtpTest();
+        // Desktop: Pass SMTP ID directly to test that specific config
+        data = await window.electronAPI.smtpTest(smtpId);
         console.log(`[Desktop SMTP Test] ${smtpId}:`, data);
-        
-        // Set status
-        if (data && data.online) {
-          setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
-        } else {
-          setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
-        }
-
-        // Restore original SMTP if needed
-        if (originalSmtpId && originalSmtpId !== smtpId) {
-          attempts = 0;
-          while (smtpData.currentSmtp?.id !== originalSmtpId && attempts < smtpData.smtpConfigs.length) {
-            const rotateResult = await window.electronAPI.smtpRotate();
-            if (rotateResult.success && rotateResult.currentSmtp) {
-              if (rotateResult.currentSmtp.id === originalSmtpId) {
-                setSmtpData(prev => ({ ...prev, currentSmtp: rotateResult.currentSmtp }));
-                break;
-              }
-            }
-            attempts++;
-          }
-        }
       } else {
         // Web version - use backend API
         const response = await fetch(`/api/smtp/test/${smtpId}`);
         data = await response.json();
-        setSmtpStatus(prev => ({ 
-          ...prev, 
-          [smtpId]: data.online ? 'online' : 'offline' 
-        }));
+      }
+      
+      // Set status based on result
+      if (data && data.online) {
+        setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
+      } else {
+        setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
       }
     } catch (error) {
       console.error(`SMTP test failed for ${smtpId}:`, error);

@@ -1042,26 +1042,42 @@ async function loadSmtpData() {
   }
 }
 
-// SMTP test handler - test local SMTP config using nodemailer
-safeHandle('smtp:test', async () => {
+// SMTP test handler - test specific SMTP config by ID using nodemailer
+safeHandle('smtp:test', async (event, smtpId) => {
   try {
-    console.log('[Electron] Testing SMTP connection locally...');
+    console.log(`[Electron] Testing SMTP connection locally for: ${smtpId || 'current'}`);
 
-    // Load current SMTP config from local files
+    // Load all SMTP configs from local files
     const smtpData = await loadSmtpData();
 
-    if (!smtpData.success || !smtpData.currentSmtp) {
+    if (!smtpData.success || !smtpData.smtpConfigs || smtpData.smtpConfigs.length === 0) {
       console.error('[Electron] ❌ SMTP test failed: No SMTP configuration available');
       return { success: false, online: false, error: 'No SMTP configuration available' };
     }
 
-    const currentSmtp = smtpData.currentSmtp;
-    console.log(`[Electron] Testing SMTP: ${currentSmtp.fromEmail} (${currentSmtp.host}:${currentSmtp.port})`);
+    // Find the specific SMTP config by ID, or use current if no ID provided
+    let targetSmtp;
+    if (smtpId) {
+      targetSmtp = smtpData.smtpConfigs.find(s => s.id === smtpId);
+      if (!targetSmtp) {
+        console.error(`[Electron] ❌ SMTP test failed: SMTP config ${smtpId} not found`);
+        return { success: false, online: false, error: `SMTP config ${smtpId} not found` };
+      }
+    } else {
+      targetSmtp = smtpData.currentSmtp;
+    }
+
+    if (!targetSmtp) {
+      console.error('[Electron] ❌ SMTP test failed: No SMTP configuration available');
+      return { success: false, online: false, error: 'No SMTP configuration available' };
+    }
+
+    console.log(`[Electron] Testing SMTP: ${targetSmtp.fromEmail} (${targetSmtp.host}:${targetSmtp.port})`);
 
     // Create nodemailer transporter
-    const port = Number(currentSmtp.port);
+    const port = Number(targetSmtp.port);
     const transporterConfig = {
-      host: currentSmtp.host,
+      host: targetSmtp.host,
       port: port,
       secure: port === 465,
       connectionTimeout: 10000,
@@ -1072,10 +1088,10 @@ safeHandle('smtp:test', async () => {
     };
 
     // Add auth if username and password are provided
-    if (currentSmtp.user && currentSmtp.pass) {
+    if (targetSmtp.user && targetSmtp.pass) {
       transporterConfig.auth = {
-        user: currentSmtp.user,
-        pass: currentSmtp.pass
+        user: targetSmtp.user,
+        pass: targetSmtp.pass
       };
     }
 
@@ -1084,32 +1100,34 @@ safeHandle('smtp:test', async () => {
     try {
       // Verify the connection
       await transporter.verify();
-      console.log('[Electron] ✅ SMTP test successful');
-      console.log('[Electron] SMTP ONLINE:', currentSmtp.fromEmail);
+      console.log(`[Electron] ✅ SMTP test successful for ${targetSmtp.id}`);
+      console.log('[Electron] SMTP ONLINE:', targetSmtp.fromEmail);
 
       transporter.close();
       return {
         success: true,
         online: true,
+        smtpId: targetSmtp.id,
         smtp: {
-          id: currentSmtp.id,
-          host: currentSmtp.host,
-          port: currentSmtp.port,
-          fromEmail: currentSmtp.fromEmail
+          id: targetSmtp.id,
+          host: targetSmtp.host,
+          port: targetSmtp.port,
+          fromEmail: targetSmtp.fromEmail
         }
       };
     } catch (verifyError) {
-      console.error('[Electron] ❌ SMTP verification failed:', verifyError.message);
+      console.error(`[Electron] ❌ SMTP verification failed for ${targetSmtp.id}:`, verifyError.message);
       transporter.close();
       return {
         success: false,
         online: false,
+        smtpId: targetSmtp.id,
         error: verifyError.message || 'SMTP connection failed',
         smtp: {
-          id: currentSmtp.id,
-          host: currentSmtp.host,
-          port: currentSmtp.port,
-          fromEmail: currentSmtp.fromEmail
+          id: targetSmtp.id,
+          host: targetSmtp.host,
+          port: targetSmtp.port,
+          fromEmail: targetSmtp.fromEmail
         }
       };
     }

@@ -24,7 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   smtpDelete: (id) => ipcRenderer.invoke('smtp:delete', id),
   smtpRotate: () => ipcRenderer.invoke('smtp:rotate'),
   smtpToggleRotation: (enabled) => ipcRenderer.invoke('smtp:toggle-rotation', enabled),
-  smtpTest: () => ipcRenderer.invoke('smtp:test'),
+  smtpTest: (smtpId) => ipcRenderer.invoke('smtp:test', smtpId),
 
   // NOTE: Email sending and AI operations now use backend API via replitApiService
   // sendEmail, getEmailProgress, cancelEmail, and AI features have been removed from Electron IPC
