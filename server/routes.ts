@@ -168,7 +168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { injectDynamicPlaceholders, replacePlaceholders } = await import('./services/advancedEmailService');
 
       let processedHtml = htmlContent;
-      processedHtml = injectDynamicPlaceholders(processedHtml, recipient, senderEmail, dateStr, timeStr);
+      processedHtml = await injectDynamicPlaceholders(processedHtml, recipient, senderEmail, dateStr, timeStr);
       processedHtml = replacePlaceholders(processedHtml);
 
       res.json({ processedHtml });
@@ -228,21 +228,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: false,
         error: error.message
       });
-    }
-  });
-
-  app.post("/api/smtp/rotate", (req, res) => {
-    try {
-      configService.rotateToNextSmtp();
-      const currentSmtp = configService.getCurrentSmtpConfig();
-
-      res.json({
-        success: true,
-        currentSmtp: currentSmtp,
-        rotationEnabled: configService.isSmtpRotationEnabled()
-      });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
     }
   });
 

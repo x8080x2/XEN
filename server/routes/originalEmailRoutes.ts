@@ -4,7 +4,6 @@ import multer from "multer";
 import { configService } from "../services/configService";
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import nodemailer from 'nodemailer';
 
 // Configure multer with size limits to prevent DoS
 const upload = multer({ 
@@ -339,87 +338,6 @@ export function setupOriginalEmailRoutes(app: Express) {
     res.json(result);
   });
 
-  // Test individual SMTP endpoint
-  app.get("/api/smtp/test/:smtpId", async (req, res) => {
-    try {
-      const { smtpId } = req.params;
-      const smtpConfigs = configService.getAllSmtpConfigs();
-      const smtp = smtpConfigs.find((s: any) => s.id === smtpId);
-
-      if (!smtp) {
-        return res.json({
-          success: false,
-          online: false,
-          smtpId,
-          error: "SMTP configuration not found"
-        });
-      }
-
-      console.log(`[SMTP Test] Testing ${smtpId}: ${smtp.host}:${smtp.port} (user: ${smtp.user || 'none'})`);
-
-      const port = Number(smtp.port);
-      const transporterConfig: any = {
-        host: smtp.host,
-        port: port,
-        secure: port === 465,
-        pool: false,
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-        tls: {
-          rejectUnauthorized: false
-        }
-      };
-
-      if (smtp.user && smtp.pass) {
-        transporterConfig.auth = {
-          user: smtp.user,
-          pass: smtp.pass
-        };
-      }
-
-      const transporter = nodemailer.createTransport(transporterConfig);
-
-      try {
-        await transporter.verify();
-        console.log(`[SMTP Test] ✅ ${smtpId} is online`);
-        transporter.close();
-        res.json({
-          success: true,
-          online: true,
-          smtpId,
-          smtp: {
-            host: smtp.host,
-            port: smtp.port,
-            fromEmail: smtp.fromEmail
-          }
-        });
-      } catch (verifyError: any) {
-        console.log(`[SMTP Test] ❌ ${smtpId} failed: ${verifyError.message}`);
-        transporter.close();
-        res.json({
-          success: false,
-          online: false,
-          smtpId,
-          error: verifyError.message || "SMTP connection failed",
-          smtp: {
-            host: smtp.host,
-            port: smtp.port,
-            fromEmail: smtp.fromEmail
-          }
-        });
-      }
-    } catch (error: any) {
-      console.error(`[SMTP Test] Error testing ${req.params.smtpId}:`, error);
-      res.json({ 
-        success: false, 
-        online: false,
-        smtpId: req.params.smtpId,
-        error: error.message 
-      });
-    }
-  });
-
   // Read file endpoint
   app.post("/api/original/readFile", async (req, res) => {
     const { filepath } = req.body;
@@ -432,17 +350,6 @@ export function setupOriginalEmailRoutes(app: Express) {
     const { filepath, content } = req.body;
     const result = await advancedEmailService.writeFile(filepath, content);
     res.json(result);
-  });
-
-  // Load configuration from files
-  app.get("/api/config/load", async (_req, res) => {
-    try {
-      configService.loadConfig();
-      const config = configService.getEmailConfig();
-      res.json({ success: true, config });
-    } catch (error: any) {
-      res.status(500).json({ success: false, error: error.message });
-    }
   });
 
   // Save configuration to setup.ini
