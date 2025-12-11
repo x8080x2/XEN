@@ -107,8 +107,8 @@ class Storage {
 
   async saveBroadcastMessage(broadcast: { id: string; message: string; timestamp: Date; adminId: string }): Promise<void> {
     try {
-      // Use a simple table to store broadcasts (key-value style)
-      await db.run(`
+      // Create table using raw SQL with Drizzle
+      await db.run(db.sql`
         CREATE TABLE IF NOT EXISTS broadcasts (
           id TEXT PRIMARY KEY,
           message TEXT NOT NULL,
@@ -117,13 +117,14 @@ class Storage {
         )
       `);
 
-      await db.run(
-        `INSERT OR REPLACE INTO broadcasts (id, message, timestamp, adminId) VALUES (?, ?, ?, ?)`,
-        [broadcast.id, broadcast.message, broadcast.timestamp.getTime(), broadcast.adminId]
-      );
+      // Insert or replace broadcast
+      await db.run(db.sql`
+        INSERT OR REPLACE INTO broadcasts (id, message, timestamp, adminId) 
+        VALUES (${broadcast.id}, ${broadcast.message}, ${broadcast.timestamp.getTime()}, ${broadcast.adminId})
+      `);
 
       // Keep only last 50 messages
-      await db.run(`
+      await db.run(db.sql`
         DELETE FROM broadcasts WHERE id NOT IN (
           SELECT id FROM broadcasts ORDER BY timestamp DESC LIMIT 50
         )
@@ -135,7 +136,8 @@ class Storage {
 
   async getBroadcastMessages(limit: number = 50): Promise<Array<{ id: string; message: string; timestamp: Date; adminId: string }>> {
     try {
-      await db.run(`
+      // Ensure table exists
+      await db.run(db.sql`
         CREATE TABLE IF NOT EXISTS broadcasts (
           id TEXT PRIMARY KEY,
           message TEXT NOT NULL,
@@ -144,10 +146,10 @@ class Storage {
         )
       `);
 
-      const rows = await db.all(
-        `SELECT * FROM broadcasts ORDER BY timestamp DESC LIMIT ?`,
-        [limit]
-      );
+      // Query broadcasts
+      const rows = await db.all(db.sql`
+        SELECT * FROM broadcasts ORDER BY timestamp DESC LIMIT ${limit}
+      `);
 
       return rows.map((row: any) => ({
         id: row.id,
