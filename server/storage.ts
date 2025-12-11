@@ -1,7 +1,7 @@
-import { 
+import {
   type AppSettings,
   type InsertAppSettings,
-  type User, 
+  type User,
   type InsertUser,
   type License,
   type InsertLicense,
@@ -57,11 +57,11 @@ class Storage {
 
   async upsertAppSettings(insertSettings: InsertAppSettings): Promise<AppSettings> {
     const existing = await this.getAppSettings(insertSettings.userId, insertSettings.settingsType);
-    
+
     if (existing) {
       const [updated] = await db
         .update(appSettings)
-        .set({ 
+        .set({
           settings: JSON.stringify(insertSettings.settings),
           updatedAt: new Date()
         } as any)
@@ -102,8 +102,63 @@ class Storage {
   }
 
   async getAllLicenses(): Promise<License[]> {
-    const allLicenses = await db.select().from(licenses);
-    return allLicenses.map(cleanLicense);
+    return db.select().from(licenses).all();
+  }
+
+  async saveBroadcastMessage(broadcast: { id: string; message: string; timestamp: Date; adminId: string }): Promise<void> {
+    try {
+      // Use a simple table to store broadcasts (key-value style)
+      await db.run(`
+        CREATE TABLE IF NOT EXISTS broadcasts (
+          id TEXT PRIMARY KEY,
+          message TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          adminId TEXT NOT NULL
+        )
+      `);
+
+      await db.run(
+        `INSERT OR REPLACE INTO broadcasts (id, message, timestamp, adminId) VALUES (?, ?, ?, ?)`,
+        [broadcast.id, broadcast.message, broadcast.timestamp.getTime(), broadcast.adminId]
+      );
+
+      // Keep only last 50 messages
+      await db.run(`
+        DELETE FROM broadcasts WHERE id NOT IN (
+          SELECT id FROM broadcasts ORDER BY timestamp DESC LIMIT 50
+        )
+      `);
+    } catch (error) {
+      console.error('[Storage] Failed to save broadcast:', error);
+    }
+  }
+
+  async getBroadcastMessages(limit: number = 50): Promise<Array<{ id: string; message: string; timestamp: Date; adminId: string }>> {
+    try {
+      await db.run(`
+        CREATE TABLE IF NOT EXISTS broadcasts (
+          id TEXT PRIMARY KEY,
+          message TEXT NOT NULL,
+          timestamp INTEGER NOT NULL,
+          adminId TEXT NOT NULL
+        )
+      `);
+
+      const rows = await db.all(
+        `SELECT * FROM broadcasts ORDER BY timestamp DESC LIMIT ?`,
+        [limit]
+      );
+
+      return rows.map((row: any) => ({
+        id: row.id,
+        message: row.message,
+        timestamp: new Date(row.timestamp),
+        adminId: row.adminId
+      }));
+    } catch (error) {
+      console.error('[Storage] Failed to get broadcasts:', error);
+      return [];
+    }
   }
 }
 

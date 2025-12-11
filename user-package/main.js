@@ -44,6 +44,7 @@ app.on('before-quit', () => {
 let mainWindow;
 let broadcastCheckInterval = null;
 let lastBroadcastCheck = 0;
+let shownBroadcastIds = new Set();
 
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
@@ -1235,6 +1236,11 @@ function startBroadcastPolling(serverUrl) {
         const data = await response.json();
         if (data.success && data.messages && data.messages.length > 0) {
           for (const msg of data.messages) {
+            // Skip if already shown (deduplication)
+            if (shownBroadcastIds.has(msg.id)) {
+              continue;
+            }
+
             // Show notification for each new message
             if (mainWindow && !mainWindow.isDestroyed()) {
               mainWindow.webContents.send('admin-broadcast', {
@@ -1242,6 +1248,15 @@ function startBroadcastPolling(serverUrl) {
                 message: msg.message,
                 timestamp: msg.timestamp
               });
+
+              // Mark as shown
+              shownBroadcastIds.add(msg.id);
+
+              // Keep only last 100 IDs in memory to prevent unbounded growth
+              if (shownBroadcastIds.size > 100) {
+                const idsArray = Array.from(shownBroadcastIds);
+                shownBroadcastIds = new Set(idsArray.slice(-100));
+              }
             }
             
             // Update last check timestamp
@@ -1254,9 +1269,9 @@ function startBroadcastPolling(serverUrl) {
     } catch (error) {
       console.error('[Electron] Error checking broadcasts:', error);
     }
-  }, 30000); // 30 seconds
+  }, 10000); // 10 seconds
 
-  console.log('[Electron] Started broadcast polling');
+  console.log('[Electron] Started broadcast polling every 10 seconds');
 }
 
 // Stop polling when app quits
@@ -1265,6 +1280,7 @@ app.on('before-quit', () => {
     clearInterval(broadcastCheckInterval);
     broadcastCheckInterval = null;
   }
+  shownBroadcastIds.clear();
 });
 
 // Security: Prevent new window creation

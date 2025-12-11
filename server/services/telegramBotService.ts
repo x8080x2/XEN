@@ -3,6 +3,7 @@ import { licenseService } from './licenseService';
 import archiver from 'archiver';
 import fs from 'fs';
 import path from 'path';
+import { storage } from '../storage';
 
 interface UserState {
   action?: 'awaiting_status_key' | 'awaiting_revoke_key' | 'awaiting_download_key';
@@ -22,6 +23,9 @@ class TelegramBotService {
         console.log('Telegram bot already initialized');
         return true;
       }
+
+      // Load last 50 broadcast messages from database
+      await this.loadBroadcastsFromDatabase();
 
       // Initialize bot without polling (we'll use webhooks)
       this.bot = new TelegramBot(token, { polling: false });
@@ -240,17 +244,22 @@ class TelegramBotService {
       }
 
       const broadcastId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      this.broadcastMessages.push({
+      const broadcastData = {
         id: broadcastId,
         message,
         timestamp: Date.now(),
         adminId: userId
-      });
+      };
+      
+      this.broadcastMessages.push(broadcastData);
 
-      // Keep only last 50 messages
+      // Keep only last 50 messages in memory
       if (this.broadcastMessages.length > 50) {
         this.broadcastMessages = this.broadcastMessages.slice(-50);
       }
+
+      // Save to database for persistence
+      await this.saveBroadcastToDatabase(broadcastData);
 
       await this.bot?.sendMessage(
         chatId,
@@ -858,6 +867,35 @@ NODE_ENV=production
       return this.broadcastMessages;
     }
     return this.broadcastMessages.filter(msg => msg.timestamp > since);
+  }
+
+  private async loadBroadcastsFromDatabase(): Promise<void> {
+    try {
+      const broadcasts = await storage.getBroadcastMessages(50);
+      this.broadcastMessages = broadcasts.map(b => ({
+        id: b.id,
+        message: b.message,
+        timestamp: new Date(b.timestamp).getTime(),
+        adminId: parseInt(b.adminId) || 0
+      }));
+      console.log(`[Telegram Bot] Loaded ${this.broadcastMessages.length} broadcast messages from database`);
+    } catch (error) {
+      console.error('[Telegram Bot] Failed to load broadcasts from database:', error);
+      this.broadcastMessages = [];
+    }
+  }
+
+  private async saveBroadcastToDatabase(broadcast: { id: string; message: string; timestamp: number; adminId: number }): Promise<void> {
+    try {
+      await storage.saveBroadcastMessage({
+        id: broadcast.id,
+        message: broadcast.message,
+        timestamp: new Date(broadcast.timestamp),
+        adminId: broadcast.adminId.toString()
+      });
+    } catch (error) {
+      console.error('[Telegram Bot] Failed to save broadcast to database:', error);
+    }
   }
 }
 
