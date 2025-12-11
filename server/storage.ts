@@ -7,10 +7,11 @@ import {
   type InsertLicense,
   users,
   appSettings,
-  licenses
+  licenses,
+  broadcasts
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 function cleanLicense(license: any): License {
   return {

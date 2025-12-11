@@ -45,9 +45,9 @@ export const emailConfigSchema = z.object({
   createdAt: z.date().default(() => new Date()),
 });
 
-export const insertEmailConfigSchema = emailConfigSchema.omit({ 
-  id: true, 
-  createdAt: true 
+export const insertEmailConfigSchema = emailConfigSchema.omit({
+  id: true,
+  createdAt: true
 });
 
 export type EmailConfig = z.infer<typeof emailConfigSchema>;
@@ -62,9 +62,9 @@ export const appSettingsSchema = z.object({
   updatedAt: z.date().default(() => new Date()),
 });
 
-export const insertAppSettingsSchema = appSettingsSchema.omit({ 
-  id: true, 
-  updatedAt: true 
+export const insertAppSettingsSchema = appSettingsSchema.omit({
+  id: true,
+  updatedAt: true
 });
 
 export type AppSettings = z.infer<typeof appSettingsSchema>;
@@ -83,9 +83,9 @@ export const licenseSchema = z.object({
   createdAt: z.date().default(() => new Date()),
 });
 
-export const insertLicenseSchema = licenseSchema.omit({ 
-  id: true, 
-  createdAt: true 
+export const insertLicenseSchema = licenseSchema.omit({
+  id: true,
+  createdAt: true
 });
 
 export type License = z.infer<typeof licenseSchema>;
@@ -137,6 +137,14 @@ export const licenses = pgTable("licenses", {
   expiresAt: timestamp("expires_at"),
   hardwareId: varchar("hardware_id", { length: 255 }),
   activatedAt: timestamp("activated_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const broadcasts = pgTable("broadcasts", {
+  id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
+  message: text("message").notNull(),
+  timestamp: integer("timestamp").notNull(),
+  adminId: varchar("admin_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
