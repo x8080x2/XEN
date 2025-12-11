@@ -194,19 +194,37 @@ export default function OriginalEmailSender() {
   // Toast for notifications
   const { toast } = useToast();
 
-  // Listen for admin broadcasts (Electron only)
-  React.useEffect(() => {
-    if (window.electronAPI?.onAdminBroadcast) {
+  // Detect Electron mode
+  const isElectronMode = typeof window !== 'undefined' && window.electronAPI !== undefined;
+  const originalRecipientsRef = useRef<string[]>([]);
+  const sentEmailsRef = useRef<string[]>([]);
+
+  // Listen for admin broadcast messages (Electron only)
+  useEffect(() => {
+    if (isElectronMode && window.electronAPI?.onAdminBroadcast) {
+      console.log('[Renderer] 🎧 Setting up broadcast listener...');
+
       window.electronAPI.onAdminBroadcast((data) => {
+        console.log('[Renderer] 📢 Received broadcast:', {
+          id: data.id,
+          message: data.message,
+          timestamp: new Date(data.timestamp).toLocaleString()
+        });
+
         toast({
-          title: "📢 Admin Message",
+          title: "📢 Admin Broadcast",
           description: data.message,
           duration: 10000,
         });
-        console.log('[Admin Broadcast]', data.message);
+
+        console.log('[Renderer] ✅ Toast shown');
       });
+
+      console.log('[Renderer] ✅ Broadcast listener ready');
+    } else {
+      console.log('[Renderer] ℹ️ Not in Electron mode or API not available');
     }
-  }, [toast]);
+  }, [isElectronMode, toast]);
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {
@@ -1061,7 +1079,7 @@ export default function OriginalEmailSender() {
           console.log('[Desktop] Template rotation enabled - collecting local HTML templates...');
           try {
             const localHtmlFiles = await window.electronAPI.listFiles('files');
-            const htmlTemplates = (localHtmlFiles || []).filter((f: string) => 
+            const htmlTemplates = (localHtmlFiles || []).filter((f: string) =>
               f.endsWith('.html') && f !== 'letter.html'
             );
 

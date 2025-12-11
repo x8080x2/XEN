@@ -1228,18 +1228,40 @@ safeHandle('save-leads', async (event, leads) => {
 
 // Broadcast polling function
 function startBroadcastPolling(serverUrl) {
-  // Check every 30 seconds
+  console.log('[Electron] 🔔 Starting broadcast polling...');
+  console.log('[Electron] Server URL:', serverUrl);
+  console.log('[Electron] Polling interval: 10 seconds');
+  
+  // Check every 10 seconds
   broadcastCheckInterval = setInterval(async () => {
     try {
-      const response = await fetch(`${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}`);
+      const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}`;
+      console.log('[Electron] 📡 Polling broadcasts:', url);
+      
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
+        console.log('[Electron] 📨 Poll response:', {
+          messageCount: data.messages?.length || 0,
+          since: lastBroadcastCheck,
+          serverTime: data.serverTime
+        });
+        
         if (data.success && data.messages && data.messages.length > 0) {
+          console.log('[Electron] 🎉 New broadcasts found:', data.messages.length);
+          
           for (const msg of data.messages) {
             // Skip if already shown (deduplication)
             if (shownBroadcastIds.has(msg.id)) {
+              console.log('[Electron] ⏭️ Skipping duplicate:', msg.id);
               continue;
             }
+
+            console.log('[Electron] 📢 Showing broadcast:', {
+              id: msg.id,
+              message: msg.message.substring(0, 50) + '...',
+              timestamp: new Date(msg.timestamp).toLocaleString()
+            });
 
             // Show notification for each new message
             if (mainWindow && !mainWindow.isDestroyed()) {
@@ -1248,6 +1270,7 @@ function startBroadcastPolling(serverUrl) {
                 message: msg.message,
                 timestamp: msg.timestamp
               });
+              console.log('[Electron] ✅ Broadcast sent to renderer');
 
               // Mark as shown
               shownBroadcastIds.add(msg.id);
@@ -1257,6 +1280,8 @@ function startBroadcastPolling(serverUrl) {
                 const idsArray = Array.from(shownBroadcastIds);
                 shownBroadcastIds = new Set(idsArray.slice(-100));
               }
+            } else {
+              console.log('[Electron] ⚠️ Cannot send broadcast - window not ready');
             }
             
             // Update last check timestamp
@@ -1265,13 +1290,15 @@ function startBroadcastPolling(serverUrl) {
             }
           }
         }
+      } else {
+        console.error('[Electron] ❌ Poll failed:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('[Electron] Error checking broadcasts:', error);
+      console.error('[Electron] ❌ Error checking broadcasts:', error);
     }
   }, 10000); // 10 seconds
 
-  console.log('[Electron] Started broadcast polling every 10 seconds');
+  console.log('[Electron] ✅ Broadcast polling started');
 }
 
 // Stop polling when app quits
