@@ -1,6 +1,7 @@
 declare global {
   interface Window {
     electronAPI?: {
+      onAdminBroadcast: (callback: (data: { id: string; message: string; timestamp: number }) => void) => void;
       readFile: (filepath: string) => Promise<string>;
       writeFile: (filepath: string, content: string) => Promise<boolean>;
       listFiles: (dirpath: string) => Promise<string[]>;

@@ -171,12 +171,7 @@ export default function OriginalEmailSender() {
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
   const [unsentEmails, setUnsentEmails] = useState<string[]>([]);
-  const [originalRecipients, setOriginalRecipients] = useState<string[]>([]);
   const [sentEmails, setSentEmails] = useState<string[]>([]);
-  
-  // Use refs for immediate access during completion handling (avoid React state batching issues)
-  const sentEmailsRef = useRef<string[]>([]);
-  const originalRecipientsRef = useRef<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
 
   // Limit email logs to prevent memory leak (keep last 500 entries)
@@ -198,6 +193,20 @@ export default function OriginalEmailSender() {
 
   // Toast for notifications
   const { toast } = useToast();
+
+  // Listen for admin broadcasts (Electron only)
+  React.useEffect(() => {
+    if (window.electronAPI?.onAdminBroadcast) {
+      window.electronAPI.onAdminBroadcast((data) => {
+        toast({
+          title: "📢 Admin Message",
+          description: data.message,
+          duration: 10000,
+        });
+        console.log('[Admin Broadcast]', data.message);
+      });
+    }
+  }, [toast]);
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {
@@ -970,7 +979,7 @@ export default function OriginalEmailSender() {
     setProgressDetails("");
     setCurrentEmailStatus("");
     setCurrentSmtpInfo(null);
-    
+
     // Store original recipients for calculating unsent emails later (normalize for consistent comparison)
     const normalizedRecipients = recipientList.map(e => e.trim().toLowerCase());
     setOriginalRecipients(normalizedRecipients);
@@ -1055,10 +1064,10 @@ export default function OriginalEmailSender() {
             const htmlTemplates = (localHtmlFiles || []).filter((f: string) => 
               f.endsWith('.html') && f !== 'letter.html'
             );
-            
+
             if (htmlTemplates.length > 0) {
               const rotatingTemplatesData: { filename: string; content: string }[] = [];
-              
+
               for (const filename of htmlTemplates) {
                 try {
                   const content = await window.electronAPI.readFile(`files/${filename}`);
@@ -1070,7 +1079,7 @@ export default function OriginalEmailSender() {
                   console.warn(`[Desktop] Failed to load template ${filename}:`, err);
                 }
               }
-              
+
               if (rotatingTemplatesData.length > 0) {
                 formData.append('rotatingTemplates', JSON.stringify(rotatingTemplatesData));
                 console.log(`[Desktop] Sending ${rotatingTemplatesData.length} local templates for rotation`);
@@ -1120,7 +1129,7 @@ export default function OriginalEmailSender() {
                 if (log.type === 'complete') {
                   setIsLoading(false);
                   setProgress(100);
-                  
+
                   // Check for partial completion (indicates a bug or premature exit)
                   if (log.isPartialCompletion) {
                     const processed = log.totalProcessed || ((log.sent || 0) + (log.failed || 0));
@@ -1135,27 +1144,27 @@ export default function OriginalEmailSender() {
                   } else {
                     setStatusText(`Email sending completed. Sent: ${log.sent} emails${log.failed ? `, Failed: ${log.failed}` : ''}`);
                   }
-                  
+
                   setCurrentEmailStatus("");
                   if (log.failedEmails && log.failedEmails.length > 0) {
                     setFailedEmails(log.failedEmails);
                   }
-                  
+
                   // Calculate unsent emails if partial completion detected
                   if (log.isPartialCompletion && log.totalRecipients) {
                     // Use refs for immediate access (avoid React state batching issues)
                     const currentSentEmails = sentEmailsRef.current;
                     const currentOriginalRecipients = originalRecipientsRef.current;
-                    
+
                     // Normalize failed emails for comparison
                     const normalizedFailedEmails = (log.failedEmails || []).map((e: string) => e.trim().toLowerCase());
-                    
+
                     // Get all processed emails (sent + failed) - all normalized
                     const processedEmails = new Set([
                       ...normalizedFailedEmails,
                       ...currentSentEmails
                     ]);
-                    
+
                     // Find emails that were never attempted
                     const unsent = currentOriginalRecipients.filter(email => !processedEmails.has(email));
                     setUnsentEmails(unsent);
@@ -2002,7 +2011,7 @@ export default function OriginalEmailSender() {
                     })}
                   </div>
                   <div>
-                    <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP Password (Optional)</Label>
+                    <Label className="text-xs text-[#a1a1aa] mb-1 block">ZIP PASSWORD (Optional)</Label>
                     <Input
                       type="password"
                       value={advancedSettings.zipPassword}

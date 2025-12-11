@@ -13,6 +13,7 @@ import multer from "multer";
 import { join } from "path";
 import { readFileSync, existsSync } from "fs";
 import nodemailer from "nodemailer";
+import { telegramBotService } from './services/telegramBotService';
 
 const upload = multer({
   dest: 'uploads/',
@@ -45,6 +46,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('[Telegram Webhook] Error processing update:', error);
       res.sendStatus(500);
+    }
+  });
+
+  // Broadcast messages endpoint for Electron app
+  app.get('/api/telegram/broadcasts', (req, res) => {
+    try {
+      const since = req.query.since ? parseInt(req.query.since as string) : undefined;
+      const messages = telegramBotService.getBroadcastMessages(since);
+      res.json({ success: true, messages });
+    } catch (error) {
+      console.error('[Broadcast API] Error fetching messages:', error);
+      res.status(500).json({ success: false, messages: [] });
     }
   });
 

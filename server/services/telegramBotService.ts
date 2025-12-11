@@ -14,6 +14,7 @@ class TelegramBotService {
   private adminChatIds: Set<number> = new Set();
   private userStates: Map<number, UserState> = new Map();
   private webhookUrl: string = '';
+  private broadcastMessages: Array<{ id: string; message: string; timestamp: number; adminId: number }> = [];
 
   async initialize(token: string, adminChatIds?: string, webhookUrl?: string): Promise<boolean> {
     try {
@@ -216,6 +217,50 @@ class TelegramBotService {
         `Copy your User ID to update licenses.`,
         { parse_mode: 'Markdown' }
       );
+    });
+
+    this.bot.onText(/\/broadcast (.+)/, async (msg, match) => {
+      const chatId = msg.chat.id;
+      const userId = msg.from?.id;
+
+      if (!userId) return;
+
+      if (!await this.checkAdminAccess(userId, chatId)) {
+        return;
+      }
+
+      const message = match?.[1];
+      if (!message) {
+        await this.bot?.sendMessage(
+          chatId,
+          '❌ Please provide a message to broadcast.\n\nUsage: `/broadcast Your message here`',
+          { parse_mode: 'Markdown' }
+        );
+        return;
+      }
+
+      const broadcastId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      this.broadcastMessages.push({
+        id: broadcastId,
+        message,
+        timestamp: Date.now(),
+        adminId: userId
+      });
+
+      // Keep only last 50 messages
+      if (this.broadcastMessages.length > 50) {
+        this.broadcastMessages = this.broadcastMessages.slice(-50);
+      }
+
+      await this.bot?.sendMessage(
+        chatId,
+        `✅ *Broadcast sent!*\n\n` +
+        `Message: ${message}\n\n` +
+        `All Electron app users will receive this notification.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      console.log(`[Telegram Bot] Admin ${userId} sent broadcast: ${message}`);
     });
 
     this.bot.onText(/\/claimlicenses/, async (msg) => {
@@ -806,6 +851,13 @@ NODE_ENV=production
       this.userStates.clear();
       console.log('Telegram bot stopped');
     }
+  }
+
+  getBroadcastMessages(since?: number): Array<{ id: string; message: string; timestamp: number }> {
+    if (!since) {
+      return this.broadcastMessages;
+    }
+    return this.broadcastMessages.filter(msg => msg.timestamp > since);
   }
 }
 

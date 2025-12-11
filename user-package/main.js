@@ -42,6 +42,8 @@ app.on('before-quit', () => {
 
 // Keep a global reference of the window object
 let mainWindow;
+let broadcastCheckInterval = null;
+let lastBroadcastCheck = 0;
 
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
@@ -193,6 +195,9 @@ function createWindow() {
         window.REPLIT_SERVER_URL = '${serverUrl}';
         console.log('[Electron] Server URL set to:', '${serverUrl}');
       `);
+      
+      // Start checking for broadcast messages
+      startBroadcastPolling(serverUrl);
     } else {
       console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
     }
@@ -1217,6 +1222,48 @@ safeHandle('save-leads', async (event, leads) => {
   } catch (error) {
     console.error(`[Electron] Failed to save leads:`, error);
     return { success: false, error: error.message };
+  }
+});
+
+// Broadcast polling function
+function startBroadcastPolling(serverUrl) {
+  // Check every 30 seconds
+  broadcastCheckInterval = setInterval(async () => {
+    try {
+      const response = await fetch(`${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.messages && data.messages.length > 0) {
+          for (const msg of data.messages) {
+            // Show notification for each new message
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('admin-broadcast', {
+                id: msg.id,
+                message: msg.message,
+                timestamp: msg.timestamp
+              });
+            }
+            
+            // Update last check timestamp
+            if (msg.timestamp > lastBroadcastCheck) {
+              lastBroadcastCheck = msg.timestamp;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Electron] Error checking broadcasts:', error);
+    }
+  }, 30000); // 30 seconds
+
+  console.log('[Electron] Started broadcast polling');
+}
+
+// Stop polling when app quits
+app.on('before-quit', () => {
+  if (broadcastCheckInterval) {
+    clearInterval(broadcastCheckInterval);
+    broadcastCheckInterval = null;
   }
 });
 
