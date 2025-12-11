@@ -1,0 +1,144 @@
+2025-12-11 12:16:22.73
+80727438
+User
+' at WebSocket.emitClose (/home/runner/workspace/node_modules/ws/lib/websocket.js:272:10)\n' +
+2025-12-11 12:16:22.73
+80727438
+User
+' at Socket.socketOnClose (/home/runner/workspace/node_modules/ws/lib/websocket.js:1341:15)\n' +
+2025-12-11 12:16:22.73
+80727438
+User
+at _AdvancedEmailService.launchBrowser (file:///home/runner/workspace/dist/index.js:1340:17)
+2025-12-11 12:16:22.73
+80727438
+User
+at async _AdvancedEmailService.renderHtml (file:///home/runner/workspace/dist/index.js:1502:16)
+2025-12-11 12:16:22.73
+80727438
+User
+[HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Protocol error (Target.setAutoAttach): Target closed
+2025-12-11 12:16:22.73
+80727438
+User
+error: 'Failed to launch browser: Protocol error (Target.setAutoAttach): Target closed'
+2025-12-11 12:16:22.73
+80727438
+User
+Browser launch failed {
+2025-12-11 12:16:22.73
+80727438
+User
+' at WebSocket.emit (node:events:524:28)\n' +
+2025-12-11 12:16:22.73
+80727438
+User
+}
+2025-12-11 12:16:22.73
+80727438
+User
+' at WebSocket. (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/node/NodeWebSocketTransport.js:42:30)\n' +
+2025-12-11 12:16:22.73
+80727438
+User
+at async _AdvancedEmailService.convertHtmlToPdf (file:///home/runner/workspace/dist/index.js:1355:27)
+2025-12-11 12:16:22.73
+80727438
+User
+}
+2025-12-11 12:16:52.15
+80727438
+User
+' at WebSocket.emit (node:events:524:28)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+at async _AdvancedEmailService.convertHtmlToPdf (file:///home/runner/workspace/dist/index.js:1355:27)
+2025-12-11 12:16:52.15
+80727438
+User
+[Browser Pool] Failed to create browser: {
+2025-12-11 12:16:52.15
+80727438
+User
+at async _AdvancedEmailService.renderHtml (file:///home/runner/workspace/dist/index.js:1502:16)
+2025-12-11 12:16:52.15
+80727438
+User
+' at WebSocket.emitClose (/home/runner/workspace/node_modules/ws/lib/websocket.js:272:10)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+Browser launch failed {
+2025-12-11 12:16:52.15
+80727438
+User
+' at Socket.emit (node:events:524:28)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+}
+2025-12-11 12:16:52.15
+80727438
+User
+' at TCP. (node:net:343:12)'
+2025-12-11 12:16:52.15
+80727438
+User
+stack: 'TargetCloseError: Protocol error (Target.setAutoAttach): Target closed\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+' at WebSocket. (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/node/NodeWebSocketTransport.js:42:30)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+' at CallbackRegistry.clear (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/common/CallbackRegistry.js:78:36)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+at async _AdvancedEmailService.getBrowserFromPool (file:///home/runner/workspace/dist/index.js:929:27)
+2025-12-11 12:16:52.15
+80727438
+User
+at async _AdvancedEmailService.sendMail (file:///home/runner/workspace/dist/index.js:2451:38)
+2025-12-11 12:16:52.15
+80727438
+User
+}
+2025-12-11 12:16:52.15
+80727438
+User
+error: 'Failed to launch browser: Protocol error (Target.setAutoAttach): Target closed'
+2025-12-11 12:16:52.15
+80727438
+User
+at _AdvancedEmailService.launchBrowser (file:///home/runner/workspace/dist/index.js:1340:17)
+2025-12-11 12:16:52.15
+80727438
+User
+' at Socket.socketOnClose (/home/runner/workspace/node_modules/ws/lib/websocket.js:1341:15)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+operationId: 'browser_1765448208416_9uiymr7bi',
+2025-12-11 12:16:52.15
+80727438
+User
+[HTML_CONVERT] PDF conversion failed: Error: Failed to launch browser: Protocol error (Target.setAutoAttach): Target closed
+2025-12-11 12:16:52.15
+80727438
+User
+' at #onClose (file:///home/runner/workspace/node_modules/puppeteer-core/lib/esm/puppeteer/cdp/Connection.js:175:25)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+' at callListener (/home/runner/workspace/node_modules/ws/lib/event-target.js:290:14)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+' at WebSocket.onClose (/home/runner/workspace/node_modules/ws/lib/event-target.js:220:9)\n' +
+2025-12-11 12:16:52.15
+80727438
+User
+error: 'Protocol error (Target.setAutoAttach): Target closed',
