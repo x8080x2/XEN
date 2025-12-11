@@ -54,7 +54,7 @@ Preferred communication style: Simple, everyday language.
 - Middleware-based request handling with Vite integration for development
 
 **Core Services:**
-- `advancedEmailService`: Handles email composition, SMTP rotation, template rotation, attachment processing, QR code generation, and batch sending
+- `advancedEmailService`: Handles email composition, SMTP rotation, template rotation, attachment processing, QR code generation, and batch sending with enhanced completion verification (detects partial completions, cancellations, and unexpected exits)
 - `licenseService`: Manages license key generation, validation, hardware fingerprinting, and expiration
 - `telegramBotService`: Telegram bot integration for license management via webhooks
 - `aiService`: Google Gemini integration for generating email subjects and sender names
