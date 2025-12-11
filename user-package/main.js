@@ -1042,51 +1042,76 @@ async function loadSmtpData() {
   }
 }
 
-// SMTP test handler - proxy to backend server API for better network access
+// SMTP test handler - test local SMTP config using nodemailer
 safeHandle('smtp:test', async () => {
   try {
-    const serverUrl = process.env.REPLIT_SERVER_URL;
+    console.log('[Electron] Testing SMTP connection locally...');
 
-    if (!serverUrl) {
-      console.error('[Electron] ❌ SMTP test failed: No server URL configured');
-      return { success: false, online: false, error: 'Server URL not configured' };
+    // Load current SMTP config from local files
+    const smtpData = await loadSmtpData();
+
+    if (!smtpData.success || !smtpData.currentSmtp) {
+      console.error('[Electron] ❌ SMTP test failed: No SMTP configuration available');
+      return { success: false, online: false, error: 'No SMTP configuration available' };
     }
 
-    console.log('[Electron] Testing SMTP via backend server API...');
+    const currentSmtp = smtpData.currentSmtp;
+    console.log(`[Electron] Testing SMTP: ${currentSmtp.fromEmail} (${currentSmtp.host}:${currentSmtp.port})`);
 
-    // Use backend server API for SMTP testing (avoids local network/firewall issues)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    // Create nodemailer transporter
+    const port = Number(currentSmtp.port);
+    const transporterConfig = {
+      host: currentSmtp.host,
+      port: port,
+      secure: port === 465,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      tls: {
+        rejectUnauthorized: false
+      }
+    };
+
+    // Add auth if username and password are provided
+    if (currentSmtp.user && currentSmtp.pass) {
+      transporterConfig.auth = {
+        user: currentSmtp.user,
+        pass: currentSmtp.pass
+      };
+    }
+
+    const transporter = nodemailer.createTransport(transporterConfig);
 
     try {
-      const response = await fetch(`${serverUrl}/api/smtp/test`, {
-        method: 'GET',
-        signal: controller.signal
-      });
+      // Verify the connection
+      await transporter.verify();
+      console.log('[Electron] ✅ SMTP test successful');
+      console.log('[Electron] SMTP ONLINE:', currentSmtp.fromEmail);
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Server returned status ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.online) {
-        console.log('[Electron] ✅ SMTP test successful (via backend)');
-        console.log('[Electron] SMTP ONLINE:', data.smtp);
-      } else {
-        console.error('[Electron] ❌ SMTP test failed:', data.error);
-      }
-
-      return data;
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.error('[Electron] ❌ SMTP test timed out');
-        return { success: false, online: false, error: 'SMTP test timed out (30s)' };
-      }
-      throw fetchError;
+      transporter.close();
+      return {
+        success: true,
+        online: true,
+        smtp: {
+          id: currentSmtp.id,
+          host: currentSmtp.host,
+          port: currentSmtp.port,
+          fromEmail: currentSmtp.fromEmail
+        }
+      };
+    } catch (verifyError) {
+      console.error('[Electron] ❌ SMTP verification failed:', verifyError.message);
+      transporter.close();
+      return {
+        success: false,
+        online: false,
+        error: verifyError.message || 'SMTP connection failed',
+        smtp: {
+          id: currentSmtp.id,
+          host: currentSmtp.host,
+          port: currentSmtp.port,
+          fromEmail: currentSmtp.fromEmail
+        }
+      };
     }
   } catch (error) {
     console.error('[Electron] ❌ SMTP test failed:', error.message);
