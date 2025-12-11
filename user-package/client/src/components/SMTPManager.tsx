@@ -10,6 +10,20 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, RotateCcw, Settings, Mail, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Electron API types
+declare global {
+  interface Window {
+    electronAPI?: {
+      smtpTest: () => Promise<{ online: boolean; smtp?: any; error?: string }>;
+      smtpList: () => Promise<{ success: boolean; smtpConfigs: any[]; currentSmtp: any; rotationEnabled: boolean }>;
+      smtpRotate: () => Promise<{ success: boolean; currentSmtp: any; rotationEnabled: boolean }>;
+      smtpToggleRotation: (enabled: boolean) => Promise<{ success: boolean; rotationEnabled: boolean; currentSmtp: any }>;
+      smtpAdd: (config: any) => Promise<{ success: boolean; smtpConfigs: any[]; smtpId: string }>;
+      smtpDelete: (smtpId: string) => Promise<{ success: boolean; smtpConfigs: any[]; currentSmtp: any }>;
+    };
+  }
+}
+
 interface SMTPConfig {
   id: string;
   host: string;
@@ -53,29 +67,85 @@ export function SMTPManager() {
   const testSmtp = async (smtpId: string) => {
     setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
     try {
-      const response = await fetch(`/api/smtp/test/${smtpId}`);
-      const data = await response.json();
-      setSmtpStatus(prev => ({ 
-        ...prev, 
-        [smtpId]: data.online ? 'online' : 'offline' 
-      }));
+      // Use Electron API if available, otherwise fall back to backend
+      let data;
+      if (window.electronAPI?.smtpTest) {
+        data = await window.electronAPI.smtpTest();
+        // Desktop returns current SMTP status, map to specific ID
+        if (data && data.online) {
+          // Find matching config by comparing SMTP details
+          const matchingSmtp = smtpData.smtpConfigs.find(s => 
+            s.host === data.smtp?.host && s.fromEmail === data.smtp?.fromEmail
+          );
+          if (matchingSmtp && matchingSmtp.id === smtpId) {
+            setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
+          } else {
+            // This SMTP wasn't tested, mark as unknown
+            setSmtpStatus(prev => ({ ...prev, [smtpId]: 'unknown' }));
+          }
+        } else {
+          setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+        }
+      } else {
+        // Web version - use backend API
+        const response = await fetch(`/api/smtp/test/${smtpId}`);
+        data = await response.json();
+        setSmtpStatus(prev => ({ 
+          ...prev, 
+          [smtpId]: data.online ? 'online' : 'offline' 
+        }));
+      }
     } catch (error) {
+      console.error(`SMTP test failed for ${smtpId}:`, error);
       setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
     }
   };
 
   const testAllSmtps = async () => {
-    for (const smtp of smtpData.smtpConfigs) {
-      testSmtp(smtp.id);
+    // Desktop: Test current SMTP only (since API tests current config)
+    if (window.electronAPI?.smtpTest) {
+      try {
+        const data = await window.electronAPI.smtpTest();
+        if (data && data.online && data.smtp) {
+          // Find and mark the current SMTP as online
+          const currentSmtp = smtpData.smtpConfigs.find(s => 
+            s.host === data.smtp.host && s.fromEmail === data.smtp.fromEmail
+          );
+          if (currentSmtp) {
+            setSmtpStatus(prev => ({ ...prev, [currentSmtp.id]: 'online' }));
+            console.log(`[Desktop SMTP Test] ${currentSmtp.id} is ONLINE`);
+          }
+        }
+      } catch (error) {
+        console.error('[Desktop SMTP Test] Failed:', error);
+      }
+    } else {
+      // Web: Test all SMTPs individually
+      for (const smtp of smtpData.smtpConfigs) {
+        await testSmtp(smtp.id);
+      }
     }
   };
 
   const fetchSmtpData = async () => {
     try {
-      const response = await fetch("/api/smtp/list");
-      const data = await response.json();
-      if (data.success) {
+      let data;
+      if (window.electronAPI?.smtpList) {
+        // Desktop: Use Electron API
+        data = await window.electronAPI.smtpList();
+      } else {
+        // Web: Use backend API
+        const response = await fetch("/api/smtp/list");
+        data = await response.json();
+      }
+      
+      if (data && data.success) {
         setSmtpData(data);
+        
+        // Auto-test current SMTP on desktop
+        if (window.electronAPI?.smtpTest && data.currentSmtp) {
+          testSmtp(data.currentSmtp.id);
+        }
       }
     } catch (error) {
       toast({
