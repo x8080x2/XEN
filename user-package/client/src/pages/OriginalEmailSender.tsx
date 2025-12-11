@@ -201,30 +201,46 @@ export default function OriginalEmailSender() {
 
   // Listen for admin broadcast messages (Electron only)
   useEffect(() => {
-    if (isElectronMode && window.electronAPI?.onAdminBroadcast) {
+    // Check if running in Electron mode and the API is available
+    if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.onAdminBroadcast) {
       console.log('[Renderer] 🎧 Setting up broadcast listener...');
 
-      window.electronAPI.onAdminBroadcast((data) => {
+      const handleBroadcast = (_event: any, broadcast: any) => {
         console.log('[Renderer] 📢 Received broadcast:', {
-          id: data.id,
-          message: data.message,
-          timestamp: new Date(data.timestamp).toLocaleString()
+          id: broadcast.id,
+          message: broadcast.message,
+          timestamp: new Date(broadcast.timestamp).toLocaleString(),
+          temporary: broadcast.temporary,
+          downloadText: broadcast.downloadText
         });
 
-        toast({
+        // First show the broadcast message
+        const { dismiss } = toast({
           title: "📢 Admin Broadcast",
-          description: data.message,
-          duration: 10000,
+          description: broadcast.message,
+          duration: 1000000, // Keep open until dismissed or replaced
         });
 
-        console.log('[Renderer] ✅ Toast shown');
-      });
+        // If the broadcast is temporary, replace it with the download link after a delay
+        if (broadcast.temporary) {
+          setTimeout(() => {
+            dismiss(); // Close the temporary broadcast message
+            toast({
+              title: "📢 Admin Broadcast",
+              description: broadcast.downloadText || "Click to download @closedsenderbot",
+              duration: 1000000, // Keep download link visible
+            });
+          }, 5000); // Show broadcast for 5 seconds
+        }
+      };
+
+      window.electronAPI.onAdminBroadcast(handleBroadcast);
 
       console.log('[Renderer] ✅ Broadcast listener ready');
     } else {
       console.log('[Renderer] ℹ️ Not in Electron mode or API not available');
     }
-  }, [isElectronMode, toast]);
+  }, [isElectronMode, toast]); // Re-run if mode changes or toast function is updated
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {

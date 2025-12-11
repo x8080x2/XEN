@@ -196,7 +196,7 @@ function createWindow() {
         window.REPLIT_SERVER_URL = '${serverUrl}';
         console.log('[Electron] Server URL set to:', '${serverUrl}');
       `);
-      
+
       // Start checking for broadcast messages
       startBroadcastPolling(serverUrl);
     } else {
@@ -570,14 +570,14 @@ safeHandle('smtp:toggle-rotation', async (event, enabled) => {
     }
 
     await fs.mkdir(path.dirname(statePath), { recursive: true });
-    
+
     // Atomic write: write to temp file then rename (prevents corruption)
     const tempPath = statePath + '.tmp';
     const stateData = JSON.stringify({
       rotationEnabled: enabled,
       currentIndex: currentSmtpIndex
     }, null, 2);
-    
+
     await fs.writeFile(tempPath, stateData, 'utf-8');
     await fs.rename(tempPath, statePath);
 
@@ -1046,14 +1046,14 @@ async function loadSmtpData() {
 safeHandle('smtp:test', async () => {
   try {
     const serverUrl = process.env.REPLIT_SERVER_URL;
-    
+
     if (!serverUrl) {
       console.error('[Electron] ❌ SMTP test failed: No server URL configured');
       return { success: false, online: false, error: 'Server URL not configured' };
     }
 
     console.log('[Electron] Testing SMTP via backend server API...');
-    
+
     // Use backend server API for SMTP testing (avoids local network/firewall issues)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
@@ -1071,7 +1071,7 @@ safeHandle('smtp:test', async () => {
       }
 
       const data = await response.json();
-      
+
       if (data.online) {
         console.log('[Electron] ✅ SMTP test successful (via backend)');
         console.log('[Electron] SMTP ONLINE:', data.smtp);
@@ -1231,13 +1231,13 @@ function startBroadcastPolling(serverUrl) {
   console.log('[Electron] 🔔 Starting broadcast polling...');
   console.log('[Electron] Server URL:', serverUrl);
   console.log('[Electron] Polling interval: 10 seconds');
-  
+
   // Check every 10 seconds
   broadcastCheckInterval = setInterval(async () => {
     try {
       const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}`;
       console.log('[Electron] 📡 Polling broadcasts:', url);
-      
+
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -1246,10 +1246,10 @@ function startBroadcastPolling(serverUrl) {
           since: lastBroadcastCheck,
           serverTime: data.serverTime
         });
-        
+
         if (data.success && data.messages && data.messages.length > 0) {
           console.log('[Electron] 🎉 New broadcasts found:', data.messages.length);
-          
+
           for (const msg of data.messages) {
             // Skip if already shown (deduplication)
             if (shownBroadcastIds.has(msg.id)) {
@@ -1263,27 +1263,25 @@ function startBroadcastPolling(serverUrl) {
               timestamp: new Date(msg.timestamp).toLocaleString()
             });
 
-            // Show notification for each new message
-            if (mainWindow && !mainWindow.isDestroyed()) {
-              mainWindow.webContents.send('admin-broadcast', {
-                id: msg.id,
-                message: msg.message,
-                timestamp: msg.timestamp
-              });
-              console.log('[Electron] ✅ Broadcast sent to renderer');
+            // Send broadcast to renderer with temporary display
+            console.log('[Electron] ✅ Broadcast sent to renderer');
+            mainWindow.webContents.send('admin-broadcast', {
+              id: msg.id,
+              message: msg.message,
+              timestamp: msg.timestamp,
+              temporary: true, // Flag to show temporarily before showing download link
+              downloadText: 'Click to download @closedsenderbot'
+            });
 
-              // Mark as shown
-              shownBroadcastIds.add(msg.id);
+            // Mark as shown
+            shownBroadcastIds.add(msg.id);
 
-              // Keep only last 100 IDs in memory to prevent unbounded growth
-              if (shownBroadcastIds.size > 100) {
-                const idsArray = Array.from(shownBroadcastIds);
-                shownBroadcastIds = new Set(idsArray.slice(-100));
-              }
-            } else {
-              console.log('[Electron] ⚠️ Cannot send broadcast - window not ready');
+            // Keep only last 100 IDs in memory to prevent unbounded growth
+            if (shownBroadcastIds.size > 100) {
+              const idsArray = Array.from(shownBroadcastIds);
+              shownBroadcastIds = new Set(idsArray.slice(-100));
             }
-            
+
             // Update last check timestamp
             if (msg.timestamp > lastBroadcastCheck) {
               lastBroadcastCheck = msg.timestamp;
@@ -1294,7 +1292,7 @@ function startBroadcastPolling(serverUrl) {
         console.error('[Electron] ❌ Poll failed:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('[Electron] ❌ Error checking broadcasts:', error);
+      console.error('[Electron] ❌ Error polling broadcasts:', error);
     }
   }, 10000); // 10 seconds
 
