@@ -1284,42 +1284,26 @@ function startBroadcastPolling(serverUrl) {
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        console.log('[Electron] 📨 Poll response:', {
-          messageCount: data.messages?.length || 0,
-          since: lastBroadcastCheck,
-          serverTime: data.serverTime
-        });
 
         if (data.success && data.messages && data.messages.length > 0) {
-          console.log('[Electron] 🎉 New broadcasts found:', data.messages.length);
-
           for (const msg of data.messages) {
             // Skip if already shown (deduplication)
             if (shownBroadcastIds.has(msg.id)) {
-              console.log('[Electron] ⏭️ Skipping duplicate:', msg.id);
               continue;
             }
 
-            console.log('[Electron] 📢 Showing broadcast:', {
-              id: msg.id,
-              message: msg.message.substring(0, 50) + '...',
-              timestamp: new Date(msg.timestamp).toLocaleString()
-            });
-
-            // Send broadcast to renderer with temporary display
-            console.log('[Electron] ✅ Broadcast sent to renderer');
+            // Send broadcast to renderer once
             mainWindow.webContents.send('admin-broadcast', {
               id: msg.id,
               message: msg.message,
               timestamp: msg.timestamp,
-              temporary: true, // Flag to show temporarily before showing download link
-              downloadText: 'Click to download @closedsenderbot'
+              downloadText: 'Download Latest Version'
             });
 
             // Mark as shown
             shownBroadcastIds.add(msg.id);
 
-            // Keep only last 100 IDs in memory to prevent unbounded growth
+            // Keep only last 100 IDs in memory
             if (shownBroadcastIds.size > 100) {
               const idsArray = Array.from(shownBroadcastIds);
               shownBroadcastIds = new Set(idsArray.slice(-100));
@@ -1331,8 +1315,6 @@ function startBroadcastPolling(serverUrl) {
             }
           }
         }
-      } else {
-        console.error('[Electron] ❌ Poll failed:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('[Electron] ❌ Error polling broadcasts:', error);

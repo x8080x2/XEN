@@ -203,51 +203,48 @@ export default function OriginalEmailSender() {
   const [broadcastBanner, setBroadcastBanner] = useState<{
     visible: boolean;
     message: string;
+    timestamp: number;
+    id: string;
     downloadText?: string;
     showDownloadLink: boolean;
   } | null>(null);
 
-  // Listen for admin broadcast messages (Electron only)
+  // Track shown broadcast IDs to prevent duplicates
+  const [shownBroadcastIds, setShownBroadcastIds] = React.useState<Set<string>>(new Set());
+
+  // Broadcast polling effect for desktop app
   useEffect(() => {
-    // Check if running in Electron mode and the API is available
-    if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.onAdminBroadcast) {
-      console.log('[Renderer] 🎧 Setting up broadcast listener...');
+    if (!isElectronMode || !window.electronAPI?.onAdminBroadcast) return;
 
-      const handleBroadcast = (broadcast: any) => {
-        console.log('[Renderer] 📢 Received broadcast:', {
-          id: broadcast.id,
-          message: broadcast.message,
-          timestamp: new Date(broadcast.timestamp).toLocaleString(),
-          temporary: broadcast.temporary,
-          downloadText: broadcast.downloadText
-        });
+    console.log('[Renderer] 🔔 Setting up admin broadcast listener...');
 
-        // Show persistent banner with the broadcast message
-        setBroadcastBanner({
-          visible: true,
-          message: broadcast.message,
-          downloadText: broadcast.downloadText,
-          showDownloadLink: false // Start with message only
-        });
+    const handleBroadcast = (data: { id: string; message: string; timestamp: number; temporary?: boolean; downloadText?: string }) => {
+      console.log('[Renderer] 📢 Received admin broadcast:', data);
 
-        // After 10 seconds, show the download link option
-        if (broadcast.temporary && broadcast.downloadText) {
-          setTimeout(() => {
-            setBroadcastBanner(prev => prev ? {
-              ...prev,
-              showDownloadLink: true
-            } : null);
-          }, 10000);
-        }
-      };
+      // Check if we've already shown this broadcast
+      if (shownBroadcastIds.has(data.id)) {
+        console.log('[Renderer] ⏭️ Skipping duplicate broadcast:', data.id);
+        return;
+      }
 
-      window.electronAPI.onAdminBroadcast(handleBroadcast);
+      // Mark as shown
+      setShownBroadcastIds(prev => new Set(prev).add(data.id));
 
-      console.log('[Renderer] ✅ Broadcast listener ready');
-    } else {
-      console.log('[Renderer] ℹ️ Not in Electron mode or API not available');
-    }
-  }, [isElectronMode]); // Removed toast dependency
+      // Show the broadcast notification
+      setBroadcastBanner({
+        visible: true,
+        message: data.message,
+        timestamp: data.timestamp,
+        id: data.id,
+        showDownloadLink: true,
+        downloadText: data.downloadText || 'Click to download @closedsenderbot'
+      });
+    };
+
+    window.electronAPI.onAdminBroadcast(handleBroadcast);
+
+    console.log('[Renderer] ✅ Admin broadcast listener registered');
+  }, [isElectronMode, shownBroadcastIds]);
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {
