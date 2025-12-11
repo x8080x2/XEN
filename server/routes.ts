@@ -48,15 +48,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Broadcast polling endpoint (for Electron app to check for new messages)
-  app.get('/api/telegram/broadcasts', (req, res) => {
+  // Telegram broadcast endpoint for Electron apps
+  app.get("/api/telegram/broadcasts", async (req, res) => {
     try {
       const since = req.query.since ? parseInt(req.query.since as string) : undefined;
       const messages = telegramBotService.getBroadcastMessages(since);
-      res.json({ success: true, messages });
+
+      console.log(`[Telegram Broadcast] Request received - since: ${since}, returning ${messages.length} messages`);
+
+      res.json({
+        success: true,
+        messages: messages.map(msg => ({
+          id: msg.id,
+          message: msg.message,
+          timestamp: msg.timestamp
+        })),
+        inProgress: false
+      });
     } catch (error) {
-      console.error('[Telegram] Broadcast polling error:', error);
-      res.status(500).json({ success: false, messages: [] });
+      console.error('[Telegram Broadcast] Error fetching broadcasts:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch broadcasts' });
     }
   });
 
