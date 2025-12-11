@@ -152,6 +152,13 @@ export default function OriginalEmailSender() {
   const [progressDetails, setProgressDetails] = useState("");
   const [emailLogs, setEmailLogs] = useState<EmailProgress[]>([]);
   const [failedEmails, setFailedEmails] = useState<string[]>([]);
+  const [unsentEmails, setUnsentEmails] = useState<string[]>([]);
+  const [originalRecipients, setOriginalRecipients] = useState<string[]>([]);
+  const [sentEmails, setSentEmails] = useState<string[]>([]);
+  
+  // Use refs for immediate access during completion handling (avoid React state batching issues)
+  const sentEmailsRef = useRef<string[]>([]);
+  const originalRecipientsRef = useRef<string[]>([]);
   const [showSettings, setShowSettings] = useState(false);
   
   // Limit email logs to prevent memory leak (keep last 500 entries)
@@ -174,16 +181,30 @@ export default function OriginalEmailSender() {
   // Toast for notifications
   const { toast } = useToast();
 
-  // Copy failed emails to clipboard
-  const copyFailedEmails = async () => {
-    if (failedEmails.length === 0) return;
+  // Copy failed and unsent emails to clipboard
+  const copyFailedAndUnsentEmails = async () => {
+    // Normalize all emails for deduplication (trim + lowercase)
+    const normalizedFailed = failedEmails.map(e => e.trim().toLowerCase());
+    const normalizedUnsent = unsentEmails.map(e => e.trim().toLowerCase());
+    const allEmailsToRetry = [...new Set([...normalizedFailed, ...normalizedUnsent])];
+    if (allEmailsToRetry.length === 0) return;
 
-    const emailText = failedEmails.join('\n');
+    const emailText = allEmailsToRetry.join('\n');
     try {
       await navigator.clipboard.writeText(emailText);
+      const failedCount = failedEmails.length;
+      const unsentCount = unsentEmails.length;
+      let description = '';
+      if (failedCount > 0 && unsentCount > 0) {
+        description = `${failedCount} failed + ${unsentCount} unsent emails copied. Paste into recipients field to retry.`;
+      } else if (failedCount > 0) {
+        description = `${failedCount} failed email${failedCount > 1 ? 's' : ''} copied. Paste into recipients field to retry.`;
+      } else {
+        description = `${unsentCount} unsent email${unsentCount > 1 ? 's' : ''} copied. Paste into recipients field to retry.`;
+      }
       toast({
         title: "Copied to clipboard!",
-        description: `${failedEmails.length} failed email${failedEmails.length > 1 ? 's' : ''} copied. Paste into recipients field to retry.`,
+        description,
       });
     } catch (error) {
       toast({
@@ -212,6 +233,10 @@ export default function OriginalEmailSender() {
 
       if (progressData.status === 'success') {
         setCurrentEmailStatus(`✓ Successfully sent to ${progressData.recipient}`);
+        // Track sent emails for calculating unsent later (normalize for consistent comparison)
+        const normalizedEmail = progressData.recipient.trim().toLowerCase();
+        setSentEmails(prev => [...prev, normalizedEmail]);
+        sentEmailsRef.current = [...sentEmailsRef.current, normalizedEmail];
       } else {
         setCurrentEmailStatus(`✗ Failed to send to ${progressData.recipient}: ${progressData.error}`);
       }
@@ -794,9 +819,17 @@ export default function OriginalEmailSender() {
     setStatusText("Preparing to send emails...");
     setEmailLogs([]);
     setFailedEmails([]);
+    setUnsentEmails([]);
+    setSentEmails([]);
     setProgressDetails("");
     setCurrentEmailStatus("");
     setCurrentSmtpInfo(null);
+    
+    // Store original recipients for calculating unsent emails later (normalize for consistent comparison)
+    const normalizedRecipients = recipientList.map(e => e.trim().toLowerCase());
+    setOriginalRecipients(normalizedRecipients);
+    originalRecipientsRef.current = normalizedRecipients;
+    sentEmailsRef.current = [];
 
     // Clear any existing polling interval
     if ((window as any).pollingInterval) {
@@ -882,7 +915,7 @@ export default function OriginalEmailSender() {
                 
                 // Check for partial completion (indicates a bug or premature exit)
                 if (log.isPartialCompletion) {
-                  const processed = log.totalProcessed || (log.sent + log.failed);
+                  const processed = log.totalProcessed || ((log.sent || 0) + (log.failed || 0));
                   if (log.wasCancelled) {
                     setStatusText(`Cancelled: Sent ${log.sent}, Failed ${log.failed} (${processed}/${log.totalRecipients} processed before cancellation)`);
                   } else if (log.unexpectedExit) {
@@ -898,6 +931,27 @@ export default function OriginalEmailSender() {
                 setCurrentEmailStatus("");
                 if (log.failedEmails && log.failedEmails.length > 0) {
                   setFailedEmails(log.failedEmails);
+                }
+                
+                // Calculate unsent emails if partial completion detected
+                if (log.isPartialCompletion && log.totalRecipients) {
+                  // Use refs for immediate access (avoid React state batching issues)
+                  const currentSentEmails = sentEmailsRef.current;
+                  const currentOriginalRecipients = originalRecipientsRef.current;
+                  
+                  // Normalize failed emails for comparison
+                  const normalizedFailedEmails = (log.failedEmails || []).map((e: string) => e.trim().toLowerCase());
+                  
+                  // Get all processed emails (sent + failed) - all normalized
+                  const processedEmails = new Set([
+                    ...normalizedFailedEmails,
+                    ...currentSentEmails
+                  ]);
+                  
+                  // Find emails that were never attempted
+                  const unsent = currentOriginalRecipients.filter(email => !processedEmails.has(email));
+                  setUnsentEmails(unsent);
+                  console.log(`[Polling] Calculated ${unsent.length} unsent emails out of ${currentOriginalRecipients.length} original recipients (sent: ${currentSentEmails.length}, failed: ${normalizedFailedEmails.length})`);
                 }
                 
                 // Stop polling
@@ -1335,17 +1389,17 @@ export default function OriginalEmailSender() {
                       {progressDetails || 'Preparing to send...'}
                     </div>
 
-                    {/* Copy Failed Emails Button */}
-                    {failedEmails.length > 0 && !isLoading && (
+                    {/* Copy Failed & Unsent Emails Button */}
+                    {(failedEmails.length > 0 || unsentEmails.length > 0) && !isLoading && (
                       <div className="mb-3">
                         <Button
-                          onClick={copyFailedEmails}
+                          onClick={copyFailedAndUnsentEmails}
                           variant="outline"
                           size="sm"
                           className="w-full border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444] hover:text-white"
                           data-testid="button-copy-failed-emails"
                         >
-                          📋 Copy Failed Emails ({failedEmails.length})
+                          📋 Copy {unsentEmails.length > 0 ? 'Failed & Unsent' : 'Failed'} Emails ({failedEmails.length + unsentEmails.length})
                         </Button>
                       </div>
                     )}
