@@ -125,8 +125,9 @@ class Storage {
       const messages = await db.select()
         .from(broadcasts)
         .orderBy(desc(broadcasts.timestamp))
-        .limit(limit)
-        .all();
+        .limit(limit);
+
+      console.log(`[Storage] Retrieved ${messages.length} broadcasts from database`);
 
       return messages.map(msg => ({
         id: msg.id,
