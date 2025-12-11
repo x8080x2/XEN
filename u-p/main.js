@@ -44,7 +44,7 @@ app.on('before-quit', () => {
 let mainWindow;
 // Broadcast polling variables
 let broadcastCheckInterval = null;
-let lastBroadcastCheck = 0; // Timestamp of last check
+let lastBroadcastCheck = Date.now(); // Initialize to current time to avoid showing old broadcasts
 let userId = null; // Will be set to hardware fingerprint for persistent user identification
 
 // Generate hardware fingerprint based on IP address
