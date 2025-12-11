@@ -4,17 +4,17 @@
 @tailwind utilities;
 
 :root {
-  /* Dark theme colors matching the design */
-  --dark-bg: hsl(240, 7%, 5.5%);
-  --dark-surface: hsl(240, 6%, 7.5%);
-  --dark-surface-2: hsl(240, 9%, 4.3%);
-  --dark-text: hsl(210, 11%, 90%);
-  --dark-muted: hsl(240, 4%, 67%);
-  --dark-border: hsl(240, 6%, 15%);
-  --red-primary: hsl(0, 84%, 60%);
-  --red-700: hsl(0, 72%, 51%);
-  --red-800: hsl(0, 77%, 42%);
-  --red-glow: hsla(0, 84%, 60%, 0.35);
+  /* Enhanced dark theme with richer blacks and vibrant reds */
+  --dark-bg: hsl(0, 0%, 4%);
+  --dark-surface: hsl(0, 0%, 8%);
+  --dark-surface-2: hsl(0, 0%, 6%);
+  --dark-text: hsl(0, 0%, 96%);
+  --dark-muted: hsl(0, 0%, 60%);
+  --dark-border: hsl(0, 5%, 12%);
+  --red-primary: hsl(0, 100%, 58%);
+  --red-700: hsl(0, 95%, 48%);
+  --red-800: hsl(0, 90%, 38%);
+  --red-glow: hsla(0, 100%, 58%, 0.4);
 
   /* Override default colors */
   --background: var(--dark-bg);
