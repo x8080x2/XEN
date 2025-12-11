@@ -1,9 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  onAdminBroadcast: (callback) => {
-    ipcRenderer.on('admin-broadcast', (event, data) => callback(data));
-  },
   // File operations
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),
   writeFile: (filepath, content) => ipcRenderer.invoke('write-file', filepath, content),
