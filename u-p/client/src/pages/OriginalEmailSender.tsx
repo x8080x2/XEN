@@ -1423,11 +1423,6 @@ export default function OriginalEmailSender() {
 
           {/* ASCII Art Status Display */}
           <div className="absolute bottom-4 right-4">
-            <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
-{`
-▓ SYSTEM STATUS ▓
-`}
-            </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
               <div
                 className={`w-3 h-3 rounded-full flex-shrink-0 ${
