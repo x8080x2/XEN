@@ -1361,22 +1361,24 @@ export default function OriginalEmailSender() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
-      {/* Broadcast Banner - Persistent notification */}
+      {/* Broadcast Banner - Persistent notification with enhanced visibility */}
       {broadcastBanner?.visible && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#ef4444] to-[#dc2626] text-white shadow-2xl border-b-4 border-[#991b1b]">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
-                <span className="text-3xl animate-pulse">📢</span>
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-[#ff0000] via-[#ef4444] to-[#ff0000] text-white shadow-2xl border-b-8 border-yellow-400 animate-pulse">
+          <div className="container mx-auto px-4 py-6">
+            <div className="flex items-center justify-between bg-black/30 rounded-lg p-4 border-2 border-yellow-300">
+              <div className="flex items-center gap-4 flex-1">
+                <span className="text-5xl animate-bounce">📢</span>
                 <div className="flex-1">
-                  <div className="font-bold text-lg tracking-wide">⚠️ ADMIN NOTIFICATION</div>
-                  <div className="text-sm font-medium mt-1">{broadcastBanner.message}</div>
+                  <div className="font-black text-2xl tracking-wide text-yellow-300 drop-shadow-lg">⚠️ ADMIN NOTIFICATION ⚠️</div>
+                  <div className="text-lg font-bold mt-2 text-white drop-shadow-md bg-red-600/50 p-3 rounded border-l-4 border-yellow-400">
+                    {broadcastBanner.message}
+                  </div>
                   {broadcastBanner.showDownloadLink && broadcastBanner.downloadText && (
                     <a
                       href="https://t.me/closedsenderbot"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-3 px-5 py-2 bg-white text-[#ef4444] rounded-md font-bold hover:bg-gray-100 transition-all shadow-md hover:shadow-lg transform hover:scale-105"
+                      className="inline-block mt-4 px-6 py-3 bg-yellow-400 text-black rounded-lg font-black text-lg hover:bg-yellow-300 transition-all shadow-xl hover:shadow-2xl transform hover:scale-110 border-4 border-white animate-pulse"
                     >
                       🔽 {broadcastBanner.downloadText}
                     </a>
@@ -1385,7 +1387,7 @@ export default function OriginalEmailSender() {
               </div>
               <button
                 onClick={() => setBroadcastBanner(null)}
-                className="ml-4 text-white hover:text-gray-200 text-3xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors"
+                className="ml-6 text-yellow-300 hover:text-yellow-400 text-5xl font-black w-12 h-12 flex items-center justify-center rounded-full bg-red-700 hover:bg-red-800 transition-colors border-4 border-yellow-400 shadow-xl"
                 aria-label="Close notification"
               >
                 ×
@@ -1396,7 +1398,7 @@ export default function OriginalEmailSender() {
       )}
 
       {/* Window Controls */}
-      <div className="flex justify-end items-center h-8  border-b border-[#26262b] px-4" style={{ marginTop: broadcastBanner?.visible ? '80px' : '0' }}>
+      <div className="flex justify-end items-center h-8 border-b border-[#26262b] px-4" style={{ marginTop: broadcastBanner?.visible ? '160px' : '0' }}>
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-[#3f3f46] hover:bg-[#52525b] cursor-pointer"></div>
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
