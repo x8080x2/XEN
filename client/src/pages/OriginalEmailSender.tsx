@@ -1148,10 +1148,25 @@ export default function OriginalEmailSender() {
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
-              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'} ${smtpChecking ? 'animate-pulse' : ''}`}>📡</div>
-              <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
-                {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
-              </div>
+              {(() => {
+                const statusValues = Object.values(smtpStatus);
+                const hasOnline = statusValues.some(s => s === 'online');
+                const hasTesting = statusValues.some(s => s === 'testing');
+                const allOffline = statusValues.length > 0 && statusValues.every(s => s === 'offline');
+                
+                const isChecking = hasTesting || smtpChecking;
+                const isOnline = hasOnline;
+                const isOffline = allOffline && !hasTesting;
+                
+                return (
+                  <>
+                    <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'} ${isChecking ? 'animate-pulse' : ''}`}>📡</div>
+                    <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
+                      {isChecking && !hasOnline ? 'CHECKING...' : isOnline ? 'ONLINE' : 'OFFLINE'}
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
