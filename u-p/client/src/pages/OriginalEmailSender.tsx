@@ -1017,7 +1017,6 @@ export default function OriginalEmailSender() {
 
     // Store original recipients for calculating unsent emails later (normalize for consistent comparison)
     const normalizedRecipients = recipientList.map(e => e.trim().toLowerCase());
-    setOriginalRecipients(normalizedRecipients);
     originalRecipientsRef.current = normalizedRecipients;
     sentEmailsRef.current = [];
 
