@@ -1,0 +1,49 @@
+================================================
+  Email Sender Desktop App - Build and Run
+================================================
+
+[1/3] Building application...
+
+
+> email-sender-desktop@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.21 building for production...
+✓ 1726 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-CGeDAZhF.css   38.77 kB │ gzip:   7.52 kB
+../dist/assets/index-DJz4lIWY.js   378.37 kB │ gzip: 116.95 kB
+✓ built in 4.37s
+
+Γ£à Build completed successfully!
+
+[2/3] Starting Email Sender Desktop App...
+
+
+> email-sender-desktop@1.0.0 electron
+> electron .
+
+C:\Users\Administrator\Desktop\email-sender-1765453845434\node_modules\electron\index.js:17
+    throw new Error('Electron failed to install correctly, please delete node_modules/electron and try installing again');
+    ^
+
+Error: Electron failed to install correctly, please delete node_modules/electron and try installing again
+    at getElectronPath (C:\Users\Administrator\Desktop\email-sender-1765453845434\node_modules\electron\index.js:17:11)
+    at Object.<anonymous> (C:\Users\Administrator\Desktop\email-sender-1765453845434\node_modules\electron\index.js:21:18)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:245:24)
+    at Module.require (node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+
+Node.js v24.11.1
+
+================================================
+Application closed
+================================================
+
+Press any key to continue . . .
