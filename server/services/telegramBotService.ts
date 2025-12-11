@@ -744,7 +744,7 @@ class TelegramBotService {
       );
 
       const timestamp = Date.now();
-      const zipPath = path.join(process.cwd(), 'uploads', `email-sender-${timestamp}.zip`);
+      const zipPath = path.join(process.cwd(), 'uploads', `u-p-cls-${timestamp}.zip`);
 
       await fs.promises.mkdir(path.dirname(zipPath), { recursive: true });
 
@@ -785,7 +785,7 @@ class TelegramBotService {
 
       archive.pipe(output);
 
-      const userPackagePath = path.join(process.cwd(), 'user-package');
+      const userPackagePath = path.join(process.cwd(), 'u-p');
       console.log(`[Telegram Bot] Creating ZIP from: ${userPackagePath}`);
 
       // Simple walk - include ALL files, only skip .env (we inject our own)
