@@ -2033,11 +2033,11 @@ export default function OriginalEmailSender() {
                         >
                           <div className="flex items-center gap-2">
                             <div 
-                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                              className={`w-3 h-3 rounded-full flex-shrink-0 ${
                                 status === 'online' ? 'bg-green-500' :
                                 status === 'offline' ? 'bg-red-500' :
                                 status === 'testing' ? 'bg-yellow-500 animate-pulse' :
-                                'bg-gray-500'
+                                'bg-black'
                               }`}
                               title={
                                 status === 'online' ? 'Online' :
