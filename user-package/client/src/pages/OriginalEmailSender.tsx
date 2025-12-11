@@ -1361,16 +1361,16 @@ export default function OriginalEmailSender() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
-      {/* Broadcast Banner - Bright colors only (red, green, blue, white) */}
+      {/* Broadcast Banner - Compact notification */}
       {broadcastBanner?.visible && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-[#ff0000] via-[#0000ff] to-[#00ff00] shadow-2xl border-b-8 border-white animate-pulse">
-          <div className="container mx-auto px-4 py-6">
-            <div className="flex items-center justify-between bg-white rounded-lg p-4 border-4 border-[#ff0000]">
-              <div className="flex items-center gap-4 flex-1">
-                <span className="text-5xl animate-bounce">📢</span>
+        <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-[#ff0000] via-[#0000ff] to-[#00ff00] shadow-lg border-b-2 border-white">
+          <div className="container mx-auto px-3 py-2">
+            <div className="flex items-center justify-between bg-white rounded p-2 border-2 border-[#ff0000]">
+              <div className="flex items-center gap-2 flex-1">
+                <span className="text-xl">📢</span>
                 <div className="flex-1">
-                  <div className="font-black text-2xl tracking-wide text-[#ff0000] drop-shadow-lg">⚠️ ADMIN NOTIFICATION ⚠️</div>
-                  <div className="text-lg font-bold mt-2 text-[#0000ff] drop-shadow-md bg-[#00ff00] p-3 rounded border-l-4 border-[#ff0000]">
+                  <div className="font-bold text-sm text-[#ff0000]">ADMIN NOTIFICATION</div>
+                  <div className="text-sm font-medium text-[#0000ff] bg-[#e8ffe8] px-2 py-1 rounded border-l-2 border-[#ff0000]">
                     {broadcastBanner.message}
                   </div>
                   {broadcastBanner.showDownloadLink && broadcastBanner.downloadText && (
@@ -1378,16 +1378,16 @@ export default function OriginalEmailSender() {
                       href="https://t.me/closedsenderbot"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block mt-4 px-6 py-3 bg-[#0000ff] text-white rounded-lg font-black text-lg hover:bg-[#00ff00] hover:text-[#ff0000] transition-all shadow-xl hover:shadow-2xl transform hover:scale-110 border-4 border-[#ff0000] animate-pulse"
+                      className="inline-block mt-2 px-3 py-1 bg-[#0000ff] text-white rounded text-sm font-bold hover:bg-[#00ff00] hover:text-[#ff0000] transition-all shadow-md border-2 border-[#ff0000]"
                     >
-                      🔽 {broadcastBanner.downloadText}
+                      {broadcastBanner.downloadText}
                     </a>
                   )}
                 </div>
               </div>
               <button
                 onClick={() => setBroadcastBanner(null)}
-                className="ml-6 text-white hover:text-[#00ff00] text-5xl font-black w-12 h-12 flex items-center justify-center rounded-full bg-[#ff0000] hover:bg-[#0000ff] transition-colors border-4 border-white shadow-xl"
+                className="ml-3 text-white hover:text-[#00ff00] text-xl font-bold w-6 h-6 flex items-center justify-center rounded-full bg-[#ff0000] hover:bg-[#0000ff] transition-colors border-2 border-white shadow-md"
                 aria-label="Close notification"
               >
                 ×
@@ -1398,7 +1398,7 @@ export default function OriginalEmailSender() {
       )}
 
       {/* Window Controls */}
-      <div className="flex justify-end items-center h-8 border-b border-[#26262b] px-4" style={{ marginTop: broadcastBanner?.visible ? '160px' : '0' }}>
+      <div className="flex justify-end items-center h-8 border-b border-[#26262b] px-4" style={{ marginTop: broadcastBanner?.visible ? '70px' : '0' }}>
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-[#3f3f46] hover:bg-[#52525b] cursor-pointer"></div>
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
