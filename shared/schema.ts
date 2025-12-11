@@ -144,7 +144,7 @@ export const broadcasts = pgTable("broadcasts", {
   id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
   message: text("message").notNull(),
   timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
-  adminId: varchar("admin_id", { length: 255 }).notNull().references(() => users.id),
+  adminId: varchar("admin_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

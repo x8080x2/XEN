@@ -2,7 +2,7 @@
 -- Drop the existing table if it exists
 DROP TABLE IF EXISTS "broadcasts";
 
--- Create broadcasts table with bigint timestamp
+-- Create broadcasts table with bigint timestamp (no foreign key constraint)
 CREATE TABLE IF NOT EXISTS "broadcasts" (
   "id" varchar(255) PRIMARY KEY,
   "message" text NOT NULL,
