@@ -268,13 +268,16 @@ export default function OriginalEmailSender() {
   const testIndividualSmtp = async (smtpId: string) => {
     setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
     try {
+      console.log(`[SMTP Test] Testing ${smtpId}...`);
       const response = await fetch(`/api/smtp/test/${smtpId}`);
       const data = await response.json();
+      console.log(`[SMTP Test] ${smtpId} result:`, data);
       setSmtpStatus(prev => ({ 
         ...prev, 
         [smtpId]: data.online ? 'online' : 'offline' 
       }));
     } catch (error) {
+      console.error(`[SMTP Test] ${smtpId} failed:`, error);
       setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
     }
   };
@@ -282,8 +285,9 @@ export default function OriginalEmailSender() {
   // Test all SMTP servers
   const testAllSmtpServers = async () => {
     if (!smtpData.smtpConfigs?.length) return;
+    console.log('[Test All] Starting test for all SMTP servers');
     for (const smtp of smtpData.smtpConfigs) {
-      testIndividualSmtp(smtp.id);
+      await testIndividualSmtp(smtp.id);
     }
   };
 

@@ -344,10 +344,14 @@ export function setupOriginalEmailRoutes(app: Express) {
       const nodemailer = require('nodemailer');
       const { smtpId } = req.params;
       const smtpConfigs = configService.getAllSmtpConfigs();
+      
+      console.log(`[API] Testing SMTP ${smtpId}, available configs:`, smtpConfigs.map((s: any) => s.id));
+      
       const smtp = smtpConfigs.find((s: any) => s.id === smtpId);
 
       if (!smtp) {
-        return res.json({
+        console.error(`[API] SMTP ${smtpId} not found in configs`);
+        return res.status(404).json({
           success: false,
           online: false,
           smtpId,
