@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { pgTable, varchar, integer, timestamp, text } from "drizzle-orm/pg-core";
+import { pgTable, varchar, integer, timestamp, text, bigint } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { relations } from "drizzle-orm";
 
@@ -143,8 +143,8 @@ export const licenses = pgTable("licenses", {
 export const broadcasts = pgTable("broadcasts", {
   id: varchar("id", { length: 255 }).primaryKey().default(sql`gen_random_uuid()`),
   message: text("message").notNull(),
-  timestamp: integer("timestamp").notNull(),
-  adminId: varchar("admin_id", { length: 255 }).notNull(),
+  timestamp: bigint('timestamp', { mode: 'number' }).notNull(),
+  adminId: varchar("admin_id", { length: 255 }).notNull().references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
