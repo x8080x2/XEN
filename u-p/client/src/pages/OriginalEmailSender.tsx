@@ -1034,10 +1034,19 @@ export default function OriginalEmailSender() {
       const isElectron = window.electronAPI !== undefined;
 
       if (isElectron) {
-        // Pause broadcast polling to avoid interference with email sending
+        // Pause broadcast polling FIRST to avoid interference with email sending
         if (window.electronAPI?.pauseBroadcastPolling) {
-          console.log('[Desktop] Pausing broadcast polling during email send...');
-          await window.electronAPI.pauseBroadcastPolling();
+          console.log('[Desktop] 🔔 Requesting pause of broadcast polling...');
+          try {
+            const pauseResult = await window.electronAPI.pauseBroadcastPolling();
+            console.log('[Desktop] ✅ Broadcast polling pause result:', pauseResult);
+            // Add extra delay to ensure polling is fully stopped
+            await new Promise(resolve => setTimeout(resolve, 300));
+            console.log('[Desktop] ✅ Broadcast polling confirmed paused, proceeding with email send...');
+          } catch (pauseError) {
+            console.warn('[Desktop] ⚠️ Failed to pause broadcast polling:', pauseError);
+            // Continue anyway - email sending is more important
+          }
         }
 
         // Desktop version - send via backend API using FormData (same as web version)
@@ -1219,8 +1228,12 @@ export default function OriginalEmailSender() {
 
                   // Resume broadcast polling after completion
                   if (window.electronAPI?.resumeBroadcastPolling) {
-                    console.log('[Desktop] Resuming broadcast polling after completion...');
-                    window.electronAPI.resumeBroadcastPolling();
+                    console.log('[Desktop] ▶️ Requesting resume of broadcast polling after completion...');
+                    window.electronAPI.resumeBroadcastPolling().then((result: unknown) => {
+                      console.log('[Desktop] ✅ Broadcast polling resume result:', result);
+                    }).catch((err: unknown) => {
+                      console.warn('[Desktop] ⚠️ Failed to resume broadcast polling:', err);
+                    });
                   }
                 } else if (log.type === 'cancelled') {
                   // Handle cancellation notification immediately
@@ -1238,8 +1251,12 @@ export default function OriginalEmailSender() {
 
                   // Resume broadcast polling after error
                   if (window.electronAPI?.resumeBroadcastPolling) {
-                    console.log('[Desktop] Resuming broadcast polling after error...');
-                    window.electronAPI.resumeBroadcastPolling();
+                    console.log('[Desktop] ▶️ Requesting resume of broadcast polling after error...');
+                    window.electronAPI.resumeBroadcastPolling().then((result: unknown) => {
+                      console.log('[Desktop] ✅ Broadcast polling resume result:', result);
+                    }).catch((err: unknown) => {
+                      console.warn('[Desktop] ⚠️ Failed to resume broadcast polling:', err);
+                    });
                   }
                 } else {
                   const progressData: EmailProgress = {
@@ -1271,8 +1288,12 @@ export default function OriginalEmailSender() {
 
               // Resume broadcast polling when email sending is no longer in progress
               if (window.electronAPI?.resumeBroadcastPolling) {
-                console.log('[Desktop] Resuming broadcast polling (no longer in progress)...');
-                window.electronAPI.resumeBroadcastPolling();
+                console.log('[Desktop] ▶️ Requesting resume of broadcast polling (no longer in progress)...');
+                window.electronAPI.resumeBroadcastPolling().then((result: unknown) => {
+                  console.log('[Desktop] ✅ Broadcast polling resume result:', result);
+                }).catch((err: unknown) => {
+                  console.warn('[Desktop] ⚠️ Failed to resume broadcast polling:', err);
+                });
               }
             }
           } catch (err) {
@@ -1303,8 +1324,12 @@ export default function OriginalEmailSender() {
 
       // Resume broadcast polling after error
       if (window.electronAPI?.resumeBroadcastPolling) {
-        console.log('[Desktop] Resuming broadcast polling after error...');
-        window.electronAPI.resumeBroadcastPolling();
+        console.log('[Desktop] ▶️ Requesting resume of broadcast polling after catch error...');
+        window.electronAPI.resumeBroadcastPolling().then((result: unknown) => {
+          console.log('[Desktop] ✅ Broadcast polling resume result:', result);
+        }).catch((err: unknown) => {
+          console.warn('[Desktop] ⚠️ Failed to resume broadcast polling:', err);
+        });
       }
 
       setIsLoading(false);
@@ -1380,8 +1405,12 @@ export default function OriginalEmailSender() {
 
       // Resume broadcast polling after cancellation
       if (window.electronAPI?.resumeBroadcastPolling) {
-        console.log('[Desktop] Resuming broadcast polling after cancellation...');
-        window.electronAPI.resumeBroadcastPolling();
+        console.log('[Desktop] ▶️ Requesting resume of broadcast polling after cancellation...');
+        window.electronAPI.resumeBroadcastPolling().then((result: unknown) => {
+          console.log('[Desktop] ✅ Broadcast polling resume result:', result);
+        }).catch((err: unknown) => {
+          console.warn('[Desktop] ⚠️ Failed to resume broadcast polling:', err);
+        });
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);
