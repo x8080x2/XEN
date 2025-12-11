@@ -1464,7 +1464,7 @@ export default function OriginalEmailSender() {
             <div className="flex items-center justify-center gap-2 px-1 py-2">
               <div 
                 className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                  smtpOnline === null ? 'bg-yellow-500' : 
+                  smtpOnline === null ? 'bg-yellow-500 animate-pulse' : 
                   smtpOnline ? 'bg-green-500' : 
                   'bg-red-500'
                 } ${smtpChecking ? 'animate-pulse' : ''}`}
