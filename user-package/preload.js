@@ -34,7 +34,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fileUpload: (sourceFilePath) => ipcRenderer.invoke('file-upload', sourceFilePath),
 
   // Server configuration
-  getServerUrl: () => process.env.REPLIT_SERVER_URL
+  getServerUrl: () => process.env.REPLIT_SERVER_URL,
+
+  // Admin broadcast listener
+  onAdminBroadcast: (callback) => {
+    ipcRenderer.on('admin-broadcast', (event, data) => {
+      callback(data);
+    });
+  }
 });
 
 // Log that preload script has loaded
