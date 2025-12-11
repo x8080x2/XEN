@@ -1,0 +1,229 @@
+================================================
+  Email Sender Desktop App - Build and Run
+================================================
+
+[1/3] Building application...
+
+
+> email-sender-desktop@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.21 building for production...
+✓ 1726 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-RFIqefOL.css   41.31 kB │ gzip:   7.86 kB
+../dist/assets/index-CseH_y-J.js   381.77 kB │ gzip: 117.93 kB
+✓ built in 4.34s
+
+Γ£à Build completed successfully!
+
+[2/3] Starting Email Sender Desktop App...
+
+
+> email-sender-desktop@1.0.0 electron
+> electron .
+
+
+[dotenv@17.2.3] injecting env (3) from .env -- tip: ≡ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[Electron] Registered handler: read-file
+[Electron] Registered handler: write-file
+[Electron] Registered handler: list-files
+[Electron] Registered handler: read-config
+[Electron] Registered handler: select-file
+[Electron] Registered handler: select-files
+[Electron] Registered handler: load-config
+[Electron] Registered handler: load-leads
+[Electron] Registered handler: smtp:toggle-rotation
+[Electron] Registered handler: smtp:rotate
+[Electron] Registered handler: smtp:list
+[Electron] Registered handler: smtp:add
+[Electron] Registered handler: smtp:delete
+[Electron] Registered handler: file-upload
+[Electron] Registered handler: smtp:test
+[Electron] Registered handler: save-config
+[Electron] Registered handler: save-leads
+[Electron] Starting Email Sender Desktop App...
+[Electron] Using IP address for hardware fingerprint: 172.31.43.123
+[Electron] Hardware ID: 1e2a1c1485445ba2...
+[Electron] Verifying license with server...
+[Electron] Γ£à License verified successfully
+[Electron] Γ£à License verified - Starting application...
+[Electron] ≡ƒöö Starting broadcast polling...
+[Electron] Server URL: https://xen-1-cls8080.replit.app
+[Electron] Polling interval: 10 seconds
+[Electron] Γ£à Broadcast polling started
+[Electron] Listing files in: files
+[Electron] Trying directory: C:\Users\Administrator\Desktop\email-sender-1765475925315\files
+[Electron] Listing files in: files/logo
+[Electron] Trying directory: C:\Users\Administrator\Desktop\email-sender-1765475925315\files\logo
+[Electron] Loading config files
+[Electron] Checking config paths in: C:\Users\Administrator\Desktop\email-sender-1765475925315
+[Electron] Loading SMTP configurations
+[Electron] Checking SMTP path: C:\Users\Administrator\Desktop\email-sender-1765475925315\config\smtp.ini
+[Electron] Found 5 files in C:\Users\Administrator\Desktop\email-sender-1765475925315\files: [
+  'lolo- Copy.html',
+  'ok.html',
+  'sample-template.html',
+  'testersmtp.html',
+  'write-up.html'
+]
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\email-sender-1765475925315\files\logo: [ 'L1.png', 'L2.png' ]
+[Electron] Found setup.ini at C:\Users\Administrator\Desktop\email-sender-1765475925315\config\setup.ini
+[Electron] Loaded rotation state: enabled=false, index=0
+[Electron] Found SMTP config at: C:\Users\Administrator\Desktop\email-sender-1765475925315\config\smtp.ini
+[Electron] Found smtp.ini at C:\Users\Administrator\Desktop\email-sender-1765475925315\config\smtp.ini
+[Electron] Loaded SMTP config: {
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com'
+}
+[Electron] Found config files in: C:\Users\Administrator\Desktop\email-sender-1765475925315
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Loading leads file
+[Electron] Trying leads path: C:\Users\Administrator\Desktop\email-sender-1765475925315\files\leads.txt
+[Electron] Testing SMTP connection locally...
+[Electron] Successfully loaded leads from C:\Users\Administrator\Desktop\email-sender-1765475925315\files\leads.txt (22 chars)
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'smtp.mail.me.com',
+  port: 587,
+  user: 'deek1220127115911@icloud.com',
+  pass: 'bngn-yvck-xtvz-tvpl',
+  fromEmail: 'deek1220127115911@icloud.com',
+  fromName: ''
+}
+[Electron] Parsed SMTP config smtp1: {
+  id: 'smtp1',
+  host: 'netsol-smtp-oxcs.hostingplatform.com',
+  port: 587,
+  user: 'patrick@carlolawgroup.com',
+  pass: 'Carl0!awF1rm',
+  fromEmail: 'patrick@carlolawgroup.com',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 2
+[Electron] Testing SMTP: deek1220127115911@icloud.com (smtp.mail.me.com:587)
+[Electron] Γ£à SMTP test successful
+[Electron] SMTP ONLINE: deek1220127115911@icloud.com
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=0
+[Electron] ≡ƒô¿ Poll response: { messageCount: 14, since: 0, serverTime: 1765478185109 }
+[Electron] ≡ƒÄë New broadcasts found: 14
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765463735246_zdrnpeto2',
+  message: 'New Update Available...',
+  timestamp: '12/11/2025, 2:35:35 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765463669854_punynjre5',
+  message: 'New Update Available...',
+  timestamp: '12/11/2025, 2:34:29 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765463622908_b4gsnva3s',
+  message: 'New Updaye Available...',
+  timestamp: '12/11/2025, 2:33:42 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765463601906_nfn73bq5m',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:33:21 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462693492_nnygz8qyr',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:18:13 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462666580_kfg2s2jrh',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:17:46 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462489965_5xap06onb',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:14:49 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462478272_z1jhmiim3',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:14:38 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462367332_szxbmdgnm',
+  message: '≡ƒæï on my channel and i my favorite ≡ƒÿì i love you y...',
+  timestamp: '12/11/2025, 2:12:47 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765462080305_k0pi7lzqh',
+  message: '≡ƒæï on my channel and i my favorite ≡ƒÿì i love you y...',
+  timestamp: '12/11/2025, 2:08:00 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765461987992_gkeucxiab',
+  message: '≡ƒæï on my channel and i my favorite ≡ƒÿì i love you y...',
+  timestamp: '12/11/2025, 2:06:27 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765461875020_ot7y9f5iu',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:04:35 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765461621517_9jwl2nd4f',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 2:00:21 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôó Showing broadcast: {
+  id: 'msg_1765461172454_jd8bkugfd',
+  message: 'Hello...',
+  timestamp: '12/11/2025, 1:52:52 PM'
+}
+[Electron] Γ£à Broadcast sent to renderer
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478195111 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478205139 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478215121 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478225120 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478235161 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478245126 }
+[Electron] ≡ƒôí Polling broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=1765463735246
+[Electron] ≡ƒô¿ Poll response: { messageCount: 0, since: 1765463735246, serverTime: 1765478255145 }
