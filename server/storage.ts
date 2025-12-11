@@ -107,9 +107,13 @@ class Storage {
 
   async saveBroadcastMessage(broadcast: { id: string; message: string; timestamp: Date; adminId: string }): Promise<void> {
     try {
-      // Using in-memory array for broadcasts (simpler for now)
-      // PostgreSQL table creation would require migrations
-      console.log('[Storage] Broadcast saved to memory');
+      await db.insert(broadcasts).values({
+        id: broadcast.id,
+        message: broadcast.message,
+        timestamp: broadcast.timestamp.getTime(),
+        adminId: broadcast.adminId,
+      });
+      console.log('[Storage] Broadcast saved to database');
     } catch (error) {
       console.error('[Storage] Failed to save broadcast:', error);
     }
@@ -117,9 +121,18 @@ class Storage {
 
   async getBroadcastMessages(limit: number = 50): Promise<Array<{ id: string; message: string; timestamp: Date; adminId: string }>> {
     try {
-      // Using in-memory array managed by telegramBotService
-      // This prevents database schema issues
-      return [];
+      const messages = await db.select()
+        .from(broadcasts)
+        .orderBy(desc(broadcasts.timestamp))
+        .limit(limit)
+        .all();
+
+      return messages.map(msg => ({
+        id: msg.id,
+        message: msg.message,
+        timestamp: new Date(msg.timestamp),
+        adminId: msg.adminId,
+      }));
     } catch (error) {
       console.error('[Storage] Failed to get broadcasts:', error);
       return [];
