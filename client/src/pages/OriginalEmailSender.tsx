@@ -284,11 +284,29 @@ export default function OriginalEmailSender() {
 
   // Test all SMTP servers
   const testAllSmtpServers = async () => {
-    if (!smtpData.smtpConfigs?.length) return;
+    if (!smtpData.smtpConfigs?.length) {
+      toast({
+        title: "No SMTP servers",
+        description: "Please add SMTP servers first",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     console.log('[Test All] Starting test for all SMTP servers');
+    toast({
+      title: "Testing all SMTP servers",
+      description: `Testing ${smtpData.smtpConfigs.length} servers...`,
+    });
+    
     for (const smtp of smtpData.smtpConfigs) {
       await testIndividualSmtp(smtp.id);
     }
+    
+    toast({
+      title: "Testing complete",
+      description: "All SMTP servers tested",
+    });
   };
 
   // File input ref
@@ -1686,9 +1704,10 @@ export default function OriginalEmailSender() {
                         disabled={!smtpData.smtpConfigs?.length}
                         variant="ghost"
                         size="sm"
-                        className="text-blue-400 hover:text-blue-300 h-6 px-2 text-[10px]"
+                        className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20 h-6 px-2 text-[10px]"
+                        data-testid="button-test-all-smtp"
                       >
-                        Test All
+                        🔄 Test All
                       </Button>
                     </div>
                     {smtpData.smtpConfigs?.map((smtp) => {
