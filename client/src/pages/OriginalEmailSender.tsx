@@ -262,6 +262,30 @@ export default function OriginalEmailSender() {
   const [smtpOnline, setSmtpOnline] = useState<boolean | null>(null);
   const [smtpChecking, setSmtpChecking] = useState(false);
   const smtpCheckingRef = useRef(false);
+  const [smtpStatus, setSmtpStatus] = useState<{[smtpId: string]: 'online' | 'offline' | 'testing' | 'unknown'}>({});
+
+  // Test individual SMTP server
+  const testIndividualSmtp = async (smtpId: string) => {
+    setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
+    try {
+      const response = await fetch(`/api/smtp/test/${smtpId}`);
+      const data = await response.json();
+      setSmtpStatus(prev => ({ 
+        ...prev, 
+        [smtpId]: data.online ? 'online' : 'offline' 
+      }));
+    } catch (error) {
+      setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+    }
+  };
+
+  // Test all SMTP servers
+  const testAllSmtpServers = async () => {
+    if (!smtpData.smtpConfigs?.length) return;
+    for (const smtp of smtpData.smtpConfigs) {
+      testIndividualSmtp(smtp.id);
+    }
+  };
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -511,8 +535,22 @@ export default function OriginalEmailSender() {
       const response = await fetch("/api/smtp/list");
       const data = await response.json();
       if (data.success) {
+        // Set all to 'testing' status BEFORE updating smtpData to avoid gray flash
+        if (data.smtpConfigs?.length) {
+          const initialStatus: {[key: string]: 'testing'} = {};
+          data.smtpConfigs.forEach((smtp: any) => {
+            initialStatus[smtp.id] = 'testing';
+          });
+          setSmtpStatus(initialStatus);
+        }
         setSmtpData(data);
         checkSmtpStatus();
+        // Auto-test all SMTPs after loading
+        if (data.smtpConfigs?.length) {
+          for (const smtp of data.smtpConfigs) {
+            testIndividualSmtp(smtp.id);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to fetch SMTP data:', error);
@@ -565,6 +603,10 @@ export default function OriginalEmailSender() {
         setStatusText(`SMTP ${data.smtpId} added successfully`);
         fetchSmtpData();
         checkSmtpStatus();
+        // Test the newly added SMTP
+        if (data.smtpId) {
+          testIndividualSmtp(data.smtpId);
+        }
       }
     } catch (error) {
       setStatusText('Failed to add SMTP configuration');
@@ -1633,39 +1675,81 @@ export default function OriginalEmailSender() {
 
                   {/* SMTP List */}
                   <div className="space-y-2">
-                    <h4 className="text-white font-medium text-xs">Servers ({smtpData.smtpConfigs?.length || 0})</h4>
-                    {smtpData.smtpConfigs?.map((smtp) => (
-                      <div
-                        key={smtp.id}
-                        className={`flex items-center justify-between p-2 border rounded ${
-                          smtpData.currentSmtp?.id === smtp.id
-                            ? 'border-blue-500 bg-blue-900/20'
-                            : 'border-[#26262b] bg-[#0f0f12]'
-                        }`}
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-white font-medium text-xs">Servers ({smtpData.smtpConfigs?.length || 0})</h4>
+                      <Button
+                        onClick={testAllSmtpServers}
+                        disabled={!smtpData.smtpConfigs?.length}
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-400 hover:text-blue-300 h-6 px-2 text-[10px]"
                       >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="px-1.5 py-0.5 bg-gray-600 text-white rounded text-[10px]">{smtp.id}</span>
-                            <span className="text-white font-medium text-xs truncate">{smtp.fromEmail}</span>
-                            {smtpData.currentSmtp?.id === smtp.id && (
-                              <span className="px-1.5 py-0.5 bg-green-500 text-white rounded text-[10px]">Active</span>
-                            )}
-                          </div>
-                          <p className="text-[#75798b] text-[10px] truncate">
-                            {smtp.host}:{smtp.port}
-                          </p>
-                        </div>
-                        <Button
-                          onClick={() => deleteSmtp(smtp.id)}
-                          disabled={smtpData.smtpConfigs?.length <= 1}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-400 hover:text-red-300 h-6 w-6 p-0 ml-2"
+                        Test All
+                      </Button>
+                    </div>
+                    {smtpData.smtpConfigs?.map((smtp) => {
+                      const status = smtpStatus[smtp.id];
+                      return (
+                        <div
+                          key={smtp.id}
+                          className={`flex items-center justify-between p-2 border rounded ${
+                            smtpData.currentSmtp?.id === smtp.id
+                              ? 'border-blue-500 bg-blue-900/20'
+                              : 'border-[#26262b] bg-[#0f0f12]'
+                          }`}
                         >
-                          🗑️
-                        </Button>
-                      </div>
-                    )) || <p className="text-[#75798b] text-center py-2 text-xs">No servers configured</p>}
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                                status === 'online' ? 'bg-green-500' :
+                                status === 'offline' ? 'bg-red-500' :
+                                status === 'testing' ? 'bg-yellow-500 animate-pulse' :
+                                'bg-gray-500'
+                              }`}
+                              title={
+                                status === 'online' ? 'Online' :
+                                status === 'offline' ? 'Offline' :
+                                status === 'testing' ? 'Testing...' :
+                                'Not tested'
+                              }
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <span className="px-1.5 py-0.5 bg-gray-600 text-white rounded text-[10px]">{smtp.id}</span>
+                                <span className="text-white font-medium text-xs truncate">{smtp.fromEmail}</span>
+                                {smtpData.currentSmtp?.id === smtp.id && (
+                                  <span className="px-1.5 py-0.5 bg-green-500 text-white rounded text-[10px]">Active</span>
+                                )}
+                              </div>
+                              <p className="text-[#75798b] text-[10px] truncate">
+                                {smtp.host}:{smtp.port}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              onClick={() => testIndividualSmtp(smtp.id)}
+                              disabled={status === 'testing'}
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-400 hover:text-blue-300 h-6 w-6 p-0"
+                              title="Test connection"
+                            >
+                              🔄
+                            </Button>
+                            <Button
+                              onClick={() => deleteSmtp(smtp.id)}
+                              disabled={smtpData.smtpConfigs?.length <= 1}
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                            >
+                              🗑️
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }) || <p className="text-[#75798b] text-center py-2 text-xs">No servers configured</p>}
                   </div>
                 </div>
               </details>
