@@ -213,7 +213,7 @@ export default function OriginalEmailSender() {
     if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.onAdminBroadcast) {
       console.log('[Renderer] 🎧 Setting up broadcast listener...');
 
-      const handleBroadcast = (_event: any, broadcast: any) => {
+      const handleBroadcast = (broadcast: any) => {
         console.log('[Renderer] 📢 Received broadcast:', {
           id: broadcast.id,
           message: broadcast.message,
