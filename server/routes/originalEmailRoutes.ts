@@ -355,16 +355,17 @@ export function setupOriginalEmailRoutes(app: Express) {
         });
       }
 
+      console.log(`[SMTP Test] Testing ${smtpId}: ${smtp.host}:${smtp.port} (user: ${smtp.user || 'none'})`);
+
       const port = Number(smtp.port);
       const transporterConfig: any = {
         host: smtp.host,
         port: port,
         secure: port === 465,
-        pool: true,
-        maxConnections: 1,
-        maxMessages: 1,
+        pool: false,
         connectionTimeout: 10000,
         greetingTimeout: 10000,
+        socketTimeout: 10000,
         tls: {
           rejectUnauthorized: false
         }
@@ -381,6 +382,8 @@ export function setupOriginalEmailRoutes(app: Express) {
 
       try {
         await transporter.verify();
+        console.log(`[SMTP Test] ✅ ${smtpId} is online`);
+        transporter.close();
         res.json({
           success: true,
           online: true,
@@ -392,6 +395,8 @@ export function setupOriginalEmailRoutes(app: Express) {
           }
         });
       } catch (verifyError: any) {
+        console.log(`[SMTP Test] ❌ ${smtpId} failed: ${verifyError.message}`);
+        transporter.close();
         res.json({
           success: false,
           online: false,
@@ -403,11 +408,10 @@ export function setupOriginalEmailRoutes(app: Express) {
             fromEmail: smtp.fromEmail
           }
         });
-      } finally {
-        transporter.close();
       }
     } catch (error: any) {
-      res.status(500).json({ 
+      console.error(`[SMTP Test] Error testing ${req.params.smtpId}:`, error);
+      res.json({ 
         success: false, 
         online: false,
         smtpId: req.params.smtpId,
