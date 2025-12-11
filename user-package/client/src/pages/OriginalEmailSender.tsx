@@ -214,23 +214,23 @@ export default function OriginalEmailSender() {
           downloadText: broadcast.downloadText
         });
 
-        // First show the broadcast message
+        // First show the broadcast message with longer duration (10 seconds)
         const { dismiss } = toast({
-          title: "📢 Admin Broadcast",
+          title: "📢 Admin Notification",
           description: broadcast.message,
-          duration: 1000000, // Keep open until dismissed or replaced
+          duration: 10000, // Show for 10 seconds
         });
 
-        // If the broadcast is temporary, replace it with the download link after a delay
-        if (broadcast.temporary) {
+        // If the broadcast is temporary, replace it with the download link after 10 seconds
+        if (broadcast.temporary && broadcast.downloadText) {
           setTimeout(() => {
             dismiss(); // Close the temporary broadcast message
             toast({
-              title: "📢 Admin Broadcast",
-              description: broadcast.downloadText || "Click to download @closedsenderbot",
-              duration: 1000000, // Keep download link visible
+              title: "📥 Download Available",
+              description: broadcast.downloadText,
+              duration: 30000, // Keep download link visible for 30 seconds
             });
-          }, 5000); // Show broadcast for 5 seconds
+          }, 10000); // Show broadcast for 10 seconds before showing download link
         }
       };
 
