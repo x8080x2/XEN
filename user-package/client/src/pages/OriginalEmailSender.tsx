@@ -199,6 +199,14 @@ export default function OriginalEmailSender() {
   const originalRecipientsRef = useRef<string[]>([]);
   const sentEmailsRef = useRef<string[]>([]);
 
+  // Broadcast banner state
+  const [broadcastBanner, setBroadcastBanner] = useState<{
+    visible: boolean;
+    message: string;
+    downloadText?: string;
+    showDownloadLink: boolean;
+  } | null>(null);
+
   // Listen for admin broadcast messages (Electron only)
   useEffect(() => {
     // Check if running in Electron mode and the API is available
@@ -214,23 +222,22 @@ export default function OriginalEmailSender() {
           downloadText: broadcast.downloadText
         });
 
-        // First show the broadcast message with longer duration (10 seconds)
-        const { dismiss } = toast({
-          title: "📢 Admin Notification",
-          description: broadcast.message,
-          duration: 10000, // Show for 10 seconds
+        // Show persistent banner with the broadcast message
+        setBroadcastBanner({
+          visible: true,
+          message: broadcast.message,
+          downloadText: broadcast.downloadText,
+          showDownloadLink: false // Start with message only
         });
 
-        // If the broadcast is temporary, replace it with the download link after 10 seconds
+        // After 10 seconds, show the download link option
         if (broadcast.temporary && broadcast.downloadText) {
           setTimeout(() => {
-            dismiss(); // Close the temporary broadcast message
-            toast({
-              title: "📥 Download Available",
-              description: broadcast.downloadText,
-              duration: 30000, // Keep download link visible for 30 seconds
-            });
-          }, 10000); // Show broadcast for 10 seconds before showing download link
+            setBroadcastBanner(prev => prev ? {
+              ...prev,
+              showDownloadLink: true
+            } : null);
+          }, 10000);
         }
       };
 
@@ -240,7 +247,7 @@ export default function OriginalEmailSender() {
     } else {
       console.log('[Renderer] ℹ️ Not in Electron mode or API not available');
     }
-  }, [isElectronMode, toast]); // Re-run if mode changes or toast function is updated
+  }, [isElectronMode]); // Removed toast dependency
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {
@@ -1354,8 +1361,42 @@ export default function OriginalEmailSender() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-[#e4e4e7] font-mono">
+      {/* Broadcast Banner - Persistent notification */}
+      {broadcastBanner?.visible && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <span className="text-2xl">📢</span>
+                <div className="flex-1">
+                  <div className="font-semibold text-lg">Admin Notification</div>
+                  <div className="text-sm opacity-90">{broadcastBanner.message}</div>
+                  {broadcastBanner.showDownloadLink && broadcastBanner.downloadText && (
+                    <a
+                      href="https://t.me/closedsenderbot"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-2 px-4 py-1.5 bg-white text-blue-600 rounded-md font-medium hover:bg-gray-100 transition-colors"
+                    >
+                      {broadcastBanner.downloadText}
+                    </a>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setBroadcastBanner(null)}
+                className="ml-4 text-white hover:text-gray-200 text-2xl font-bold"
+                aria-label="Close notification"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Window Controls */}
-      <div className="flex justify-end items-center h-8  border-b border-[#26262b] px-4">
+      <div className="flex justify-end items-center h-8  border-b border-[#26262b] px-4" style={{ marginTop: broadcastBanner?.visible ? '72px' : '0' }}>
         <div className="flex gap-2">
           <div className="w-3 h-3 rounded-full bg-[#3f3f46] hover:bg-[#52525b] cursor-pointer"></div>
           <div className="w-3 h-3 rounded-full bg-[#ef4444] hover:bg-[#dc2626] cursor-pointer"></div>
