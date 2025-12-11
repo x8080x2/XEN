@@ -5,8 +5,6 @@ import QRCode from "qrcode";
 import archiver from "archiver";
 import crypto from "crypto";
 import axios from "axios";
-import { execSync } from "child_process";
-
 import puppeteer from "puppeteer";
 import { htmlToText } from "html-to-text";
 import AdmZip from "adm-zip";
@@ -852,27 +850,12 @@ export class AdvancedEmailService {
         '--disable-background-networking',
         '--disable-default-apps',
         '--disable-sync',
-        '--single-process', // Use single process to reduce overhead
         '--no-zygote' // Disable zygote process
       ]
     };
 
-    // Try to use system Chromium (installed via Nix on Replit)
-    try {
-      const chromiumPath = execSync('which chromium 2>/dev/null || echo ""', { 
-        encoding: 'utf-8',
-        env: process.env
-      }).trim();
-      if (chromiumPath && chromiumPath !== '') {
-        launchOptions.executablePath = chromiumPath;
-        console.log('Using system Chromium:', chromiumPath);
-      } else {
-        console.log('System Chromium not found in PATH, using Puppeteer bundled Chrome');
-      }
-    } catch (err) {
-      console.log('Error detecting system Chromium:', err);
-      console.log('Falling back to Puppeteer bundled Chrome');
-    }
+    // Use Puppeteer's bundled Chrome for reliability across all environments
+    console.log('Using Puppeteer bundled Chrome');
 
     // Add proxy support
     if (C.PROXY && C.PROXY.PROXY_USE === 1) {
