@@ -37,26 +37,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup AI routes
   setupAIRoutes(app);
 
-  // Telegram webhook endpoint
+  // Telegram webhook endpoint (receives updates from Telegram)
   app.post('/api/telegram/webhook', async (req, res) => {
     try {
-      const { telegramBotService } = await import('./services/telegramBotService');
       await telegramBotService.processUpdate(req.body);
       res.sendStatus(200);
     } catch (error) {
-      console.error('[Telegram Webhook] Error processing update:', error);
+      console.error('[Telegram] Webhook error:', error);
       res.sendStatus(500);
     }
   });
 
-  // Broadcast messages endpoint for Electron app
+  // Broadcast polling endpoint (for Electron app to check for new messages)
   app.get('/api/telegram/broadcasts', (req, res) => {
     try {
       const since = req.query.since ? parseInt(req.query.since as string) : undefined;
       const messages = telegramBotService.getBroadcastMessages(since);
       res.json({ success: true, messages });
     } catch (error) {
-      console.error('[Broadcast API] Error fetching messages:', error);
+      console.error('[Telegram] Broadcast polling error:', error);
       res.status(500).json({ success: false, messages: [] });
     }
   });
