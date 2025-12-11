@@ -1,7 +1,7 @@
 {
-  "name": "email-sender-desktop",
+  "name": "u-p-cls",
   "version": "1.0.0",
-  "description": "Email Sender Desktop Application",
+  "description": "u-p-cls Desktop Application",
   "main": "main.js",
   "scripts": {
     "electron": "electron .",
@@ -85,8 +85,8 @@
     "electron-builder": "^25.1.7"
   },
   "build": {
-    "appId": "com.emailsender.desktop",
-    "productName": "Email Sender Desktop",
+    "appId": "com.upcls.desktop",
+    "productName": "u-p-cls",
     "directories": {
       "output": "dist-electron"
     },
