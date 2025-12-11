@@ -535,18 +535,18 @@ export default function OriginalEmailSender() {
       const response = await fetch("/api/smtp/list");
       const data = await response.json();
       if (data.success) {
-        // Set all to 'testing' status BEFORE updating smtpData to avoid gray flash
+        setSmtpData(data);
+        
+        // Single unified auto-test: test all SMTPs (including current)
         if (data.smtpConfigs?.length) {
+          // Set all to 'testing' status
           const initialStatus: {[key: string]: 'testing'} = {};
           data.smtpConfigs.forEach((smtp: any) => {
             initialStatus[smtp.id] = 'testing';
           });
           setSmtpStatus(initialStatus);
-        }
-        setSmtpData(data);
-        checkSmtpStatus();
-        // Auto-test all SMTPs after loading
-        if (data.smtpConfigs?.length) {
+          
+          // Test each SMTP once
           for (const smtp of data.smtpConfigs) {
             testIndividualSmtp(smtp.id);
           }
