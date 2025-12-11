@@ -51,10 +51,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Telegram broadcast endpoint for Electron apps
   app.get("/api/telegram/broadcasts", async (req, res) => {
     try {
+      console.log('[Telegram Broadcast] ✅ Endpoint hit! Query:', req.query);
+      
       const since = req.query.since ? parseInt(req.query.since as string) : undefined;
       const messages = telegramBotService.getBroadcastMessages(since);
 
-      console.log(`[Telegram Broadcast] Request received - since: ${since}, returning ${messages.length} messages`);
+      console.log(`[Telegram Broadcast] Returning ${messages.length} messages (since: ${since || 'all'})`);
 
       res.json({
         success: true,
@@ -66,7 +68,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         inProgress: false
       });
     } catch (error) {
-      console.error('[Telegram Broadcast] Error fetching broadcasts:', error);
+      console.error('[Telegram Broadcast] ❌ Error:', error);
       res.status(500).json({ success: false, error: 'Failed to fetch broadcasts' });
     }
   });
