@@ -275,6 +275,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/smtp/test/:smtpId", async (req, res) => {
+    try {
+      const { smtpId } = req.params;
+      const smtpConfigs = configService.getAllSmtpConfigs();
+      const smtp = smtpConfigs.find((s: any) => s.id === smtpId);
+
+      if (!smtp) {
+        return res.json({
+          success: false,
+          online: false,
+          smtpId,
+          error: "SMTP configuration not found"
+        });
+      }
+
+      const port = Number(smtp.port);
+      const transporterConfig: any = {
+        host: smtp.host,
+        port: port,
+        secure: port === 465,
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 1,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        tls: {
+          rejectUnauthorized: false
+        }
+      };
+
+      if (smtp.user && smtp.pass) {
+        transporterConfig.auth = {
+          user: smtp.user,
+          pass: smtp.pass
+        };
+      }
+
+      const transporter = nodemailer.createTransport(transporterConfig);
+
+      try {
+        await transporter.verify();
+        res.json({
+          success: true,
+          online: true,
+          smtpId,
+          smtp: {
+            host: smtp.host,
+            port: smtp.port,
+            fromEmail: smtp.fromEmail
+          }
+        });
+      } catch (verifyError: any) {
+        res.json({
+          success: false,
+          online: false,
+          smtpId,
+          error: verifyError.message || "SMTP connection failed",
+          smtp: {
+            host: smtp.host,
+            port: smtp.port,
+            fromEmail: smtp.fromEmail
+          }
+        });
+      } finally {
+        transporter.close();
+      }
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        online: false,
+        smtpId: req.params.smtpId,
+        error: error.message 
+      });
+    }
+  });
+
   app.get("/api/smtp/test", async (req, res) => {
     try {
       const currentSmtp = configService.getCurrentSmtpConfig();

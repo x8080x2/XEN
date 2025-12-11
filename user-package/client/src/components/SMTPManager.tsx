@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, RotateCcw, Settings, Mail } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Settings, Mail, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface SMTPConfig {
@@ -18,6 +18,10 @@ interface SMTPConfig {
   pass: string;
   fromEmail: string;
   fromName?: string;
+}
+
+interface SMTPStatus {
+  [smtpId: string]: 'online' | 'offline' | 'testing' | 'unknown';
 }
 
 interface SMTPData {
@@ -32,6 +36,7 @@ export function SMTPManager() {
     currentSmtp: null,
     rotationEnabled: false
   });
+  const [smtpStatus, setSmtpStatus] = useState<SMTPStatus>({});
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSmtp, setNewSmtp] = useState({
@@ -44,6 +49,26 @@ export function SMTPManager() {
   });
 
   const { toast } = useToast();
+
+  const testSmtp = async (smtpId: string) => {
+    setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
+    try {
+      const response = await fetch(`/api/smtp/test/${smtpId}`);
+      const data = await response.json();
+      setSmtpStatus(prev => ({ 
+        ...prev, 
+        [smtpId]: data.online ? 'online' : 'offline' 
+      }));
+    } catch (error) {
+      setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+    }
+  };
+
+  const testAllSmtps = async () => {
+    for (const smtp of smtpData.smtpConfigs) {
+      testSmtp(smtp.id);
+    }
+  };
 
   const fetchSmtpData = async () => {
     try {
@@ -271,13 +296,24 @@ export function SMTPManager() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-medium">Available SMTP Servers ({smtpData.smtpConfigs.length})</h4>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-add-smtp" variant="outline" size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add SMTP
-                </Button>
-              </DialogTrigger>
+            <div className="flex items-center gap-2">
+              <Button 
+                data-testid="button-test-all-smtp" 
+                variant="outline" 
+                size="sm"
+                onClick={testAllSmtps}
+                disabled={smtpData.smtpConfigs.length === 0}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Test All
+              </Button>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-add-smtp" variant="outline" size="sm">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add SMTP
+                  </Button>
+                </DialogTrigger>
               <DialogContent data-testid="dialog-add-smtp">
                 <DialogHeader>
                   <DialogTitle>Add SMTP Server</DialogTitle>
@@ -365,43 +401,75 @@ export function SMTPManager() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
           
           <div className="grid gap-2">
-            {smtpData.smtpConfigs.map((smtp) => (
-              <div
-                key={smtp.id}
-                data-testid={`smtp-config-${smtp.id}`}
-                className={`flex items-center justify-between p-3 border rounded-lg ${
-                  smtpData.currentSmtp?.id === smtp.id 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
-                    : 'border-border'
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" data-testid={`badge-${smtp.id}`}>{smtp.id}</Badge>
-                    <span className="font-medium" data-testid={`email-${smtp.id}`}>{smtp.fromEmail}</span>
-                    {smtpData.currentSmtp?.id === smtp.id && (
-                      <Badge variant="default">Active</Badge>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1" data-testid={`host-${smtp.id}`}>
-                    {smtp.host}:{smtp.port} ({smtp.user})
-                  </p>
-                </div>
-                <Button
-                  data-testid={`button-delete-${smtp.id}`}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deleteSmtp(smtp.id)}
-                  disabled={loading || smtpData.smtpConfigs.length <= 1}
-                  className="text-red-500 hover:text-red-700"
+            {smtpData.smtpConfigs.map((smtp) => {
+              const status = smtpStatus[smtp.id];
+              return (
+                <div
+                  key={smtp.id}
+                  data-testid={`smtp-config-${smtp.id}`}
+                  className={`flex items-center justify-between p-3 border rounded-lg ${
+                    smtpData.currentSmtp?.id === smtp.id 
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950' 
+                      : 'border-border'
+                  }`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                        status === 'online' ? 'bg-green-500' :
+                        status === 'offline' ? 'bg-red-500' :
+                        status === 'testing' ? 'bg-yellow-500 animate-pulse' :
+                        'bg-gray-300'
+                      }`}
+                      title={
+                        status === 'online' ? 'Online' :
+                        status === 'offline' ? 'Offline' :
+                        status === 'testing' ? 'Testing...' :
+                        'Not tested'
+                      }
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" data-testid={`badge-${smtp.id}`}>{smtp.id}</Badge>
+                        <span className="font-medium" data-testid={`email-${smtp.id}`}>{smtp.fromEmail}</span>
+                        {smtpData.currentSmtp?.id === smtp.id && (
+                          <Badge variant="default">Active</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1" data-testid={`host-${smtp.id}`}>
+                        {smtp.host}:{smtp.port} ({smtp.user})
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      data-testid={`button-test-${smtp.id}`}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testSmtp(smtp.id)}
+                      disabled={status === 'testing'}
+                      title="Test connection"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${status === 'testing' ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button
+                      data-testid={`button-delete-${smtp.id}`}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteSmtp(smtp.id)}
+                      disabled={loading || smtpData.smtpConfigs.length <= 1}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
           
           {smtpData.smtpConfigs.length === 0 && (
