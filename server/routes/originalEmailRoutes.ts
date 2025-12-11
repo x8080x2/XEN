@@ -4,6 +4,7 @@ import multer from "multer";
 import { configService } from "../services/configService";
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import nodemailer from 'nodemailer';
 
 // Configure multer with size limits to prevent DoS
 const upload = multer({ 
@@ -341,7 +342,6 @@ export function setupOriginalEmailRoutes(app: Express) {
   // Test individual SMTP endpoint
   app.get("/api/smtp/test/:smtpId", async (req, res) => {
     try {
-      const nodemailer = require('nodemailer');
       const { smtpId } = req.params;
       const smtpConfigs = configService.getAllSmtpConfigs();
       const smtp = smtpConfigs.find((s: any) => s.id === smtpId);
