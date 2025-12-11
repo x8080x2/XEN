@@ -140,6 +140,15 @@ class Storage {
       return [];
     }
   }
+
+  async deleteBroadcastMessage(broadcastId: string): Promise<void> {
+    try {
+      await db.delete(broadcasts).where(eq(broadcasts.id, broadcastId));
+      console.log(`[Storage] Deleted broadcast ${broadcastId} from database`);
+    } catch (error) {
+      console.error('[Storage] Failed to delete broadcast:', error);
+    }
+  }
 }
 
 export const storage = new Storage();

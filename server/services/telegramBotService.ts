@@ -882,8 +882,19 @@ NODE_ENV=production
     return messages;
   }
 
-  // Mark a broadcast as dismissed for a specific user
-  dismissBroadcast(broadcastId: string, userId: string): void {
+  // Mark a broadcast as dismissed for a specific user - permanently deletes from database
+  async dismissBroadcast(broadcastId: string, userId: string): Promise<void> {
+    // Remove from in-memory array
+    const index = this.broadcastMessages.findIndex(msg => msg.id === broadcastId);
+    if (index !== -1) {
+      this.broadcastMessages.splice(index, 1);
+      console.log(`[Telegram Bot] Removed broadcast ${broadcastId} from memory`);
+    }
+
+    // Delete from database permanently
+    await storage.deleteBroadcastMessage(broadcastId);
+    
+    // Also mark as dismissed in case there are any race conditions
     const dismissedKey = `dismissed_${userId}`;
     if (!this.dismissedBroadcasts.has(dismissedKey)) {
       this.dismissedBroadcasts.set(dismissedKey, new Set<string>());

@@ -1,6 +1,7 @@
 import { Express } from "express";
 import { FileService } from "../services/fileService";
 import { filePathSchema, fileContentSchema, validateRequest, formatValidationError } from "../utils/validation";
+import { telegramBotService } from "../services/telegramBotService"; // Assuming telegramBotService is imported elsewhere and accessible
 
 export function setupElectronRoutes(app: Express) {
   const fileService = new FileService();
@@ -10,7 +11,7 @@ export function setupElectronRoutes(app: Express) {
     try {
       const dirpath = req.query.dirpath as string || '';
       const extensionFilter = req.query.ext as string;
-      
+
       let extensions: string[] | undefined;
       if (extensionFilter) {
         extensions = extensionFilter.split(',').map(ext => ext.trim());
@@ -45,7 +46,7 @@ export function setupElectronRoutes(app: Express) {
   app.get("/api/electron/readFile", async (req, res) => {
     try {
       const filepath = req.query.filepath as string;
-      
+
       // Enhanced validation for file path
       const validation = validateRequest(filePathSchema, filepath);
       if (!validation.success) {
@@ -53,7 +54,7 @@ export function setupElectronRoutes(app: Express) {
       }
 
       const content = await fileService.readFileWithFallback(validation.data, true);
-      
+
       if (content === null) {
         return res.status(404).json({ 
           error: 'File not found',
@@ -76,7 +77,7 @@ export function setupElectronRoutes(app: Express) {
   app.post("/api/electron/writeFile", async (req, res) => {
     try {
       const { filepath, content } = req.body;
-      
+
       // Validate file path
       const pathValidation = validateRequest(filePathSchema, filepath);
       if (!pathValidation.success) {
@@ -96,7 +97,7 @@ export function setupElectronRoutes(app: Express) {
       }
 
       const success = await fileService.writeFileSecure(pathValidation.data, contentValidation.data);
-      
+
       if (!success) {
         return res.status(400).json({ 
           error: 'Write operation failed',
@@ -132,6 +133,18 @@ export function setupElectronRoutes(app: Express) {
       console.error('[ElectronAPI] List config files error:', error);
       res.status(500).json({ error: 'Failed to list config files', files: [] });
     }
+  });
+
+  // Dismiss a broadcast (permanently delete from database)
+  app.post('/api/telegram/broadcasts/:broadcastId/dismiss', async (req, res) => {
+    const { broadcastId } = req.params;
+    const userId = req.header('X-User-ID') || 'desktop-user';
+
+    console.log(`[Electron Routes] Permanently dismissing broadcast ${broadcastId} for user ${userId}`);
+
+    await telegramBotService.dismissBroadcast(broadcastId, userId);
+
+    res.json({ success: true, message: 'Broadcast permanently dismissed' });
   });
 
   console.log('[ElectronAPI] Electron-compatible routes registered');
