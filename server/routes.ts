@@ -48,17 +48,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get broadcasts newer than a timestamp for desktop app polling
+  // Get broadcast messages (polling endpoint for Electron apps)
   app.get('/api/telegram/broadcasts', async (req, res) => {
     try {
       const since = parseInt(req.query.since as string) || 0;
-      const userId = req.query.userId as string;
+      const userId = req.query.userId as string || req.headers['x-user-id'] as string;
 
       const messages = telegramBotService.getBroadcastsSince(since, userId);
-
-      // Only log when there are actual messages to deliver
+      
+      // Only log when there are actual messages to return
       if (messages.length > 0) {
-        console.log(`[Telegram Broadcast] 📬 Delivering ${messages.length} new message(s) to user ${userId}`);
+        console.log(`[Telegram Broadcast] ✅ Returning ${messages.length} messages for user ${userId || 'anonymous'}`);
       }
 
       res.status(200).json({
