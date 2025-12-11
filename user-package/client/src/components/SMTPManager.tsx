@@ -70,21 +70,50 @@ export function SMTPManager() {
       // Use Electron API if available, otherwise fall back to backend
       let data;
       if (window.electronAPI?.smtpTest) {
-        data = await window.electronAPI.smtpTest();
-        // Desktop returns current SMTP status, map to specific ID
-        if (data && data.online) {
-          // Find matching config by comparing SMTP details
-          const matchingSmtp = smtpData.smtpConfigs.find(s => 
-            s.host === data.smtp?.host && s.fromEmail === data.smtp?.fromEmail
-          );
-          if (matchingSmtp && matchingSmtp.id === smtpId) {
-            setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
-          } else {
-            // This SMTP wasn't tested, mark as unknown
-            setSmtpStatus(prev => ({ ...prev, [smtpId]: 'unknown' }));
+        // Desktop: Switch to this SMTP first, then test
+        const smtp = smtpData.smtpConfigs.find(s => s.id === smtpId);
+        if (!smtp) {
+          console.error(`[Desktop SMTP Test] SMTP ${smtpId} not found`);
+          setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+          return;
+        }
+
+        // Rotate to this SMTP if it's not current
+        if (smtpData.currentSmtp?.id !== smtpId) {
+          // Find the index of this SMTP
+          const targetIndex = smtpData.smtpConfigs.findIndex(s => s.id === smtpId);
+          if (targetIndex === -1) {
+            setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+            return;
           }
+
+          // Keep rotating until we reach the target SMTP
+          let attempts = 0;
+          while (smtpData.currentSmtp?.id !== smtpId && attempts < smtpData.smtpConfigs.length) {
+            const rotateResult = await window.electronAPI.smtpRotate();
+            if (rotateResult.success && rotateResult.currentSmtp) {
+              setSmtpData(prev => ({
+                ...prev,
+                currentSmtp: rotateResult.currentSmtp
+              }));
+              if (rotateResult.currentSmtp.id === smtpId) {
+                break;
+              }
+            }
+            attempts++;
+          }
+        }
+
+        // Now test the current SMTP
+        data = await window.electronAPI.smtpTest();
+        console.log(`[Desktop SMTP Test] Testing ${smtpId}:`, data);
+        
+        if (data && data.online) {
+          setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
+          console.log(`[Desktop SMTP Test] ${smtpId} is ONLINE`);
         } else {
           setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+          console.log(`[Desktop SMTP Test] ${smtpId} is OFFLINE:`, data.error);
         }
       } else {
         // Web version - use backend API
@@ -102,22 +131,11 @@ export function SMTPManager() {
   };
 
   const testAllSmtps = async () => {
-    // Desktop: Test current SMTP only (since API tests current config)
+    // Desktop: Test each SMTP by rotating to it
     if (window.electronAPI?.smtpTest) {
-      try {
-        const data = await window.electronAPI.smtpTest();
-        if (data && data.online && data.smtp) {
-          // Find and mark the current SMTP as online
-          const currentSmtp = smtpData.smtpConfigs.find(s => 
-            s.host === data.smtp.host && s.fromEmail === data.smtp.fromEmail
-          );
-          if (currentSmtp) {
-            setSmtpStatus(prev => ({ ...prev, [currentSmtp.id]: 'online' }));
-            console.log(`[Desktop SMTP Test] ${currentSmtp.id} is ONLINE`);
-          }
-        }
-      } catch (error) {
-        console.error('[Desktop SMTP Test] Failed:', error);
+      console.log('[Desktop SMTP Test] Testing all SMTPs...');
+      for (const smtp of smtpData.smtpConfigs) {
+        await testSmtp(smtp.id);
       }
     } else {
       // Web: Test all SMTPs individually
@@ -142,9 +160,21 @@ export function SMTPManager() {
       if (data && data.success) {
         setSmtpData(data);
         
-        // Auto-test current SMTP on desktop
+        // Auto-test current SMTP on desktop (just the active one initially)
         if (window.electronAPI?.smtpTest && data.currentSmtp) {
-          testSmtp(data.currentSmtp.id);
+          console.log('[Desktop SMTP] Auto-testing current SMTP:', data.currentSmtp.id);
+          // Set current as testing
+          setSmtpStatus(prev => ({ ...prev, [data.currentSmtp.id]: 'testing' }));
+          
+          // Test the current SMTP
+          const testResult = await window.electronAPI.smtpTest();
+          if (testResult && testResult.online) {
+            setSmtpStatus(prev => ({ ...prev, [data.currentSmtp.id]: 'online' }));
+            console.log(`[Desktop SMTP] ${data.currentSmtp.id} is ONLINE`);
+          } else {
+            setSmtpStatus(prev => ({ ...prev, [data.currentSmtp.id]: 'offline' }));
+            console.log(`[Desktop SMTP] ${data.currentSmtp.id} is OFFLINE`);
+          }
         }
       }
     } catch (error) {
