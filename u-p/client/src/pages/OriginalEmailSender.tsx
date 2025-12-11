@@ -1622,9 +1622,12 @@ export default function OriginalEmailSender() {
                   <div className="text-xs text-[#75798b] mt-1">
                     {recipientCount} recipients
                   </div>
-                  <details className="mt-2">
-                    <summary className="text-xs text-[#ef4444] cursor-pointer font-semibold hover:text-red-400">📝 SENDER TAGS (Click to Expand)</summary>
-                    <div className="text-xs text-[#a1a1aa] mt-3 space-y-3 bg-[#0a0a0f] p-3 rounded border border-[#26262b]">
+                  <details className="mt-3 bg-gradient-to-br from-[#1a1a1f] to-[#131316] rounded-xl border border-[#2a2a35] shadow-lg shadow-black/20 group overflow-hidden">
+                    <summary className="px-4 py-3 cursor-pointer list-none flex items-center justify-between hover:bg-white/5 transition-all duration-200">
+                      <span className="text-sm font-semibold bg-gradient-to-r from-[#ef4444] to-[#f97316] bg-clip-text text-transparent">📝 SENDER TAGS (Click to Expand)</span>
+                      <span className="text-[#ef4444] text-xs group-open:rotate-180 transition-transform duration-300 bg-[#ef4444]/10 w-6 h-6 rounded-full flex items-center justify-center">▼</span>
+                    </summary>
+                    <div className="text-xs text-[#a1a1aa] space-y-3 p-4 border-t border-[#2a2a35]/50 bg-gradient-to-b from-transparent to-black/10">
                       <div className="space-y-2">
                         <div className="text-yellow-400 font-semibold">📧 Basic Email Placeholders:</div>
                         <div className="font-mono text-[10px] grid grid-cols-2 gap-1 pl-2">
