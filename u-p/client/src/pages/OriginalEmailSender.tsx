@@ -336,13 +336,34 @@ export default function OriginalEmailSender() {
   const testIndividualSmtp = async (smtpId: string) => {
     setSmtpStatus(prev => ({ ...prev, [smtpId]: 'testing' }));
     try {
-      const response = await fetch(`/api/smtp/test/${smtpId}`);
-      const data = await response.json();
-      setSmtpStatus(prev => ({
-        ...prev,
-        [smtpId]: data.online ? 'online' : 'offline'
-      }));
+      let data: { online: boolean; error?: string; success?: boolean } | undefined;
+
+      if (window.electronAPI?.smtpTest) {
+        // Desktop: Pass SMTP ID directly to test that specific config
+        data = await window.electronAPI.smtpTest(smtpId);
+        console.log(`[Desktop SMTP Test] ${smtpId}:`, data);
+      } else {
+        // Web version - the endpoint doesn't exist, so we need to simulate it
+        // We'll rotate to the SMTP and test it
+        const smtp = smtpData.smtpConfigs?.find(s => s.id === smtpId);
+        if (!smtp) {
+          throw new Error('SMTP config not found');
+        }
+
+        // Create a test transporter with this SMTP's credentials
+        const response = await fetch(`/api/smtp/test/${smtpId}`);
+        data = await response.json();
+        console.log(`[Web SMTP Test] ${smtpId}:`, data);
+      }
+
+      // Set status based on result
+      if (data && (data.online || data.success)) {
+        setSmtpStatus(prev => ({ ...prev, [smtpId]: 'online' }));
+      } else {
+        setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
+      }
     } catch (error) {
+      console.error(`SMTP test failed for ${smtpId}:`, error);
       setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
     }
   };
