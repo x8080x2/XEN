@@ -16,6 +16,7 @@ class TelegramBotService {
   private userStates: Map<number, UserState> = new Map();
   private webhookUrl: string = '';
   private broadcastMessages: Array<{ id: string; message: string; timestamp: number; adminId: number }> = [];
+  private dismissedBroadcasts: Map<string, Set<string>> = new Map(); // Map of userId -> Set of dismissed broadcast IDs
 
   async initialize(token: string, adminChatIds?: string, webhookUrl?: string): Promise<boolean> {
     try {
@@ -29,7 +30,7 @@ class TelegramBotService {
 
       // Initialize bot without polling (we'll use webhooks)
       this.bot = new TelegramBot(token, { polling: false });
-      
+
       if (adminChatIds) {
         const ids = adminChatIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
         this.adminChatIds = new Set(ids);
@@ -37,15 +38,15 @@ class TelegramBotService {
       } else {
         console.warn('⚠️  WARNING: No admin chat IDs configured! Bot commands will be restricted.');
       }
-      
+
       this.setupCommands();
-      
+
       // Set up webhook if URL provided
       if (webhookUrl) {
         this.webhookUrl = webhookUrl;
         await this.setWebhook(webhookUrl);
       }
-      
+
       this.isInitialized = true;
       console.log('✅ Telegram bot initialized successfully with webhooks');
       return true;
@@ -105,7 +106,7 @@ class TelegramBotService {
 
   private getMainMenu(isAdmin: boolean = true): TelegramBot.InlineKeyboardMarkup {
     const buttons = [];
-    
+
     if (isAdmin) {
       buttons.push([
         { text: '🆕 Generate License', callback_data: 'menu_generate' }
@@ -114,26 +115,26 @@ class TelegramBotService {
         { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
       ]);
     }
-    
+
     buttons.push([
       { text: '💾 Download Desktop App', callback_data: 'menu_download' }
     ]);
-    
+
     // All users can check license status
     buttons.push([
       { text: '🔍 Check Status', callback_data: 'menu_status' }
     ]);
-    
+
     if (isAdmin) {
       buttons.push([
         { text: '❌ Revoke License', callback_data: 'menu_revoke' }
       ]);
     }
-    
+
     buttons.push([
       { text: '❓ Help', callback_data: 'menu_help' }
     ]);
-    
+
     return { inline_keyboard: buttons };
   }
 
@@ -177,7 +178,7 @@ class TelegramBotService {
       if (!userId) return;
 
       const isAdmin = this.isAdmin(userId);
-      
+
       await this.bot?.sendMessage(
         chatId,
         `👋 Welcome ${username}!`,
@@ -195,7 +196,7 @@ class TelegramBotService {
       if (!userId) return;
 
       const isAdmin = this.isAdmin(userId);
-      
+
       await this.bot?.sendMessage(
         chatId,
         '📋 Select an option:',
@@ -250,7 +251,7 @@ class TelegramBotService {
         timestamp: Date.now(),
         adminId: userId
       };
-      
+
       this.broadcastMessages.push(broadcastData);
 
       // Keep only last 50 messages in memory
@@ -329,7 +330,7 @@ class TelegramBotService {
 
       // Allow these actions for all users
       const publicActions = ['menu_download', 'menu_status', 'menu_help', 'menu_main'];
-      
+
       // Check admin access only for admin-only actions
       if (!publicActions.includes(data) && !await this.checkAdminAccess(userId, chatId)) {
         await this.bot?.answerCallbackQuery(query.id, {
@@ -562,7 +563,7 @@ class TelegramBotService {
       // Auto-claim unknown licenses for admins if they have no licenses
       if (userLicenses.length === 0 && isAdmin) {
         const unknownLicenses = allLicenses.filter(l => !l.telegramUserId || l.telegramUserId === 'Unknown');
-        
+
         if (unknownLicenses.length > 0) {
           // Claim all unknown licenses
           for (const license of unknownLicenses) {
@@ -571,11 +572,11 @@ class TelegramBotService {
               telegramUsername: 'Admin'
             });
           }
-          
+
           // Refresh the user's licenses
           const updatedLicenses = await licenseService.getAllLicenses();
           userLicenses = updatedLicenses.filter(l => l.telegramUserId === userId.toString());
-          
+
           console.log(`[Telegram Bot] Auto-claimed ${unknownLicenses.length} unknown licenses for admin ${userId}`);
         }
       }
@@ -596,10 +597,10 @@ class TelegramBotService {
         const expiryText = license.expiresAt 
           ? `Expires: ${license.expiresAt.toLocaleDateString()}`
           : 'Lifetime';
-        
+
         let statusIcon = '🟢';
         let statusText = 'Active';
-        
+
         if (license.status === 'expired') {
           statusIcon = '🟡';
           statusText = 'Expired';
@@ -607,7 +608,7 @@ class TelegramBotService {
           statusIcon = '🔴';
           statusText = 'Revoked';
         }
-        
+
         return `${index + 1}. ${statusIcon} *${statusText}*\n` +
                `   Key: \`${license.licenseKey}\`\n` +
                `   ${expiryText}`;
@@ -641,7 +642,7 @@ class TelegramBotService {
     const isAdmin = this.isAdmin(userId);
     try {
       const result = await licenseService.verifyLicense(licenseKey);
-      
+
       if (!result.valid) {
         await this.bot?.sendMessage(
           chatId,
@@ -684,7 +685,7 @@ class TelegramBotService {
     const isAdmin = this.isAdmin(userId);
     try {
       const license = await licenseService.revokeLicense(licenseKey);
-      
+
       if (!license) {
         await this.bot?.sendMessage(
           chatId,
@@ -722,7 +723,7 @@ class TelegramBotService {
     const isAdmin = this.isAdmin(userId);
     try {
       const result = await licenseService.verifyLicense(licenseKey);
-      
+
       if (!result.valid) {
         await this.bot?.sendMessage(
           chatId,
@@ -744,7 +745,7 @@ class TelegramBotService {
 
       const timestamp = Date.now();
       const zipPath = path.join(process.cwd(), 'uploads', `email-sender-${timestamp}.zip`);
-      
+
       await fs.promises.mkdir(path.dirname(zipPath), { recursive: true });
 
       const output = fs.createWriteStream(zipPath);
@@ -786,21 +787,21 @@ class TelegramBotService {
 
       const userPackagePath = path.join(process.cwd(), 'user-package');
       console.log(`[Telegram Bot] Creating ZIP from: ${userPackagePath}`);
-      
+
       // Simple walk - include ALL files, only skip .env (we inject our own)
       const walkAndAddFiles = async (dir: string, baseDir: string): Promise<number> => {
         let count = 0;
         const entries = await fs.promises.readdir(dir, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
           const relativePath = path.relative(baseDir, fullPath);
-          
+
           // Only skip .env files (we inject our own with license)
           if (entry.name === '.env' || entry.name === '.env.example') {
             continue;
           }
-          
+
           if (entry.isDirectory()) {
             count += await walkAndAddFiles(fullPath, baseDir);
           } else if (entry.isFile()) {
@@ -834,7 +835,7 @@ NODE_ENV=production
       archive.append(envContent, { name: '.env' });
 
       await archive.finalize();
-      
+
     } catch (error) {
       console.error('[Telegram Bot] Error preparing download:', error);
       await this.bot?.sendMessage(
@@ -862,11 +863,33 @@ NODE_ENV=production
     }
   }
 
-  getBroadcastMessages(since?: number): Array<{ id: string; message: string; timestamp: number }> {
-    if (!since) {
-      return this.broadcastMessages;
+  // Get broadcasts newer than a timestamp (excluding those already dismissed by this user)
+  getBroadcastsSince(since: number, userId?: string): Array<{ id: string; message: string; timestamp: number; adminId: number }> {
+    let messages = this.broadcastMessages;
+
+    // Filter by timestamp if provided
+    if (since) {
+      messages = messages.filter(msg => msg.timestamp > since);
     }
-    return this.broadcastMessages.filter(msg => msg.timestamp > since);
+
+    // If userId provided, filter out dismissed broadcasts
+    if (userId) {
+      const dismissedKey = `dismissed_${userId}`;
+      const dismissed = this.dismissedBroadcasts.get(dismissedKey) || new Set<string>();
+      messages = messages.filter(msg => !dismissed.has(msg.id));
+    }
+
+    return messages;
+  }
+
+  // Mark a broadcast as dismissed for a specific user
+  dismissBroadcast(broadcastId: string, userId: string): void {
+    const dismissedKey = `dismissed_${userId}`;
+    if (!this.dismissedBroadcasts.has(dismissedKey)) {
+      this.dismissedBroadcasts.set(dismissedKey, new Set<string>());
+    }
+    this.dismissedBroadcasts.get(dismissedKey)!.add(broadcastId);
+    console.log(`[Telegram Bot] User ${userId} dismissed broadcast ${broadcastId}`);
   }
 
   private async loadBroadcastsFromDatabase(): Promise<void> {

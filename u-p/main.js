@@ -42,9 +42,10 @@ app.on('before-quit', () => {
 
 // Keep a global reference of the window object
 let mainWindow;
+// Broadcast polling variables
 let broadcastCheckInterval = null;
-let lastBroadcastCheck = 0;
-let shownBroadcastIds = new Set();
+let lastBroadcastCheck = 0; // Timestamp of last check
+const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`; // Unique user ID for this app instance
 
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
@@ -1273,12 +1274,13 @@ safeHandle('save-leads', async (event, leads) => {
 function startBroadcastPolling(serverUrl) {
   console.log('[Electron] 🔔 Starting broadcast polling...');
   console.log('[Electron] Server URL:', serverUrl);
+  console.log('[Electron] User ID:', userId);
   console.log('[Electron] Polling interval: 10 seconds');
 
   // Check every 10 seconds
   broadcastCheckInterval = setInterval(async () => {
     try {
-      const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}`;
+      const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}&userId=${encodeURIComponent(userId)}`;
       console.log('[Electron] 📡 Polling broadcasts:', url);
 
       const response = await fetch(url);
@@ -1286,28 +1288,16 @@ function startBroadcastPolling(serverUrl) {
         const data = await response.json();
 
         if (data.success && data.messages && data.messages.length > 0) {
-          for (const msg of data.messages) {
-            // Skip if already shown (deduplication)
-            if (shownBroadcastIds.has(msg.id)) {
-              continue;
-            }
+          console.log(`[Electron] 📬 Received ${data.messages.length} new broadcasts`);
 
-            // Send broadcast to renderer once
+          for (const msg of data.messages) {
+            // Send broadcast to renderer
             mainWindow.webContents.send('admin-broadcast', {
               id: msg.id,
               message: msg.message,
               timestamp: msg.timestamp,
               downloadText: 'Download Latest Version'
             });
-
-            // Mark as shown
-            shownBroadcastIds.add(msg.id);
-
-            // Keep only last 100 IDs in memory
-            if (shownBroadcastIds.size > 100) {
-              const idsArray = Array.from(shownBroadcastIds);
-              shownBroadcastIds = new Set(idsArray.slice(-100));
-            }
 
             // Update last check timestamp
             if (msg.timestamp > lastBroadcastCheck) {
@@ -1324,13 +1314,39 @@ function startBroadcastPolling(serverUrl) {
   console.log('[Electron] ✅ Broadcast polling started');
 }
 
+// Handle broadcast dismissal from renderer
+ipcMain.handle('dismiss-broadcast', async (event, broadcastId) => {
+  try {
+    const serverUrl = process.env.REPLIT_SERVER_URL;
+    if (!serverUrl) {
+      console.error('[Electron] No server URL configured for dismissal');
+      return { success: false, error: 'No server URL configured' };
+    }
+
+    const response = await fetch(`${serverUrl}/api/telegram/broadcasts/${broadcastId}/dismiss`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-ID': userId
+      },
+      body: JSON.stringify({ userId })
+    });
+
+    const result = await response.json();
+    console.log(`[Electron] ✅ Dismissed broadcast ${broadcastId}:`, result);
+    return result;
+  } catch (error) {
+    console.error('[Electron] ❌ Error dismissing broadcast:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Stop polling when app quits
 app.on('before-quit', () => {
   if (broadcastCheckInterval) {
     clearInterval(broadcastCheckInterval);
     broadcastCheckInterval = null;
   }
-  shownBroadcastIds.clear();
 });
 
 // Security: Prevent new window creation

@@ -209,9 +209,6 @@ export default function OriginalEmailSender() {
     showDownloadLink: boolean;
   } | null>(null);
 
-  // Track shown broadcast IDs to prevent duplicates
-  const [shownBroadcastIds, setShownBroadcastIds] = React.useState<Set<string>>(new Set());
-
   // Broadcast polling effect for desktop app
   useEffect(() => {
     if (!isElectronMode || !window.electronAPI?.onAdminBroadcast) return;
@@ -221,16 +218,7 @@ export default function OriginalEmailSender() {
     const handleBroadcast = (data: { id: string; message: string; timestamp: number; temporary?: boolean; downloadText?: string }) => {
       console.log('[Renderer] 📢 Received admin broadcast:', data);
 
-      // Check if we've already shown this broadcast
-      if (shownBroadcastIds.has(data.id)) {
-        console.log('[Renderer] ⏭️ Skipping duplicate broadcast:', data.id);
-        return;
-      }
-
-      // Mark as shown
-      setShownBroadcastIds(prev => new Set(prev).add(data.id));
-
-      // Show the broadcast notification
+      // Show the broadcast notification immediately (server already filtered dismissed ones)
       setBroadcastBanner({
         visible: true,
         message: data.message,
@@ -244,7 +232,7 @@ export default function OriginalEmailSender() {
     window.electronAPI.onAdminBroadcast(handleBroadcast);
 
     console.log('[Renderer] ✅ Admin broadcast listener registered');
-  }, [isElectronMode, shownBroadcastIds]);
+  }, [isElectronMode]);
 
   // Copy failed and unsent emails to clipboard
   const copyFailedAndUnsentEmails = async () => {
@@ -1392,7 +1380,18 @@ export default function OriginalEmailSender() {
                 </div>
               </div>
               <button
-                onClick={() => setBroadcastBanner(null)}
+                onClick={async () => {
+                  // Dismiss on server if using desktop app
+                  if (window.electronAPI?.dismissBroadcast && broadcastBanner) {
+                    try {
+                      await window.electronAPI.dismissBroadcast(broadcastBanner.id);
+                      console.log('[Broadcast] Dismissed broadcast:', broadcastBanner.id);
+                    } catch (error) {
+                      console.error('[Broadcast] Failed to dismiss:', error);
+                    }
+                  }
+                  setBroadcastBanner(null);
+                }}
                 className="ml-3 text-white hover:text-[#00ff00] text-xl font-bold w-6 h-6 flex items-center justify-center rounded-full bg-[#ff0000] hover:bg-[#0000ff] transition-colors border-2 border-white shadow-md"
                 aria-label="Close notification"
               >

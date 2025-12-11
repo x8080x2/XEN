@@ -48,19 +48,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Telegram broadcast endpoint for Electron apps
-  app.get("/api/telegram/broadcasts", async (req, res) => {
-    console.log('[Telegram Broadcast] 🎯 Route hit!', {
-      query: req.query,
-      url: req.url,
-      path: req.path
-    });
-    
+  // Get broadcast messages (polling endpoint for Electron apps)
+  app.get('/api/telegram/broadcasts', async (req, res) => {
     try {
-      const since = req.query.since ? parseInt(req.query.since as string) : undefined;
-      const messages = telegramBotService.getBroadcastMessages(since);
+      const since = parseInt(req.query.since as string) || 0;
+      const userId = req.query.userId as string || req.headers['x-user-id'] as string; // Support both query param and header
 
-      console.log(`[Telegram Broadcast] ✅ Returning ${messages.length} messages (since: ${since || 'all'})`);
+      console.log('[Telegram Broadcast] 🎯 Route hit!', {
+        query: req.query,
+        userId,
+        url: req.url,
+        path: req.path
+      });
+
+      const messages = telegramBotService.getBroadcastsSince(since, userId);
+      console.log(`[Telegram Broadcast] ✅ Returning ${messages.length} messages for user ${userId || 'anonymous'} (since: ${since || 'all'})`);
 
       res.status(200).json({
         success: true,
@@ -74,9 +76,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('[Telegram Broadcast] ❌ Error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch broadcasts' 
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch broadcasts'
+      });
+    }
+  });
+
+  // Dismiss a broadcast for a specific user
+  app.post('/api/telegram/broadcasts/:id/dismiss', async (req, res) => {
+    try {
+      const broadcastId = req.params.id;
+      const userId = req.body.userId || req.headers['x-user-id'] as string;
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'User ID required to dismiss broadcast'
+        });
+      }
+
+      telegramBotService.dismissBroadcast(broadcastId, userId);
+
+      res.json({
+        success: true,
+        message: 'Broadcast dismissed successfully'
+      });
+    } catch (error) {
+      console.error('[Telegram Broadcast] ❌ Dismissal error:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to dismiss broadcast'
       });
     }
   });
@@ -342,11 +372,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporter.close();
       }
     } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         online: false,
         smtpId: req.params.smtpId,
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -411,10 +441,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporter.close();
       }
     } catch (error: any) {
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         online: false,
-        error: error.message 
+        error: error.message
       });
     }
   });
@@ -424,18 +454,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { licenseKey, hardwareId } = req.body;
 
       if (!licenseKey) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           valid: false,
-          error: 'License key is required' 
+          error: 'License key is required'
         });
       }
 
       if (!hardwareId || typeof hardwareId !== 'string' || hardwareId.trim() === '') {
-        return res.status(400).json({ 
+        return res.status(400).json({
           success: false,
           valid: false,
-          error: 'Hardware ID is required for license verification' 
+          error: 'Hardware ID is required for license verification'
         });
       }
 
@@ -465,10 +495,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('License verification error:', error);
-      res.status(500).json({ 
-        success: false, 
+      res.status(500).json({
+        success: false,
         valid: false,
-        error: 'Failed to verify license' 
+        error: 'Failed to verify license'
       });
     }
   });
@@ -487,9 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('License status error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to check license status' 
+      res.status(500).json({
+        success: false,
+        error: 'Failed to check license status'
       });
     }
   });
@@ -516,9 +546,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error('License stats error:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: 'Failed to get license statistics' 
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get license statistics'
       });
     }
   });

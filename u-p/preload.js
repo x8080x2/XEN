@@ -35,10 +35,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Admin broadcast listener
   onAdminBroadcast: (callback) => {
-    ipcRenderer.on('admin-broadcast', (event, data) => {
-      callback(data);
-    });
-  }
+    ipcRenderer.on('admin-broadcast', (event, data) => callback(data));
+  },
+
+  // Dismiss broadcast
+  dismissBroadcast: (broadcastId) => ipcRenderer.invoke('dismiss-broadcast', broadcastId),
 });
 
 // Log that preload script has loaded
