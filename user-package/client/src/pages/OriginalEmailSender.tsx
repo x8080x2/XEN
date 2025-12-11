@@ -1455,7 +1455,7 @@ export default function OriginalEmailSender() {
           </div>
 
           {/* ASCII Art Status Display */}
-          <div className="absolute bottom-4  right-4">
+          <div className="absolute bottom-4 right-4">
             <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
 {`
 ▓ SYSTEM STATUS ▓
@@ -1474,6 +1474,18 @@ export default function OriginalEmailSender() {
                 {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
               </div>
             </div>
+            {/* Active SMTP Display */}
+            {smtpData.currentSmtp && (
+              <div className="mt-2 p-2 bg-[#0f0f12] rounded border border-[#26262b]">
+                <div className="text-[10px] text-[#a1a1aa] mb-1">Active SMTP:</div>
+                <div className="text-[10px] text-green-400 font-medium truncate">
+                  {smtpData.currentSmtp.fromEmail}
+                </div>
+                <div className="text-[8px] text-[#75798b] truncate">
+                  {smtpData.currentSmtp.id} - {smtpData.currentSmtp.host}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
