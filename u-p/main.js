@@ -42,13 +42,9 @@ app.on('before-quit', () => {
 
 // Keep a global reference of the window object
 let mainWindow;
-// Broadcast polling variables
-let broadcastCheckInterval = null;
-let lastBroadcastCheck = Date.now(); // Initialize to current time to avoid showing old broadcasts
+// Broadcast check variables (one-time check at startup, no polling)
+let lastBroadcastCheck = 0; // Initialize to 0 to show all pending broadcasts on startup
 let userId = null; // Will be set to hardware fingerprint for persistent user identification
-let isPollingPaused = false; // Track if polling is intentionally paused (e.g., during email sending)
-let activePollingServerUrl = null; // Store the actual URL used for polling (not just from env)
-let currentPollingRequest = null; // Track in-flight polling request
 
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
@@ -201,8 +197,8 @@ function createWindow() {
         console.log('[Electron] Server URL set to:', '${serverUrl}');
       `);
 
-      // Start checking for broadcast messages
-      startBroadcastPolling(serverUrl);
+      // Check for broadcast messages once at startup (no continuous polling)
+      checkBroadcastsOnce(serverUrl);
     } else {
       console.log('[Electron] No REPLIT_SERVER_URL environment variable set');
     }
@@ -1278,75 +1274,47 @@ safeHandle('save-leads', async (event, leads) => {
   }
 });
 
-// Broadcast polling function
-function startBroadcastPolling(serverUrl) {
-  // Don't start if polling is intentionally paused
-  if (isPollingPaused) {
-    console.log('[Electron] ⏸️ Broadcast polling is paused, not starting');
-    return;
-  }
-
-  // Prevent duplicate intervals
-  if (broadcastCheckInterval) {
-    console.log('[Electron] ⚠️ Broadcast polling already running, clearing old interval first');
-    clearInterval(broadcastCheckInterval);
-    broadcastCheckInterval = null;
-  }
-
-  // Store the actual server URL for later use
-  activePollingServerUrl = serverUrl;
-
-  console.log('[Electron] 🔔 Starting broadcast polling...');
+// One-time broadcast check at startup (no polling)
+async function checkBroadcastsOnce(serverUrl) {
+  console.log('[Electron] 🔔 Checking for broadcasts (one-time at startup)...');
   console.log('[Electron] Server URL:', serverUrl);
   console.log('[Electron] User ID:', userId);
-  console.log('[Electron] Polling interval: 10 seconds');
 
-  // Check every 10 seconds
-  broadcastCheckInterval = setInterval(async () => {
-    // Double-check if we should still be polling
-    if (isPollingPaused) {
-      console.log('[Electron] ⏸️ Polling paused, skipping this cycle');
-      return;
-    }
+  try {
+    const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}&userId=${encodeURIComponent(userId)}`;
+    console.log('[Electron] 📡 Fetching broadcasts:', url);
 
-    try {
-      const url = `${serverUrl}/api/telegram/broadcasts?since=${lastBroadcastCheck}&userId=${encodeURIComponent(userId)}`;
-      console.log('[Electron] 📡 Polling broadcasts:', url);
+    const response = await fetch(url);
+    
+    if (response.ok) {
+      const data = await response.json();
 
-      // Track the in-flight request
-      currentPollingRequest = fetch(url);
-      const response = await currentPollingRequest;
-      currentPollingRequest = null; // Clear after completion
-      
-      if (response.ok) {
-        const data = await response.json();
+      if (data.success && data.messages && data.messages.length > 0) {
+        console.log(`[Electron] 📬 Received ${data.messages.length} broadcasts`);
 
-        if (data.success && data.messages && data.messages.length > 0) {
-          console.log(`[Electron] 📬 Received ${data.messages.length} new broadcasts`);
+        for (const msg of data.messages) {
+          // Send broadcast to renderer
+          mainWindow.webContents.send('admin-broadcast', {
+            id: msg.id,
+            message: msg.message,
+            timestamp: msg.timestamp,
+            downloadText: 'Download Latest Version'
+          });
 
-          for (const msg of data.messages) {
-            // Send broadcast to renderer
-            mainWindow.webContents.send('admin-broadcast', {
-              id: msg.id,
-              message: msg.message,
-              timestamp: msg.timestamp,
-              downloadText: 'Download Latest Version'
-            });
-
-            // Update last check timestamp
-            if (msg.timestamp > lastBroadcastCheck) {
-              lastBroadcastCheck = msg.timestamp;
-            }
+          // Update last check timestamp
+          if (msg.timestamp > lastBroadcastCheck) {
+            lastBroadcastCheck = msg.timestamp;
           }
         }
+      } else {
+        console.log('[Electron] ✅ No new broadcasts');
       }
-    } catch (error) {
-      currentPollingRequest = null; // Clear on error too
-      console.error('[Electron] ❌ Error polling broadcasts:', error);
     }
-  }, 10000); // 10 seconds
+  } catch (error) {
+    console.error('[Electron] ❌ Error checking broadcasts:', error);
+  }
 
-  console.log('[Electron] ✅ Broadcast polling started');
+  console.log('[Electron] ✅ Broadcast check completed');
 }
 
 // Handle broadcast dismissal from renderer
@@ -1376,85 +1344,16 @@ ipcMain.handle('dismiss-broadcast', async (event, broadcastId) => {
   }
 });
 
-// Pause/Resume broadcast polling handlers (to avoid interfering with email sending)
-
+// Pause/Resume broadcast polling handlers - now no-ops since we use one-time check
+// Kept for backward compatibility with frontend code
 ipcMain.handle('pause-broadcast-polling', async () => {
-  try {
-    console.log('[Electron] ⏸️ PAUSE REQUEST RECEIVED - Pausing broadcast polling during email sending...');
-    
-    // Set the paused flag FIRST to prevent any new polling cycles
-    isPollingPaused = true;
-    
-    // Clear the interval if it exists
-    if (broadcastCheckInterval) {
-      clearInterval(broadcastCheckInterval);
-      broadcastCheckInterval = null;
-      console.log('[Electron] ✅ Broadcast polling interval cleared');
-    } else {
-      console.log('[Electron] ℹ️ Broadcast polling was not running, but paused flag is set');
-    }
-    
-    // Wait for any in-flight polling request to complete
-    if (currentPollingRequest) {
-      console.log('[Electron] ⏳ Waiting for in-flight polling request to complete...');
-      try {
-        await currentPollingRequest;
-        console.log('[Electron] ✅ In-flight polling request completed');
-      } catch (e) {
-        console.log('[Electron] ℹ️ In-flight polling request finished (may have failed)');
-      }
-      currentPollingRequest = null;
-    }
-    
-    // Add a small additional delay to ensure everything is settled
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    console.log('[Electron] ✅ Broadcast polling PAUSED successfully');
-    return { success: true, message: 'Broadcast polling paused', isPaused: true };
-  } catch (error) {
-    console.error('[Electron] ❌ Error pausing broadcast polling:', error);
-    return { success: false, error: error.message };
-  }
+  console.log('[Electron] ℹ️ Pause broadcast polling called (no-op - using one-time check)');
+  return { success: true, message: 'No polling to pause (one-time check mode)' };
 });
 
 ipcMain.handle('resume-broadcast-polling', async () => {
-  try {
-    console.log('[Electron] ▶️ RESUME REQUEST RECEIVED - Resuming broadcast polling after email sending...');
-    
-    // Only resume if we were actually paused
-    if (!isPollingPaused && broadcastCheckInterval) {
-      console.log('[Electron] ℹ️ Broadcast polling was already running, no need to resume');
-      return { success: true, message: 'Broadcast polling was already running' };
-    }
-    
-    // Clear the paused flag FIRST
-    isPollingPaused = false;
-    
-    // Use the stored active URL, or fall back to environment variable
-    const serverUrl = activePollingServerUrl || process.env.REPLIT_SERVER_URL;
-    if (serverUrl) {
-      // Add a small delay before resuming to avoid race conditions
-      await new Promise(resolve => setTimeout(resolve, 200));
-      
-      startBroadcastPolling(serverUrl);
-      console.log('[Electron] ✅ Broadcast polling RESUMED successfully');
-      return { success: true, message: 'Broadcast polling resumed', isPaused: false };
-    }
-    
-    console.log('[Electron] ⚠️ No server URL available for broadcast polling');
-    return { success: false, message: 'No server URL available for broadcast polling' };
-  } catch (error) {
-    console.error('[Electron] ❌ Error resuming broadcast polling:', error);
-    return { success: false, error: error.message };
-  }
-});
-
-// Stop polling when app quits
-app.on('before-quit', () => {
-  if (broadcastCheckInterval) {
-    clearInterval(broadcastCheckInterval);
-    broadcastCheckInterval = null;
-  }
+  console.log('[Electron] ℹ️ Resume broadcast polling called (no-op - using one-time check)');
+  return { success: true, message: 'No polling to resume (one-time check mode)' };
 });
 
 // Security: Prevent new window creation
