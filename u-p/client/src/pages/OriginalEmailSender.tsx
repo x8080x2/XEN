@@ -338,9 +338,9 @@ export default function OriginalEmailSender() {
     try {
       const response = await fetch(`/api/smtp/test/${smtpId}`);
       const data = await response.json();
-      setSmtpStatus(prev => ({ 
-        ...prev, 
-        [smtpId]: data.online ? 'online' : 'offline' 
+      setSmtpStatus(prev => ({
+        ...prev,
+        [smtpId]: data.online ? 'online' : 'offline'
       }));
     } catch (error) {
       setSmtpStatus(prev => ({ ...prev, [smtpId]: 'offline' }));
@@ -553,39 +553,6 @@ export default function OriginalEmailSender() {
 
   const initializeAI = async () => {
     // Both desktop and web versions can use backend AI service
-    // If AI is already initialized, this button acts as a toggle to turn it OFF
-    if (aiStatus.initialized) {
-      try {
-        // Call backend to deinitialize AI service
-        const response = await fetch(getApiUrl('/api/ai/deinitialize'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          setAiEnabled(false); // Disable AI features
-          setAiStatus({ initialized: false, hasApiKey: false, provider: '' }); // Reset status
-          setStatusText('AI service turned off successfully');
-          if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('google_ai_key');
-          }
-
-          // Clear from config file
-          await fetch(getApiUrl('/api/config/save'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ GOOGLE_AI_KEY: '' })
-          });
-        } else {
-          setStatusText('Failed to turn off AI service');
-        }
-      } catch (error) {
-        setStatusText('Error turning off AI service');
-      }
-      return;
-    }
-
     // If AI is not initialized, proceed with initialization
     if (!aiApiKey) {
       setStatusText('Please enter Google AI API key');
@@ -1462,10 +1429,10 @@ export default function OriginalEmailSender() {
 `}
             </div>
             <div className="flex items-center justify-center gap-2 px-1 py-2">
-              <div 
+              <div
                 className={`w-3 h-3 rounded-full flex-shrink-0 ${
-                  smtpOnline === null ? 'bg-yellow-500 animate-pulse' : 
-                  smtpOnline ? 'bg-green-500' : 
+                  smtpOnline === null ? 'bg-yellow-500 animate-pulse' :
+                  smtpOnline ? 'bg-green-500' :
                   'bg-red-500'
                 } ${smtpChecking ? 'animate-pulse' : ''}`}
                 title={smtpOnline === null ? 'Checking...' : smtpOnline ? 'Online' : 'Offline'}
@@ -1474,18 +1441,6 @@ export default function OriginalEmailSender() {
                 {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
               </div>
             </div>
-            {/* Active SMTP Display */}
-            {smtpData.currentSmtp && (
-              <div className="mt-2 p-2 bg-[#0f0f12] rounded border border-[#26262b]">
-                <div className="text-[10px] text-[#a1a1aa] mb-1">Active SMTP:</div>
-                <div className="text-[10px] text-green-400 font-medium truncate">
-                  {smtpData.currentSmtp.fromEmail}
-                </div>
-                <div className="text-[8px] text-[#75798b] truncate">
-                  {smtpData.currentSmtp.id} - {smtpData.currentSmtp.host}
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -1576,7 +1531,8 @@ export default function OriginalEmailSender() {
 
                 {/* Maillist */}
                 <div>
-                   <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1 font-bold bg-[#ff0a0af0] text-[12px] text-[#00ff00]">MAILLIST</Label>                  <Textarea
+                   <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1 font-bold bg-[#ff0a0af0] text-[12px] text-[#00ff00]">MAILLIST</Label>
+                  <Textarea
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
                     placeholder="recipient1@example.com&#10;recipient2@example.com&#10;recipient3@example.com"
@@ -2032,7 +1988,7 @@ export default function OriginalEmailSender() {
                           }`}
                         >
                           <div className="flex items-center gap-2">
-                            <div 
+                            <div
                               className={`w-3 h-3 rounded-full flex-shrink-0 ${
                                 status === 'online' ? 'bg-green-500' :
                                 status === 'offline' ? 'bg-red-500' :
