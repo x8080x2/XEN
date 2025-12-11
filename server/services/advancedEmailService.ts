@@ -854,8 +854,22 @@ export class AdvancedEmailService {
       ]
     };
 
-    // Use Puppeteer's bundled Chrome for reliability across all environments
-    console.log('Using Puppeteer bundled Chrome');
+    // Try to use system Chromium first (installed via Nix on Replit)
+    try {
+      const { execSync } = await import('child_process');
+      const chromiumPath = execSync('which chromium 2>/dev/null || echo ""', { 
+        encoding: 'utf-8',
+        env: process.env
+      }).trim();
+      if (chromiumPath && chromiumPath !== '') {
+        launchOptions.executablePath = chromiumPath;
+        console.log('Using system Chromium:', chromiumPath);
+      } else {
+        console.log('System Chromium not found, using Puppeteer bundled Chrome');
+      }
+    } catch (err) {
+      console.log('Falling back to Puppeteer bundled Chrome');
+    }
 
     // Add proxy support
     if (C.PROXY && C.PROXY.PROXY_USE === 1) {
