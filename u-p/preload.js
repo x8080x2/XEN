@@ -40,6 +40,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Dismiss broadcast
   dismissBroadcast: (broadcastId) => ipcRenderer.invoke('dismiss-broadcast', broadcastId),
+
+  // Pause/Resume broadcast polling (to avoid interference during email sending)
+  pauseBroadcastPolling: () => ipcRenderer.invoke('pause-broadcast-polling'),
+  resumeBroadcastPolling: () => ipcRenderer.invoke('resume-broadcast-polling'),
 });
 
 // Log that preload script has loaded

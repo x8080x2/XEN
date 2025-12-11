@@ -1034,6 +1034,12 @@ export default function OriginalEmailSender() {
       const isElectron = window.electronAPI !== undefined;
 
       if (isElectron) {
+        // Pause broadcast polling to avoid interference with email sending
+        if (window.electronAPI?.pauseBroadcastPolling) {
+          console.log('[Desktop] Pausing broadcast polling during email send...');
+          await window.electronAPI.pauseBroadcastPolling();
+        }
+
         // Desktop version - send via backend API using FormData (same as web version)
         console.log('[Desktop] Starting email send via backend API...');
 
@@ -1210,6 +1216,12 @@ export default function OriginalEmailSender() {
                     clearInterval((window as any).pollingInterval);
                     (window as any).pollingInterval = null;
                   }
+
+                  // Resume broadcast polling after completion
+                  if (window.electronAPI?.resumeBroadcastPolling) {
+                    console.log('[Desktop] Resuming broadcast polling after completion...');
+                    window.electronAPI.resumeBroadcastPolling();
+                  }
                 } else if (log.type === 'cancelled') {
                   // Handle cancellation notification immediately
                   setIsLoading(false);
@@ -1222,6 +1234,12 @@ export default function OriginalEmailSender() {
                   if ((window as any).pollingInterval) {
                     clearInterval((window as any).pollingInterval);
                     (window as any).pollingInterval = null;
+                  }
+
+                  // Resume broadcast polling after error
+                  if (window.electronAPI?.resumeBroadcastPolling) {
+                    console.log('[Desktop] Resuming broadcast polling after error...');
+                    window.electronAPI.resumeBroadcastPolling();
                   }
                 } else {
                   const progressData: EmailProgress = {
@@ -1250,6 +1268,12 @@ export default function OriginalEmailSender() {
                 (window as any).pollingInterval = null;
               }
               setIsLoading(false);
+
+              // Resume broadcast polling when email sending is no longer in progress
+              if (window.electronAPI?.resumeBroadcastPolling) {
+                console.log('[Desktop] Resuming broadcast polling (no longer in progress)...');
+                window.electronAPI.resumeBroadcastPolling();
+              }
             }
           } catch (err) {
             console.error('Error polling progress:', err);
@@ -1275,6 +1299,12 @@ export default function OriginalEmailSender() {
       if ((window as any).pollingInterval) {
         clearInterval((window as any).pollingInterval);
         (window as any).pollingInterval = null;
+      }
+
+      // Resume broadcast polling after error
+      if (window.electronAPI?.resumeBroadcastPolling) {
+        console.log('[Desktop] Resuming broadcast polling after error...');
+        window.electronAPI.resumeBroadcastPolling();
       }
 
       setIsLoading(false);
@@ -1346,6 +1376,12 @@ export default function OriginalEmailSender() {
       if ((window as any).pollingInterval) {
         clearInterval((window as any).pollingInterval);
         (window as any).pollingInterval = null;
+      }
+
+      // Resume broadcast polling after cancellation
+      if (window.electronAPI?.resumeBroadcastPolling) {
+        console.log('[Desktop] Resuming broadcast polling after cancellation...');
+        window.electronAPI.resumeBroadcastPolling();
       }
     } catch (error) {
       console.error('Failed to cancel sending:', error);

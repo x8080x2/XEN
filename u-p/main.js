@@ -1346,6 +1346,43 @@ ipcMain.handle('dismiss-broadcast', async (event, broadcastId) => {
   }
 });
 
+// Pause/Resume broadcast polling handlers (to avoid interfering with email sending)
+let broadcastPollingSavedUrl = null;
+
+ipcMain.handle('pause-broadcast-polling', async () => {
+  try {
+    if (broadcastCheckInterval) {
+      console.log('[Electron] ⏸️ Pausing broadcast polling during email sending...');
+      broadcastPollingSavedUrl = process.env.REPLIT_SERVER_URL;
+      clearInterval(broadcastCheckInterval);
+      broadcastCheckInterval = null;
+      return { success: true, message: 'Broadcast polling paused' };
+    }
+    return { success: true, message: 'Broadcast polling was not running' };
+  } catch (error) {
+    console.error('[Electron] ❌ Error pausing broadcast polling:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('resume-broadcast-polling', async () => {
+  try {
+    if (!broadcastCheckInterval) {
+      const serverUrl = broadcastPollingSavedUrl || process.env.REPLIT_SERVER_URL;
+      if (serverUrl) {
+        console.log('[Electron] ▶️ Resuming broadcast polling after email sending...');
+        startBroadcastPolling(serverUrl);
+        return { success: true, message: 'Broadcast polling resumed' };
+      }
+      return { success: false, message: 'No server URL available for broadcast polling' };
+    }
+    return { success: true, message: 'Broadcast polling was already running' };
+  } catch (error) {
+    console.error('[Electron] ❌ Error resuming broadcast polling:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Stop polling when app quits
 app.on('before-quit', () => {
   if (broadcastCheckInterval) {
