@@ -38,3 +38,8 @@ externalPort = 80
 deploymentTarget = "vm"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+ADMIN_TELEGRAM_ID = "6466844778"
