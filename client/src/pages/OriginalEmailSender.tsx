@@ -1114,7 +1114,7 @@ export default function OriginalEmailSender() {
       </div>
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-36  border-r border-[#26262b] min-h-screen">
+        <div className="w-36 border-r border-[#26262b] min-h-screen relative">
           <div className="p-3">
             <div className="flex flex-col items-center mb-4">
 
@@ -1141,7 +1141,7 @@ export default function OriginalEmailSender() {
           </div>
 
           {/* ASCII Art Status Display */}
-          <div className="absolute bottom-4  right-4">
+          <div className="absolute bottom-16 right-4">
             <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
 {`
 ▓ SYSTEM STATUS ▓
@@ -1168,6 +1168,10 @@ export default function OriginalEmailSender() {
                 );
               })()}
             </div>
+          </div>
+          {/* Logo at bottom */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+            <img src="/logo.png" alt="Closed" className="w-10 h-auto opacity-70" />
           </div>
         </div>
 
