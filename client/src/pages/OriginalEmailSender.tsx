@@ -1114,14 +1114,9 @@ export default function OriginalEmailSender() {
       </div>
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-36 border-r border-[#26262b] min-h-screen relative">
+        <div className="w-36 border-r border-[#26262b] min-h-screen flex flex-col">
           <div className="p-3">
             <div className="flex flex-col items-center mb-4">
-
-
-              {/* Decorative Elements */}
-
-
               <div className="text-center text-[#a1a1aa] text-xs">
                 <div className="text-[#ef4444] font-bold">CLS V1 🚸</div>
               </div>
@@ -1140,37 +1135,36 @@ export default function OriginalEmailSender() {
             </nav>
           </div>
 
-          {/* ASCII Art Status Display */}
-          <div className="absolute bottom-16 right-4">
-            <div className="text-[#ef4444] font-mono text-xs text-right whitespace-pre opacity-70 mb-3">
-{`
-▓ SYSTEM STATUS ▓
-`}
+          {/* Bottom section with status and logo */}
+          <div className="mt-auto flex flex-col items-center gap-2 pb-4 px-2">
+            {/* ASCII Art Status Display */}
+            <div className="text-center">
+              <div className="text-[#ef4444] font-mono text-xs whitespace-pre opacity-70">
+                ▓ SYSTEM STATUS ▓
+              </div>
+              <div className="flex items-center justify-center gap-2 px-1 py-2">
+                {(() => {
+                  const statusValues = Object.values(smtpStatus);
+                  const hasOnline = statusValues.some(s => s === 'online');
+                  const hasTesting = statusValues.some(s => s === 'testing');
+                  const allOffline = statusValues.length > 0 && statusValues.every(s => s === 'offline');
+                  
+                  const isChecking = hasTesting || smtpChecking;
+                  const isOnline = hasOnline;
+                  const isOffline = allOffline && !hasTesting;
+                  
+                  return (
+                    <>
+                      <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'} ${isChecking ? 'animate-pulse' : ''}`}>📡</div>
+                      <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
+                        {isChecking && !hasOnline ? 'CHECKING...' : isOnline ? 'ONLINE' : 'OFFLINE'}
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
-            <div className="flex items-center justify-center gap-2 px-1 py-2">
-              {(() => {
-                const statusValues = Object.values(smtpStatus);
-                const hasOnline = statusValues.some(s => s === 'online');
-                const hasTesting = statusValues.some(s => s === 'testing');
-                const allOffline = statusValues.length > 0 && statusValues.every(s => s === 'offline');
-                
-                const isChecking = hasTesting || smtpChecking;
-                const isOnline = hasOnline;
-                const isOffline = allOffline && !hasTesting;
-                
-                return (
-                  <>
-                    <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'} ${isChecking ? 'animate-pulse' : ''}`}>📡</div>
-                    <div className={`text-xs ${isChecking && !hasOnline ? 'text-yellow-400' : isOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
-                      {isChecking && !hasOnline ? 'CHECKING...' : isOnline ? 'ONLINE' : 'OFFLINE'}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-          {/* Logo at bottom */}
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
+            {/* Logo */}
             <img src="/logo.png" alt="Closed" className="w-10 h-auto opacity-70" />
           </div>
         </div>
