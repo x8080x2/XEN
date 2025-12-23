@@ -1136,7 +1136,7 @@ export default function OriginalEmailSender() {
           </div>
 
           {/* Bottom section with status and logo */}
-          <div className="mt-auto flex flex-col items-center gap-2 pb-4 px-2">
+          <div className="mt-auto flex flex-col items-center gap-2 pb-12 px-2">
             {/* ASCII Art Status Display */}
             <div className="text-center">
               <div className="text-[#ef4444] font-mono text-xs whitespace-pre opacity-70">
