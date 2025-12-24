@@ -103,7 +103,8 @@ class Storage {
   }
 
   async getAllLicenses(): Promise<License[]> {
-    return db.select().from(licenses).all();
+    const allLicenses = await db.select().from(licenses);
+    return allLicenses.map(cleanLicense);
   }
 
   async saveBroadcastMessage(broadcast: { id: string; message: string; timestamp: Date; adminId: string }): Promise<void> {
