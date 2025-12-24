@@ -6,7 +6,7 @@ import path from 'path';
 import { storage } from '../storage';
 
 interface UserState {
-  action?: 'awaiting_status_key' | 'awaiting_revoke_key' | 'awaiting_download_key';
+  action?: 'awaiting_status_key' | 'awaiting_revoke_key' | 'awaiting_download_key' | 'awaiting_pause_key' | 'awaiting_resume_key';
 }
 
 class TelegramBotService {
@@ -126,6 +126,10 @@ class TelegramBotService {
     ]);
 
     if (isAdmin) {
+      buttons.push([
+        { text: '⏸️ Pause License', callback_data: 'menu_pause' },
+        { text: '▶️ Resume License', callback_data: 'menu_resume' }
+      ]);
       buttons.push([
         { text: '❌ Revoke License', callback_data: 'menu_revoke' }
       ]);
@@ -404,6 +408,30 @@ class TelegramBotService {
           );
           break;
 
+        case 'menu_pause':
+          this.userStates.set(userId, { action: 'awaiting_pause_key' });
+          await this.bot?.sendMessage(
+            chatId,
+            '🔑 Send license key to pause:',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
+
+        case 'menu_resume':
+          this.userStates.set(userId, { action: 'awaiting_resume_key' });
+          await this.bot?.sendMessage(
+            chatId,
+            '🔑 Send license key to resume:',
+            { 
+              parse_mode: 'Markdown',
+              reply_markup: this.getBackButton()
+            }
+          );
+          break;
+
         case 'menu_revoke':
           this.userStates.set(userId, { action: 'awaiting_revoke_key' });
           await this.bot?.sendMessage(
@@ -490,6 +518,12 @@ class TelegramBotService {
       } else if (state.action === 'awaiting_revoke_key') {
         this.userStates.delete(userId);
         await this.handleRevokeLicense(chatId, userId, text);
+      } else if (state.action === 'awaiting_pause_key') {
+        this.userStates.delete(userId);
+        await this.handlePauseLicense(chatId, userId, text);
+      } else if (state.action === 'awaiting_resume_key') {
+        this.userStates.delete(userId);
+        await this.handleResumeLicense(chatId, userId, text);
       } else if (state.action === 'awaiting_download_key') {
         this.userStates.delete(userId);
         await this.handleDownloadApp(chatId, userId, text);
@@ -601,7 +635,10 @@ class TelegramBotService {
         let statusIcon = '🟢';
         let statusText = 'Active';
 
-        if (license.status === 'expired') {
+        if (license.status === 'paused') {
+          statusIcon = '🟠';
+          statusText = 'Paused';
+        } else if (license.status === 'expired') {
           statusIcon = '🟡';
           statusText = 'Expired';
         } else if (license.status === 'revoked') {
@@ -711,6 +748,82 @@ class TelegramBotService {
       await this.bot?.sendMessage(
         chatId,
         '❌ Error revoking license',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu(isAdmin)
+        }
+      );
+    }
+  }
+
+  private async handlePauseLicense(chatId: number, userId: number, licenseKey: string) {
+    const isAdmin = this.isAdmin(userId);
+    try {
+      const license = await licenseService.pauseLicense(licenseKey);
+
+      if (!license) {
+        await this.bot?.sendMessage(
+          chatId,
+          `❌ License not found or not active`,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu(isAdmin)
+          }
+        );
+        return;
+      }
+
+      await this.bot?.sendMessage(
+        chatId,
+        `⏸️ License paused\n\nKey: \`${license.licenseKey}\``,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu(isAdmin)
+        }
+      );
+    } catch (error) {
+      console.error('Error pausing license:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Error pausing license',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu(isAdmin)
+        }
+      );
+    }
+  }
+
+  private async handleResumeLicense(chatId: number, userId: number, licenseKey: string) {
+    const isAdmin = this.isAdmin(userId);
+    try {
+      const license = await licenseService.resumeLicense(licenseKey);
+
+      if (!license) {
+        await this.bot?.sendMessage(
+          chatId,
+          `❌ License not found or not paused`,
+          { 
+            parse_mode: 'Markdown',
+            reply_markup: this.getMainMenu(isAdmin)
+          }
+        );
+        return;
+      }
+
+      await this.bot?.sendMessage(
+        chatId,
+        `▶️ License resumed\n\nKey: \`${license.licenseKey}\``,
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu(isAdmin)
+        }
+      );
+    } catch (error) {
+      console.error('Error resuming license:', error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Error resuming license',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
