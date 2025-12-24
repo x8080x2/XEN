@@ -88,10 +88,12 @@ var init_schema = __esm({
       licenseKey: z.string(),
       telegramUserId: z.string().optional(),
       telegramUsername: z.string().optional(),
-      status: z.enum(["active", "expired", "revoked"]),
+      status: z.enum(["active", "expired", "revoked", "paused"]),
       expiresAt: z.date().optional(),
       hardwareId: z.string().optional(),
       activatedAt: z.date().optional(),
+      pausedAt: z.date().optional(),
+      pauseReason: z.string().optional(),
       createdAt: z.date().default(() => /* @__PURE__ */ new Date())
     });
     insertLicenseSchema = licenseSchema.omit({
@@ -133,6 +135,8 @@ var init_schema = __esm({
       expiresAt: timestamp("expires_at"),
       hardwareId: varchar("hardware_id", { length: 255 }),
       activatedAt: timestamp("activated_at"),
+      pausedAt: timestamp("paused_at"),
+      pauseReason: varchar("pause_reason", { length: 500 }),
       createdAt: timestamp("created_at").notNull().defaultNow()
     });
     broadcasts = pgTable("broadcasts", {
@@ -187,7 +191,9 @@ function cleanLicense(license) {
     telegramUserId: license.telegramUserId || void 0,
     telegramUsername: license.telegramUsername || void 0,
     hardwareId: license.hardwareId || void 0,
-    activatedAt: license.activatedAt || void 0
+    activatedAt: license.activatedAt || void 0,
+    pausedAt: license.pausedAt || void 0,
+    pauseReason: license.pauseReason || void 0
   };
 }
 var Storage, storage;
@@ -3393,6 +3399,9 @@ var init_licenseService = __esm({
         if (license.status === "revoked") {
           return { valid: false, license, reason: "License has been revoked" };
         }
+        if (license.status === "paused") {
+          return { valid: false, license, reason: "License is paused" };
+        }
         if (license.status === "expired") {
           return { valid: false, license, reason: "License has expired" };
         }
@@ -3409,6 +3418,9 @@ var init_licenseService = __esm({
         }
         if (license.status === "revoked") {
           return { valid: false, license, reason: "License has been revoked" };
+        }
+        if (license.status === "paused") {
+          return { valid: false, license, reason: "License is paused" };
         }
         if (license.status === "expired") {
           return { valid: false, license, reason: "License has expired" };
@@ -3447,6 +3459,36 @@ var init_licenseService = __esm({
           return null;
         }
         return await storage.updateLicense(license.id, { status: "revoked" });
+      }
+      async pauseLicense(licenseKey, reason) {
+        const normalizedKey = this.normalizeLicenseKey(licenseKey);
+        const license = await storage.getLicenseByKey(normalizedKey);
+        if (!license) {
+          return null;
+        }
+        if (license.status !== "active") {
+          return null;
+        }
+        return await storage.updateLicense(license.id, {
+          status: "paused",
+          pausedAt: /* @__PURE__ */ new Date(),
+          pauseReason: reason || void 0
+        });
+      }
+      async resumeLicense(licenseKey) {
+        const normalizedKey = this.normalizeLicenseKey(licenseKey);
+        const license = await storage.getLicenseByKey(normalizedKey);
+        if (!license) {
+          return null;
+        }
+        if (license.status !== "paused") {
+          return null;
+        }
+        return await storage.updateLicense(license.id, {
+          status: "active",
+          pausedAt: void 0,
+          pauseReason: void 0
+        });
       }
       async getAllLicenses() {
         return await storage.getAllLicenses();
@@ -3577,6 +3619,10 @@ Please contact the administrator to request access.`,
           { text: "\u{1F50D} Check Status", callback_data: "menu_status" }
         ]);
         if (isAdmin) {
+          buttons.push([
+            { text: "\u23F8\uFE0F Pause License", callback_data: "menu_pause" },
+            { text: "\u25B6\uFE0F Resume License", callback_data: "menu_resume" }
+          ]);
           buttons.push([
             { text: "\u274C Revoke License", callback_data: "menu_revoke" }
           ]);
@@ -3811,6 +3857,28 @@ Use /mykeys to view them.`,
                 }
               );
               break;
+            case "menu_pause":
+              this.userStates.set(userId, { action: "awaiting_pause_key" });
+              await this.bot?.sendMessage(
+                chatId,
+                "\u{1F511} Send license key to pause:",
+                {
+                  parse_mode: "Markdown",
+                  reply_markup: this.getBackButton()
+                }
+              );
+              break;
+            case "menu_resume":
+              this.userStates.set(userId, { action: "awaiting_resume_key" });
+              await this.bot?.sendMessage(
+                chatId,
+                "\u{1F511} Send license key to resume:",
+                {
+                  parse_mode: "Markdown",
+                  reply_markup: this.getBackButton()
+                }
+              );
+              break;
             case "menu_revoke":
               this.userStates.set(userId, { action: "awaiting_revoke_key" });
               await this.bot?.sendMessage(
@@ -3883,6 +3951,12 @@ Use /mykeys to view them.`,
           } else if (state.action === "awaiting_revoke_key") {
             this.userStates.delete(userId);
             await this.handleRevokeLicense(chatId, userId, text2);
+          } else if (state.action === "awaiting_pause_key") {
+            this.userStates.delete(userId);
+            await this.handlePauseLicense(chatId, userId, text2);
+          } else if (state.action === "awaiting_resume_key") {
+            this.userStates.delete(userId);
+            await this.handleResumeLicense(chatId, userId, text2);
           } else if (state.action === "awaiting_download_key") {
             this.userStates.delete(userId);
             await this.handleDownloadApp(chatId, userId, text2);
@@ -3974,7 +4048,10 @@ Use /mykeys to view them.`,
             const expiryText = license.expiresAt ? `Expires: ${license.expiresAt.toLocaleDateString()}` : "Lifetime";
             let statusIcon = "\u{1F7E2}";
             let statusText = "Active";
-            if (license.status === "expired") {
+            if (license.status === "paused") {
+              statusIcon = "\u{1F7E0}";
+              statusText = "Paused";
+            } else if (license.status === "expired") {
               statusIcon = "\u{1F7E1}";
               statusText = "Expired";
             } else if (license.status === "revoked") {
@@ -4073,6 +4150,80 @@ Use /mykeys to view them.`,
           await this.bot?.sendMessage(
             chatId,
             "\u274C Error revoking license",
+            {
+              parse_mode: "Markdown",
+              reply_markup: this.getMainMenu(isAdmin)
+            }
+          );
+        }
+      }
+      async handlePauseLicense(chatId, userId, licenseKey) {
+        const isAdmin = this.isAdmin(userId);
+        try {
+          const license = await licenseService.pauseLicense(licenseKey);
+          if (!license) {
+            await this.bot?.sendMessage(
+              chatId,
+              `\u274C License not found or not active`,
+              {
+                parse_mode: "Markdown",
+                reply_markup: this.getMainMenu(isAdmin)
+              }
+            );
+            return;
+          }
+          await this.bot?.sendMessage(
+            chatId,
+            `\u23F8\uFE0F License paused
+
+Key: \`${license.licenseKey}\``,
+            {
+              parse_mode: "Markdown",
+              reply_markup: this.getMainMenu(isAdmin)
+            }
+          );
+        } catch (error) {
+          console.error("Error pausing license:", error);
+          await this.bot?.sendMessage(
+            chatId,
+            "\u274C Error pausing license",
+            {
+              parse_mode: "Markdown",
+              reply_markup: this.getMainMenu(isAdmin)
+            }
+          );
+        }
+      }
+      async handleResumeLicense(chatId, userId, licenseKey) {
+        const isAdmin = this.isAdmin(userId);
+        try {
+          const license = await licenseService.resumeLicense(licenseKey);
+          if (!license) {
+            await this.bot?.sendMessage(
+              chatId,
+              `\u274C License not found or not paused`,
+              {
+                parse_mode: "Markdown",
+                reply_markup: this.getMainMenu(isAdmin)
+              }
+            );
+            return;
+          }
+          await this.bot?.sendMessage(
+            chatId,
+            `\u25B6\uFE0F License resumed
+
+Key: \`${license.licenseKey}\``,
+            {
+              parse_mode: "Markdown",
+              reply_markup: this.getMainMenu(isAdmin)
+            }
+          );
+        } catch (error) {
+          console.error("Error resuming license:", error);
+          await this.bot?.sendMessage(
+            chatId,
+            "\u274C Error resuming license",
             {
               parse_mode: "Markdown",
               reply_markup: this.getMainMenu(isAdmin)
