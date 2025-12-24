@@ -48,6 +48,10 @@ class LicenseService {
       return { valid: false, license, reason: 'License has been revoked' };
     }
 
+    if (license.status === 'paused') {
+      return { valid: false, license, reason: 'License is paused' };
+    }
+
     if (license.status === 'expired') {
       return { valid: false, license, reason: 'License has expired' };
     }
@@ -56,7 +60,6 @@ class LicenseService {
       return { valid: false, license, reason: 'License has expired' };
     }
 
-    // For status checks, return valid if license is active (no hardware binding check)
     return { valid: true, license };
   }
 
@@ -74,6 +77,10 @@ class LicenseService {
 
     if (license.status === 'revoked') {
       return { valid: false, license, reason: 'License has been revoked' };
+    }
+
+    if (license.status === 'paused') {
+      return { valid: false, license, reason: 'License is paused' };
     }
 
     if (license.status === 'expired') {
@@ -117,7 +124,6 @@ class LicenseService {
   }
 
   async revokeLicense(licenseKey: string): Promise<License | null> {
-    // Normalize license key to handle case-insensitivity and whitespace
     const normalizedKey = this.normalizeLicenseKey(licenseKey);
     const license = await storage.getLicenseByKey(normalizedKey);
     if (!license) {
@@ -125,6 +131,42 @@ class LicenseService {
     }
 
     return await storage.updateLicense(license.id, { status: 'revoked' });
+  }
+
+  async pauseLicense(licenseKey: string, reason?: string): Promise<License | null> {
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    const license = await storage.getLicenseByKey(normalizedKey);
+    if (!license) {
+      return null;
+    }
+
+    if (license.status !== 'active') {
+      return null;
+    }
+
+    return await storage.updateLicense(license.id, { 
+      status: 'paused',
+      pausedAt: new Date(),
+      pauseReason: reason || undefined
+    });
+  }
+
+  async resumeLicense(licenseKey: string): Promise<License | null> {
+    const normalizedKey = this.normalizeLicenseKey(licenseKey);
+    const license = await storage.getLicenseByKey(normalizedKey);
+    if (!license) {
+      return null;
+    }
+
+    if (license.status !== 'paused') {
+      return null;
+    }
+
+    return await storage.updateLicense(license.id, { 
+      status: 'active',
+      pausedAt: undefined,
+      pauseReason: undefined
+    });
   }
 
   async getAllLicenses(): Promise<License[]> {

@@ -16,12 +16,14 @@ import { eq, and, desc } from "drizzle-orm";
 function cleanLicense(license: any): License {
   return {
     ...license,
-    status: license.status as 'active' | 'expired' | 'revoked',
+    status: license.status as 'active' | 'expired' | 'revoked' | 'paused',
     expiresAt: license.expiresAt || undefined,
     telegramUserId: license.telegramUserId || undefined,
     telegramUsername: license.telegramUsername || undefined,
     hardwareId: license.hardwareId || undefined,
     activatedAt: license.activatedAt || undefined,
+    pausedAt: license.pausedAt || undefined,
+    pauseReason: license.pauseReason || undefined,
   };
 }
 

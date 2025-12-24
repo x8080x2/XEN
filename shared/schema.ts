@@ -76,10 +76,12 @@ export const licenseSchema = z.object({
   licenseKey: z.string(),
   telegramUserId: z.string().optional(),
   telegramUsername: z.string().optional(),
-  status: z.enum(['active', 'expired', 'revoked']),
+  status: z.enum(['active', 'expired', 'revoked', 'paused']),
   expiresAt: z.date().optional(),
   hardwareId: z.string().optional(),
   activatedAt: z.date().optional(),
+  pausedAt: z.date().optional(),
+  pauseReason: z.string().optional(),
   createdAt: z.date().default(() => new Date()),
 });
 
@@ -92,10 +94,12 @@ export type License = z.infer<typeof licenseSchema>;
 export type InsertLicense = z.infer<typeof insertLicenseSchema>;
 
 export interface LicenseUpdate {
-  status?: 'active' | 'expired' | 'revoked';
+  status?: 'active' | 'expired' | 'revoked' | 'paused';
   hardwareId?: string;
   activatedAt?: Date;
   expiresAt?: Date;
+  pausedAt?: Date;
+  pauseReason?: string;
 }
 
 // PostgreSQL Table Definitions
@@ -137,6 +141,8 @@ export const licenses = pgTable("licenses", {
   expiresAt: timestamp("expires_at"),
   hardwareId: varchar("hardware_id", { length: 255 }),
   activatedAt: timestamp("activated_at"),
+  pausedAt: timestamp("paused_at"),
+  pauseReason: varchar("pause_reason", { length: 500 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
