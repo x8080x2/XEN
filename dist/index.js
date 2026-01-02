@@ -4101,10 +4101,15 @@ Use /mykeys to view them.`,
             return;
           }
           const license = result.license;
-          const expiryText = license.expiresAt ? `Expires ${license.expiresAt.toLocaleDateString()}` : "Lifetime";
+          const expiryText = license.expiresAt ? `Expires: ${license.expiresAt.toLocaleDateString()}` : "Lifetime";
+          const createdText = license.createdAt ? `Generated: ${license.createdAt.toLocaleDateString()}` : "";
           await this.bot?.sendMessage(
             chatId,
-            `\u2705 Valid - ${license.status} (${expiryText})`,
+            `\u2705 *License Valid*
+
+Status: ${license.status}
+${expiryText}
+${createdText}`,
             {
               parse_mode: "Markdown",
               reply_markup: this.getMainMenu(isAdmin)

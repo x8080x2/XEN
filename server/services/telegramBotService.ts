@@ -694,12 +694,18 @@ class TelegramBotService {
 
       const license = result.license!;
       const expiryText = license.expiresAt 
-        ? `Expires ${license.expiresAt.toLocaleDateString()}`
+        ? `Expires: ${license.expiresAt.toLocaleDateString()}`
         : 'Lifetime';
+      const createdText = license.createdAt 
+        ? `Generated: ${license.createdAt.toLocaleDateString()}`
+        : '';
 
       await this.bot?.sendMessage(
         chatId,
-        `✅ Valid - ${license.status} (${expiryText})`,
+        `✅ *License Valid*\n\n` +
+        `Status: ${license.status}\n` +
+        `${expiryText}\n` +
+        `${createdText}`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
