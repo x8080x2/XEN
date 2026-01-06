@@ -336,11 +336,26 @@ class TelegramBotService {
       const publicActions = ['menu_download', 'menu_status', 'menu_help', 'menu_main'];
 
       // Check admin access only for admin-only actions
-      if (!publicActions.includes(data) && !await this.checkAdminAccess(userId, chatId)) {
+      const isLicenseAction = data.startsWith('lic_pause_') || data.startsWith('lic_resume_') || data.startsWith('lic_revoke_');
+      if (!publicActions.includes(data) && !isLicenseAction && !await this.checkAdminAccess(userId, chatId)) {
         await this.bot?.answerCallbackQuery(query.id, {
           text: '❌ Access denied',
           show_alert: true
         });
+        return;
+      }
+
+      // Handle per-license management actions
+      if (isLicenseAction) {
+        if (!await this.checkAdminAccess(userId, chatId)) {
+          await this.bot?.answerCallbackQuery(query.id, {
+            text: '❌ Access denied',
+            show_alert: true
+          });
+          return;
+        }
+        await this.bot?.answerCallbackQuery(query.id);
+        await this.handleLicenseAction(chatId, userId, messageId!, data);
         return;
       }
 
@@ -615,10 +630,13 @@ class TelegramBotService {
         }
       }
 
-      if (userLicenses.length === 0) {
+      // Filter out revoked licenses - only show active, paused, and expired
+      const activeLicenses = userLicenses.filter(l => l.status !== 'revoked');
+
+      if (activeLicenses.length === 0) {
         await this.bot?.sendMessage(
           chatId,
-          '📋 No licenses found',
+          '📋 No active licenses found',
           { 
             parse_mode: 'Markdown',
             reply_markup: this.getMainMenu(isAdmin)
@@ -627,10 +645,15 @@ class TelegramBotService {
         return;
       }
 
-      const licenseList = userLicenses.map((license, index) => {
+      // Send each license as a separate message with management buttons
+      for (const license of activeLicenses) {
         const expiryText = license.expiresAt 
           ? `Expires: ${license.expiresAt.toLocaleDateString()}`
           : 'Lifetime';
+        
+        const createdText = license.createdAt 
+          ? `Created: ${license.createdAt.toLocaleDateString()}`
+          : '';
 
         let statusIcon = '🟢';
         let statusText = 'Active';
@@ -641,22 +664,50 @@ class TelegramBotService {
         } else if (license.status === 'expired') {
           statusIcon = '🟡';
           statusText = 'Expired';
-        } else if (license.status === 'revoked') {
-          statusIcon = '🔴';
-          statusText = 'Revoked';
         }
 
-        return `${index + 1}. ${statusIcon} *${statusText}*\n` +
-               `   Key: \`${license.licenseKey}\`\n` +
-               `   ${expiryText}`;
-      }).join('\n\n');
+        const licenseText = `${statusIcon} *${statusText}*\n` +
+               `Key: \`${license.licenseKey}\`\n` +
+               `${createdText}\n` +
+               `${expiryText}`;
 
-      const activeLicenses = userLicenses.filter(l => l.status === 'active').length;
+        // Create per-license management buttons
+        const managementButtons: TelegramBot.InlineKeyboardButton[][] = [];
+        
+        if (license.status === 'active') {
+          managementButtons.push([
+            { text: '⏸️ Pause', callback_data: `lic_pause_${license.id}` },
+            { text: '❌ Revoke', callback_data: `lic_revoke_${license.id}` }
+          ]);
+        } else if (license.status === 'paused') {
+          managementButtons.push([
+            { text: '▶️ Resume', callback_data: `lic_resume_${license.id}` },
+            { text: '❌ Revoke', callback_data: `lic_revoke_${license.id}` }
+          ]);
+        }
+        // Expired licenses: no management buttons, just display
 
+        // Only include reply_markup if there are buttons
+        const messageOptions: TelegramBot.SendMessageOptions = { parse_mode: 'Markdown' };
+        if (managementButtons.length > 0) {
+          messageOptions.reply_markup = { inline_keyboard: managementButtons };
+        }
+
+        await this.bot?.sendMessage(
+          chatId,
+          licenseText,
+          messageOptions
+        );
+      }
+
+      // Send summary with main menu
+      const activeCount = activeLicenses.filter(l => l.status === 'active').length;
+      const pausedCount = activeLicenses.filter(l => l.status === 'paused').length;
+      
       await this.bot?.sendMessage(
         chatId,
-        `📋 *My Licenses* (${userLicenses.length} total, ${activeLicenses} active)\n\n` +
-        licenseList,
+        `📊 *Summary*: ${activeLicenses.length} license(s)\n` +
+        `Active: ${activeCount} | Paused: ${pausedCount}`,
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
@@ -830,6 +881,86 @@ class TelegramBotService {
       await this.bot?.sendMessage(
         chatId,
         '❌ Error resuming license',
+        { 
+          parse_mode: 'Markdown',
+          reply_markup: this.getMainMenu(isAdmin)
+        }
+      );
+    }
+  }
+
+  private async handleLicenseAction(chatId: number, userId: number, messageId: number, action: string) {
+    const isAdmin = this.isAdmin(userId);
+    try {
+      // Parse the action: lic_pause_<id>, lic_resume_<id>, lic_revoke_<id>
+      const parts = action.split('_');
+      const actionType = parts[1]; // pause, resume, or revoke
+      const licenseId = parts.slice(2).join('_'); // license id
+
+      // Get license by ID
+      const allLicenses = await licenseService.getAllLicenses();
+      const license = allLicenses.find(l => l.id === licenseId);
+
+      if (!license) {
+        await this.bot?.editMessageText(
+          '❌ License not found',
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          }
+        );
+        return;
+      }
+
+      let result;
+      let successMessage = '';
+
+      switch (actionType) {
+        case 'pause':
+          result = await licenseService.pauseLicense(license.licenseKey);
+          if (result) {
+            successMessage = `⏸️ *Paused*\nKey: \`${license.licenseKey}\``;
+          }
+          break;
+        case 'resume':
+          result = await licenseService.resumeLicense(license.licenseKey);
+          if (result) {
+            successMessage = `▶️ *Resumed*\nKey: \`${license.licenseKey}\``;
+          }
+          break;
+        case 'revoke':
+          result = await licenseService.revokeLicense(license.licenseKey);
+          if (result) {
+            successMessage = `❌ *Revoked*\nKey: \`${license.licenseKey}\``;
+          }
+          break;
+      }
+
+      if (result) {
+        await this.bot?.editMessageText(
+          successMessage,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          }
+        );
+      } else {
+        await this.bot?.editMessageText(
+          `❌ Failed to ${actionType} license`,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            parse_mode: 'Markdown'
+          }
+        );
+      }
+    } catch (error) {
+      console.error(`Error handling license action ${action}:`, error);
+      await this.bot?.sendMessage(
+        chatId,
+        '❌ Error processing action',
         { 
           parse_mode: 'Markdown',
           reply_markup: this.getMainMenu(isAdmin)
