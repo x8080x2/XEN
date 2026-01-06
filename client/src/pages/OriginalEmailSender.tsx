@@ -1171,9 +1171,9 @@ export default function OriginalEmailSender() {
           </div>
         </div>
 
-        {/* Main Content - Fixed width container with scaling */}
+        {/* Main Content - Fixed width container */}
         <div className="flex-1 overflow-auto">
-          <div className="min-w-[900px] w-[900px] mx-auto origin-top-left" style={{ transform: 'scale(max(0.6, min(1, calc((100vw - 80px) / 900))))' }}>
+          <div className="w-full px-4">
 
               <div className="text-center mt-1">
                 <div className="text-[#ef4444] text-xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
