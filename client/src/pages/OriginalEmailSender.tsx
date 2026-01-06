@@ -1210,7 +1210,7 @@ export default function OriginalEmailSender() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xl text-[green] mb-1">REPLY TO</Label>
+                  <Label className="text-xl mb-1 text-[#ff0000]">REPLY TO</Label>
                   <Input
                     type="email"
                     value={replyTo}
