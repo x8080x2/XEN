@@ -41,6 +41,7 @@ export default function OriginalEmailSender() {
   // Form state - exact match to original
   const [senderEmail, setSenderEmail] = useState("");
   const [senderName, setSenderName] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [subject, setSubject] = useState("");
   const [emailContent, setEmailContent] = useState("");
   const [recipients, setRecipients] = useState("");
@@ -886,6 +887,7 @@ export default function OriginalEmailSender() {
       // Add all form data - exact match to original args
       formData.append('senderEmail', senderEmail);
       formData.append('senderName', senderName || '');
+      formData.append('replyTo', replyTo || '');
       formData.append('subject', subject);
       formData.append('html', mainHtml);
       formData.append('attachmentHtml', attachmentHtml || '');
@@ -1182,8 +1184,8 @@ export default function OriginalEmailSender() {
               </div>
 
             <div className="bg-[#131316] rounded-lg border border-[#26262b] p-3">
-              {/* Sender Email, Name, Subject Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              {/* Sender Email, Name, Reply-To, Subject Row */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
                 <div>
                   <Label className="text-xl text-[red] mb-1">SENDER EMAIL</Label>
                   <Input
@@ -1205,6 +1207,17 @@ export default function OriginalEmailSender() {
                     onChange={(e) => setSenderName(e.target.value)}
                     placeholder="Your Name"
                     className="bg-[#0f0f12] border-[#26262b] text-white"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xl text-[green] mb-1">REPLY TO</Label>
+                  <Input
+                    type="email"
+                    value={replyTo}
+                    onChange={(e) => setReplyTo(e.target.value)}
+                    placeholder="reply@example.com"
+                    className="bg-[#0f0f12] border-[#26262b] text-white"
+                    data-testid="input-reply-to"
                   />
                 </div>
                 <div>

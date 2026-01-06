@@ -225,6 +225,9 @@ export function setupOriginalEmailRoutes(app: Express) {
         proxyPort: req.body.proxyPort || '',
         proxyUser: req.body.proxyUser || '',
         proxyPass: req.body.proxyPass || '',
+
+        // Reply-To setting
+        replyTo: req.body.replyTo || '',
       };
 
       // Clear previous progress logs

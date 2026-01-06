@@ -1364,6 +1364,12 @@ export class AdvancedEmailService {
       C.BORDER_COLOR = args.borderColor;
     }
 
+    // Apply Reply-To from UI args
+    if (typeof args.replyTo === 'string' && args.replyTo.trim()) {
+      C.REPLY_TO = args.replyTo.trim();
+      console.log('[Config] Reply-To set from UI:', C.REPLY_TO);
+    }
+
     let sent = 0;
     let failed = 0;
     let totalRecipients = 0; // Will be set after recipients are parsed
