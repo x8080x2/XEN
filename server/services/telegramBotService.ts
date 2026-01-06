@@ -109,29 +109,21 @@ class TelegramBotService {
 
     if (isAdmin) {
       buttons.push([
-        { text: '🆕 Generate License', callback_data: 'menu_generate' }
-      ]);
-      buttons.push([
-        { text: '📋 My Licenses', callback_data: 'menu_mykeys' }
+        { text: '🆕 Generate', callback_data: 'menu_generate' },
+        { text: '📋 My Keys', callback_data: 'menu_mykeys' }
       ]);
     }
 
     buttons.push([
-      { text: '💾 Download Desktop App', callback_data: 'menu_download' }
-    ]);
-
-    // All users can check license status
-    buttons.push([
-      { text: '🔍 Check Status', callback_data: 'menu_status' }
+      { text: '💾 Download', callback_data: 'menu_download' },
+      { text: '🔍 Status', callback_data: 'menu_status' }
     ]);
 
     if (isAdmin) {
       buttons.push([
-        { text: '⏸️ Pause License', callback_data: 'menu_pause' },
-        { text: '▶️ Resume License', callback_data: 'menu_resume' }
-      ]);
-      buttons.push([
-        { text: '❌ Revoke License', callback_data: 'menu_revoke' }
+        { text: '⏸️ Pause', callback_data: 'menu_pause' },
+        { text: '▶️ Resume', callback_data: 'menu_resume' },
+        { text: '❌ Revoke', callback_data: 'menu_revoke' }
       ]);
     }
 
