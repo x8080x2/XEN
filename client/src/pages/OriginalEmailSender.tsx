@@ -1171,9 +1171,9 @@ export default function OriginalEmailSender() {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 overflow-y-auto max-h-screen">
-          <div className="max-w-1xs mx-auto">
+        {/* Main Content - Fixed width container with scaling */}
+        <div className="flex-1 overflow-auto">
+          <div className="min-w-[900px] w-[900px] mx-auto origin-top-left" style={{ transform: 'scale(max(0.6, min(1, calc((100vw - 80px) / 900))))' }}>
 
               <div className="text-center mt-1">
                 <div className="text-[#ef4444] text-xl font-bold">CLOSED ADVANCED SMART EMAIL SENDER ⚡</div>
@@ -1184,8 +1184,8 @@ export default function OriginalEmailSender() {
               </div>
 
             <div className="bg-[#131316] rounded-lg border border-[#26262b] p-3">
-              {/* Sender Email, Name, Reply-To, Subject Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+              {/* Sender Email, Name, Reply-To, Subject Row - Fixed 4 columns */}
+              <div className="grid grid-cols-4 gap-3 mb-3">
                 <div>
                   <Label className="text-xl text-[red] mb-1">SENDER EMAIL</Label>
                   <Input
@@ -1232,8 +1232,8 @@ export default function OriginalEmailSender() {
               </div>
 
 
-              {/* Main Content Row */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+              {/* Main Content Row - Fixed 2 columns */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Letter */}
                 <div>
                   <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-1 font-bold bg-[#db1818] text-[12px] text-[#00ff00]">LETTER</Label>
@@ -1371,8 +1371,8 @@ export default function OriginalEmailSender() {
 
 
 
-              {/* Second Row - Attachment Files and HTML */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+              {/* Second Row - Attachment Files and HTML - Fixed 2 columns */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Attachment Files */}
                 <div>
                   <Label className="text-sm text-[#a1a1aa] mb-2">Attachment Files</Label>
