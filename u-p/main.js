@@ -1092,6 +1092,17 @@ safeHandle('smtp:test', async (event, smtpId) => {
       }
     };
 
+    // For port 25, disable TLS entirely and add timeout settings to avoid connection hanging
+    if (port === 25) {
+      transporterConfig.ignoreTLS = true;
+      transporterConfig.requireTLS = false;
+      transporterConfig.secure = false;
+      transporterConfig.connectionTimeout = 30000;
+      transporterConfig.greetingTimeout = 30000;
+      transporterConfig.socketTimeout = 60000;
+      console.log('[Electron] Port 25 detected - TLS disabled, extended timeouts configured');
+    }
+
     // Add auth if username and password are provided
     if (targetSmtp.user && targetSmtp.pass) {
       transporterConfig.auth = {
