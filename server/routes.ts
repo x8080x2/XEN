@@ -307,9 +307,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         host: smtp.host,
         port: port,
         secure: port === 465,
-        pool: true,
-        maxConnections: 1,
-        maxMessages: 1,
         connectionTimeout: 10000,
         greetingTimeout: 10000,
         tls: {
@@ -317,9 +314,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
       
-      // For port 25, disable TLS entirely to avoid timeout issues
+      // For port 25, disable TLS entirely and add timeout settings to avoid connection hanging
+      // Note: pooling and rate limiting are not used for port 25 to prevent connection hangs
       if (port === 25) {
         transporterConfig.ignoreTLS = true;
+        transporterConfig.requireTLS = false;
+        transporterConfig.secure = false;
+        transporterConfig.connectionTimeout = 30000;
+        transporterConfig.greetingTimeout = 30000;
+        transporterConfig.socketTimeout = 60000;
       }
 
       if (smtp.user && smtp.pass) {
@@ -385,17 +388,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         host: currentSmtp.host,
         port: port,
         secure: port === 465,
-        pool: true,
-        maxConnections: 1,
-        maxMessages: 1,
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
         tls: {
           rejectUnauthorized: false
         }
       };
       
-      // For port 25, disable TLS entirely to avoid timeout issues
+      // For port 25, disable TLS entirely and add timeout settings to avoid connection hanging
+      // Note: pooling and rate limiting are not used for port 25 to prevent connection hangs
       if (port === 25) {
         transporterConfig.ignoreTLS = true;
+        transporterConfig.requireTLS = false;
+        transporterConfig.secure = false;
+        transporterConfig.connectionTimeout = 30000;
+        transporterConfig.greetingTimeout = 30000;
+        transporterConfig.socketTimeout = 60000;
       }
 
       if (currentSmtp.user && currentSmtp.pass) {

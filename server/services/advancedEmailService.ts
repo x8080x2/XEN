@@ -1444,13 +1444,22 @@ export class AdvancedEmailService {
         }
       };
       
-      // For port 25, disable TLS entirely to avoid timeout issues
+      // For port 25, disable TLS entirely and add timeout settings to avoid connection hanging
       if (port === 25) {
         transporterConfig.ignoreTLS = true;
-        console.log('[SMTP] Port 25 detected - TLS disabled for compatibility');
+        transporterConfig.requireTLS = false;
+        transporterConfig.secure = false;
+        transporterConfig.pool = false; // Disable pooling for port 25 to prevent hanging
+        transporterConfig.connectionTimeout = 30000; // 30 seconds
+        transporterConfig.greetingTimeout = 30000;
+        transporterConfig.socketTimeout = 60000; // 60 seconds
+        delete transporterConfig.maxConnections;
+        delete transporterConfig.maxMessages;
+        delete transporterConfig.rateLimit;
+        console.log('[SMTP] Port 25 detected - TLS disabled, pooling disabled, timeouts configured');
       }
       
-      console.log('[SMTP TLS] TLS config added with rejectUnauthorized: false', { host, port, ignoreTLS: port === 25 });
+      console.log('[SMTP Config] Transporter config:', { host, port, secure: transporterConfig.secure, ignoreTLS: transporterConfig.ignoreTLS, pool: transporterConfig.pool });
 
       // Only add auth if username and password are provided
       if (user && pass) {
@@ -1812,13 +1821,21 @@ export class AdvancedEmailService {
                 }
               };
               
-              // For port 25, disable TLS entirely to avoid timeout issues
+              // For port 25, disable TLS entirely and add timeout settings to avoid connection hanging
               if (rotationPort === 25) {
                 rotationTransporterConfig.ignoreTLS = true;
-                console.log(`[SMTP] Port 25 detected for ${currentSmtpConfig.id} - TLS disabled for compatibility`);
+                rotationTransporterConfig.requireTLS = false;
+                rotationTransporterConfig.secure = false;
+                rotationTransporterConfig.pool = false;
+                rotationTransporterConfig.connectionTimeout = 30000;
+                rotationTransporterConfig.greetingTimeout = 30000;
+                rotationTransporterConfig.socketTimeout = 60000;
+                delete rotationTransporterConfig.maxConnections;
+                delete rotationTransporterConfig.maxMessages;
+                console.log(`[SMTP] Port 25 detected for ${currentSmtpConfig.id} - TLS disabled, pooling disabled, timeouts configured`);
               }
               
-              console.log(`[SMTP TLS] TLS config added with rejectUnauthorized: false (${currentSmtpConfig.id}), ignoreTLS: ${rotationPort === 25}`);
+              console.log(`[SMTP Config] Rotation transporter config (${currentSmtpConfig.id}):`, { host: currentSmtpConfig.host, port: rotationPort, secure: rotationTransporterConfig.secure, ignoreTLS: rotationTransporterConfig.ignoreTLS, pool: rotationTransporterConfig.pool });
 
               // Only add auth if username and password are provided
               if (currentSmtpConfig.user && currentSmtpConfig.pass) {
