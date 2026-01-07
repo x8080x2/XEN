@@ -52,13 +52,21 @@ export function setupOriginalEmailRoutes(app: Express) {
   }, async (req, res) => {
     try {
       console.log('Original sendMail endpoint called with body keys:', Object.keys(req.body));
+      
+      // Log client IP from desktop app (RDP IP)
+      const clientIp = req.body.clientIp;
+      if (clientIp) {
+        console.log('[Server] Client IP received from desktop app:', clientIp);
+      }
+      
       console.log('SMTP Settings received:', {
         smtpHost: req.body.smtpHost,
         smtpPort: req.body.smtpPort,
         smtpUser: req.body.smtpUser,
         hasSmtpPass: !!req.body.smtpPass,
         senderEmail: req.body.senderEmail,
-        hasUserSmtpConfigs: !!req.body.userSmtpConfigs
+        hasUserSmtpConfigs: !!req.body.userSmtpConfigs,
+        clientIp: clientIp || '(not provided)'
       });
 
       // Validate SMTP settings early - accept either legacy single SMTP OR user SMTP configs
@@ -224,6 +232,9 @@ export function setupOriginalEmailRoutes(app: Express) {
 
         // Reply-To setting
         replyTo: req.body.replyTo || '',
+
+        // Client IP from desktop app (RDP IP for tracking/headers)
+        clientIp: req.body.clientIp || '',
       };
 
       // Clear previous progress logs

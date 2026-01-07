@@ -1176,6 +1176,11 @@ export class AdvancedEmailService {
     if (safeArgs.smtpPass) safeArgs.smtpPass = '[REDACTED]';
     if (safeArgs.proxyPass) safeArgs.proxyPass = '[REDACTED]';
     console.log('Advanced sendMail invoked with args:', safeArgs);
+    
+    // Log client IP from desktop app if provided (RDP IP)
+    if (args.clientIp) {
+      console.log('[AdvancedEmailService] Client IP (RDP) from desktop app:', args.clientIp);
+    }
     const sendMailStart = Date.now();
     const campaignId = args.campaignId || `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -1341,6 +1346,12 @@ export class AdvancedEmailService {
       C.PROXY.PORT = args.proxyPort || '';
       C.PROXY.USER = args.proxyUser || '';
       C.PROXY.PASS = args.proxyPass || '';
+    }
+
+    // Client IP from desktop app (RDP IP) - for X-Originating-IP header
+    if (args.clientIp && typeof args.clientIp === 'string') {
+      (C as any).CLIENT_IP = args.clientIp;
+      console.log('[AdvancedEmailService] Client IP set in config:', args.clientIp);
     }
 
     // Apply hidden image settings from UI args - exact clone
@@ -2956,6 +2967,12 @@ END:VCALENDAR`;
     if (!mailOptions.headers) mailOptions.headers = {};
     // Use consistent, legitimate mailer identification
     mailOptions.headers['X-Mailer'] = 'Email Marketing System v1.0';
+
+    // Add X-Originating-IP header if client IP (RDP IP) is provided from desktop app
+    if (emailData.C.CLIENT_IP) {
+      mailOptions.headers['X-Originating-IP'] = `[${emailData.C.CLIENT_IP}]`;
+      console.log('[Email Headers] Added X-Originating-IP:', emailData.C.CLIENT_IP);
+    }
 
     return await emailData.transporter.sendMail(mailOptions);
   }

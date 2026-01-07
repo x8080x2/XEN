@@ -46,6 +46,32 @@ let mainWindow;
 let lastBroadcastCheck = 0; // Initialize to 0 to show all pending broadcasts on startup
 let userId = null; // Will be set to hardware fingerprint for persistent user identification
 
+// Get raw IP address (not hashed) for sending to server
+function getClientIpAddress() {
+  try {
+    const networkInterfaces = os.networkInterfaces();
+
+    // Find the first non-internal IPv4 address
+    for (const interfaceName in networkInterfaces) {
+      const interfaces = networkInterfaces[interfaceName];
+      for (const iface of interfaces) {
+        // Skip internal (loopback) and non-IPv4 addresses
+        if (!iface.internal && iface.family === 'IPv4') {
+          console.log('[Electron] Client IP address:', iface.address);
+          return iface.address;
+        }
+      }
+    }
+
+    // Fallback if no external IP found
+    console.warn('[Electron] No external IP found');
+    return null;
+  } catch (error) {
+    console.error('[Electron] Error getting client IP:', error);
+    return null;
+  }
+}
+
 // Generate hardware fingerprint based on IP address
 function generateHardwareFingerprint() {
   try {
@@ -261,6 +287,13 @@ app.on('window-all-closed', function () {
 
 app.on('activate', function () {
   if (mainWindow === null) createWindow();
+});
+
+// IPC handler to get client IP address (for sending to server)
+safeHandle('get-client-ip', async () => {
+  const ip = getClientIpAddress();
+  console.log('[Electron] Returning client IP to renderer:', ip);
+  return ip;
 });
 
 // IPC handlers for file operations

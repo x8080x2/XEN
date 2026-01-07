@@ -1143,6 +1143,19 @@ export default function OriginalEmailSender() {
         // Mark as desktop mode so server knows not to use server files
         formData.append('isDesktopMode', 'true');
 
+        // Get client IP address to send to server (RDP IP)
+        if (window.electronAPI?.getClientIp) {
+          try {
+            const clientIp = await window.electronAPI.getClientIp();
+            if (clientIp) {
+              formData.append('clientIp', clientIp);
+              console.log('[Desktop] Including client IP in request:', clientIp);
+            }
+          } catch (err) {
+            console.warn('[Desktop] Could not get client IP:', err);
+          }
+        }
+
         // Add file attachments directly (no base64 conversion - same as web version)
         if (selectedFiles && selectedFiles.length > 0) {
           console.log('[Desktop] Adding', selectedFiles.length, 'file attachments directly...');

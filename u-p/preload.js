@@ -1,6 +1,9 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  // Get client IP address for sending to server
+  getClientIp: () => ipcRenderer.invoke('get-client-ip'),
+
   // File operations
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),
   writeFile: (filepath, content) => ipcRenderer.invoke('write-file', filepath, content),
