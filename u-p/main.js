@@ -775,8 +775,9 @@ safeHandle('smtp:add', async (event, smtpData) => {
   try {
     console.log(`[Electron] Adding new SMTP config:`, smtpData);
 
-    if (!smtpData.host || !smtpData.port || !smtpData.user || !smtpData.pass || !smtpData.fromEmail) {
-      return { success: false, error: 'All SMTP fields are required' };
+    // Only require host, port, and fromEmail - user/pass are optional for no-auth SMTP (e.g., port 25)
+    if (!smtpData.host || !smtpData.port || !smtpData.fromEmail) {
+      return { success: false, error: 'SMTP host, port, and fromEmail are required' };
     }
 
     const basePaths = [
@@ -813,7 +814,7 @@ safeHandle('smtp:add', async (event, smtpData) => {
     }
 
     const smtpId = `smtp${nextIndex}`;
-    const newSection = `\n[${smtpId}]\nhost=${smtpData.host}\nport=${smtpData.port}\nuser=${smtpData.user}\npass=${smtpData.pass}\nfromEmail=${smtpData.fromEmail}\nfromName=${smtpData.fromName || ''}\n`;
+    const newSection = `\n[${smtpId}]\nhost=${smtpData.host}\nport=${smtpData.port}\nuser=${smtpData.user || ''}\npass=${smtpData.pass || ''}\nfromEmail=${smtpData.fromEmail}\nfromName=${smtpData.fromName || ''}\n`;
 
     await fs.writeFile(smtpPath, existingContent + newSection, 'utf-8');
     console.log(`[Electron] SMTP config ${smtpId} added successfully`);
