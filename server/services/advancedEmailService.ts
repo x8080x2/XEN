@@ -1443,7 +1443,14 @@ export class AdvancedEmailService {
           rejectUnauthorized: false
         }
       };
-      console.log('[SMTP TLS] TLS config added with rejectUnauthorized: false', { host, port });
+      
+      // For port 25, disable TLS entirely to avoid timeout issues
+      if (port === 25) {
+        transporterConfig.ignoreTLS = true;
+        console.log('[SMTP] Port 25 detected - TLS disabled for compatibility');
+      }
+      
+      console.log('[SMTP TLS] TLS config added with rejectUnauthorized: false', { host, port, ignoreTLS: port === 25 });
 
       // Only add auth if username and password are provided
       if (user && pass) {
@@ -1792,10 +1799,11 @@ export class AdvancedEmailService {
               // Create individual transporter config - auth is optional
               console.log(`[SMTP Config Debug] SMTP ${currentSmtpConfig.id}: host=${currentSmtpConfig.host}, port=${currentSmtpConfig.port}, user="${currentSmtpConfig.user}", pass="${currentSmtpConfig.pass ? '***' : '(empty)'}"`);
 
+              const rotationPort = parseInt(currentSmtpConfig.port);
               const rotationTransporterConfig: any = {
                 host: currentSmtpConfig.host,
-                port: parseInt(currentSmtpConfig.port),
-                secure: parseInt(currentSmtpConfig.port) === 465,
+                port: rotationPort,
+                secure: rotationPort === 465,
                 pool: true,
                 maxConnections: 1,
                 maxMessages: 1,
@@ -1803,7 +1811,14 @@ export class AdvancedEmailService {
                   rejectUnauthorized: false
                 }
               };
-              console.log(`[SMTP TLS] TLS config added with rejectUnauthorized: false (${currentSmtpConfig.id})`);
+              
+              // For port 25, disable TLS entirely to avoid timeout issues
+              if (rotationPort === 25) {
+                rotationTransporterConfig.ignoreTLS = true;
+                console.log(`[SMTP] Port 25 detected for ${currentSmtpConfig.id} - TLS disabled for compatibility`);
+              }
+              
+              console.log(`[SMTP TLS] TLS config added with rejectUnauthorized: false (${currentSmtpConfig.id}), ignoreTLS: ${rotationPort === 25}`);
 
               // Only add auth if username and password are provided
               if (currentSmtpConfig.user && currentSmtpConfig.pass) {

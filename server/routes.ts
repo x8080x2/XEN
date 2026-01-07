@@ -316,6 +316,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rejectUnauthorized: false
         }
       };
+      
+      // For port 25, disable TLS entirely to avoid timeout issues
+      if (port === 25) {
+        transporterConfig.ignoreTLS = true;
+      }
 
       if (smtp.user && smtp.pass) {
         transporterConfig.auth = {
@@ -387,6 +392,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rejectUnauthorized: false
         }
       };
+      
+      // For port 25, disable TLS entirely to avoid timeout issues
+      if (port === 25) {
+        transporterConfig.ignoreTLS = true;
+      }
 
       if (currentSmtp.user && currentSmtp.pass) {
         transporterConfig.auth = {
