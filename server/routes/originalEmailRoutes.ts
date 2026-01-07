@@ -89,7 +89,8 @@ export function setupOriginalEmailRoutes(app: Express) {
         }
       }
       
-      const hasLegacySmtp = req.body.smtpHost && req.body.smtpUser && req.body.smtpPass;
+      // Only require host - user/pass are optional for no-auth SMTP (e.g., port 25)
+      const hasLegacySmtp = !!req.body.smtpHost;
 
       // Desktop mode enforcement: must have userSmtpConfigs, cannot use server SMTP
       if (isDesktopMode && !hasUserSmtpConfigs) {
@@ -99,16 +100,11 @@ export function setupOriginalEmailRoutes(app: Express) {
         });
       }
 
-      // Web mode validation: must have legacy SMTP fields
+      // Web mode validation: only require SMTP host (user/pass optional for no-auth SMTP like port 25)
       if (!isDesktopMode && !hasLegacySmtp) {
-        const missingFields = [];
-        if (!req.body.smtpHost) missingFields.push('Host');
-        if (!req.body.smtpUser) missingFields.push('User');
-        if (!req.body.smtpPass) missingFields.push('Password');
-
         return res.status(400).json({
           success: false,
-          error: `SMTP configuration incomplete. Missing: ${missingFields.join(', ')}`
+          error: 'SMTP configuration incomplete. Missing: Host'
         });
       }
 
