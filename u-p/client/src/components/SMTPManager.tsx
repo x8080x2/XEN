@@ -151,22 +151,19 @@ export function SMTPManager() {
   }, []);
 
   const toggleRotation = async () => {
+    if (!window.electronAPI?.smtpToggleRotation) {
+      toast({
+        title: "Error",
+        description: "SMTP toggle rotation not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      let data;
-      if (window.electronAPI?.smtpToggleRotation) {
-        // Desktop: Use Electron API for local file operations
-        data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
-        console.log('[Desktop SMTP Toggle Rotation]', data);
-      } else {
-        // Web: Use backend API
-        const response = await fetch("/api/smtp/toggle-rotation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-        });
-        data = await response.json();
-      }
+      const data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
+      console.log('[Desktop SMTP Toggle Rotation]', data);
       
       if (data.success) {
         setSmtpData(prev => ({
@@ -206,22 +203,19 @@ export function SMTPManager() {
       return;
     }
 
+    if (!window.electronAPI?.smtpAdd) {
+      toast({
+        title: "Error",
+        description: "SMTP add not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      let data;
-      if (window.electronAPI?.smtpAdd) {
-        // Desktop: Use Electron API for local file operations
-        data = await window.electronAPI.smtpAdd(newSmtp);
-        console.log('[Desktop SMTP Add]', data);
-      } else {
-        // Web: Use backend API
-        const response = await fetch("/api/smtp/add", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newSmtp)
-        });
-        data = await response.json();
-      }
+      const data = await window.electronAPI.smtpAdd(newSmtp);
+      console.log('[Desktop SMTP Add]', data);
       
       if (data.success) {
         setSmtpData(prev => ({
@@ -268,20 +262,19 @@ export function SMTPManager() {
       return;
     }
 
+    if (!window.electronAPI?.smtpDelete) {
+      toast({
+        title: "Error",
+        description: "SMTP delete not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      let data;
-      if (window.electronAPI?.smtpDelete) {
-        // Desktop: Use Electron API for local file operations
-        data = await window.electronAPI.smtpDelete(smtpId);
-        console.log('[Desktop SMTP Delete]', data);
-      } else {
-        // Web: Use backend API
-        const response = await fetch(`/api/smtp/${smtpId}`, {
-          method: "DELETE"
-        });
-        data = await response.json();
-      }
+      const data = await window.electronAPI.smtpDelete(smtpId);
+      console.log('[Desktop SMTP Delete]', data);
       
       if (data.success) {
         setSmtpData(prev => ({
@@ -311,20 +304,19 @@ export function SMTPManager() {
   };
 
   const rotateSmtp = async () => {
+    if (!window.electronAPI?.smtpRotate) {
+      toast({
+        title: "Error",
+        description: "SMTP rotate not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      let data;
-      if (window.electronAPI?.smtpRotate) {
-        // Desktop: Use Electron API for local file operations
-        data = await window.electronAPI.smtpRotate();
-        console.log('[Desktop SMTP Rotate]', data);
-      } else {
-        // Web: Use backend API
-        const response = await fetch("/api/smtp/rotate", {
-          method: "POST"
-        });
-        data = await response.json();
-      }
+      const data = await window.electronAPI.smtpRotate();
+      console.log('[Desktop SMTP Rotate]', data);
       
       if (data.success) {
         setSmtpData(prev => ({
