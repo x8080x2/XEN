@@ -112,15 +112,42 @@ class TunnelService {
           this.clients.set(licenseKey, client);
           console.log(`[Tunnel] ✅ Client authenticated: ${licenseKey.substring(0, 8)}... tunnelId: ${tunnelId} (Total: ${this.clients.size})`);
 
-          // Send auth success
-          ws.send(JSON.stringify({ type: 'auth_success', message: 'Connected to tunnel server' }));
+          // Send auth success with tunnelId so client knows its routing identifier
+          ws.send(JSON.stringify({ type: 'auth_success', message: 'Connected to tunnel server', tunnelId }));
 
           // Handle subsequent messages
           ws.on('message', (data) => this.handleMessage(licenseKey, data.toString()));
           
           ws.on('close', (code, reason) => {
             console.log(`[Tunnel] Client disconnected: ${licenseKey.substring(0, 8)}... (code: ${code})`);
-            this.clients.delete(licenseKey);
+            
+            // Only clean up if the map still points to THIS client instance
+            // (handles race condition when new connection replaces old one before close fires)
+            const currentClient = this.clients.get(licenseKey);
+            if (currentClient === client) {
+              // Immediately reject all pending requests instead of waiting for timeout
+              if (client.pendingRequests.size > 0) {
+                console.log(`[Tunnel] Rejecting ${client.pendingRequests.size} pending requests for disconnected client`);
+                client.pendingRequests.forEach((pending, requestId) => {
+                  clearTimeout(pending.timeout);
+                  pending.reject(new Error('Tunnel connection lost - RDP client disconnected. Please reconnect and retry.'));
+                });
+                client.pendingRequests.clear();
+              }
+              this.clients.delete(licenseKey);
+            } else {
+              // Old socket closed but new connection already replaced it - just log, don't touch new client
+              console.log(`[Tunnel] Stale socket closed for ${licenseKey.substring(0, 8)}... (replaced by new connection)`);
+              // Still reject pending requests on the old client object if any
+              if (client.pendingRequests.size > 0) {
+                console.log(`[Tunnel] Rejecting ${client.pendingRequests.size} pending requests from stale connection`);
+                client.pendingRequests.forEach((pending) => {
+                  clearTimeout(pending.timeout);
+                  pending.reject(new Error('Tunnel connection replaced - using new connection'));
+                });
+                client.pendingRequests.clear();
+              }
+            }
           });
 
           ws.on('error', (error) => {
