@@ -296,6 +296,16 @@ safeHandle('get-client-ip', async () => {
   return ip;
 });
 
+// IPC handler to get tunnel identifier (hashed license key for routing, not raw key)
+safeHandle('get-tunnel-id', async () => {
+  const licenseKey = process.env.LICENSE_KEY;
+  if (!licenseKey) return null;
+  // Return first 16 chars of hash - enough to identify but not expose full key
+  const tunnelId = crypto.createHash('sha256').update(licenseKey).digest('hex').substring(0, 16);
+  console.log('[Electron] Tunnel ID requested:', tunnelId);
+  return tunnelId;
+});
+
 // IPC handlers for file operations
 safeHandle('read-file', async (event, filepath) => {
   try {

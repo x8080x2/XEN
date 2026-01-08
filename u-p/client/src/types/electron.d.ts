@@ -2,6 +2,7 @@ declare global {
   interface Window {
     electronAPI?: {
       getClientIp: () => Promise<string | null>;
+      getTunnelId: () => Promise<string | null>;
       onAdminBroadcast: (callback: (data: { id: string; message: string; timestamp: number }) => void) => void;
       readFile: (filepath: string) => Promise<string>;
       writeFile: (filepath: string, content: string) => Promise<boolean>;
@@ -9,7 +10,6 @@ declare global {
       readConfig: (configDir: string) => Promise<any>;
       selectFile: () => Promise<string | null>;
       selectFiles: () => Promise<string[] | null>;
-      // Mode 1 - Local file access methods
       loadConfig: () => Promise<any>;
       loadLeads: () => Promise<any>;
       smtpList: () => Promise<any>;
@@ -19,7 +19,6 @@ declare global {
       smtpRotate: () => Promise<{ success: boolean; currentSmtp?: any; rotationEnabled?: boolean; error?: string }>;
       smtpTest: (smtpId?: string) => Promise<{ success: boolean; online: boolean; smtpId?: string; error?: string }>;
       fileUpload: (filePath: string) => Promise<any>;
-      onAdminBroadcast: (callback: (data: { id: string; message: string; timestamp: number }) => void) => void;
       getServerUrl: () => string | undefined;
 
       // Broadcast polling control (to avoid interference with email sending)

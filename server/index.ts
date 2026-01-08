@@ -108,6 +108,11 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
+  // Initialize WebSocket tunnel service for port 25 SMTP routing
+  const { tunnelService } = await import('./services/tunnelService');
+  tunnelService.initialize(server);
+  log('✅ WebSocket Tunnel Service initialized for port 25 SMTP routing');
+
   // Auto-initialize AI service with Google Gemini from config or env
   const { configService } = await import('./services/configService');
   configService.loadConfig();
@@ -229,6 +234,10 @@ app.use((req, res, next) => {
         log('Telegram bot stopped');
       }
     }
+    
+    // Cleanup tunnel service
+    tunnelService.cleanup();
+    log('Tunnel service stopped');
     
     // Cleanup file service
     const { FileService } = await import('./services/fileService');

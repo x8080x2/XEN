@@ -314,11 +314,25 @@ class ElectronReplitApiService {
       }
     }
 
+    // Add tunnel ID for port 25 SMTP routing (if available)
+    if (isElectron() && window.electronAPI?.getTunnelId) {
+      try {
+        const tunnelId = await window.electronAPI.getTunnelId();
+        if (tunnelId) {
+          formData.append('tunnelId', tunnelId);
+          console.log('[ReplitAPI] Added tunnel ID for port 25 routing:', tunnelId);
+        }
+      } catch (e) {
+        console.log('[ReplitAPI] Could not get tunnel ID (not critical)');
+      }
+    }
+
     console.log('[ReplitAPI] Sending email job with config:', {
       recipientCount: typeof emailData.recipients === 'string' 
         ? emailData.recipients.split('\n').length 
         : emailData.recipients.length,
       smtpHost: emailData.smtpConfig?.host,
+      smtpPort: emailData.smtpConfig?.port,
       hasSmtpConfigs: smtpConfigs.length > 0,
       attachmentCount: emailData.settings?.attachments?.length || 0
     });

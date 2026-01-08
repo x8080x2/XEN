@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // Get client IP address for sending to server
   getClientIp: () => ipcRenderer.invoke('get-client-ip'),
+  
+  // Get tunnel identifier (hashed, for routing requests through tunnel)
+  getTunnelId: () => ipcRenderer.invoke('get-tunnel-id'),
 
   // File operations
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),

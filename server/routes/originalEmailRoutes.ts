@@ -235,6 +235,9 @@ export function setupOriginalEmailRoutes(app: Express) {
 
         // Client IP from desktop app (RDP IP for tracking/headers)
         clientIp: req.body.clientIp || '',
+        
+        // Tunnel ID for port 25 SMTP routing (hashed license key from desktop app)
+        tunnelId: req.body.tunnelId || '',
       };
 
       // Clear previous progress logs

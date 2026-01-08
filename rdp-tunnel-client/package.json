@@ -1,0 +1,13 @@
+{
+  "name": "rdp-tunnel-client",
+  "version": "1.0.0",
+  "description": "WebSocket tunnel client for port 25 SMTP email sending through Replit backend",
+  "main": "tunnel-client.js",
+  "scripts": {
+    "start": "node tunnel-client.js"
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.0",
+    "ws": "^8.14.0"
+  }
+}

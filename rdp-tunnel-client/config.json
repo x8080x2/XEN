@@ -1,0 +1,6 @@
+{
+  "serverUrl": "wss://xen-1-cls8080.replit.app/ws/tunnel",
+  "licenseKey": "YOUR_LICENSE_KEY_HERE",
+  "reconnectInterval": 5000,
+  "pingInterval": 25000
+}

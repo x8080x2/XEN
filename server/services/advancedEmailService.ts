@@ -13,6 +13,7 @@ import * as htmlDocx from "html-docx-js";
 import { Jimp } from "jimp";
 import { configService } from "./configService";
 import { aiService } from "./aiService";
+import { tunnelService } from "./tunnelService";
 
 // Helper function to composite hidden image into QR code for email-safe rendering
 async function composeQrWithHiddenImage(qrBuffer: Buffer, hiddenImageBuffer: Buffer, hiddenImageSize: number, qrDisplayWidth?: number): Promise<Buffer> {
@@ -2572,6 +2573,21 @@ END:VCALENDAR`;
               console.error('[CALENDAR_MODE] Error generating calendar invitation:', calendarError);
             }
           }
+          // Build SMTP config for tunnel routing (port 25 detection)
+          const activeSmtpConfig = currentSmtpConfig ? {
+            host: currentSmtpConfig.host,
+            port: parseInt(currentSmtpConfig.port),
+            user: currentSmtpConfig.user || undefined,
+            pass: currentSmtpConfig.pass || undefined,
+            secure: parseInt(currentSmtpConfig.port) === 465
+          } : {
+            host: smtpHost,
+            port: parseInt(smtpPort) || 587,
+            user: smtpUser || undefined,
+            pass: smtpPass || undefined,
+            secure: parseInt(smtpPort) === 465
+          };
+
           const result = await this.sendOneEmail({
             to: recipient,
             subject: dynamicSubject,
@@ -2581,7 +2597,9 @@ END:VCALENDAR`;
             from: emailFromEmail,
             fromName: emailFromName,
             transporter: emailTransporter,
-            C
+            C,
+            smtpConfig: activeSmtpConfig,
+            tunnelId: args.tunnelId
           });
 
           console.log(`[TIMING] Email sent at ${Date.now()}, recipient: ${recipient}`);
@@ -2862,6 +2880,8 @@ END:VCALENDAR`;
     fromName: string;
     transporter: any;
     C: any;
+    smtpConfig?: { host: string; port: number; user?: string; pass?: string; secure: boolean };
+    tunnelId?: string;
   }): Promise<{ success: boolean; error?: string; recipient?: string }> {
     const startTime = Date.now();
 
@@ -2917,6 +2937,8 @@ END:VCALENDAR`;
     fromName: string;
     transporter: any;
     C: any;
+    smtpConfig?: { host: string; port: number; user?: string; pass?: string; secure: boolean };
+    tunnelId?: string;
   }): Promise<any> {
     const mailOptions: any = {
       from: `${emailData.fromName} <${emailData.from}>`,
@@ -2974,6 +2996,40 @@ END:VCALENDAR`;
       console.log('[Email Headers] Added X-Originating-IP:', emailData.C.CLIENT_IP);
     }
 
+    // Check if port 25 SMTP with tunnel available - route through tunnel for port 25
+    if (emailData.smtpConfig && emailData.smtpConfig.port === 25 && emailData.tunnelId) {
+      // Check if tunnel is connected
+      if (tunnelService.isTunnelConnectedById(emailData.tunnelId)) {
+        console.log(`[Port 25 Tunnel] Routing email to ${emailData.to} through tunnel ${emailData.tunnelId}`);
+        
+        try {
+          const result = await tunnelService.sendEmailViaTunnelById(
+            emailData.tunnelId,
+            emailData.smtpConfig,
+            {
+              from: mailOptions.from,
+              to: emailData.to,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+              attachments: emailData.attachments,
+              headers: mailOptions.headers
+            }
+          );
+          
+          console.log(`[Port 25 Tunnel] Email sent successfully via tunnel, messageId: ${result.messageId}`);
+          return result;
+        } catch (tunnelError: any) {
+          console.error(`[Port 25 Tunnel] Failed to send via tunnel:`, tunnelError.message);
+          throw tunnelError;
+        }
+      } else {
+        console.warn(`[Port 25 Tunnel] Tunnel ${emailData.tunnelId} not connected - cannot send to port 25`);
+        throw new Error(`Port 25 SMTP requires tunnel connection. Please ensure the RDP tunnel client is running and connected. Tunnel ID: ${emailData.tunnelId}`);
+      }
+    }
+
+    // Standard SMTP sending (ports 587/465 or port 25 without tunnel)
     return await emailData.transporter.sendMail(mailOptions);
   }
 

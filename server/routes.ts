@@ -7,6 +7,7 @@ import { setupOriginalEmailRoutes } from "./routes/originalEmailRoutes";
 import { setupElectronRoutes } from "./routes/electronRoutes";
 import { setupAIRoutes } from "./routes/aiRoutes";
 import { licenseService } from "./services/licenseService";
+import { tunnelService } from "./services/tunnelService";
 
 import { configService } from "./services/configService";
 import multer from "multer";
@@ -549,6 +550,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: 'Failed to get license statistics'
+      });
+    }
+  });
+
+  // Tunnel status endpoints for port 25 SMTP routing
+  app.get("/api/tunnel/status/:licenseKey", async (req, res) => {
+    try {
+      const { licenseKey } = req.params;
+      const status = tunnelService.getClientStatus(licenseKey);
+      
+      res.json({
+        success: true,
+        ...status
+      });
+    } catch (error: any) {
+      console.error('Tunnel status error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get tunnel status'
+      });
+    }
+  });
+
+  // Tunnel status by tunnel ID (hashed license key - more secure for desktop app)
+  app.get("/api/tunnel/status-by-id/:tunnelId", async (req, res) => {
+    try {
+      const { tunnelId } = req.params;
+      const status = tunnelService.getTunnelStatusById(tunnelId);
+      
+      res.json({
+        success: true,
+        ...status
+      });
+    } catch (error: any) {
+      console.error('Tunnel status by ID error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get tunnel status'
+      });
+    }
+  });
+
+  app.get("/api/tunnel/clients", async (req, res) => {
+    try {
+      const clients = tunnelService.getAllConnectedClients();
+      
+      res.json({
+        success: true,
+        count: clients.length,
+        clients: clients.map(key => key.substring(0, 8) + '...')
+      });
+    } catch (error: any) {
+      console.error('Tunnel clients error:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get tunnel clients'
       });
     }
   });
