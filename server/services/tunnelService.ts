@@ -370,12 +370,27 @@ class TunnelService {
 
     const requestId = crypto.randomUUID();
 
+    // Serialize attachments for JSON transport - convert Buffers to base64
+    const serializedMailOptions = {
+      ...mailOptions,
+      attachments: mailOptions.attachments?.map(att => {
+        if (att.content && Buffer.isBuffer(att.content)) {
+          return {
+            ...att,
+            content: att.content.toString('base64'),
+            encoding: 'base64'
+          };
+        }
+        return att;
+      })
+    };
+
     const request: EmailSendRequest = {
       requestId,
       type: 'send_email',
       payload: {
         smtpConfig,
-        mailOptions
+        mailOptions: serializedMailOptions
       }
     };
 

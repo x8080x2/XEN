@@ -158,8 +158,22 @@ class TunnelClient extends EventEmitter {
         };
       }
 
+      // Deserialize attachments - convert base64 back to Buffer for nodemailer
+      const processedMailOptions = { ...mailOptions };
+      if (mailOptions.attachments && Array.isArray(mailOptions.attachments)) {
+        processedMailOptions.attachments = mailOptions.attachments.map(att => {
+          if (att.content && att.encoding === 'base64' && typeof att.content === 'string') {
+            return {
+              ...att,
+              content: Buffer.from(att.content, 'base64')
+            };
+          }
+          return att;
+        });
+      }
+
       const transporter = nodemailer.createTransport(transporterConfig);
-      const result = await transporter.sendMail(mailOptions);
+      const result = await transporter.sendMail(processedMailOptions);
 
       console.log(`[Tunnel Email] Success - MessageID: ${result.messageId}`);
 
