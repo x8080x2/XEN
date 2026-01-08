@@ -1189,6 +1189,19 @@ export default function OriginalEmailSender() {
           }
         }
 
+        // Add tunnel ID for port 25 SMTP routing through tunnel client
+        if (window.electronAPI?.getTunnelId) {
+          try {
+            const tunnelId = await window.electronAPI.getTunnelId();
+            if (tunnelId) {
+              formData.append('tunnelId', tunnelId);
+              console.log('[Desktop] Including tunnel ID for port 25 routing:', tunnelId);
+            }
+          } catch (err) {
+            console.warn('[Desktop] Could not get tunnel ID:', err);
+          }
+        }
+
         // Add file attachments directly (no base64 conversion - same as web version)
         if (selectedFiles && selectedFiles.length > 0) {
           console.log('[Desktop] Adding', selectedFiles.length, 'file attachments directly...');

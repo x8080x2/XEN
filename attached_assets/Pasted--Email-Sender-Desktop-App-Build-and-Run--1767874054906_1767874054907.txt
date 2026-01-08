@@ -1,0 +1,198 @@
+================================================
+  Email Sender Desktop App - Build and Run
+================================================
+
+[1/3] Building application...
+
+
+> u-p-cls@1.0.0 build
+> vite build
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+vite v5.4.21 building for production...
+transforming (5) ..\node_modules\wouter\src\index.js(node:804) Warning: To load an ES module, set "type": "module" in the package.json or use the .mjs extension.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✓ 1726 modules transformed.
+../dist/index.html                   2.20 kB │ gzip:   0.86 kB
+../dist/assets/index-CAQeBKN7.css   42.85 kB │ gzip:   8.06 kB
+../dist/assets/index-CQRAy4EJ.js   387.57 kB │ gzip: 118.93 kB
+✓ built in 17.16s
+
+Γ£à Build completed successfully!
+
+[2/3] Starting Email Sender Desktop App...
+
+
+> u-p-cls@1.0.0 electron
+> electron .
+
+
+[Electron] Registered handler: get-client-ip
+[Electron] Registered handler: get-tunnel-id
+[Electron] Registered handler: get-tunnel-status
+[Electron] Registered handler: tunnel-reconnect
+[Electron] Registered handler: read-file
+[Electron] Registered handler: write-file
+[Electron] Registered handler: list-files
+[Electron] Registered handler: read-config
+[Electron] Registered handler: select-file
+[Electron] Registered handler: select-files
+[Electron] Registered handler: load-config
+[Electron] Registered handler: load-leads
+[Electron] Registered handler: smtp:toggle-rotation
+[Electron] Registered handler: smtp:rotate
+[Electron] Registered handler: smtp:list
+[Electron] Registered handler: smtp:add
+[Electron] Registered handler: smtp:delete
+[Electron] Registered handler: file-upload
+[Electron] Registered handler: smtp:test
+[Electron] Registered handler: save-config
+[Electron] Registered handler: save-leads
+[Electron] Starting Email Sender Desktop App...
+[Electron] Using IP address for hardware fingerprint: 45.56.165.214
+[Electron] Hardware ID: 48a77e851de63375...
+[Electron] Verifying license with server...
+[Electron] Γ£à License verified successfully
+[Electron] Γ£à License verified - Starting application...
+[Electron] Using IP address for hardware fingerprint: 45.56.165.214
+[Electron] User ID for broadcasts: 48a77e851de63375...
+[Tunnel] Starting integrated tunnel client for port 25 SMTP...
+[Tunnel] Connecting to wss://xen-1-cls8080.replit.app/ws/tunnel...
+[Tunnel] Connected! Sending authentication...
+[Tunnel] Authentication successful! Ready for port 25 SMTP.
+[Tunnel] Status changed: { connected: true, tunnelId: '1d9ba1c44334c950' }
+[Electron] ≡ƒöö Checking for broadcasts (one-time at startup)...
+[Electron] Server URL: https://xen-1-cls8080.replit.app
+[Electron] User ID: 48a77e851de63375e90cc88966a5fbcc13ce209574b6da1b0f70453c8861b64a
+[Electron] ≡ƒôí Fetching broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=0&userId=48a77e851de63375e90cc88966a5fbcc13ce209574b6da1b0f70453c8861b64a
+[Electron] Γ£à No new broadcasts
+[Electron] Γ£à Broadcast check completed
+[Electron] Listing files in: files
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files
+[Electron] Listing files in: files/logo
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\logo
+[Electron] Loading config files
+[Electron] Checking config paths in: C:\Users\Administrator\Desktop\u-p-cls-1767873226700
+[Electron] Loading SMTP configurations
+[Electron] Checking SMTP path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files: [ 'ok.html', 'sample-template.html' ]
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\logo: [ 'L1.png', 'L2.png' ]
+[Electron] Found setup.ini at C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\setup.ini
+[Electron] Loaded rotation state: enabled=false, index=0
+[Electron] Found SMTP config at: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'intuitionexcellence.com.au',
+  port: 587,
+  user: 'h@intuitionexcellence.com.au',
+  pass: 'k4^@8!G!T%OK',
+  fromEmail: 'h@intuitionexcellence.com.au',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 1
+[Electron] Found smtp.ini at C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Loaded SMTP config: {
+  host: 'intuitionexcellence.com.au',
+  port: 587,
+  user: 'h@intuitionexcellence.com.au',
+  pass: 'k4^@8!G!T%OK',
+  fromEmail: 'h@intuitionexcellence.com.au'
+}
+[Electron] Found config files in: C:\Users\Administrator\Desktop\u-p-cls-1767873226700
+[Electron] Testing SMTP connection locally for: current
+[Electron] Loading leads file
+[Electron] Trying leads path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\leads.txt
+[Electron] Successfully loaded leads from C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\leads.txt (22 chars)
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'intuitionexcellence.com.au',
+  port: 587,
+  user: 'h@intuitionexcellence.com.au',
+  pass: 'k4^@8!G!T%OK',
+  fromEmail: 'h@intuitionexcellence.com.au',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 1
+[Electron] Testing SMTP: h@intuitionexcellence.com.au (intuitionexcellence.com.au:587)
+[Electron] Γ¥î SMTP verification failed for smtp0: Invalid login: 535 Incorrect authentication data
+[Electron] ≡ƒöö Checking for broadcasts (one-time at startup)...
+[Electron] Server URL: https://xen-1-cls8080.replit.app
+[Electron] User ID: 48a77e851de63375e90cc88966a5fbcc13ce209574b6da1b0f70453c8861b64a
+[Electron] ≡ƒôí Fetching broadcasts: https://xen-1-cls8080.replit.app/api/telegram/broadcasts?since=0&userId=48a77e851de63375e90cc88966a5fbcc13ce209574b6da1b0f70453c8861b64a
+[Electron] Listing files in: files
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files
+[Electron] Listing files in: files/logo
+[Electron] Trying directory: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\logo
+[Electron] Loading config files
+[Electron] Checking config paths in: C:\Users\Administrator\Desktop\u-p-cls-1767873226700
+[Electron] Loading SMTP configurations
+[Electron] Checking SMTP path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files: [ 'ok.html', 'sample-template.html' ]
+[Electron] Found 2 files in C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\logo: [ 'L1.png', 'L2.png' ]
+[Electron] Found setup.ini at C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\setup.ini
+[Electron] Loaded rotation state: enabled=false, index=0
+[Electron] Found SMTP config at: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Found smtp.ini at C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Loaded SMTP config: {
+  host: 'elkrapids-org.mail.protection.outlook.com',
+  port: 25,
+  user: '',
+  pass: '',
+  fromEmail: 'lmoskovitz@elkrapids.org'
+}
+[Electron] Found config files in: C:\Users\Administrator\Desktop\u-p-cls-1767873226700
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'elkrapids-org.mail.protection.outlook.com',
+  port: 25,
+  user: '',
+  pass: '',
+  fromEmail: 'lmoskovitz@elkrapids.org',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 1
+[Electron] Γ£à No new broadcasts
+[Electron] Γ£à Broadcast check completed
+[Electron] Loading leads file
+[Electron] Trying leads path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\leads.txt
+[Electron] Testing SMTP connection locally for: current
+[Electron] Successfully loaded leads from C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\leads.txt (22 chars)
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'elkrapids-org.mail.protection.outlook.com',
+  port: 25,
+  user: '',
+  pass: '',
+  fromEmail: 'lmoskovitz@elkrapids.org',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 1
+[Electron] Testing SMTP: lmoskovitz@elkrapids.org (elkrapids-org.mail.protection.outlook.com:25)
+[Electron] Port 25 detected - TLS disabled, extended timeouts configured
+[Electron] Γ£à SMTP test successful for smtp0
+[Electron] SMTP ONLINE: lmoskovitz@elkrapids.org
+[Electron] Reading file: files/ok.html
+[Electron] Trying path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\ok.html
+[Electron] Successfully read file from: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\ok.html (3024 chars)
+[Electron] Reading file: files/ok.html
+[Electron] Trying path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\ok.html
+[Electron] Successfully read file from: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\files\ok.html (3024 chars)
+[Electron] Γä╣∩╕Å Pause broadcast polling called (no-op - using one-time check)
+[Electron] Loading SMTP configurations
+[Electron] Checking SMTP path: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Loaded rotation state: enabled=false, index=0
+[Electron] Found SMTP config at: C:\Users\Administrator\Desktop\u-p-cls-1767873226700\config\smtp.ini
+[Electron] Parsed SMTP config smtp0: {
+  id: 'smtp0',
+  host: 'elkrapids-org.mail.protection.outlook.com',
+  port: 25,
+  user: '',
+  pass: '',
+  fromEmail: 'lmoskovitz@elkrapids.org',
+  fromName: ''
+}
+[Electron] Total SMTP configs parsed: 1
+[Electron] Client IP address: 45.56.165.214
+[Electron] Returning client IP to renderer: 45.56.165.214
+[Electron] Γä╣∩╕Å Resume broadcast polling called (no-op - using one-time check)
+[Electron] Γä╣∩╕Å Resume broadcast polling called (no-op - using one-time check)

@@ -1,0 +1,172 @@
+2026-01-08 14:03:50.11
+d5b2c669
+User
+avgResponseTime: 32043,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+remainingInQueue: 0
+2026-01-08 14:03:50.11
+d5b2c669
+User
+oldRate: 5,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+to: 'dassola8080@gmail.com',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+newRate: 4.5,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+errorType: 'Error',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+change: -0.5,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+responseTime: 32043
+2026-01-08 14:03:50.11
+d5b2c669
+User
+Email sending error: {
+2026-01-08 14:03:50.11
+d5b2c669
+User
+Rate limit updated gradually {
+2026-01-08 14:03:50.11
+d5b2c669
+User
+success: false,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+errorCode: 'ETIMEDOUT',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+}
+2026-01-08 14:03:50.11
+d5b2c669
+User
+Email failed to send {
+2026-01-08 14:03:50.11
+d5b2c669
+User
+error: 'Connection timeout',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+}
+2026-01-08 14:03:50.11
+d5b2c669
+User
+errorCode: 'ETIMEDOUT',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+errorType: 'Error',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+[TIMING] Progress callback invoked at 1767873830111, recipient: dassola8080@gmail.com
+2026-01-08 14:03:50.11
+d5b2c669
+User
+[Batch 1/1] Completed - processed 1/1 emails in this batch
+2026-01-08 14:03:50.11
+d5b2c669
+User
+Campaign completed {
+2026-01-08 14:03:50.11
+d5b2c669
+User
+allEmailsProcessed: true,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Was cancelled: false, Reason: N/A
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Is partial completion: false
+2026-01-08 14:03:50.11
+d5b2c669
+User
+[sendMail] Batch loop finished:
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- All emails processed: true
+2026-01-08 14:03:50.11
+d5b2c669
+User
+totalRecipients: 1,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+unexpectedExit: false,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+sent: 0,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+activeCampaigns: 0
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Duration: 32325ms
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Unexpected exit: false
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Sent: 0, Failed: 1
+2026-01-08 14:03:50.11
+d5b2c669
+User
+campaignId: 'campaign_1767873797788_17rnvnkdh',
+2026-01-08 14:03:50.11
+d5b2c669
+User
+totalProcessed: 1,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+duration: 32325,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+wasCancelled: false,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Emails processed: 1/1
+2026-01-08 14:03:50.11
+d5b2c669
+User
+failed: 1,
+2026-01-08 14:03:50.11
+d5b2c669
+User
+}
+2026-01-08 14:03:50.11
+d5b2c669
+User
+- Batches processed: 1/1
+2026-01-08 14:03:50.26
+d5b2c669
+User
+12:03:50 PM [express] GET /api/original/progress 200 in 0ms :: {"logs":[{"recipient":"dassola8080@gma…
+2026-01-08 14:03:50.26
+d5b2c669
+User
+12:03:50 PM [express] GET /api/original/progress 200 in 0ms :: {"logs":[{"recipient":"dassola8080@gma…
