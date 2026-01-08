@@ -153,13 +153,21 @@ export function SMTPManager() {
   const toggleRotation = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/smtp/toggle-rotation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
-      });
+      let data;
+      if (window.electronAPI?.smtpToggleRotation) {
+        // Desktop: Use Electron API for local file operations
+        data = await window.electronAPI.smtpToggleRotation(!smtpData.rotationEnabled);
+        console.log('[Desktop SMTP Toggle Rotation]', data);
+      } else {
+        // Web: Use backend API
+        const response = await fetch("/api/smtp/toggle-rotation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled: !smtpData.rotationEnabled })
+        });
+        data = await response.json();
+      }
       
-      const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -169,6 +177,12 @@ export function SMTPManager() {
         toast({
           title: "SMTP Rotation",
           description: `SMTP rotation ${data.rotationEnabled ? 'enabled' : 'disabled'}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to toggle SMTP rotation",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -194,13 +208,21 @@ export function SMTPManager() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/smtp/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newSmtp)
-      });
+      let data;
+      if (window.electronAPI?.smtpAdd) {
+        // Desktop: Use Electron API for local file operations
+        data = await window.electronAPI.smtpAdd(newSmtp);
+        console.log('[Desktop SMTP Add]', data);
+      } else {
+        // Web: Use backend API
+        const response = await fetch("/api/smtp/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newSmtp)
+        });
+        data = await response.json();
+      }
       
-      const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -218,6 +240,12 @@ export function SMTPManager() {
         toast({
           title: "Success",
           description: `SMTP configuration ${data.smtpId} added successfully`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to add SMTP configuration",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -242,11 +270,19 @@ export function SMTPManager() {
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/smtp/${smtpId}`, {
-        method: "DELETE"
-      });
+      let data;
+      if (window.electronAPI?.smtpDelete) {
+        // Desktop: Use Electron API for local file operations
+        data = await window.electronAPI.smtpDelete(smtpId);
+        console.log('[Desktop SMTP Delete]', data);
+      } else {
+        // Web: Use backend API
+        const response = await fetch(`/api/smtp/${smtpId}`, {
+          method: "DELETE"
+        });
+        data = await response.json();
+      }
       
-      const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -256,6 +292,12 @@ export function SMTPManager() {
         toast({
           title: "Success",
           description: `SMTP configuration ${smtpId} deleted successfully`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to delete SMTP configuration",
+          variant: "destructive"
         });
       }
     } catch (error) {
@@ -271,11 +313,19 @@ export function SMTPManager() {
   const rotateSmtp = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/smtp/rotate", {
-        method: "POST"
-      });
+      let data;
+      if (window.electronAPI?.smtpRotate) {
+        // Desktop: Use Electron API for local file operations
+        data = await window.electronAPI.smtpRotate();
+        console.log('[Desktop SMTP Rotate]', data);
+      } else {
+        // Web: Use backend API
+        const response = await fetch("/api/smtp/rotate", {
+          method: "POST"
+        });
+        data = await response.json();
+      }
       
-      const data = await response.json();
       if (data.success) {
         setSmtpData(prev => ({
           ...prev,
@@ -284,6 +334,12 @@ export function SMTPManager() {
         toast({
           title: "SMTP Rotated",
           description: `Now using: ${data.currentSmtp?.fromEmail}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to rotate SMTP",
+          variant: "destructive"
         });
       }
     } catch (error) {
