@@ -187,6 +187,9 @@ export default function OriginalEmailSender() {
   const [currentEmailStatus, setCurrentEmailStatus] = useState<string>("");
   const [recentlyAddedLogIndex, setRecentlyAddedLogIndex] = useState<number>(-1);
   const [currentSmtpInfo, setCurrentSmtpInfo] = useState<{id: string, fromEmail: string, host: string} | null>(null);
+  
+  // Tunnel status for port 25 SMTP routing (desktop only)
+  const [tunnelStatus, setTunnelStatus] = useState<{connected: boolean; reason?: string}>({ connected: false });
 
   // Refs for auto-scrolling
   const logContainerRef = useRef<HTMLDivElement>(null);
@@ -209,6 +212,36 @@ export default function OriginalEmailSender() {
     downloadText?: string;
     showDownloadLink: boolean;
   } | null>(null);
+
+  // Tunnel status listener for port 25 SMTP (desktop only)
+  useEffect(() => {
+    if (!isElectronMode) return;
+    
+    // Get initial tunnel status
+    if (window.electronAPI?.getTunnelStatus) {
+      window.electronAPI.getTunnelStatus().then(status => {
+        setTunnelStatus({ connected: status.connected, reason: status.reason });
+        console.log('[Tunnel] Initial status:', status);
+      });
+    }
+    
+    // Listen for status updates
+    const handleTunnelStatus = (status: { connected: boolean; reason?: string }) => {
+      setTunnelStatus({ connected: status.connected, reason: status.reason });
+      console.log('[Tunnel] Status update:', status);
+    };
+    
+    if (window.electronAPI?.onTunnelStatus) {
+      window.electronAPI.onTunnelStatus(handleTunnelStatus);
+    }
+    
+    // Cleanup listener on unmount
+    return () => {
+      if (window.electronAPI?.removeTunnelStatusListener) {
+        window.electronAPI.removeTunnelStatusListener(handleTunnelStatus);
+      }
+    };
+  }, [isElectronMode]);
 
   // Broadcast polling effect for desktop app
   useEffect(() => {
@@ -1531,9 +1564,30 @@ export default function OriginalEmailSender() {
                 title={smtpOnline === null ? 'Checking...' : smtpOnline ? 'Online' : 'Offline'}
               />
               <div className={`text-xs ${smtpOnline === null ? 'text-yellow-400' : smtpOnline ? 'text-green-400' : 'text-[#ef4444]'}`}>
-                {smtpOnline === null ? 'CHECKING...' : smtpOnline ? 'ONLINE' : 'OFFLINE'}
+                SMTP: {smtpOnline === null ? 'CHECK' : smtpOnline ? 'OK' : 'OFF'}
               </div>
             </div>
+            {/* Tunnel Status for Port 25 (Desktop only) */}
+            {isElectronMode && (
+              <div 
+                className="flex items-center justify-center gap-2 px-1 py-1" 
+                title="Port 25 tunnel for sending via local SMTP"
+                data-testid="status-tunnel-p25"
+              >
+                <div
+                  className={`w-3 h-3 rounded-full flex-shrink-0 ${
+                    tunnelStatus.connected ? 'bg-blue-500' : 'bg-gray-500'
+                  }`}
+                  data-testid="indicator-tunnel-p25"
+                />
+                <div 
+                  className={`text-xs ${tunnelStatus.connected ? 'text-blue-400' : 'text-gray-500'}`}
+                  data-testid="text-tunnel-p25"
+                >
+                  P25: {tunnelStatus.connected ? 'OK' : 'OFF'}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

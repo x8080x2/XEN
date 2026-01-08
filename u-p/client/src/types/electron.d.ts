@@ -3,6 +3,9 @@ declare global {
     electronAPI?: {
       getClientIp: () => Promise<string | null>;
       getTunnelId: () => Promise<string | null>;
+      getTunnelStatus: () => Promise<{ connected: boolean; hasLicenseKey?: boolean; hasServerUrl?: boolean; reconnectAttempts?: number; reason?: string }>;
+      tunnelReconnect: () => Promise<{ success: boolean; message?: string; error?: string }>;
+      onTunnelStatus: (callback: (status: { connected: boolean; reason?: string; tunnelId?: string }) => void) => void;
       onAdminBroadcast: (callback: (data: { id: string; message: string; timestamp: number }) => void) => void;
       readFile: (filepath: string) => Promise<string>;
       writeFile: (filepath: string, content: string) => Promise<boolean>;

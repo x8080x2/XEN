@@ -6,6 +6,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Get tunnel identifier (hashed, for routing requests through tunnel)
   getTunnelId: () => ipcRenderer.invoke('get-tunnel-id'),
+  
+  // Tunnel status for port 25 SMTP routing
+  getTunnelStatus: () => ipcRenderer.invoke('get-tunnel-status'),
+  tunnelReconnect: () => ipcRenderer.invoke('tunnel-reconnect'),
+  onTunnelStatus: (callback) => {
+    const handler = (event, status) => callback(status);
+    ipcRenderer.on('tunnel-status', handler);
+    // Store handler for cleanup
+    if (!window._tunnelStatusHandlers) window._tunnelStatusHandlers = new Map();
+    window._tunnelStatusHandlers.set(callback, handler);
+  },
+  removeTunnelStatusListener: (callback) => {
+    if (window._tunnelStatusHandlers?.has(callback)) {
+      const handler = window._tunnelStatusHandlers.get(callback);
+      ipcRenderer.removeListener('tunnel-status', handler);
+      window._tunnelStatusHandlers.delete(callback);
+    }
+  },
 
   // File operations
   readFile: (filepath) => ipcRenderer.invoke('read-file', filepath),

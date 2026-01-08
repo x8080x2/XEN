@@ -6,11 +6,16 @@ const https = require('https');
 const http = require('http');
 const os = require('os');
 const crypto = require('crypto');
-const axios = require('axios'); // Import axios for HTTP requests
-const nodemailer = require('nodemailer'); // Import nodemailer for SMTP operations
+const axios = require('axios');
+const nodemailer = require('nodemailer');
+const { TunnelClient } = require('./tunnel-client');
 
 // Load environment variables
 require('dotenv').config();
+
+// Global tunnel client instance for port 25 SMTP routing
+let tunnelClient = null;
+let tunnelStatus = { connected: false, reason: 'not_started' };
 
 // Track registered handlers to prevent duplicates
 const registeredHandlers = new Set();
@@ -277,12 +282,58 @@ app.whenReady().then(async () => {
   userId = generateHardwareFingerprint();
   console.log('[Electron] User ID for broadcasts:', userId.substring(0, 16) + '...');
   
+  // Start tunnel client for port 25 SMTP routing
+  startTunnelClient();
+  
   createWindow();
 });
+
+// Start the tunnel client for port 25 SMTP routing
+function startTunnelClient() {
+  const licenseKey = process.env.LICENSE_KEY;
+  const serverUrl = process.env.REPLIT_SERVER_URL;
+  
+  if (!licenseKey || !serverUrl) {
+    console.log('[Tunnel] Missing license key or server URL - tunnel disabled');
+    tunnelStatus = { connected: false, reason: 'missing_config' };
+    return;
+  }
+  
+  console.log('[Tunnel] Starting integrated tunnel client for port 25 SMTP...');
+  
+  tunnelClient = new TunnelClient({
+    licenseKey: licenseKey,
+    serverUrl: serverUrl
+  });
+  
+  tunnelClient.on('status', (status) => {
+    tunnelStatus = status;
+    console.log('[Tunnel] Status changed:', status);
+    
+    // Notify renderer if window is available
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send('tunnel-status', status);
+    }
+  });
+  
+  tunnelClient.on('error', (error) => {
+    console.error('[Tunnel] Error:', error.message);
+  });
+  
+  tunnelClient.connect();
+}
 
 // Quit when all windows are closed
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// Cleanup tunnel client on app quit
+app.on('before-quit', () => {
+  if (tunnelClient) {
+    console.log('[Tunnel] Cleaning up tunnel client...');
+    tunnelClient.disconnect();
+  }
 });
 
 app.on('activate', function () {
@@ -304,6 +355,23 @@ safeHandle('get-tunnel-id', async () => {
   const tunnelId = crypto.createHash('sha256').update(licenseKey).digest('hex').substring(0, 16);
   console.log('[Electron] Tunnel ID requested:', tunnelId);
   return tunnelId;
+});
+
+// IPC handler to get tunnel connection status
+safeHandle('get-tunnel-status', async () => {
+  if (tunnelClient) {
+    return tunnelClient.getStatus();
+  }
+  return tunnelStatus;
+});
+
+// IPC handler to reconnect tunnel manually
+safeHandle('tunnel-reconnect', async () => {
+  if (tunnelClient) {
+    tunnelClient.reconnect();
+    return { success: true, message: 'Reconnecting...' };
+  }
+  return { success: false, error: 'Tunnel client not initialized' };
 });
 
 // IPC handlers for file operations
